@@ -9,7 +9,8 @@ async function makeRequest(useStreaming = false) {
     try {
         // Initialize OpenAI client with custom baseURL
         const openai = new openai_1.default({
-            baseURL: 'https://yyg6foe61d.execute-api.us-east-1.amazonaws.com/Prod/',
+            // baseURL: 'https://yyg6foe61d.execute-api.us-east-1.amazonaws.com/Prod/',
+            baseURL: 'http://localhost:3000',
             apiKey: 'dummy-key', // Required by the client but not used with local server
             timeout: 25000, // 25 second timeout
             maxRetries: 2
@@ -53,10 +54,15 @@ async function makeRequest(useStreaming = false) {
 }
 // Run a single test request without streaming first
 console.log('Starting test request...');
-makeRequest(false)
+makeRequest(true)
     .then(() => {
     console.log('Test request completed');
-    process.exit(0);
+})
+    .then(() => {
+    console.log('Starting test request...');
+    makeRequest(false).then(() => {
+        console.log('Test request completed');
+    });
 })
     .catch((error) => {
     console.error('Fatal error:', error);

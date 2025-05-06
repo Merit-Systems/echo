@@ -7,6 +7,7 @@ exports.handler = void 0;
 const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const compression_1 = __importDefault(require("compression"));
+const helpers_1 = require("./helpers");
 const serverless_http_1 = __importDefault(require("serverless-http"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -54,16 +55,15 @@ function duplicateStream(stream) {
 }
 // Main route handler
 app.all('*', async (req, res) => {
+    var _a;
     try {
-        console.log('Received request:', {
-            path: req.path,
-            method: req.method,
-            headers: req.headers,
-            body: req.body
-        });
         // Process headers
         const processedHeaders = await processHeaders(req.headers);
-        console.log('Processed headers:', processedHeaders);
+        if (req.body.stream) {
+            req.body.stream_options = {
+                include_usage: true
+            };
+        }
         // Forward the request to OpenAI API
         const openAIUrl = `${BASE_URL}${req.path}`;
         console.log('Making request to OpenAI:', openAIUrl);
@@ -72,86 +72,108 @@ app.all('*', async (req, res) => {
             headers: processedHeaders,
             body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined
         });
-        console.log('OpenAI response status:', response.status);
-        console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('OpenAI API error:', {
-                status: response.status,
-                statusText: response.statusText,
-                body: errorText
-            });
-            return res.status(response.status).json({
-                error: 'OpenAI API error',
-                details: errorText
-            });
+        console.log("new outbound request", `${BASE_URL}${req.path}`, req.method);
+        // Check if this is a streaming response
+        const isStreaming = (_a = response.headers.get('content-type')) === null || _a === void 0 ? void 0 : _a.includes('text/event-stream');
+        if (isStreaming) {
+            // Handle streaming response
+            const bodyStream = response.body;
+            if (!bodyStream) {
+                throw new Error('No body stream returned from OpenAI API');
+            }
+            const [stream1, stream2] = duplicateStream(bodyStream);
+            // Pipe the main stream directly to the response
+            const reader1 = stream1.getReader();
+            const reader2 = stream2.getReader();
+            (async () => {
+                try {
+                    while (true) {
+                        const { done, value } = await reader1.read();
+                        if (done)
+                            break;
+                        res.write(value);
+                    }
+                    res.end();
+                }
+                catch (error) {
+                    console.error('Error reading stream:', error);
+                }
+            })();
+            let data = '';
+            (async () => {
+                try {
+                    while (true) {
+                        const { done, value } = await reader2.read();
+                        if (done)
+                            break;
+                        data += new TextDecoder().decode(value);
+                    }
+                    console.log('Stream data:', data);
+                    (0, helpers_1.handleBody)(data, true);
+                }
+                catch (error) {
+                    console.error('Error processing stream:', error);
+                }
+            })();
         }
-        // Handle non-streaming response
-        const data = await response.json();
-        console.log('Received response from OpenAI', data);
-        // Set appropriate headers
-        res.setHeader('content-type', 'application/json');
-        // Send response
-        return res.json(data);
+        else {
+            // Handle non-streaming response
+            const data = await response.json();
+            (0, helpers_1.handleBody)(JSON.stringify(data), false);
+            res.setHeader('content-type', 'application/json'); // Set the content type to json
+            res.json(data);
+        }
     }
     catch (error) {
         console.error('Error handling request:', error);
-        if (error instanceof Error) {
-            console.error('Error details:', {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-            });
-        }
-        return res.status(500).json({
-            error: 'Internal Server Error',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
+        res.status(500).send('Internal Server Error');
     }
 });
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+async function handleRequest(req, context) {
+    // Set the path from the Lambda event
+    if (context.path) {
+        // Remove the base path if it exists
+        req.path = context.path.replace('/Prod', '');
+    }
+    else if (context.pathParameters && context.pathParameters.proxy) {
+        req.path = `/${context.pathParameters.proxy}`;
+    }
+    req.method = context.httpMethod;
+    req.headers = context.headers;
+    // Parse the body if it exists and is a string
+    if (context.body) {
+        try {
+            req.body = typeof context.body === 'string' ? JSON.parse(context.body) : context.body;
+        }
+        catch (error) {
+            console.error('Error parsing request body:', error);
+            req.body = context.body;
+        }
+    }
+    return req;
+}
 // Configure serverless handler
 exports.handler = (0, serverless_http_1.default)(app, {
     provider: 'aws',
     basePath: '/Prod',
     request: (req, event, context) => {
-        // Set the path from the Lambda event
-        if (context.path) {
-            // Remove the base path if it exists
-            req.path = context.path.replace('/Prod', '');
-        }
-        else if (context.pathParameters && context.pathParameters.proxy) {
-            req.path = `/${context.pathParameters.proxy}`;
-        }
-        req.method = context.httpMethod;
-        req.headers = context.headers;
-        // Parse the body if it exists and is a string
-        if (context.body) {
-            try {
-                req.body = typeof context.body === 'string' ? JSON.parse(context.body) : context.body;
-            }
-            catch (error) {
-                console.error('Error parsing request body:', error);
-                req.body = context.body;
-            }
-        }
-        console.log('Lambda event:', JSON.stringify(event, null, 2));
-        console.log('Lambda context:', JSON.stringify(context, null, 2));
-        console.log('Lambda request:', JSON.stringify(req, null, 2));
-        return req;
+        return handleRequest(req, context);
     },
-    response: (res) => {
-        // Safely log response data without circular references
+    response: async (res) => {
         return res;
     }
 });
+/**
+ * Main Lambda handler that routes between streaming and non-streaming responses
+ */
 module.exports.funcName = async (context, event) => {
+    console.log('Lambda handler called');
     try {
-        const result = await (0, exports.handler)(event, context);
-        // Safely log result without circular references
-        return result;
+        // Otherwise use regular handler
+        return (0, exports.handler)(event, context);
     }
     catch (error) {
         console.error('Lambda execution error:', error);
