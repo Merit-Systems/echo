@@ -16,7 +16,6 @@ const BASE_URL = 'https://api.openai.com/v1';
 
 // Add middleware
 app.use(express.json());
-app.use(compression());
 
 // Function to process headers
 async function processHeaders(headers: Record<string, string>): Promise<Record<string, string>> {
@@ -34,27 +33,16 @@ async function processHeaders(headers: Record<string, string>): Promise<Record<s
      * which will be used to properly set the Openai API key
      */
     const { 
-        host, 
-        authorization, 
-        'content-encoding': contentEncoding,
-        'content-length': contentLength,
-        'transfer-encoding': transferEncoding,
-        connection,
+        host,
+        Authorization,
+        authorization,
         ...restHeaders 
     } = headers;
-
-
-    // Peform Auth Handshake.
-    // Are they a merit user? How many tokens do they have left?
-    // If they are not a merit user, we need to return a 401 Unauthorized status code
-
-
     
-    // Ensure content-type is set correctly
+    // Always use the OpenAI API key
     return {
         ...restHeaders,
         'content-type': 'application/json',
-        'accept-encoding': 'gzip, deflate',
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
     };
 }
@@ -74,6 +62,8 @@ app.all('*', async (req: Request, res: Response) => {
     try {
         // Process headers
         const processedHeaders = await processHeaders(req.headers as Record<string, string>);
+
+        console.log("processed headers", processedHeaders);
 
         if (req.body.stream) {
             req.body.stream_options = {
@@ -113,6 +103,7 @@ app.all('*', async (req: Request, res: Response) => {
                     while (true) {
                         const { done, value } = await reader1.read();
                         if (done) break;
+                        console.log("streaming value", value);
                         res.write(value);
                     }
                     res.end();
@@ -138,6 +129,7 @@ app.all('*', async (req: Request, res: Response) => {
         } else {
             // Handle non-streaming response
             const data = await response.json();
+            console.log("non-streamed response data", data);
             handleBody(JSON.stringify(data), false);
             res.setHeader('content-type', 'application/json'); // Set the content type to json
             res.json(data);
@@ -154,26 +146,44 @@ app.listen(port, () => {
 }); 
 
 
-async function handleRequest(req: any, context: any) {
+async function handleRequest(req: any, event: any, context: any) {
     // Set the path from the Lambda event
-    if (context.path) {
-        // Remove the base path if it exists
-        req.path = context.path.replace('/Prod', '');
-    } else if (context.pathParameters && context.pathParameters.proxy) {
-        req.path = `/${context.pathParameters.proxy}`;
+    if (context.rawPath) {
+        req.path = context.rawPath;
     }
-    req.method = context.httpMethod;
-    req.headers = context.headers;
     
-    // Parse the body if it exists and is a string
+    // Set the HTTP method
+    req.method = context.requestContext.http.method;
+    
+    // Set headers, but remove content-length
+    const { 'content-length': _, ...headers } = context.headers || {};
+    req.headers = headers;
+    
+    // Parse the body if it exists
     if (context.body) {
         try {
+            // If body is a string, parse it as JSON
             req.body = typeof context.body === 'string' ? JSON.parse(context.body) : context.body;
         } catch (error) {
             console.error('Error parsing request body:', error);
-            req.body = context.body;
+            throw new Error('Invalid JSON body');
         }
     }
+
+    // Add query string parameters if they exist
+    if (context.rawQueryString) {
+        req.query = new URLSearchParams(context.rawQueryString);
+    }
+
+    console.log("processed request", req);
+
+    console.log("processed request simple", {
+        path: req.path,
+        method: req.method,
+        headers: req.headers,
+        body: req.body
+    });
+    
     return req;
 }
 
@@ -182,11 +192,49 @@ async function handleRequest(req: any, context: any) {
 export const handler = ServerlessHttp(app, {
     provider: 'aws',
     basePath: '/Prod',
-    request: (req: any, event: any, context: any) => {
-        return handleRequest(req, context);
+    request: async (req: any, event: any, context: any) => {
+        console.log("initial request", req);
+        const processedReq = await handleRequest(req, event, context);
+        console.log("processed request", processedReq);
+        return processedReq;
     },
     response: async (res: any) => {
-        return res;
+        // Remove compression headers for Lambda responses
+        if (res._headers) {
+            delete res._headers['content-encoding'];
+            delete res._headers['content-length'];
+            delete res._headers['transfer-encoding'];
+        }
+        if (res[Symbol.for('kOutHeaders')]) {
+            delete res[Symbol.for('kOutHeaders')]['content-encoding'];
+            delete res[Symbol.for('kOutHeaders')]['content-length'];
+            delete res[Symbol.for('kOutHeaders')]['transfer-encoding'];
+        }
+        // Remove compression from the header string
+        if (res._header) {
+            res._header = res._header.replace(/Content-Encoding: gzip\r\n/g, '');
+        }
+
+        // Parse the body as JSON if it's a string and content-type is application/json
+        if (typeof res.body === 'string' && 
+            res._headers && 
+            res._headers['content-type']?.includes('application/json')) {
+            try {
+                res.body = JSON.parse(res.body);
+            } catch (error) {
+                console.error('Error parsing response body as JSON:', error);
+            }
+        }
+
+        const assembledResponse = {
+            statusCode: res.statusCode,
+            body: res.body,
+            headers: res._headers
+        }
+
+        console.log("assembled response", assembledResponse);
+
+        return assembledResponse;
     }
 });
 
@@ -195,6 +243,9 @@ export const handler = ServerlessHttp(app, {
  */
 module.exports.funcName = async (context: any, event: any) => {
     console.log('Lambda handler called');
+
+    console.log("event", event);
+    console.log("context", context);
 
     try {       
         // Otherwise use regular handler

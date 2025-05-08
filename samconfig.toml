@@ -1,10 +1,11 @@
 version = 0.1
 [default.deploy.parameters]
-stack_name = "sam-app"
+stack_name = "echo-v0"
 resolve_s3 = true
-s3_prefix = "sam-app"
+s3_prefix = "echo-v0"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "Environment=\"dev\""
+disable_rollback = false
+parameter_overrides = "OpenAIAPIKeyValue=\"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\""
 image_repositories = []

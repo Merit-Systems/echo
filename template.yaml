@@ -1,23 +1,13 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
-Description: API Gateway and Lambda function for OpenAI proxy
-
 Parameters:
-  Environment:
-    Type: String
-    Default: dev
-    AllowedValues:
-      - dev
-      - prod
-    Description: Environment name
   OpenAIAPIKeyValue:
     Type: String
-    NoEcho: true
-    Description: OpenAI API Key to be stored in SSM Parameter Store
+    Description: OpenAI API Key for the Lambda environment variable.
 
 Resources:
-  OpenAILambdaFunction:
+  LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./dist
@@ -25,30 +15,13 @@ Resources:
       Runtime: nodejs18.x
       Timeout: 30
       MemorySize: 256
+      Policies: 
+        - AWSLambdaBasicExecutionRole
       Environment:
         Variables:
-          OPENAI_API_KEY: 
-            Ref: OpenAIAPIKey
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            Path: /{proxy+}
-            Method: ANY
-
-  OpenAIAPIKey:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Type: String
-      Value: !Ref OpenAIAPIKeyValue
-      Description: OpenAI API Key
-
-Outputs:
-  ApiEndpoint:
-    Description: API Gateway endpoint URL
-    Value: 
-      Fn::Sub: "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
-  LambdaFunction:
-    Description: Lambda Function ARN
-    Value: 
-      Fn::GetAtt: [OpenAILambdaFunction, Arn] 
+          OPENAI_API_KEY: !Ref OpenAIAPIKeyValue
+      FunctionUrlConfig:
+        AuthType: NONE  # Change to AWS_IAM if you want authentication
+        InvokeMode: RESPONSE_STREAM
+        Cors:
+          AllowOrigins: ["*"]   # Allow all origins. Adjust for tighter security.

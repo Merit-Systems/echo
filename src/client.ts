@@ -4,8 +4,7 @@ async function makeRequest(useStreaming: boolean = false) {
     try {
         // Initialize OpenAI client with custom baseURL
         const openai = new OpenAI({
-            baseURL: 'https://yyg6foe61d.execute-api.us-east-1.amazonaws.com/Prod/',
-            // baseURL: 'http://localhost:3000',
+            baseURL: 'https://ar26ly5z7i6qu4vzo4lujohbnq0nzcrp.lambda-url.us-east-1.on.aws',
             apiKey: 'dummy-key', // Required by the client but not used with local server
             timeout: 25000, // 25 second timeout
             maxRetries: 2
@@ -20,6 +19,8 @@ async function makeRequest(useStreaming: boolean = false) {
                 model: "gpt-3.5-turbo",
                 stream: true,
             });
+
+            console.log("Stream:", stream);
 
             // Process the stream
             console.log("Streaming response:");
