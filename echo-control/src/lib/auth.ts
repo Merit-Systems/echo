@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { db } from './db'
+import { NextRequest } from 'next/server'
 
 export async function getCurrentUser() {
   const { userId } = await auth()
@@ -32,6 +33,38 @@ export async function getCurrentUser() {
   }
 
   return user
+}
+
+export async function getCurrentUserByApiKey(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('Invalid authorization header')
+  }
+
+  const apiKey = authHeader.substring(7) // Remove 'Bearer ' prefix
+
+  // Find the API key in the database
+  const apiKeyRecord = await db.apiKey.findUnique({
+    where: { 
+      key: apiKey,
+      isActive: true 
+    },
+    include: {
+      user: true,
+      echoApp: true
+    }
+  })
+
+  if (!apiKeyRecord) {
+    throw new Error('Invalid or inactive API key')
+  }
+
+  return {
+    user: apiKeyRecord.user,
+    apiKey: apiKeyRecord,
+    echoApp: apiKeyRecord.echoApp
+  }
 }
 
 export async function requireAuth() {

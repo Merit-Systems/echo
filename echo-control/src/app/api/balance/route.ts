@@ -1,13 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getCurrentUserByApiKey } from '@/lib/auth'
+
+// Helper function to get user from either Clerk or API key
+async function getAuthenticatedUser(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    // API key authentication
+    const authResult = await getCurrentUserByApiKey(request)
+    return { user: authResult.user, echoApp: authResult.echoApp }
+  } else {
+    // Clerk authentication
+    const user = await getCurrentUser()
+    return { user, echoApp: null }
+  }
+}
 
 // GET /api/balance - Get authenticated user balance (optionally for a specific app)
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const { user, echoApp } = await getAuthenticatedUser(request)
     const { searchParams } = new URL(request.url)
-    const echoAppId = searchParams.get('echoAppId')
+    let echoAppId = searchParams.get('echoAppId')
+
+    // If authenticated via API key and no specific app requested, use the API key's app
+    if (!echoAppId && echoApp) {
+      echoAppId = echoApp.id
+    }
 
     // Calculate balance from payments and transactions
     const paymentsFilter: any = {
@@ -53,7 +73,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching balance:', error)
     
-    if (error instanceof Error && error.message === 'Not authenticated') {
+    if (error instanceof Error && (error.message === 'Not authenticated' || error.message.includes('Invalid'))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
     

@@ -1,7 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getCurrentUserByApiKey } from '@/lib/auth'
 import { randomBytes } from 'crypto'
+
+// Helper function to get user from either Clerk or API key
+async function getAuthenticatedUser(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    // API key authentication
+    const authResult = await getCurrentUserByApiKey(request)
+    return { user: authResult.user, echoApp: authResult.echoApp }
+  } else {
+    // Clerk authentication
+    const user = await getCurrentUser()
+    return { user, echoApp: null }
+  }
+}
 
 // Generate a secure API key
 function generateApiKey(): string {
@@ -16,9 +31,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser()
-    // @ts-ignore - Next.js 15+ requires awaiting params, despite TS warning
-    const { id: echoAppId } = await params
+    const { user } = await getAuthenticatedUser(request)
+    const { id: echoAppId } = params
     const body = await request.json()
     const { name } = body
 
@@ -54,7 +68,7 @@ export async function POST(
   } catch (error) {
     console.error('Error creating API key:', error)
     
-    if (error instanceof Error && error.message === 'Not authenticated') {
+    if (error instanceof Error && (error.message === 'Not authenticated' || error.message.includes('Invalid'))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
     

@@ -1,33 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getCurrentUserByApiKey } from '@/lib/auth'
 
-// GET /api/echo-apps/[id] - Get echo app details for authenticated user
+// Helper function to get user from either Clerk or API key
+async function getAuthenticatedUser(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    // API key authentication
+    const authResult = await getCurrentUserByApiKey(request)
+    return { user: authResult.user, echoApp: authResult.echoApp }
+  } else {
+    // Clerk authentication
+    const user = await getCurrentUser()
+    return { user, echoApp: null }
+  }
+}
+
+// GET /api/echo-apps/[id] - Get a specific echo app by ID
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser()
-    // @ts-ignore - Next.js 15+ requires awaiting params, despite TS warning
-    const { id } = await params
+    const { user } = await getAuthenticatedUser(request)
+    const { id } = params
 
     const echoApp = await db.echoApp.findFirst({
-      where: { 
+      where: {
         id,
-        userId: user.id // Ensure user can only access their own apps
+        userId: user.id,
       },
       include: {
-        user: {
-          select: { id: true, email: true, name: true },
-        },
         apiKeys: {
           where: { isActive: true },
-          orderBy: { createdAt: 'desc' },
+          select: { id: true, name: true, createdAt: true },
         },
         llmTransactions: {
+          select: { id: true, totalTokens: true, cost: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
-          take: 50,
+          take: 10,
         },
         _count: {
           select: {
@@ -42,62 +54,26 @@ export async function GET(
       return NextResponse.json({ error: 'Echo app not found' }, { status: 404 })
     }
 
-    // Calculate usage statistics
+    // Calculate total usage and costs
     const stats = await db.llmTransaction.aggregate({
-      where: { echoAppId: id },
-      _sum: {
-        inputTokens: true,
-        outputTokens: true,
-        totalTokens: true,
-        cost: true,
-      },
-      _count: true,
-    })
-
-    // Get usage by model
-    const modelUsage = await db.llmTransaction.groupBy({
-      by: ['model'],
-      where: { echoAppId: id },
+      where: { echoAppId: echoApp.id },
       _sum: {
         totalTokens: true,
         cost: true,
-      },
-      _count: true,
-    })
-
-    // Get recent transactions
-    const recentTransactions = await db.llmTransaction.findMany({
-      where: { echoAppId: id },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      select: {
-        id: true,
-        model: true,
-        totalTokens: true,
-        cost: true,
-        status: true,
-        createdAt: true,
       },
     })
 
     const appWithStats = {
       ...echoApp,
-      stats: {
-        totalTransactions: stats._count,
-        totalTokens: stats._sum.totalTokens || 0,
-        totalInputTokens: stats._sum.inputTokens || 0,
-        totalOutputTokens: stats._sum.outputTokens || 0,
-        totalCost: stats._sum.cost || 0,
-        modelUsage,
-      },
-      recentTransactions,
+      totalTokens: stats._sum.totalTokens || 0,
+      totalCost: stats._sum.cost || 0,
     }
 
     return NextResponse.json({ echoApp: appWithStats })
   } catch (error) {
     console.error('Error fetching echo app:', error)
     
-    if (error instanceof Error && error.message === 'Not authenticated') {
+    if (error instanceof Error && (error.message === 'Not authenticated' || error.message.includes('Invalid'))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
     

@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getCurrentUserByApiKey } from '@/lib/auth'
+
+// Helper function to get user from either Clerk or API key
+async function getAuthenticatedUser(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    // API key authentication
+    const authResult = await getCurrentUserByApiKey(request)
+    return { user: authResult.user, echoApp: authResult.echoApp }
+  } else {
+    // Clerk authentication
+    const user = await getCurrentUser()
+    return { user, echoApp: null }
+  }
+}
 
 // GET /api/echo-apps - List echo apps for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const { user } = await getAuthenticatedUser(request)
 
     const echoApps = await db.echoApp.findMany({
       where: { userId: user.id },
@@ -52,7 +67,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching echo apps:', error)
     
-    if (error instanceof Error && error.message === 'Not authenticated') {
+    if (error instanceof Error && (error.message === 'Not authenticated' || error.message.includes('Invalid'))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
     
