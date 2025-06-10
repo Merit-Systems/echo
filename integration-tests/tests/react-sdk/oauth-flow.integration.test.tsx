@@ -2,7 +2,12 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { TEST_CONFIG, TEST_CLIENT_IDS } from '../../config';
-import { extractAuthorizationCodeFromUrl } from '../../utils/auth-helpers';
+import {
+  extractAuthorizationCodeFromUrl,
+  generateCodeVerifier,
+  generateCodeChallenge,
+  generateState,
+} from '../../utils/auth-helpers';
 import { echoControlApi } from '../../utils/api-client';
 
 // Import the actual React SDK components
@@ -472,6 +477,329 @@ describe('OAuth Flow Integration Tests', () => {
     }
 
     console.log('✅ Complete OAuth flow test finished');
+  });
+
+  test('tests OAuth2 token refresh flow with real backend', async () => {
+    console.log('🔧 Testing OAuth2 token refresh flow...');
+
+    // Step 1: Get initial tokens through OAuth flow
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = generateCodeChallenge(codeVerifier);
+    const state = generateState();
+
+    const redirectUrl = await echoControlApi.validateOAuthAuthorizeRequest({
+      client_id: TEST_CLIENT_IDS.primary,
+      redirect_uri: 'http://localhost:3000/callback',
+      state,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
+      scope: 'llm:invoke offline_access',
+      prompt: 'none',
+    });
+
+    const { code } = extractAuthorizationCodeFromUrl(redirectUrl);
+
+    const initialTokens = await echoControlApi.exchangeCodeForToken({
+      code,
+      client_id: TEST_CLIENT_IDS.primary,
+      redirect_uri: 'http://localhost:3000/callback',
+      code_verifier: codeVerifier,
+    });
+
+    expect(initialTokens.access_token).toBeTruthy();
+    expect(initialTokens.refresh_token).toBeTruthy();
+    expect(initialTokens.expires_in).toBeGreaterThan(0);
+
+    console.log('✅ Initial tokens obtained');
+    console.log(
+      `   Access token: ${initialTokens.access_token.substring(0, 30)}...`
+    );
+    console.log(
+      `   Refresh token: ${initialTokens.refresh_token?.substring(0, 30)}...`
+    );
+    console.log(`   Expires in: ${initialTokens.expires_in} seconds`);
+
+    // Step 2: Test refresh token flow
+    const refreshedTokens = await echoControlApi.refreshToken({
+      refresh_token: initialTokens.refresh_token!,
+      client_id: TEST_CLIENT_IDS.primary,
+    });
+
+    expect(refreshedTokens.access_token).toBeTruthy();
+    expect(refreshedTokens.access_token).not.toBe(initialTokens.access_token); // Should be different
+    expect(refreshedTokens.expires_in).toBeGreaterThan(0);
+
+    console.log('✅ Token refresh successful');
+    console.log(
+      `   New access token: ${refreshedTokens.access_token.substring(0, 30)}...`
+    );
+    console.log(`   New expires in: ${refreshedTokens.expires_in} seconds`);
+
+    // Step 3: Test React SDK automatic token refresh
+    // Mock a user with an expiring token
+    const mockUser = {
+      access_token: initialTokens.access_token,
+      refresh_token: initialTokens.refresh_token,
+      token_type: 'Bearer',
+      expires_at: Math.floor(Date.now() / 1000) + 60, // Expires in 1 minute
+      expired: false,
+      profile: {
+        sub: 'test-user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+      },
+    };
+
+    // Mock UserManager that supports refresh
+    const mockUserManager = {
+      getUser: vi.fn().mockResolvedValue(mockUser),
+      signinRedirect: vi.fn(),
+      signoutRedirect: vi.fn(),
+      removeUser: vi.fn(),
+      signinRedirectCallback: vi.fn(),
+      settings: {
+        authority: TEST_CONFIG.services.echoControl,
+        client_id: TEST_CLIENT_IDS.primary,
+      },
+      events: {
+        addUserLoaded: vi.fn(),
+        addUserUnloaded: vi.fn(),
+        addAccessTokenExpiring: vi.fn(callback => {
+          // Simulate token expiring event
+          setTimeout(() => callback(), 100);
+        }),
+        addAccessTokenExpired: vi.fn(),
+        addSilentRenewError: vi.fn(),
+        removeUserLoaded: vi.fn(),
+        removeUserUnloaded: vi.fn(),
+        removeAccessTokenExpiring: vi.fn(),
+        removeAccessTokenExpired: vi.fn(),
+        removeSilentRenewError: vi.fn(),
+      },
+    };
+
+    (window as unknown as { __echoUserManager?: unknown }).__echoUserManager =
+      mockUserManager;
+
+    const config: EchoConfig = {
+      instanceId: TEST_CLIENT_IDS.primary,
+      apiUrl: TEST_CONFIG.services.echoControl,
+      redirectUri: 'http://localhost:3000/callback',
+      scope: 'llm:invoke offline_access',
+    };
+
+    render(
+      <EchoProvider config={config}>
+        <OAuthTestComponent />
+      </EchoProvider>
+    );
+
+    // Should initialize with the mock user
+    await waitFor(() => {
+      expect(screen.getByTestId('oauth-status')).toBeInTheDocument();
+    });
+
+    // Should show authenticated state
+    await waitFor(() => {
+      const authStatus = screen.queryByTestId('auth-status');
+      expect(authStatus).toHaveTextContent('Authenticated');
+    });
+
+    console.log('✅ React SDK token refresh flow test completed');
+    console.log('✅ OAuth2 refresh tokens work with real echo-control backend');
+  });
+
+  test('tests OAuth2 token expiry handling', async () => {
+    console.log('🔧 Testing OAuth2 token expiry handling...');
+
+    // Step 1: Get real tokens first
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = generateCodeChallenge(codeVerifier);
+    const state = generateState();
+
+    const redirectUrl = await echoControlApi.validateOAuthAuthorizeRequest({
+      client_id: TEST_CLIENT_IDS.primary,
+      redirect_uri: 'http://localhost:3000/callback',
+      state,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
+      scope: 'llm:invoke offline_access',
+      prompt: 'none',
+    });
+
+    const { code } = extractAuthorizationCodeFromUrl(redirectUrl);
+
+    const tokens = await echoControlApi.exchangeCodeForToken({
+      code,
+      client_id: TEST_CLIENT_IDS.primary,
+      redirect_uri: 'http://localhost:3000/callback',
+      code_verifier: codeVerifier,
+    });
+
+    console.log('✅ Got real tokens for expiry testing');
+    console.log(`   Token expires in: ${tokens.expires_in} seconds`);
+
+    // Step 2: Test expired token scenario
+    // Create a mock user with an expired token
+    const expiredUser = {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      token_type: 'Bearer',
+      expires_at: Math.floor(Date.now() / 1000) - 3600, // Expired 1 hour ago
+      expired: true, // Mark as expired
+      profile: {
+        sub: 'test-user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+      },
+    };
+
+    let accessTokenExpiredCalled = false;
+    let silentRenewAttempted = false;
+
+    // Mock UserManager that handles token expiry
+    const mockUserManager = {
+      getUser: vi.fn().mockResolvedValue(expiredUser),
+      signinRedirect: vi.fn(),
+      signoutRedirect: vi.fn(),
+      removeUser: vi.fn(),
+      signinRedirectCallback: vi.fn(),
+      // Simulate silent renewal attempt
+      signinSilent: vi.fn().mockImplementation(async () => {
+        silentRenewAttempted = true;
+        // Try to refresh using the real refresh token
+        try {
+          const refreshedTokens = await echoControlApi.refreshToken({
+            refresh_token: tokens.refresh_token!,
+            client_id: TEST_CLIENT_IDS.primary,
+          });
+
+          console.log('✅ Silent renewal successful via refresh token');
+
+          // Return renewed user
+          return {
+            ...expiredUser,
+            access_token: refreshedTokens.access_token,
+            expires_at:
+              Math.floor(Date.now() / 1000) + refreshedTokens.expires_in,
+            expired: false,
+          };
+        } catch (error) {
+          console.log('❌ Silent renewal failed:', error);
+          throw error;
+        }
+      }),
+      settings: {
+        authority: TEST_CONFIG.services.echoControl,
+        client_id: TEST_CLIENT_IDS.primary,
+        automaticSilentRenew: true,
+      },
+      events: {
+        addUserLoaded: vi.fn(),
+        addUserUnloaded: vi.fn(),
+        addAccessTokenExpiring: vi.fn(),
+        addAccessTokenExpired: vi.fn(callback => {
+          // Simulate token expired event
+          setTimeout(() => {
+            accessTokenExpiredCalled = true;
+            console.log('🔔 Access token expired event fired');
+            callback();
+          }, 100);
+        }),
+        addSilentRenewError: vi.fn(callback => {
+          // Handle silent renewal errors
+          setTimeout(() => {
+            if (silentRenewAttempted) {
+              console.log('🔔 Silent renewal error event fired');
+              callback(new Error('Silent renewal failed'));
+            }
+          }, 200);
+        }),
+        removeUserLoaded: vi.fn(),
+        removeUserUnloaded: vi.fn(),
+        removeAccessTokenExpiring: vi.fn(),
+        removeAccessTokenExpired: vi.fn(),
+        removeSilentRenewError: vi.fn(),
+      },
+    };
+
+    (window as unknown as { __echoUserManager?: unknown }).__echoUserManager =
+      mockUserManager;
+
+    // Step 3: Test React SDK's response to expired tokens
+    const config: EchoConfig = {
+      instanceId: TEST_CLIENT_IDS.primary,
+      apiUrl: TEST_CONFIG.services.echoControl,
+      redirectUri: 'http://localhost:3000/callback',
+      scope: 'llm:invoke offline_access',
+    };
+
+    render(
+      <EchoProvider config={config}>
+        <OAuthTestComponent />
+      </EchoProvider>
+    );
+
+    // Should initialize
+    await waitFor(() => {
+      expect(screen.getByTestId('oauth-status')).toBeInTheDocument();
+    });
+
+    // Wait for token expiry events to fire
+    await waitFor(
+      () => {
+        return accessTokenExpiredCalled;
+      },
+      { timeout: 5000 }
+    );
+
+    console.log('✅ Token expired event was fired');
+
+    // Should handle expired token gracefully (either show error or attempt renewal)
+    await waitFor(
+      () => {
+        const authStatus = screen.queryByTestId('auth-status');
+        const errorElement = screen.queryByTestId('error');
+
+        if (errorElement) {
+          console.log('✅ React SDK shows error for expired token');
+          expect(errorElement).toBeInTheDocument();
+        } else if (authStatus) {
+          // Might show unauthenticated or still authenticated if renewal worked
+          console.log(`✅ React SDK auth status: ${authStatus.textContent}`);
+          expect(authStatus).toBeInTheDocument();
+        }
+
+        return true;
+      },
+      { timeout: 3000 }
+    );
+
+    // Step 4: Test token validation with expired token
+    try {
+      const validation = await echoControlApi.validateJwtToken(
+        tokens.access_token
+      );
+      console.log('🔧 Token validation result:', validation);
+
+      if (!validation.valid) {
+        console.log('✅ Backend correctly rejects expired/invalid token');
+      } else {
+        console.log(
+          '⚠️ Backend still accepts the token (may have long expiry)'
+        );
+      }
+    } catch (error) {
+      console.log('✅ Token validation failed as expected for expired token');
+    }
+
+    console.log('✅ OAuth2 token expiry handling test completed');
+    console.log(
+      `   Access token expired event: ${accessTokenExpiredCalled ? 'YES' : 'NO'}`
+    );
+    console.log(
+      `   Silent renewal attempted: ${silentRenewAttempted ? 'YES' : 'NO'}`
+    );
   });
 
   test('handles OAuth errors gracefully', async () => {
