@@ -19,7 +19,7 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = generateCodeChallenge(codeVerifier);
       const state = generateState();
-      
+
       const authUrl = await echoControlApi.validateOAuthAuthorizeRequest({
         client_id: TEST_CLIENT_IDS.primary,
         redirect_uri: 'http://localhost:3000/callback',
@@ -33,10 +33,10 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
       const callbackUrl = new URL(authUrl);
       const authCode = callbackUrl.searchParams.get('code');
       const returnedState = callbackUrl.searchParams.get('state');
-      
+
       expect(authCode).toBeTruthy();
       expect(returnedState).toBe(state);
-      
+
       // Token exchange succeeds because we have proper validation now
       const tokenResponse = await echoControlApi.exchangeCodeForToken({
         code: authCode!,
@@ -44,10 +44,10 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
         redirect_uri: 'http://localhost:3000/callback',
         code_verifier: codeVerifier,
       });
-      
+
       expect(tokenResponse.access_token).toBeTruthy();
       expect(tokenResponse.token_type).toBe('Bearer');
-      
+
       // CSRF Attack Concept:
       // WITHOUT state validation: Attacker starts OAuth → Victim completes → Attacker gets victim's tokens
       // WITH state validation: Same scenario → State user mismatch detected → Attack blocked
@@ -68,28 +68,29 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
       const sharedState = generateState();
       const attackerCodeVerifier = generateCodeVerifier();
       const attackerCodeChallenge = generateCodeChallenge(attackerCodeVerifier);
-      
+
       // Attacker starts OAuth flow (stores state in database with their userId)
-      const attackerAuthUrl = await echoControlApi.validateOAuthAuthorizeRequest({
-        client_id: TEST_CLIENT_IDS.primary,
-        redirect_uri: 'http://localhost:3000/callback',
-        state: sharedState,
-        code_challenge: attackerCodeChallenge,
-        code_challenge_method: 'S256',
-        scope: 'llm:invoke offline_access',
-        prompt: 'none',
-      });
-      
+      const attackerAuthUrl =
+        await echoControlApi.validateOAuthAuthorizeRequest({
+          client_id: TEST_CLIENT_IDS.primary,
+          redirect_uri: 'http://localhost:3000/callback',
+          state: sharedState,
+          code_challenge: attackerCodeChallenge,
+          code_challenge_method: 'S256',
+          scope: 'llm:invoke offline_access',
+          prompt: 'none',
+        });
+
       // Extract real auth code to get actual user ID
       const attackerCallbackUrl = new URL(attackerAuthUrl);
       const realAuthCode = attackerCallbackUrl.searchParams.get('code');
       if (!realAuthCode) throw new Error('No auth code returned');
-      
+
       // Create victim JWT (simulates cross-user CSRF scenario)
       const JWT_SECRET = new TextEncoder().encode(
         process.env.OAUTH_JWT_SECRET || 'your-secret-key-change-in-production'
       );
-      
+
       const victimAuthCodeJwt = await new SignJWT({
         clientId: TEST_CLIENT_IDS.primary,
         redirectUri: 'http://localhost:3000/callback',
@@ -105,7 +106,7 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
         .setIssuedAt()
         .setExpirationTime(Math.floor(Date.now() / 1000) + 300)
         .sign(JWT_SECRET);
-      
+
       // Token exchange should FAIL due to user mismatch (realPayload.userId ≠ victimUserId)
       await expect(
         echoControlApi.exchangeCodeForToken({
@@ -121,7 +122,7 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
       const state = generateState();
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = generateCodeChallenge(codeVerifier);
-      
+
       // Start OAuth flow (stores state in database with user correlation)
       const authUrl = await echoControlApi.validateOAuthAuthorizeRequest({
         client_id: TEST_CLIENT_IDS.primary,
@@ -132,20 +133,20 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
         scope: 'llm:invoke offline_access',
         prompt: 'none',
       });
-      
+
       const callbackUrl = new URL(authUrl);
       const authCode = callbackUrl.searchParams.get('code');
       if (!authCode) throw new Error('No auth code returned');
-      
+
       // Verify state is in JWT and correlates to user
       const payload = JSON.parse(
         Buffer.from(authCode.split('.')[1]!, 'base64').toString()
       );
-      
+
       expect(payload.state).toBe(state);
       expect(payload.userId).toBeTruthy();
       expect(payload.clientId).toBe(TEST_CLIENT_IDS.primary);
-      
+
       // Protection mechanism: Each user's OAuth flow stores state with THEIR userId
       // Token exchange validates state exists for the userId in the JWT
       // Cross-user attacks fail due to user correlation mismatch
@@ -155,7 +156,7 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = generateCodeChallenge(codeVerifier);
       const state = generateState();
-      
+
       // Start OAuth flow
       const authUrl = await echoControlApi.validateOAuthAuthorizeRequest({
         client_id: TEST_CLIENT_IDS.primary,
@@ -166,20 +167,20 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
         scope: 'llm:invoke offline_access',
         prompt: 'none',
       });
-      
+
       const callbackUrl = new URL(authUrl);
       const authCode = callbackUrl.searchParams.get('code');
-      
+
       expect(authCode).toBeTruthy();
       if (!authCode) throw new Error('No auth code returned');
-      
+
       // Verify the auth code contains state
       const payload = JSON.parse(
         Buffer.from(authCode.split('.')[1]!, 'base64').toString()
       );
-      
+
       expect(payload.state).toBe(state);
-      
+
       // State expiration protection: 5-minute TTL prevents replay attacks
       // Expired states are cleaned up during token exchange
     });
@@ -189,7 +190,7 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
       const legitimateState = generateState();
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = generateCodeChallenge(codeVerifier);
-      
+
       // Normal OAuth flow
       const authUrl = await echoControlApi.validateOAuthAuthorizeRequest({
         client_id: TEST_CLIENT_IDS.primary,
@@ -200,10 +201,10 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
         scope: 'llm:invoke offline_access',
         prompt: 'none',
       });
-      
+
       const callbackUrl = new URL(authUrl);
       const authCode = callbackUrl.searchParams.get('code');
-      
+
       // Should succeed because same user for both state storage and JWT
       const tokenResponse = await echoControlApi.exchangeCodeForToken({
         code: authCode!,
@@ -211,7 +212,7 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
         redirect_uri: 'http://localhost:3000/callback',
         code_verifier: codeVerifier,
       });
-      
+
       expect(tokenResponse.access_token).toBeTruthy();
       // CSRF protection allows valid users while blocking attacks
     });
@@ -222,26 +223,27 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
       const attackerCodeVerifier = generateCodeVerifier();
       const attackerCodeChallenge = generateCodeChallenge(attackerCodeVerifier);
       const attackerState = generateState();
-      
+
       // Attacker starts OAuth flow
-      const attackerAuthUrl = await echoControlApi.validateOAuthAuthorizeRequest({
-        client_id: TEST_CLIENT_IDS.primary,
-        redirect_uri: 'http://localhost:3000/callback',
-        state: attackerState,
-        code_challenge: attackerCodeChallenge,
-        code_challenge_method: 'S256',
-        scope: 'llm:invoke offline_access',
-        prompt: 'none',
-      });
+      const attackerAuthUrl =
+        await echoControlApi.validateOAuthAuthorizeRequest({
+          client_id: TEST_CLIENT_IDS.primary,
+          redirect_uri: 'http://localhost:3000/callback',
+          state: attackerState,
+          code_challenge: attackerCodeChallenge,
+          code_challenge_method: 'S256',
+          scope: 'llm:invoke offline_access',
+          prompt: 'none',
+        });
 
       const attackerCallbackUrl = new URL(attackerAuthUrl);
       const attackerAuthCode = attackerCallbackUrl.searchParams.get('code');
-      
+
       expect(attackerAuthCode).toBeTruthy();
-      
+
       // Test scenario: Attacker auth code + Different PKCE verifier
       const victimCodeVerifier = generateCodeVerifier();
-      
+
       // Should fail due to PKCE mismatch (additional protection layer)
       await expect(
         echoControlApi.exchangeCodeForToken({
@@ -251,7 +253,7 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
           code_verifier: victimCodeVerifier, // Different verifier!
         })
       ).rejects.toThrow(/PKCE verification failed|invalid.*grant/i);
-      
+
       // Combined protection: State validation prevents cross-user attacks
       // PKCE validation prevents code interception
     });
@@ -259,13 +261,13 @@ describe('OAuth CSRF Security - Comprehensive Test Suite', () => {
     test('SECURITY: Comprehensive protection guarantees', async () => {
       // Security guarantees verified through previous tests:
       // ✅ State stored in database with userId correlation
-      // ✅ JWT contains state for validation  
+      // ✅ JWT contains state for validation
       // ✅ Token exchange validates state exists for user
       // ✅ Cross-user state access is prevented
       // ✅ State expiration provides time-based protection
       // ✅ One-time state usage prevents replay attacks
       // ✅ PKCE provides additional cryptographic protection
-      
+
       // Final assessment: Each OAuth state is cryptographically tied to one user
       // Cross-user state reuse is impossible, CSRF attacks are prevented at database level
       // Legitimate users can authenticate normally with multiple protection layers
