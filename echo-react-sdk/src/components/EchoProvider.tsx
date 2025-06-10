@@ -74,11 +74,13 @@ export function EchoProvider({ config, children }: EchoProviderProps) {
       scope: config.scope || 'llm:invoke offline_access',
       automaticSilentRenew: true,
       includeIdTokenInSilentRenew: false,
-      // Echo-specific OAuth endpoints (not standard OIDC)
+      // OAuth2-only configuration
+      loadUserInfo: false,
+      // Minimal metadata for OAuth2 authorization code flow
       metadata: {
+        issuer: apiUrl,
         authorization_endpoint: `${apiUrl}/api/oauth/authorize`,
         token_endpoint: `${apiUrl}/api/oauth/token`,
-        issuer: apiUrl,
       },
     };
     const manager = new UserManager(settings);
@@ -269,7 +271,9 @@ export function EchoProvider({ config, children }: EchoProviderProps) {
         // Handle OAuth callback - check for authorization code in query params anywhere
         if (window.location.search.includes('code=')) {
           const oidcUser = await userManager.signinRedirectCallback();
-          await loadUserData(oidcUser);
+          if (oidcUser) {
+            await loadUserData(oidcUser);
+          }
           // Clean up URL
           window.history.replaceState(
             {},
