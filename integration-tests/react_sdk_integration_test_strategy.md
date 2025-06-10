@@ -48,11 +48,64 @@
 ### Phase 5: End-to-End Browser Tests (Playwright)
 
 - [ ] **Complete OAuth flow** with real browser automation
+- [ ] **OAuth redirect flows** - Full browser-based authorization code flow with real redirects
+- [ ] **Token expiry and automatic refresh** - Real browser timing and OIDC client silent renewal
 - [ ] **Silent renewal testing** in iframe scenarios with real tokens
 - [ ] **Cross-tab session synchronization** using real browser storage
 - [ ] **Mobile/responsive testing** across device types
 - [ ] **Performance testing** under realistic network conditions
 - [ ] **Accessibility testing** for OAuth flows
+
+#### OAuth2 Token Lifecycle Testing in Playwright
+
+The complete OAuth2 token lifecycle testing (including automatic expiry and refresh) is **best suited for Playwright E2E tests** because:
+
+- ✅ **Real OIDC client behavior** - Actual `oidc-client-ts` with browser storage and timing
+- ✅ **Real token expiry detection** - Browser-based timing events and automatic renewal
+- ✅ **Real silent renewal** - Hidden iframe-based token refresh without user interaction
+- ✅ **Real browser environment** - localStorage, sessionStorage, and real HTTP redirects
+- ✅ **Backend integration** - Full integration with echo-control OAuth2 endpoints
+
+**Playwright OAuth2 Test Examples:**
+
+```typescript
+test('OAuth2 automatic token renewal in real browser', async ({ page }) => {
+  // 1. Complete initial OAuth flow
+  await page.goto('/');
+  await page.click('[data-testid="signin-button"]');
+  await page.waitForURL('**/callback*');
+  await expect(page.locator('[data-testid="auth-status"]')).toContainText(
+    'Authenticated'
+  );
+
+  // 2. Fast-forward time to trigger token expiry
+  await page.addInitScript(() => {
+    const originalDate = Date;
+    Date.now = () => originalDate.now() + 25 * 60 * 60 * 1000; // +25 hours
+  });
+
+  // 3. Trigger API call that causes automatic token refresh
+  await page.click('[data-testid="refresh-balance-button"]');
+
+  // 4. Verify silent renewal happens automatically
+  await expect(page.locator('[data-testid="auth-status"]')).toContainText(
+    'Authenticated'
+  );
+});
+
+test('OAuth2 refresh flow with backend validation', async ({ page }) => {
+  // Test real refresh token exchange with echo-control
+  // Verify new access tokens work with authenticated API calls
+  // Test refresh token rotation and validation
+});
+```
+
+**Why Integration Tests Don't Cover This:**
+
+- OIDC client state management complexity (localStorage synchronization)
+- Browser redirect flows require real navigation events
+- Token expiry timing requires real browser environment
+- Silent renewal uses hidden iframes (browser-specific behavior)
 
 ### Phase 6: CI/CD Integration & Production Readiness
 
