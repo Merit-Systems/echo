@@ -24,11 +24,11 @@ Echo is a TypeScript monorepo providing an LLM application platform with 5 main 
 ### Monorepo Commands (run from root)
 
 ```bash
-bun run build          # Build all packages
-bun run test          # Test all packages
-bun run lint          # Lint all packages
-bun run type-check    # TypeScript checking across monorepo
-bun run format        # Prettier formatting
+pnpm run build          # Build all packages
+pnpm run test          # Test all packages
+pnpm run lint          # Lint all packages
+pnpm run type-check    # TypeScript checking across monorepo
+pnpm run format        # Prettier formatting
 ```
 
 ### Package-specific Development
@@ -37,28 +37,28 @@ bun run format        # Prettier formatting
 
 ```bash
 cd echo-control
-bun run dev                    # Next.js dev server
-bun run prisma:generate       # Generate Prisma client
-bun run prisma:push          # Push schema changes to DB
-bunx prisma studio             # Database browser
+pnpm run dev                    # Next.js dev server
+pnpm run prisma:generate       # Generate Prisma client
+pnpm run prisma:push          # Push schema changes to DB
+pnpm dlx prisma studio             # Database browser
 ```
 
 **Echo Server (API backend):**
 
 ```bash
 cd echo-server
-bun run dev                   # Development server
-bun run copy-prisma          # Copy Prisma client from echo-control (required dependency)
-bun test                     # Run tests
+pnpm run dev                   # Development server
+pnpm run copy-prisma          # Copy Prisma client from echo-control (required dependency)
+pnpm test                     # Run tests
 ```
 
 **TypeScript SDK:**
 
 ```bash
 cd echo-typescript-sdk
-bun run build                # Build SDK
-bunx echo-cli login          # CLI authentication
-bun test                    # Run SDK tests
+pnpm run build                # Build SDK
+pnpm dlx echo-cli login          # CLI authentication
+pnpm test                    # Run SDK tests
 ```
 
 **React SDK:**
@@ -82,7 +82,7 @@ pnpm run storybook          # Component development
 
 ## Critical Dependencies
 
-- **Prisma client copying**: echo-server requires `bun run copy-prisma` after echo-control Prisma changes
+- **Prisma client copying**: echo-server requires `pnpm run copy-prisma` after echo-control Prisma changes
 - **App-scoped API keys**: All API keys must be associated with specific Echo apps (breaking change from earlier versions)
 - **Strict TypeScript**: Shared config in `tsconfig.base.json` with comprehensive type safety rules
 
@@ -102,4 +102,4 @@ pnpm run storybook          # Component development
 - **Comprehensive testing**: Unit, integration, and security tests in echo-react-sdk using Vitest
 - **Component testing**: Storybook for React component development and documentation
 
-Run `bun run lint` and `bun run type-check` before committing changes.
+Run `pnpm run lint` and `pnpm run type-check` before committing changes.

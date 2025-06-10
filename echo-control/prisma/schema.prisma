@@ -114,3 +114,16 @@ model LlmTransaction {
 
   @@map("llm_transactions")
 }
+
+model OAuthState {
+  id        String   @id @default(uuid()) @db.Uuid
+  state     String   @unique
+  userId    String   // Clerk user ID (not UUID)
+  clientId  String   @db.Uuid
+  expiresAt DateTime @db.Timestamptz
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([state])
+  @@index([userId, clientId])
+  @@map("oauth_states")
+}

@@ -17,6 +17,7 @@ interface AuthCodePayload {
   codeChallengeMethod: string;
   scope: string;
   userId: string;
+  state: string; // Add state for CSRF validation
   exp: number;
   code: string;
 }
@@ -125,6 +126,43 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    /* 🔒 CSRF Protection: Validate state parameter */
+    const storedState = await db.oAuthState.findFirst({
+      where: {
+        state: authData.state,
+        userId: authData.userId,
+        clientId: authData.clientId,
+        expiresAt: { gt: new Date() }, // Not expired
+      },
+    });
+
+    if (!storedState) {
+      return NextResponse.json(
+        {
+          error: 'invalid_grant',
+          error_description:
+            'Invalid or expired state parameter - CSRF protection',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Delete used state (one-time use)
+    await db.oAuthState.delete({
+      where: { id: storedState.id },
+    });
+
+    // Clean up expired states (fire and forget)
+    db.oAuthState
+      .deleteMany({
+        where: {
+          expiresAt: { lt: new Date() },
+        },
+      })
+      .catch(() => {
+        // Ignore cleanup errors
+      });
 
     /* 5️⃣ Get user and validate they exist */
     const user = await db.user.findUnique({

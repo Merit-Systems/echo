@@ -145,6 +145,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(signInUrl.toString(), 302);
     }
 
+    /* 🔒 CSRF Protection: Store state parameter with user session */
+    await db.oAuthState.create({
+      data: {
+        state,
+        userId,
+        clientId,
+        expiresAt: new Date(Date.now() + AUTH_CODE_TTL * 1000), // 5 minutes
+      },
+    });
+
     /* 3️⃣ Handle prompt=none for authenticated users - skip consent page */
     if (prompt === 'none') {
       // Generate authorization code immediately (same logic as POST handler)
@@ -158,6 +168,7 @@ export async function GET(req: NextRequest) {
         codeChallengeMethod: 'S256', // Always S256 since we validated it above
         scope,
         userId,
+        state, // Add state for CSRF validation
         exp,
         code: authCode,
       })
@@ -218,6 +229,27 @@ export async function POST(req: NextRequest) {
       state,
     } = body;
 
+    /* 🔒 CSRF Protection: Verify state exists for this user/client */
+    const existingState = await db.oAuthState.findFirst({
+      where: {
+        state,
+        userId,
+        clientId: client_id,
+        expiresAt: { gt: new Date() }, // Not expired
+      },
+    });
+
+    if (!existingState) {
+      return NextResponse.json(
+        {
+          error: 'invalid_request',
+          error_description:
+            'Invalid or expired state parameter - CSRF protection',
+        },
+        { status: 400 }
+      );
+    }
+
     /* Generate authorization code */
     const authCode = nanoid(32);
     const exp = Math.floor(Date.now() / 1000) + AUTH_CODE_TTL;
@@ -229,6 +261,7 @@ export async function POST(req: NextRequest) {
       codeChallengeMethod: code_challenge_method,
       scope,
       userId,
+      state, // Add state for CSRF validation
       exp,
       code: authCode,
     })
