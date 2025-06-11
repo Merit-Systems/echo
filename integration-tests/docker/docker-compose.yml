@@ -43,6 +43,27 @@ services:
       timeout: 5s
       retries: 10
 
+
+  echo-server-test:
+    build: 
+      context: ../../
+      dockerfile: echo-server/docker/Dockerfile.local
+    env_file:
+      - ../.env.test
+      - ./.env.docker       # Docker-specific overrides
+    ports:
+      - "3069:3069"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      echo-control-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3069/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   playwright:
     image: mcr.microsoft.com/playwright:v1.40.0-focal
     environment:
