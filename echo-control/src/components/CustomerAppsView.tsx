@@ -51,6 +51,14 @@ export default function CustomerAppsView({ apps }: CustomerAppsViewProps) {
           <p className="mt-1 text-sm text-muted-foreground">
             You haven&apos;t been invited to use any apps yet.
           </p>
+          <div className="mt-6">
+            <Link
+              href="/marketplace"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-primary bg-primary/10 rounded-md hover:bg-primary/20 transition-colors"
+            >
+              Discover Apps in Marketplace
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

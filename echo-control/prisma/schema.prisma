@@ -43,6 +43,13 @@ model EchoApp {
   githubId        String?           
   githubType      String?
   authorizedCallbackUrls String[]        @default([]) // Array of allowed redirect URIs
+  
+  // Marketplace customization fields
+  marketplaceName     String?          // Custom display name for marketplace (falls back to name)
+  marketplaceDescription String?       // Custom description for marketplace (falls back to description)
+  marketplaceImageUrl String?          // Custom image/logo URL for marketplace
+  marketplaceUrl      String?          // Custom URL where the app is hosted
+  
   apiKeys         ApiKey[]         // API keys for the app 
   llmTransactions LlmTransaction[] // LLM transactions for that App
   refreshTokens   RefreshToken[]   // Refresh tokens

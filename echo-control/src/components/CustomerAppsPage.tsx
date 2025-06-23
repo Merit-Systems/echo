@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserIcon, LogOutIcon, Settings } from 'lucide-react';
+import { UserIcon, LogOutIcon, Settings, Store } from 'lucide-react';
 import { AppRole } from '@/lib/permissions/types';
 import CustomerAppsView from './CustomerAppsView';
 import UserPaymentCard from './UserPaymentCard';
@@ -97,7 +97,15 @@ export default function CustomerAppsPage() {
           </p>
         </div>
         <div className="flex items-center space-x-4">
-          {/* Link to Owner Apps */}
+          {/* Navigation Links */}
+          <Link
+            href="/marketplace"
+            className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-accent"
+          >
+            <Store className="h-4 w-4" />
+            <span>Marketplace</span>
+          </Link>
+
           <Link
             href="/owner"
             className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-accent"

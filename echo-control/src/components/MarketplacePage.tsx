@@ -4,71 +4,55 @@ import { useState, useEffect } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserIcon, LogOutIcon, Users, Store } from 'lucide-react';
-import { AppRole } from '@/lib/permissions/types';
-import OwnerAppsView from './OwnerAppsView';
-import UserPaymentCard from './UserPaymentCard';
+import { UserIcon, LogOutIcon, Settings, Home } from 'lucide-react';
+import MarketplaceView from './MarketplaceView';
 
-interface EchoAppWithRole {
+interface MarketplaceApp {
   id: string;
   name: string;
   description?: string;
-  isActive: boolean;
   createdAt: string;
-  totalTokens: number;
-  totalCost: number;
-  userRole: AppRole;
-  permissions?: unknown;
-  _count: {
-    apiKeys: number;
-    llmTransactions: number;
-  };
+  markup: number;
+  memberCount: number;
+  transactionCount: number;
+  userMembership: {
+    id: string;
+    role: string;
+    status: string;
+  } | null;
 }
 
-export default function OwnerAppsPage() {
+export default function MarketplacePage() {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
-  const [ownedApps, setOwnedApps] = useState<EchoAppWithRole[]>([]);
+  const [apps, setApps] = useState<MarketplaceApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   useEffect(() => {
     if (isLoaded && user) {
       fetchApps();
-
-      // Check for payment success in URL
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('payment') === 'success') {
-        setShowPaymentSuccess(true);
-        // Clean up URL
-        window.history.replaceState({}, '', window.location.pathname);
-      }
     }
   }, [isLoaded, user]);
 
   const fetchApps = async () => {
     try {
       setError(null);
-      const response = await fetch('/api/apps');
+      const response = await fetch('/api/marketplace');
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch echo apps');
+        throw new Error(data.error || 'Failed to fetch marketplace apps');
       }
 
-      const allApps = data.apps || [];
-
-      const owned = allApps.filter(
-        (app: EchoAppWithRole) => app.userRole === AppRole.OWNER
-      );
-
-      setOwnedApps(owned);
+      setApps(data.apps || []);
     } catch (error) {
-      console.error('Error fetching echo apps:', error);
+      console.error('Error fetching marketplace apps:', error);
       setError(
-        error instanceof Error ? error.message : 'Failed to fetch echo apps'
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch marketplace apps'
       );
     } finally {
       setLoading(false);
@@ -92,7 +76,7 @@ export default function OwnerAppsPage() {
             Welcome back{user?.firstName ? `, ${user.firstName}` : ''}!
           </h1>
           <p className="text-muted-foreground">
-            Manage your Echo applications and monitor customer usage.
+            Discover new applications and expand your AI toolkit.
           </p>
         </div>
         <div className="flex items-center space-x-4">
@@ -101,16 +85,16 @@ export default function OwnerAppsPage() {
             href="/"
             className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-accent"
           >
-            <Users className="h-4 w-4" />
-            <span>Customer Apps</span>
+            <Home className="h-4 w-4" />
+            <span>My Apps</span>
           </Link>
 
           <Link
-            href="/marketplace"
+            href="/owner"
             className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-accent"
           >
-            <Store className="h-4 w-4" />
-            <span>Marketplace</span>
+            <Settings className="h-4 w-4" />
+            <span>Owner Dashboard</span>
           </Link>
 
           {/* User Menu */}
@@ -150,17 +134,14 @@ export default function OwnerAppsPage() {
         </div>
       </div>
 
-      {/* Payment Success Message */}
-      {showPaymentSuccess && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4">
+      {/* Error Message */}
+      {error && (
+        <div className="bg-destructive/20 border border-destructive rounded-md p-4">
           <div className="flex items-center">
-            <div className="text-sm text-emerald-700">
-              ✅ Payment successful! Your credits have been added to your
-              account.
-            </div>
+            <div className="text-sm text-destructive-foreground">{error}</div>
             <button
-              onClick={() => setShowPaymentSuccess(false)}
-              className="ml-auto text-emerald-500 hover:text-emerald-700"
+              onClick={() => setError(null)}
+              className="ml-auto text-destructive hover:text-destructive/70"
             >
               ✕
             </button>
@@ -168,18 +149,8 @@ export default function OwnerAppsPage() {
         </div>
       )}
 
-      {/* Error Message */}
-      {error && (
-        <div className="bg-destructive/20 border border-destructive rounded-md p-4">
-          <div className="text-sm text-destructive-foreground">{error}</div>
-        </div>
-      )}
-
-      {/* User Payment Card */}
-      <UserPaymentCard />
-
-      {/* Owner Apps View */}
-      <OwnerAppsView apps={ownedApps} onRefresh={fetchApps} />
+      {/* Marketplace View */}
+      <MarketplaceView apps={apps} onRefresh={fetchApps} />
     </div>
   );
 }

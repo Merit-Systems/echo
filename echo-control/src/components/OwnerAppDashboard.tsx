@@ -15,6 +15,7 @@ import {
   XIcon,
 } from 'lucide-react';
 import MarkupSettingsCard from './MarkupSettingsCard';
+import MarketplaceSettingsCard from './MarketplaceSettingsCard';
 import OAuthConfigSection from './OAuthConfigSection';
 import { GlassButton } from './glass-button';
 
@@ -45,6 +46,13 @@ interface Customer {
   };
 }
 
+interface MarketplaceSettings {
+  marketplaceName?: string;
+  marketplaceDescription?: string;
+  marketplaceImageUrl?: string;
+  marketplaceUrl?: string;
+}
+
 interface OwnerAppDashboardProps {
   appId: string;
   appName: string;
@@ -56,6 +64,8 @@ export default function OwnerAppDashboard({
 }: OwnerAppDashboardProps) {
   const [analytics, setAnalytics] = useState<AppAnalytics | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [marketplaceSettings, setMarketplaceSettings] =
+    useState<MarketplaceSettings>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -74,11 +84,13 @@ export default function OwnerAppDashboard({
       setLoading(true);
       setError(null);
 
-      // Fetch analytics and customers in parallel
-      const [analyticsResponse, customersResponse] = await Promise.all([
-        fetch(`/api/owner/apps/${appId}/analytics`),
-        fetch(`/api/owner/apps/${appId}/customers`),
-      ]);
+      // Fetch analytics, customers, and marketplace settings in parallel
+      const [analyticsResponse, customersResponse, marketplaceResponse] =
+        await Promise.all([
+          fetch(`/api/owner/apps/${appId}/analytics`),
+          fetch(`/api/owner/apps/${appId}/customers`),
+          fetch(`/api/owner/apps/${appId}/marketplace-settings`),
+        ]);
 
       if (analyticsResponse.ok) {
         const analyticsData = await analyticsResponse.json();
@@ -88,6 +100,16 @@ export default function OwnerAppDashboard({
       if (customersResponse.ok) {
         const customersData = await customersResponse.json();
         setCustomers(customersData.customers || []);
+      }
+
+      if (marketplaceResponse.ok) {
+        const marketplaceData = await marketplaceResponse.json();
+        setMarketplaceSettings({
+          marketplaceName: marketplaceData.app.marketplaceName,
+          marketplaceDescription: marketplaceData.app.marketplaceDescription,
+          marketplaceImageUrl: marketplaceData.app.marketplaceImageUrl,
+          marketplaceUrl: marketplaceData.app.marketplaceUrl,
+        });
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -108,6 +130,41 @@ export default function OwnerAppDashboard({
       setTimeout(() => setInviteLinkCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy invite link:', error);
+    }
+  };
+
+  const handleMarketplaceSettingsSave = async (
+    settings: MarketplaceSettings
+  ) => {
+    try {
+      const response = await fetch(
+        `/api/owner/apps/${appId}/marketplace-settings`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(settings),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setMarketplaceSettings({
+          marketplaceName: data.app.marketplaceName,
+          marketplaceDescription: data.app.marketplaceDescription,
+          marketplaceImageUrl: data.app.marketplaceImageUrl,
+          marketplaceUrl: data.app.marketplaceUrl,
+        });
+      } else {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || 'Failed to update marketplace settings'
+        );
+      }
+    } catch (error) {
+      console.error('Error updating marketplace settings:', error);
+      throw error;
     }
   };
 
@@ -297,6 +354,14 @@ export default function OwnerAppDashboard({
 
       {/* Markup Settings */}
       <MarkupSettingsCard appId={appId} appName={appName} />
+
+      {/* Marketplace Settings */}
+      <MarketplaceSettingsCard
+        appId={appId}
+        appName={appName}
+        currentSettings={marketplaceSettings}
+        onSave={handleMarketplaceSettingsSave}
+      />
 
       {/* OAuth Config */}
       <OAuthConfigSection appId={appId} />
