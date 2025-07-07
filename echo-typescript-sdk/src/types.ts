@@ -109,6 +109,8 @@ export interface CreatePaymentLinkRequest {
   amount: number;
   description?: string;
   successUrl?: string;
+  paymentDestination?: 'user_balance' | 'app_free_pool';
+  echoAppId?: string;
 }
 
 export interface CreatePaymentLinkResponse {

@@ -141,6 +141,7 @@ export async function POST(
         role: AppRole.CUSTOMER,
         status: MembershipStatus.ACTIVE,
         totalSpent: 0, // Initialize with zero spending
+        freeSpendPoolSpent: 0, // Initialize with zero free pool spending
       },
       include: {
         user: {

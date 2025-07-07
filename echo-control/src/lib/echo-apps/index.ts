@@ -20,6 +20,7 @@ export interface AppUpdateInput {
   isActive?: boolean;
   githubType?: 'user' | 'repo';
   githubId?: string;
+  maxPerUserPoolSpendAmount?: number;
 }
 
 export interface AppWithDetails {
@@ -122,6 +123,23 @@ export const validateGithubId = (githubId?: string): string | null => {
 export const validateGithubType = (githubType?: string): string | null => {
   if (githubType && !['user', 'repo'].includes(githubType)) {
     return 'GitHub Type must be either "user" or "repo"';
+  }
+  return null;
+};
+
+export const validateMaxPerUserPoolSpendAmount = (
+  amount?: number
+): string | null => {
+  if (amount !== undefined) {
+    if (typeof amount !== 'number') {
+      return 'Per user pool spend amount must be a number';
+    }
+    if (amount < 0) {
+      return 'Per user pool spend amount cannot be negative';
+    }
+    if (amount > 10000) {
+      return 'Per user pool spend amount cannot exceed $10,000';
+    }
   }
   return null;
 };
@@ -393,6 +411,10 @@ export const createEchoApp = async (userId: string, data: AppCreateInput) => {
       description: data.description?.trim() || null,
       githubType: data.githubType || null,
       githubId: data.githubId?.trim() || null,
+      totalDeveloperSpent: 0,
+      maxDeveloperSpend: 0,
+      freeSpendPoolAmount: 0,
+      maxPerUserPoolSpendAmount: 0,
       appMemberships: {
         create: {
           userId,
@@ -400,6 +422,7 @@ export const createEchoApp = async (userId: string, data: AppCreateInput) => {
           status: MembershipStatus.ACTIVE,
           isArchived: false,
           totalSpent: 0,
+          freeSpendPoolSpent: 0,
         },
       },
       isActive: true,
@@ -466,6 +489,15 @@ export const updateEchoAppById = async (
     }
   }
 
+  if (data.maxPerUserPoolSpendAmount !== undefined) {
+    const maxPerUserPoolSpendAmountError = validateMaxPerUserPoolSpendAmount(
+      data.maxPerUserPoolSpendAmount
+    );
+    if (maxPerUserPoolSpendAmountError) {
+      throw new Error(maxPerUserPoolSpendAmountError);
+    }
+  }
+
   // Verify the echo app exists and is not archived
   const existingApp = await db.echoApp.findFirst({
     where: {
@@ -490,6 +522,9 @@ export const updateEchoAppById = async (
       ...(data.githubType !== undefined && { githubType: data.githubType }),
       ...(data.githubId !== undefined && {
         githubId: data.githubId?.trim() || null,
+      }),
+      ...(data.maxPerUserPoolSpendAmount !== undefined && {
+        maxPerUserPoolSpendAmount: data.maxPerUserPoolSpendAmount,
       }),
     },
     include: {
@@ -575,6 +610,10 @@ export const findEchoApp = async (
       archivedAt: true,
       createdAt: true,
       updatedAt: true,
+      totalDeveloperSpent: true,
+      maxDeveloperSpend: true,
+      freeSpendPoolAmount: true,
+      maxPerUserPoolSpendAmount: true,
     },
   });
 

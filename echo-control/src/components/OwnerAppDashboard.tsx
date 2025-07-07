@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import MarkupSettingsCard from './MarkupSettingsCard';
 import OAuthConfigSection from './OAuthConfigSection';
+import AppFreeSpendPoolCard from './AppFreeSpendPoolCard';
 import { GlassButton } from './glass-button';
 import { formatCurrency } from '@/lib/balance';
 
@@ -72,11 +73,22 @@ export default function OwnerAppDashboard({
   const [newAppName, setNewAppName] = useState(appName);
   const [updatingAppName, setUpdatingAppName] = useState(false);
   const [appNameError, setAppNameError] = useState<string | null>(null);
+  const [showPoolFundedSuccess, setShowPoolFundedSuccess] = useState(false);
 
-  // Generate the invite link client-side
+  // Generate the invite link client-side and check for pool funding success
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setInviteLink(`${window.location.origin}/cli-auth?appId=${appId}`);
+
+      // Check for pool funding success in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('pool_funded') === 'success') {
+        setShowPoolFundedSuccess(true);
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => setShowPoolFundedSuccess(false), 5000);
+      }
     }
   }, [appId]);
 
@@ -300,6 +312,26 @@ export default function OwnerAppDashboard({
           </div>
         )}
 
+        {showPoolFundedSuccess && (
+          <div className="mb-6 bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-lg p-4 shadow-sm">
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                <CheckIcon className="w-3 h-3 text-white" />
+              </div>
+              <div className="text-sm text-green-700 dark:text-green-300">
+                Free spend pool successfully funded! Your users can now access
+                these credits.
+              </div>
+              <button
+                onClick={() => setShowPoolFundedSuccess(false)}
+                className="ml-auto text-green-500 hover:text-green-700 dark:hover:text-green-200"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Analytics Overview - More Compact */}
         {analytics && (
           <div className="mb-8">
@@ -464,19 +496,24 @@ export default function OwnerAppDashboard({
             </div>
           </div>
 
-          {/* Left Column - Analytics and Top Performers */}
-          <div className="lg:col-span-2">
-            {analytics && analytics.topUsers.length > 0 && (
+          {/* Free Spend Pool - Full Width Row */}
+          <div className="lg:col-span-3">
+            <AppFreeSpendPoolCard appId={appId} appName={currentAppName} />
+          </div>
+
+          {/* Top Performers - Full Width Row */}
+          {analytics && analytics.topUsers.length > 0 && (
+            <div className="lg:col-span-3">
               <section className="bg-card/60 backdrop-blur-sm rounded-xl border border-border/50 p-5">
                 <h3 className="text-lg font-bold text-foreground mb-4 flex items-center">
                   <TrendingUpIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                   Top Performers
                 </h3>
-                <div className="space-y-2">
-                  {analytics.topUsers.slice(0, 6).map((user, index) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {analytics.topUsers.slice(0, 8).map((user, index) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-2 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors duration-200"
+                      className="flex items-center justify-between p-3 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors duration-200"
                     >
                       <div className="flex items-center space-x-2">
                         <div className="w-6 h-6 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center text-xs font-bold text-white">
@@ -505,13 +542,8 @@ export default function OwnerAppDashboard({
                   ))}
                 </div>
               </section>
-            )}
-          </div>
-
-          {/* Right Column - Placeholder for future content */}
-          <div className="lg:col-span-1">
-            {/* Future content can go here */}
-          </div>
+            </div>
+          )}
 
           {/* Customers Section - Bottom row spanning full width */}
           <div className="lg:col-span-3">

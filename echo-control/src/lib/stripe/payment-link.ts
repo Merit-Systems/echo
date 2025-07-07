@@ -41,6 +41,8 @@ export interface CreatePaymentLinkRequest {
   amount: number;
   description?: string;
   successUrl?: string;
+  paymentDestination?: 'user_balance' | 'app_free_pool';
+  echoAppId?: string;
 }
 
 export interface CreatePaymentLinkResult {
@@ -69,10 +71,23 @@ export async function createPaymentLink(
   user: User,
   request: CreatePaymentLinkRequest
 ): Promise<CreatePaymentLinkResult> {
-  const { amount, description = 'Echo Credits', successUrl } = request;
+  const {
+    amount,
+    description = 'Echo Credits',
+    successUrl,
+    paymentDestination = 'user_balance',
+    echoAppId,
+  } = request;
 
   if (!amount || amount <= 0) {
     throw new Error('Valid amount is required');
+  }
+
+  // Validate that if paymentDestination is app_free_pool, echoAppId is provided
+  if (paymentDestination === 'app_free_pool' && !echoAppId) {
+    throw new Error(
+      'echoAppId is required when paymentDestination is app_free_pool'
+    );
   }
 
   // Convert amount to cents for Stripe
@@ -101,6 +116,18 @@ export async function createPaymentLink(
     },
   };
 
+  // Prepare metadata with payment destination info
+  const metadata: Record<string, string> = {
+    userId: user.id,
+    description,
+    paymentDestination,
+  };
+
+  // Add echoAppId to metadata if provided
+  if (echoAppId) {
+    metadata.echoAppId = echoAppId;
+  }
+
   // Prepare payment link configuration
   const paymentLinkConfig: Stripe.PaymentLinkCreateParams = {
     line_items: [
@@ -109,10 +136,7 @@ export async function createPaymentLink(
         quantity: 1,
       },
     ],
-    metadata: {
-      userId: user.id,
-      description,
-    },
+    metadata,
     after_completion: afterCompletion,
   };
 

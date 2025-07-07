@@ -67,6 +67,7 @@ async function handleCheckoutSessionCompleted(
     const userId = metadata?.userId;
     const echoAppId = metadata?.echoAppId;
     const description = metadata?.description;
+    const paymentDestination = metadata?.paymentDestination || 'user_balance';
 
     if (!userId || !amount_total) {
       console.error('Missing userId or amount in session metadata');
@@ -90,7 +91,7 @@ async function handleCheckoutSessionCompleted(
       return;
     }
 
-    // Use a database transaction to atomically update payment status and user balance
+    // Use a database transaction to atomically update payment status and balance
     await db.$transaction(async tx => {
       // Update payment in database
       const updatedPayment = await tx.payment.updateMany({
@@ -120,15 +121,33 @@ async function handleCheckoutSessionCompleted(
         console.log(`Created new payment record for payment ID: ${paymentId}`);
       }
 
-      // Atomically update user's totalPaid (amount_total is in cents, convert to dollars)
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          totalPaid: {
-            increment: amount_total / 100,
+      if (paymentDestination === 'app_free_pool' && echoAppId) {
+        // Payment goes to app's free spend pool
+        await tx.echoApp.update({
+          where: { id: echoAppId },
+          data: {
+            freeSpendPoolAmount: {
+              increment: amount_total / 100, // Convert cents to dollars
+            },
           },
-        },
-      });
+        });
+        console.log(
+          `App ${echoAppId} free spend pool funded with ${amount_total / 100} credits`
+        );
+      } else {
+        // Default: payment goes to user's balance
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            totalPaid: {
+              increment: amount_total / 100, // Convert cents to dollars
+            },
+          },
+        });
+        console.log(
+          `User ${userId} balance increased by ${amount_total / 100} credits`
+        );
+      }
     });
 
     const creditsAdded = Math.floor(amount_total / 100);

@@ -433,6 +433,7 @@ export async function handleInitialTokenIssuance(
           status: MembershipStatus.ACTIVE,
           role: AppRole.CUSTOMER,
           totalSpent: 0,
+          freeSpendPoolSpent: 0,
           createdAt: new Date(),
           updatedAt: new Date(),
         },

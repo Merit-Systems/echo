@@ -62,8 +62,13 @@ export async function PUT(
     const { id: appId } = resolvedParams;
 
     const body = await request.json();
-    const { name, description, isActive } = body;
-    const updateData: AppUpdateInput = { name, description, isActive };
+    const { name, description, isActive, maxPerUserPoolSpendAmount } = body;
+    const updateData: AppUpdateInput = {
+      name,
+      description,
+      isActive,
+      maxPerUserPoolSpendAmount,
+    };
 
     const updatedApp = await updateEchoAppById(appId, user.id, updateData);
 

@@ -20,7 +20,7 @@ model User {
   
   totalPaid       Decimal  @db.Decimal(65, 14)   // Aggregate for Total payment amount - supports unlimited dollars with pico-cent precision
   totalSpent      Decimal  @db.Decimal(65, 14)  // Aggregate for Total spent across apps - supports unlimited dollars with pico-cent precision
-  
+
   apiKeys         ApiKey[]         // API keys owned by user
   llmTransactions LlmTransaction[] // LLM transactions
   payments        Payment[]        // payments made to the app
@@ -43,6 +43,15 @@ model EchoApp {
   githubId        String?           
   githubType      String?
   authorizedCallbackUrls String[]        @default([]) // Array of allowed redirect URIs
+
+  totalDeveloperSpent Decimal  @db.Decimal(65, 14) @default(0.0) // Owner balance spent on their own app Can ONLY be incremented by owner
+  maxDeveloperSpend Decimal  @db.Decimal(65, 14) @default(0.0) // Max Owner balance spent on their own app This is set by MERIT admins ONLY (and comes from our bank)
+
+
+  freeSpendPoolAmount Decimal  @db.Decimal(65, 14) @default(0.0) // This is funded by the owner, and users can spend against this 
+  maxPerUserPoolSpendAmount Decimal  @db.Decimal(65, 14) @default(0.0) // This is the max that a customer can spend of the freeSpendPoolAmount
+
+
   apiKeys         ApiKey[]         // API keys for the app 
   llmTransactions LlmTransaction[] // LLM transactions for that App
   refreshTokens   RefreshToken[]   // Refresh tokens
@@ -62,6 +71,8 @@ model AppMembership {
   createdAt  DateTime  @default(now()) @db.Timestamptz
   updatedAt  DateTime  @updatedAt @db.Timestamptz
   totalSpent Decimal  @db.Decimal(65, 14)  // Aggregate for Total spent by user for this app - supports unlimited dollars with pico-cent precision
+
+  freeSpendPoolSpent Decimal  @db.Decimal(65, 14) @default(0.0) // Amount a user has spent against the free pool
   
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   echoApp EchoApp @relation(fields: [echoAppId], references: [id], onDelete: Cascade)

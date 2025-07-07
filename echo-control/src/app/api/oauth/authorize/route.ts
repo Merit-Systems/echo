@@ -111,6 +111,10 @@ export async function GET(req: NextRequest) {
           markUp: true,
           githubId: true,
           githubType: true,
+          totalDeveloperSpent: true,
+          maxDeveloperSpend: true,
+          freeSpendPoolAmount: true,
+          maxPerUserPoolSpendAmount: true,
         },
       });
     } catch (error) {
