@@ -54,3 +54,70 @@ export const usePaymentLink = () => {
     error,
   };
 };
+
+interface CreateCreditGrantInvoiceParams {
+  amount?: number;
+  description?: string;
+  successUrl?: string;
+}
+
+interface CreditGrantInvoiceResponse {
+  paymentLink: string;
+  invoiceId: string;
+  amount: number;
+  description: string;
+}
+
+export const useCreditGrantInvoicePaymentLink = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const createCreditGrantInvoice = async ({
+    amount = 10,
+    description,
+    successUrl,
+  }: CreateCreditGrantInvoiceParams = {}) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        '/api/stripe/payment-link/credit-grant-invoice',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amountInCents: amount * 100, // Convert dollars to cents
+            description: description || `Echo Credits - $${amount}`,
+            successUrl,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const result: CreditGrantInvoiceResponse = await response.json();
+        return result;
+      } else {
+        const errorText = await response.text();
+        console.error(
+          'Error creating credit grant invoice payment link:',
+          errorText
+        );
+        setError('Failed to create credit grant invoice payment link');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error creating credit grant invoice payment link:', error);
+      setError('Failed to create credit grant invoice payment link');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    createCreditGrantInvoice,
+    loading,
+    error,
+  };
+};

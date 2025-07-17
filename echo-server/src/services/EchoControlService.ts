@@ -1,14 +1,16 @@
-import type {
+import {
+  User,
   ApiKeyValidationResult,
   EchoApp,
-  User,
   CreateLlmTransactionRequest,
-} from '@zdql/echo-typescript-sdk/src/types';
+} from '../types';
 import { EchoDbService } from './DbService';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
 import { PrismaClient } from '../generated/prisma';
+
+import { StripeService } from './StripeService';
 
 export class EchoControlService {
   private readonly db: PrismaClient;
@@ -16,6 +18,7 @@ export class EchoControlService {
   private readonly apiKey: string;
   private authResult: ApiKeyValidationResult | null = null;
   private appMarkup: number | null = null;
+  private stripeService: StripeService | null = null;
 
   constructor(apiKey: string) {
     // Check if the generated Prisma client exists
@@ -50,6 +53,19 @@ export class EchoControlService {
       return null;
     }
     this.appMarkup = await this.getAppMarkup();
+
+    if (!this.authResult?.user) {
+      throw new Error('User not found');
+    }
+
+    this.stripeService = new StripeService(
+      this.dbService,
+      this.authResult.user
+    );
+    // ensure Meter has been created for this app
+    await this.stripeService.getOrCreateLLMTokenBillingMeter(
+      this.authResult.echoAppId
+    );
     return this.authResult;
   }
 
@@ -152,6 +168,17 @@ export class EchoControlService {
         console.error('User has not authenticated');
         return;
       }
+
+      if (!this.stripeService) {
+        console.error('Stripe service not initialized');
+        return;
+      }
+
+      await this.stripeService.recordMeterUsage(
+        this.authResult.echoAppId,
+        transaction.totalTokens,
+        transaction.model
+      );
 
       const cost = transaction.cost * this.appMarkup;
       transaction.cost = cost;

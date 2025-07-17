@@ -52,7 +52,7 @@ makeRequest(true).then(() => {
   console.log('done');
 });
 
-makeRequest(false).then(() => {
-  console.log('\n');
-  console.log('done');
-});
+// makeRequest(false).then(() => {
+//   console.log('\n');
+//   console.log('done');
+// });

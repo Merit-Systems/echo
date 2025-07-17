@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import Stripe from 'stripe';
+import { resolveInvoiceGrantCredits } from '@/lib/stripe/burndown/resolve-invoice-grant-credits';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-05-28.basil',
@@ -8,7 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-// POST /api/stripe/webhook - Handle Stripe webhooks
+// POST /api/stripe/webhook - Handle Stripe webhooks for basic payment
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
@@ -202,10 +203,18 @@ async function handleInvoicePayment(invoice: Stripe.Invoice) {
   try {
     const { id, amount_paid, currency } = invoice;
 
+    if (!invoice.id || !invoice.customer) {
+      console.error('No invoice ID or customer found in invoice');
+      return;
+    }
+
     // Handle recurring payments if needed
     console.log(
       `Invoice payment received: ${id} for ${amount_paid} ${currency}`
     );
+
+    // Resolve the invoice grant credits
+    await resolveInvoiceGrantCredits(id!, invoice.customer as string);
   } catch (error) {
     console.error('Error handling invoice payment:', error);
   }

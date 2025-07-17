@@ -18,15 +18,17 @@ model User {
   archivedAt      DateTime?        @db.Timestamptz
   createdAt       DateTime         @default(now()) @db.Timestamptz
   updatedAt       DateTime         @updatedAt @db.Timestamptz
+  stripeCustomerId String?         @unique
   
   totalPaid       Decimal  @db.Decimal(65, 14)   // Aggregate for Total payment amount - supports unlimited dollars with pico-cent precision
   totalSpent      Decimal  @db.Decimal(65, 14)  // Aggregate for Total spent across apps - supports unlimited dollars with pico-cent precision
   
   apiKeys         ApiKey[]         // API keys owned by user
   llmTransactions LlmTransaction[] // LLM transactions
-  payments        Payment[]        // payments made to the app
+  payments        Payment[]        // payments made to the app  
   refreshTokens   RefreshToken[]   // refresh tokens 
   appMemberships  AppMembership[]  // Apps you are a member of
+  creditGrants    CreditGrant[]    // Credit grants awarded to user
 
   @@map("users")
 }
@@ -48,6 +50,8 @@ model EchoApp {
   githubId        String?           
   githubType      String?
   authorizedCallbackUrls String[]        @default([]) // Array of allowed redirect URIs
+  stripeTokenBillingMeterId String? @unique
+
   apiKeys         ApiKey[]         // API keys for the app 
   llmTransactions LlmTransaction[] // LLM transactions for that App
   refreshTokens   RefreshToken[]   // Refresh tokens
@@ -159,4 +163,27 @@ model LlmTransaction {
   apiKey   ApiKey?   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade) // API key that was used for this transaction
 
   @@map("llm_transactions")
+}
+
+
+model CreditGrant {
+  id                  String    @id @default(uuid()) @db.Uuid
+  stripeCreditGrantId String    @unique  // Stripe credit grant ID for reference
+  stripeCustomerId    String               // Links to User.stripeCustomerId
+  stripeInvoiceId     String?              // Original invoice that generated this credit (if applicable)
+  amount              Decimal   @db.Decimal(65, 14)  // Credit amount with pico-cent precision
+  currency            String    @default("usd")
+  status              String    @default("active")   // active, expired, consumed, cancelled
+  category            String    @default("paid")     // Stripe category: paid, promotional, etc.
+  type                String    @default("credit")   // credit for additive CreditGrants, debit for reductive CreditGrants
+  expiresAt           DateTime? @db.Timestamptz      // When the credit expires (nullable)
+  isArchived          Boolean   @default(false)
+  archivedAt          DateTime? @db.Timestamptz
+  createdAt           DateTime  @default(now()) @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @db.Timestamptz
+  
+  // Relation to user via stripeCustomerId
+  user User? @relation(fields: [stripeCustomerId], references: [stripeCustomerId])
+
+  @@map("credit_grants")
 }

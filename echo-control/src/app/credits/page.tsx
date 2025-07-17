@@ -8,13 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/balance';
-import { usePaymentLink } from '@/hooks/usePaymentLink';
+import {
+  useCreditGrantInvoicePaymentLink,
+  usePaymentLink,
+} from '@/hooks/usePaymentLink';
 import { useUserBalance } from '@/hooks/useUserBalance';
 import { useUserPayments } from '@/hooks/useUserPayments';
 
 export default function CreditsPage() {
   const { user, isLoaded } = useUser();
-  const { createPaymentLink, loading: purchaseLoading } = usePaymentLink();
+  // const { createPaymentLink, loading: purchaseLoading } = usePaymentLink();
+  const { createCreditGrantInvoice, loading: purchaseLoading } =
+    useCreditGrantInvoicePaymentLink();
   const { balance, loading, fetchBalance } = useUserBalance();
   const {
     payments,
@@ -34,11 +39,23 @@ export default function CreditsPage() {
 
   const handleAddCredits = async () => {
     const amount = Number(customAmount);
-    await createPaymentLink({ amount });
+    const result = await createCreditGrantInvoice({ amount });
+    console.log(
+      'Credit grant invoice payment link created:',
+      result?.paymentLink
+    );
+    // open in a new tab
+    window.open(result?.paymentLink, '_blank');
   };
 
   const handleDefaultCredits = async () => {
-    await createPaymentLink();
+    const result = await createCreditGrantInvoice();
+    console.log(
+      'Credit grant invoice payment link created:',
+      result?.paymentLink
+    );
+    // open in a new tab
+    window.open(result?.paymentLink, '_blank');
   };
 
   const formatDate = (dateString: string) => {

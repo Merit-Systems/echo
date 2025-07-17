@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { GlassButton } from '../glass-button';
 import Image from 'next/image';
+import { isValidUrl } from '@/lib/stripe/payment-link';
 
 interface PersonalizationSettingsProps {
   appId: string;
@@ -148,15 +149,6 @@ export default function PersonalizationSettings({
     setNewHomepageUrl(homepageUrl);
     setEditingHomepageUrl(false);
     setHomepageUrlError(null);
-  };
-
-  const isValidUrl = (string: string) => {
-    try {
-      new URL(string);
-      return true;
-    } catch {
-      return false;
-    }
   };
 
   // Fetch current app details including images

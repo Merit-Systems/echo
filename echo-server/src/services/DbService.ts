@@ -2,10 +2,10 @@ import {
   Balance,
   ApiKeyValidationResult,
   EchoAccessJwtPayload,
-} from '@zdql/echo-typescript-sdk/src/types';
+} from '../types';
 import { createHmac } from 'crypto';
 import { jwtVerify } from 'jose';
-import { PrismaClient } from 'generated/prisma';
+import { EchoApp, PrismaClient } from 'generated/prisma';
 /**
  * Secret key for deterministic API key hashing (should match echo-control)
  */
@@ -25,7 +25,7 @@ function hashApiKey(apiKey: string): string {
 }
 
 export class EchoDbService {
-  private db: PrismaClient;
+  db: PrismaClient;
   private apiJwtSecret: Uint8Array;
 
   constructor(db: PrismaClient) {
@@ -157,6 +157,7 @@ export class EchoDbService {
           clerkId: apiKeyRecord.user.clerkId,
           createdAt: apiKeyRecord.user.createdAt.toISOString(),
           updatedAt: apiKeyRecord.user.updatedAt.toISOString(),
+          stripeCustomerId: apiKeyRecord.user.stripeCustomerId,
         },
         echoApp: {
           id: apiKeyRecord.echoApp.id,
@@ -298,7 +299,6 @@ export class EchoDbService {
             },
           });
         }
-
         return dbTransaction;
       });
 
@@ -311,5 +311,12 @@ export class EchoDbService {
       console.error('Error creating transaction and updating balance:', error);
       return null;
     }
+  }
+
+  async getEchoApp(appId: string): Promise<EchoApp | null> {
+    const echoApp = await this.db.echoApp.findUnique({
+      where: { id: appId },
+    });
+    return echoApp;
   }
 }

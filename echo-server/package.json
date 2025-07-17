@@ -52,6 +52,7 @@
     "node-fetch": "^2.7.0",
     "prisma": "^6.8.2",
     "register": "link:@opentelemetry/auto-instrumentations-node/register",
+    "stripe": "^18.2.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
