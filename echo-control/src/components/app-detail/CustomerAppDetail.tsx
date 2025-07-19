@@ -12,6 +12,8 @@ import {
   AppProfile,
   ActivityChart,
   ApiKeysCard,
+  SubscriptionCard,
+  ActiveSubscriptionsCard,
   RecentActivityCard,
   formatNumber,
   TopModelsCard,
@@ -85,6 +87,40 @@ export function CustomerAppDetail({
   const currentRecentTransactions = isGlobalView
     ? enhancedApp.globalRecentTransactions || app.recentTransactions
     : app.recentTransactions;
+
+  // Handle subscription enrollment
+  const handleSubscribe = async (type: 'product' | 'package', id: string) => {
+    try {
+      const response = await fetch('/api/stripe/subscriptions/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type,
+          id,
+          appId: app.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create subscription');
+      }
+
+      // Redirect to payment URL
+      if (result.paymentUrl) {
+        window.location.href = result.paymentUrl;
+      } else {
+        console.error('No payment URL returned');
+        alert('Subscription created but no payment URL available');
+      }
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      alert(
+        error instanceof Error ? error.message : 'Failed to create subscription'
+      );
+    }
+  };
 
   // Clean stats display with slider in bottom right
   const enhancedStats = (
@@ -207,8 +243,8 @@ export function CustomerAppDetail({
 
       {/* Enhanced Content Section */}
       <div className="px-6 mt-8 mb-8 relative z-10">
-        {/* First Row - Homepage and API Keys */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* First Row - Homepage, API Keys, Subscriptions, and Active Subscriptions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
           {/* Homepage Card */}
           <AppHomepageCard app={app} />
 
@@ -221,6 +257,12 @@ export function CustomerAppDetail({
             onArchiveApiKey={onArchiveApiKey}
             deletingKeyId={deletingKeyId}
           />
+
+          {/* Subscription Card */}
+          <SubscriptionCard app={app} onSubscribe={handleSubscribe} />
+
+          {/* Active Subscriptions Card */}
+          <ActiveSubscriptionsCard app={app} />
         </div>
 
         {/* Second Row - Activity and Recent Transactions */}

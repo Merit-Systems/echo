@@ -14,6 +14,7 @@ model User {
   name            String?
   clerkId         String           @unique
   profilePictureUrl String?        // Profile picture URL from Clerk
+  stripeCustomerId String?         // Stripe customer ID for subscriptions and payments
   isArchived      Boolean          @default(false)
   archivedAt      DateTime?        @db.Timestamptz
   createdAt       DateTime         @default(now()) @db.Timestamptz
@@ -27,6 +28,7 @@ model User {
   payments        Payment[]        // payments made to the app
   refreshTokens   RefreshToken[]   // refresh tokens 
   appMemberships  AppMembership[]  // Apps you are a member of
+  subscriptions   Subscription[]   // User's subscriptions
 
   @@map("users")
 }
@@ -48,10 +50,13 @@ model EchoApp {
   githubId        String?           
   githubType      String?
   authorizedCallbackUrls String[]        @default([]) // Array of allowed redirect URIs
-  apiKeys         ApiKey[]         // API keys for the app 
-  llmTransactions LlmTransaction[] // LLM transactions for that App
-  refreshTokens   RefreshToken[]   // Refresh tokens
-  appMemberships  AppMembership[]  // Customers of app and owners
+  apiKeys              ApiKey[]                // API keys for the app 
+  llmTransactions      LlmTransaction[]        // LLM transactions for that App
+  refreshTokens        RefreshToken[]          // Refresh tokens
+  appMemberships       AppMembership[]         // Customers of app and owners
+  products             Product[]               // Products/subscriptions offered by this app
+  subscriptionPackages SubscriptionPackage[]   // Subscription packages offered by this app
+  subscriptions        Subscription[]          // Subscriptions for this app's products
 
   @@map("echo_apps")
 }
@@ -160,3 +165,98 @@ model LlmTransaction {
 
   @@map("llm_transactions")
 }
+
+model Product {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String
+  description     String?
+  stripeProductId String           @unique // Stripe product ID
+  stripePriceId   String           @unique // Stripe price ID  
+  price           Decimal          @db.Decimal(65, 14) // Price in dollars
+  currency        String           @default("usd")
+  isActive        Boolean          @default(true)
+  isArchived      Boolean          @default(false)
+  archivedAt      DateTime?        @db.Timestamptz
+  createdAt       DateTime         @default(now()) @db.Timestamptz
+  updatedAt       DateTime         @updatedAt @db.Timestamptz
+  echoAppId       String           @db.Uuid
+  
+  echoApp                    EchoApp                      @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  subscriptionProducts       SubscriptionProduct[]
+  subscriptionPackageProducts SubscriptionPackageProduct[]
+  
+  @@map("products")
+}
+
+model SubscriptionPackage {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  isActive    Boolean          @default(true)
+  isArchived  Boolean          @default(false)
+  archivedAt  DateTime?        @db.Timestamptz
+  createdAt   DateTime         @default(now()) @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @db.Timestamptz
+  echoAppId   String           @db.Uuid
+  
+  echoApp                    EchoApp                      @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  subscriptionPackageProducts SubscriptionPackageProduct[]
+  subscriptions              Subscription[]
+  
+  @@map("subscription_packages")
+}
+
+model SubscriptionPackageProduct {
+  id                     String              @id @default(uuid()) @db.Uuid
+  subscriptionPackageId  String              @db.Uuid
+  productId              String              @db.Uuid
+  isActive               Boolean             @default(true)
+  createdAt              DateTime            @default(now()) @db.Timestamptz
+  updatedAt              DateTime            @updatedAt @db.Timestamptz
+  
+  subscriptionPackage SubscriptionPackage @relation(fields: [subscriptionPackageId], references: [id], onDelete: Cascade)
+  product             Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([subscriptionPackageId, productId])
+  @@map("subscription_package_products")
+}
+
+model Subscription {
+  id                    String           @id @default(uuid()) @db.Uuid
+  stripeSubscriptionId  String           @unique // Stripe subscription ID
+  stripeCustomerId      String           // Stripe customer ID
+  status                String           // active, inactive, canceled, etc.
+  currentPeriodStart    DateTime?        @db.Timestamptz
+  currentPeriodEnd      DateTime?        @db.Timestamptz
+  isActive              Boolean          @default(false)
+  isArchived            Boolean          @default(false)
+  archivedAt            DateTime?        @db.Timestamptz
+  createdAt             DateTime         @default(now()) @db.Timestamptz
+  updatedAt             DateTime         @updatedAt @db.Timestamptz
+  userId                String           @db.Uuid
+  echoAppId             String           @db.Uuid
+  subscriptionPackageId String?          @db.Uuid // Optional - for package subscriptions
+  
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  echoApp              EchoApp                @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  subscriptionPackage  SubscriptionPackage?   @relation(fields: [subscriptionPackageId], references: [id])
+  subscriptionProducts SubscriptionProduct[]
+  
+  @@map("subscriptions")
+}
+
+model SubscriptionProduct {
+  id             String       @id @default(uuid()) @db.Uuid
+  subscriptionId String       @db.Uuid
+  productId      String       @db.Uuid
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now()) @db.Timestamptz
+  updatedAt      DateTime     @updatedAt @db.Timestamptz
+  
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([subscriptionId, productId])
+  @@map("subscription_products")
+}
+

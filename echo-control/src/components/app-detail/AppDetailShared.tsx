@@ -11,6 +11,10 @@ import {
   ExternalLink,
   User as UserIcon,
   GitBranch,
+  Package,
+  CreditCard,
+  DollarSign,
+  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -96,13 +100,12 @@ export function AppDetailLayout({
               </p>
             </div>
           </div>
-          <GlassButton
+          <button
             onClick={onDismissPaymentSuccess}
-            className="!h-8 !w-8"
-            variant="secondary"
+            className="!h-8 !w-8 hover:bg-transparent hover:text-foreground text-primary"
           >
             <X className="h-4 w-4" />
-          </GlassButton>
+          </button>
         </div>
       )}
 
@@ -668,5 +671,450 @@ export function TopModelsCard({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Subscription Card
+interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  stripeProductId: string;
+  stripePriceId: string;
+  price: number;
+  currency: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SubscriptionPackage {
+  id: string;
+  name: string;
+  description?: string;
+  products: Product[];
+  totalPrice: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SubscriptionCardProps {
+  app: DetailedEchoApp;
+  onSubscribe?: (type: 'product' | 'package', id: string) => void;
+}
+
+export function SubscriptionCard({ app, onSubscribe }: SubscriptionCardProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [subscribing, setSubscribing] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch products and packages
+        const [productsResponse, packagesResponse] = await Promise.all([
+          fetch(`/api/stripe/subscriptions/public?appId=${app.id}`),
+          fetch(`/api/stripe/subscriptions/packages/public?appId=${app.id}`),
+        ]);
+
+        const productsResult = await productsResponse.json();
+        const packagesResult = await packagesResponse.json();
+
+        if (productsResponse.ok) {
+          setProducts(productsResult.products || []);
+        }
+
+        if (packagesResponse.ok) {
+          setPackages(packagesResult.packages || []);
+        }
+      } catch (error) {
+        console.error('Error fetching subscriptions:', error);
+        setError('Failed to load subscriptions');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubscriptions();
+  }, [app.id]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const handleSubscribe = async (type: 'product' | 'package', id: string) => {
+    if (!onSubscribe) return;
+
+    setSubscribing(id);
+    try {
+      await onSubscribe(type, id);
+    } finally {
+      setSubscribing(null);
+    }
+  };
+
+  const allSubscriptions = [
+    ...products.map(p => ({ ...p, type: 'product' as const })),
+    ...packages.map(p => ({ ...p, type: 'package' as const })),
+  ];
+
+  if (loading) {
+    return (
+      <Card className="p-6 hover:border-secondary relative shadow-secondary shadow-[0_0_8px] transition-all duration-300 bg-background/80 backdrop-blur-sm border-border/50 h-80 flex flex-col">
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary"></div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6 hover:border-secondary relative shadow-secondary shadow-[0_0_8px] transition-all duration-300 bg-background/80 backdrop-blur-sm border-border/50 h-80 flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white">
+            <Package className="h-5 w-5" />
+          </div>
+          <h3 className="text-xl font-bold">Subscriptions</h3>
+        </div>
+      </div>
+
+      <Separator className="my-4" />
+
+      <div className="space-y-3 flex-1 overflow-auto">
+        {error && (
+          <div className="text-center py-4">
+            <p className="text-destructive text-sm">{error}</p>
+          </div>
+        )}
+
+        {!error && allSubscriptions.length > 0 ? (
+          <>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Available Plans</span>
+              <span className="font-bold">{allSubscriptions.length}</span>
+            </div>
+            {allSubscriptions.slice(0, 2).map(subscription => (
+              <div
+                key={subscription.id}
+                className="border border-border rounded-lg p-3 space-y-2"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm truncate">
+                      {subscription.name}
+                    </h4>
+                    {subscription.description && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {subscription.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right ml-2">
+                    <div className="flex items-center gap-1 font-bold">
+                      <DollarSign className="h-3 w-3 text-green-500" />
+                      {formatCurrency(
+                        subscription.type === 'package'
+                          ? subscription.totalPrice
+                          : subscription.price
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">per month</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() =>
+                    handleSubscribe(subscription.type, subscription.id)
+                  }
+                  disabled={subscribing === subscription.id}
+                  size="sm"
+                  className="w-full"
+                >
+                  {subscribing === subscription.id ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                      Subscribing...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-3 w-3 mr-2" />
+                      Subscribe
+                    </>
+                  )}
+                </Button>
+              </div>
+            ))}
+            {allSubscriptions.length > 2 && (
+              <p className="text-xs text-muted-foreground">
+                +{allSubscriptions.length - 2} more plans
+              </p>
+            )}
+          </>
+        ) : !error ? (
+          <div className="text-center py-4 flex-1 flex items-center justify-center">
+            <div>
+              <Package className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-muted-foreground text-sm">
+                No subscriptions available
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Check back later for subscription plans
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+
+// Active Subscriptions Card
+interface ActiveSubscriptionsCardProps {
+  app: DetailedEchoApp;
+}
+
+interface SubscriptionData {
+  id: string;
+  stripeSubscriptionId: string;
+  status: string;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  createdAt: string;
+  type: 'package' | 'product';
+  package: {
+    id: string;
+    name: string;
+    description: string | null;
+    products: Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      price: number;
+      currency: string;
+    }>;
+  } | null;
+  products: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    price: number;
+    currency: string;
+  }>;
+}
+
+export function ActiveSubscriptionsCard({ app }: ActiveSubscriptionsCardProps) {
+  const [subscriptions, setSubscriptions] = useState<SubscriptionData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchActiveSubscriptions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch(`/api/apps/${app.id}/subscriptions`);
+        const result = await response.json();
+
+        if (response.ok) {
+          setSubscriptions(result.subscriptions || []);
+        } else {
+          setError(result.error || 'Failed to load active subscriptions');
+        }
+      } catch (error) {
+        console.error('Error fetching active subscriptions:', error);
+        setError('Failed to load active subscriptions');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActiveSubscriptions();
+  }, [app.id]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'trialing':
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'past_due':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'canceled':
+        return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default:
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const getTotalPrice = (subscription: SubscriptionData) => {
+    if (subscription.type === 'package' && subscription.package) {
+      return subscription.package.products.reduce(
+        (total, product) => total + product.price,
+        0
+      );
+    }
+    return subscription.products.reduce(
+      (total, product) => total + product.price,
+      0
+    );
+  };
+
+  const getDisplayName = (subscription: SubscriptionData) => {
+    if (subscription.type === 'package' && subscription.package) {
+      return subscription.package.name;
+    }
+    if (subscription.products.length === 1) {
+      return subscription.products[0].name;
+    }
+    return `${subscription.products.length} Products`;
+  };
+
+  if (loading) {
+    return (
+      <Card className="p-6 hover:border-secondary relative shadow-secondary shadow-[0_0_8px] transition-all duration-300 bg-background/80 backdrop-blur-sm border-border/50 h-80 flex flex-col">
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary"></div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6 hover:border-secondary relative shadow-secondary shadow-[0_0_8px] transition-all duration-300 bg-background/80 backdrop-blur-sm border-border/50 h-80 flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white">
+            <Clock className="h-5 w-5" />
+          </div>
+          <h3 className="text-xl font-bold">Active Subscriptions</h3>
+        </div>
+      </div>
+
+      <Separator className="my-4" />
+
+      <div className="space-y-3 flex-1 overflow-auto">
+        {error && (
+          <div className="text-center py-4">
+            <p className="text-destructive text-sm">{error}</p>
+          </div>
+        )}
+
+        {!error && subscriptions.length > 0 ? (
+          <>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Active Plans</span>
+              <span className="font-bold">{subscriptions.length}</span>
+            </div>
+            {subscriptions.slice(0, 2).map(subscription => (
+              <div
+                key={subscription.id}
+                className="border border-border rounded-lg p-3 space-y-2"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm truncate">
+                      {getDisplayName(subscription)}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge
+                        variant="outline"
+                        className={`text-xs border ${getStatusColor(subscription.status)}`}
+                      >
+                        {subscription.status.charAt(0).toUpperCase() +
+                          subscription.status.slice(1)}
+                      </Badge>
+                      {subscription.currentPeriodEnd && (
+                        <span className="text-xs text-muted-foreground">
+                          Until {formatDate(subscription.currentPeriodEnd)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right ml-2">
+                    <div className="flex items-center gap-1 font-bold">
+                      <DollarSign className="h-3 w-3 text-green-500" />
+                      {formatCurrency(getTotalPrice(subscription))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">per month</p>
+                  </div>
+                </div>
+
+                {/* Show products for package subscriptions */}
+                {subscription.type === 'package' &&
+                  subscription.package &&
+                  subscription.package.products.length > 0 && (
+                    <div className="pt-2 border-t border-border/30">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Includes:
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {subscription.package.products
+                          .slice(0, 2)
+                          .map(product => (
+                            <Badge
+                              key={product.id}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {product.name}
+                            </Badge>
+                          ))}
+                        {subscription.package.products.length > 2 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{subscription.package.products.length - 2} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+              </div>
+            ))}
+            {subscriptions.length > 2 && (
+              <p className="text-xs text-muted-foreground">
+                +{subscriptions.length - 2} more subscriptions
+              </p>
+            )}
+          </>
+        ) : !error ? (
+          <div className="text-center py-4 flex-1 flex items-center justify-center">
+            <div>
+              <Clock className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-muted-foreground text-sm">
+                No active subscriptions
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Subscribe to unlock premium features
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </Card>
   );
 }

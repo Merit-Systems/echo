@@ -12,6 +12,7 @@ import {
   Users,
   DollarSign,
   Palette,
+  CreditCard,
 } from 'lucide-react';
 
 // Import individual settings components
@@ -22,6 +23,7 @@ import AnalyticsSettings from '@/components/settings/AnalyticsSettings';
 import SecuritySettings from '@/components/settings/SecuritySettings';
 import UsersSettings from '@/components/settings/UsersSettings';
 import EarningsSettings from '@/components/settings/EarningsSettings';
+import SubscriptionSettings from '@/components/settings/SubscriptionSettings';
 
 interface SidebarItem {
   id: string;
@@ -60,6 +62,12 @@ const sidebarItems: SidebarItem[] = [
     label: 'Earnings',
     icon: <DollarSign className="h-4 w-4" />,
     description: 'LLM transaction earnings and revenue details',
+  },
+  {
+    id: 'subscriptions',
+    label: 'Subscriptions',
+    icon: <CreditCard className="h-4 w-4" />,
+    description: 'Create and manage subscription products',
   },
   {
     id: 'users',
@@ -128,6 +136,9 @@ const SettingsPage: React.FC = () => {
         return <UsersSettings appId={appId} />;
       case 'security':
         return <SecuritySettings appId={appId} />;
+      case 'subscriptions':
+        return <SubscriptionSettings appId={appId} />;
+
       default:
         return (
           <div className="text-center py-12">
