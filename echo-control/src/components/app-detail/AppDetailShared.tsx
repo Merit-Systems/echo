@@ -15,6 +15,8 @@ import {
   CreditCard,
   DollarSign,
   Clock,
+  AlertTriangle,
+  RotateCcw,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -880,6 +882,7 @@ export function SubscriptionCard({ app, onSubscribe }: SubscriptionCardProps) {
 // Active Subscriptions Card
 interface ActiveSubscriptionsCardProps {
   app: DetailedEchoApp;
+  onSubscriptionUpdate?: () => void;
 }
 
 interface SubscriptionData {
@@ -911,10 +914,19 @@ interface SubscriptionData {
   }>;
 }
 
-export function ActiveSubscriptionsCard({ app }: ActiveSubscriptionsCardProps) {
+export function ActiveSubscriptionsCard({
+  app,
+  onSubscriptionUpdate,
+}: ActiveSubscriptionsCardProps) {
   const [subscriptions, setSubscriptions] = useState<SubscriptionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState<{
+    subscriptionId: string;
+    subscriptionName: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchActiveSubscriptions = async () => {
@@ -993,6 +1005,93 @@ export function ActiveSubscriptionsCard({ app }: ActiveSubscriptionsCardProps) {
       return subscription.products[0].name;
     }
     return `${subscription.products.length} Products`;
+  };
+
+  const handleCancelSubscription = async (
+    subscriptionId: string,
+    immediate = false
+  ) => {
+    setCancelingId(subscriptionId);
+    try {
+      const response = await fetch(
+        `/api/apps/${app.id}/subscriptions?subscriptionId=${subscriptionId}&immediate=${immediate}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Refresh subscriptions
+        const subscriptionsResponse = await fetch(
+          `/api/apps/${app.id}/subscriptions`
+        );
+        const subscriptionsResult = await subscriptionsResponse.json();
+        if (subscriptionsResponse.ok) {
+          setSubscriptions(subscriptionsResult.subscriptions || []);
+        }
+
+        // Notify parent component
+        onSubscriptionUpdate?.();
+      } else {
+        setError(result.error || 'Failed to cancel subscription');
+      }
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      setError('Failed to cancel subscription');
+    } finally {
+      setCancelingId(null);
+      setShowCancelConfirm(null);
+    }
+  };
+
+  const handleReactivateSubscription = async (subscriptionId: string) => {
+    setReactivatingId(subscriptionId);
+    try {
+      const response = await fetch(
+        `/api/apps/${app.id}/subscriptions?subscriptionId=${subscriptionId}&action=reactivate`,
+        {
+          method: 'PATCH',
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Refresh subscriptions
+        const subscriptionsResponse = await fetch(
+          `/api/apps/${app.id}/subscriptions`
+        );
+        const subscriptionsResult = await subscriptionsResponse.json();
+        if (subscriptionsResponse.ok) {
+          setSubscriptions(subscriptionsResult.subscriptions || []);
+        }
+
+        // Notify parent component
+        onSubscriptionUpdate?.();
+      } else {
+        setError(result.error || 'Failed to reactivate subscription');
+      }
+    } catch (error) {
+      console.error('Error reactivating subscription:', error);
+      setError('Failed to reactivate subscription');
+    } finally {
+      setReactivatingId(null);
+    }
+  };
+
+  const canBeCancelled = (status: string) => {
+    return (
+      status.toLowerCase() === 'active' || status.toLowerCase() === 'trialing'
+    );
+  };
+
+  const canBeReactivated = (status: string) => {
+    return (
+      status.toLowerCase() === 'canceled' ||
+      status.toLowerCase() === 'cancelled'
+    );
   };
 
   if (loading) {
@@ -1093,6 +1192,59 @@ export function ActiveSubscriptionsCard({ app }: ActiveSubscriptionsCardProps) {
                       </div>
                     </div>
                   )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  {canBeCancelled(subscription.status) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setShowCancelConfirm({
+                          subscriptionId: subscription.id,
+                          subscriptionName: getDisplayName(subscription),
+                        })
+                      }
+                      disabled={cancelingId === subscription.id}
+                      className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    >
+                      {cancelingId === subscription.id ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-destructive mr-2"></div>
+                          Cancelling...
+                        </>
+                      ) : (
+                        <>
+                          <X className="h-3 w-3 mr-2" />
+                          Cancel
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {canBeReactivated(subscription.status) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleReactivateSubscription(subscription.id)
+                      }
+                      disabled={reactivatingId === subscription.id}
+                      className="flex-1 text-green-600 border-green-600/30 hover:bg-green-600/10"
+                    >
+                      {reactivatingId === subscription.id ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600 mr-2"></div>
+                          Reactivating...
+                        </>
+                      ) : (
+                        <>
+                          <RotateCcw className="h-3 w-3 mr-2" />
+                          Reactivate
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
             {subscriptions.length > 2 && (
@@ -1115,6 +1267,72 @@ export function ActiveSubscriptionsCard({ app }: ActiveSubscriptionsCardProps) {
           </div>
         ) : null}
       </div>
+
+      {/* Cancellation Confirmation Modal */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <h3 className="text-lg font-semibold">Cancel Subscription</h3>
+            </div>
+
+            <p className="text-muted-foreground mb-6">
+              Are you sure you want to cancel "
+              {showCancelConfirm.subscriptionName}"? This will cancel your
+              subscription at the end of the current billing period.
+            </p>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelConfirm(null)}
+                className="flex-1"
+              >
+                Keep Subscription
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() =>
+                  handleCancelSubscription(
+                    showCancelConfirm.subscriptionId,
+                    false
+                  )
+                }
+                disabled={cancelingId === showCancelConfirm.subscriptionId}
+                className="flex-1"
+              >
+                {cancelingId === showCancelConfirm.subscriptionId ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                    Cancelling...
+                  </>
+                ) : (
+                  'Cancel Subscription'
+                )}
+              </Button>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-border">
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  handleCancelSubscription(
+                    showCancelConfirm.subscriptionId,
+                    true
+                  )
+                }
+                disabled={cancelingId === showCancelConfirm.subscriptionId}
+                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                Cancel Immediately (No Refund)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

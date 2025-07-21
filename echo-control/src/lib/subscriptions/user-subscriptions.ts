@@ -1,5 +1,10 @@
+import Stripe from 'stripe';
 import { db } from '@/lib/db';
 import { UserSubscription } from './types';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-05-28.basil',
+});
 
 export class UserSubscriptionService {
   /**
@@ -183,5 +188,170 @@ export class UserSubscriptionService {
     });
 
     return Array.from(userProductIds);
+  }
+
+  /**
+   * Cancel a user's subscription
+   */
+  static async cancelSubscription(
+    clerkUserId: string,
+    appId: string,
+    subscriptionId: string,
+    cancelImmediately = false
+  ): Promise<{ success: boolean; message: string }> {
+    console.log('🚫 Cancelling subscription:', {
+      clerkUserId,
+      appId,
+      subscriptionId,
+      cancelImmediately,
+    });
+
+    // Find the subscription
+    const subscription = await db.subscription.findFirst({
+      where: {
+        id: subscriptionId,
+        echoAppId: appId,
+        user: {
+          clerkId: clerkUserId,
+        },
+        isActive: true,
+        isArchived: false,
+      },
+    });
+
+    if (!subscription) {
+      return {
+        success: false,
+        message: 'Subscription not found or already cancelled',
+      };
+    }
+
+    try {
+      // Cancel the Stripe subscription
+      const stripeSubscription = await stripe.subscriptions.update(
+        subscription.stripeSubscriptionId,
+        {
+          cancel_at_period_end: !cancelImmediately,
+          ...(cancelImmediately && {
+            cancel_at: Math.floor(Date.now() / 1000),
+          }),
+        }
+      );
+
+      // Update the database
+      await db.subscription.update({
+        where: { id: subscriptionId },
+        data: {
+          status: stripeSubscription.status,
+          isActive: stripeSubscription.status === 'active',
+          updatedAt: new Date(),
+        },
+      });
+
+      console.log('✅ Subscription cancelled successfully:', {
+        subscriptionId,
+        stripeStatus: stripeSubscription.status,
+        cancelImmediately,
+        cancelAt: stripeSubscription.cancel_at,
+        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
+      });
+
+      const message = cancelImmediately
+        ? 'Subscription cancelled immediately'
+        : 'Subscription will be cancelled at the end of the current billing period';
+
+      return {
+        success: true,
+        message,
+      };
+    } catch (error) {
+      console.error('❌ Error cancelling subscription:', error);
+      return {
+        success: false,
+        message: 'Failed to cancel subscription. Please try again.',
+      };
+    }
+  }
+
+  /**
+   * Reactivate a cancelled subscription (if still within the current period)
+   */
+  static async reactivateSubscription(
+    clerkUserId: string,
+    appId: string,
+    subscriptionId: string
+  ): Promise<{ success: boolean; message: string }> {
+    console.log('🔄 Reactivating subscription:', {
+      clerkUserId,
+      appId,
+      subscriptionId,
+    });
+
+    // Find the subscription
+    const subscription = await db.subscription.findFirst({
+      where: {
+        id: subscriptionId,
+        echoAppId: appId,
+        user: {
+          clerkId: clerkUserId,
+        },
+      },
+    });
+
+    if (!subscription) {
+      return {
+        success: false,
+        message: 'Subscription not found',
+      };
+    }
+
+    try {
+      // Check the current Stripe subscription status
+      const stripeSubscription = await stripe.subscriptions.retrieve(
+        subscription.stripeSubscriptionId
+      );
+
+      // Only allow reactivation if subscription is set to cancel at period end
+      if (!stripeSubscription.cancel_at_period_end) {
+        return {
+          success: false,
+          message: 'Subscription is not scheduled for cancellation',
+        };
+      }
+
+      // Reactivate by removing the cancellation
+      const updatedStripeSubscription = await stripe.subscriptions.update(
+        subscription.stripeSubscriptionId,
+        {
+          cancel_at_period_end: false,
+        }
+      );
+
+      // Update the database
+      await db.subscription.update({
+        where: { id: subscriptionId },
+        data: {
+          status: updatedStripeSubscription.status,
+          isActive: true,
+          updatedAt: new Date(),
+        },
+      });
+
+      console.log('✅ Subscription reactivated successfully:', {
+        subscriptionId,
+        stripeStatus: updatedStripeSubscription.status,
+      });
+
+      return {
+        success: true,
+        message: 'Subscription has been reactivated',
+      };
+    } catch (error) {
+      console.error('❌ Error reactivating subscription:', error);
+      return {
+        success: false,
+        message: 'Failed to reactivate subscription. Please try again.',
+      };
+    }
   }
 }
