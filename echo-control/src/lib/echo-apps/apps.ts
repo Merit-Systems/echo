@@ -65,7 +65,6 @@ export async function createApp(req: NextRequest) {
         description: echoApp.description,
         github_type: echoApp.githubType,
         github_id: echoApp.githubId,
-        is_active: echoApp.isActive,
         created_at: echoApp.createdAt.toISOString(),
         updated_at: echoApp.updatedAt.toISOString(),
         authorized_callback_urls: echoApp.authorizedCallbackUrls,
@@ -174,7 +173,6 @@ export async function updateApp(
       profilePictureUrl,
       bannerImageUrl,
       homepageUrl,
-      isActive,
       isPublic,
     } = body;
 
@@ -188,7 +186,6 @@ export async function updateApp(
       profilePictureUrl,
       bannerImageUrl,
       homepageUrl,
-      isActive,
       isPublic,
     });
 
@@ -210,7 +207,6 @@ export async function updateApp(
     if (bannerImageUrl !== undefined)
       updateData.bannerImageUrl = bannerImageUrl;
     if (homepageUrl !== undefined) updateData.homepageUrl = homepageUrl;
-    if (isActive !== undefined) updateData.isActive = isActive;
     if (isPublic !== undefined) updateData.isPublic = isPublic;
 
     const updatedApp = await updateEchoAppById(appId, user.id, updateData);
@@ -221,7 +217,6 @@ export async function updateApp(
       description: updatedApp.description,
       github_type: updatedApp.githubType,
       github_id: updatedApp.githubId,
-      is_active: updatedApp.isActive,
       created_at: updatedApp.createdAt.toISOString(),
       updated_at: updatedApp.updatedAt.toISOString(),
       authorized_callback_urls: updatedApp.authorizedCallbackUrls,

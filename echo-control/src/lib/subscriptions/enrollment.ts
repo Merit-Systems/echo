@@ -27,10 +27,10 @@ export class SubscriptionEnrollmentService {
     // Verify the app exists and is active
     const app = await db.echoApp.findUnique({
       where: { id: appId },
-      select: { id: true, name: true, isActive: true },
+      select: { id: true, name: true },
     });
 
-    if (!app || !app.isActive) {
+    if (!app) {
       throw new Error('App not found or inactive');
     }
 
@@ -69,7 +69,7 @@ export class SubscriptionEnrollmentService {
         throw new Error('Subscription package not found');
       }
 
-      if (!subscriptionPackage.isActive || subscriptionPackage.isArchived) {
+      if (subscriptionPackage.isArchived) {
         throw new Error('Subscription package is not available');
       }
 
@@ -90,7 +90,7 @@ export class SubscriptionEnrollmentService {
         throw new Error('Product not found');
       }
 
-      if (!product.isActive || product.isArchived) {
+      if (product.isArchived) {
         throw new Error('Product is not available');
       }
 
@@ -169,7 +169,6 @@ export class SubscriptionEnrollmentService {
                 .current_period_end * 1000
             )
           : null,
-        isActive: false, // Will be activated when payment succeeds
         userId: userId,
         echoAppId: appId,
         subscriptionPackageId: subscriptionPackageToUse?.id || null,
@@ -182,7 +181,6 @@ export class SubscriptionEnrollmentService {
       userId: userId,
       appId,
       status: subscription.status,
-      isActive: dbSubscription.isActive,
       stripeCustomerId,
       subscriptionPackageId: subscriptionPackageToUse?.id || null,
     });

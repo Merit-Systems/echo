@@ -147,7 +147,6 @@ async function seedUsageProductsForApp(
         inputPricePerToken,
         outputPricePerToken,
         category: 'llm',
-        isActive: true,
         isArchived: false,
         echoAppId: appId,
       };
@@ -212,7 +211,6 @@ async function seedAllApps(
 
   const apps = await prisma.echoApp.findMany({
     where: {
-      isActive: true,
       isArchived: false,
     },
     select: {

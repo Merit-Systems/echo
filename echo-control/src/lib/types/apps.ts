@@ -10,7 +10,6 @@ export interface PublicEchoApp {
   description: string | null;
   profilePictureUrl: string | null;
   bannerImageUrl: string | null;
-  isActive: boolean;
   isPublic: boolean;
   createdAt: string;
   updatedAt: string;
@@ -82,7 +81,6 @@ export interface DetailedEchoApp extends AuthenticatedEchoApp {
   apiKeys: Array<{
     id: string;
     name?: string;
-    isActive: boolean;
     createdAt: string;
     lastUsed?: string;
     totalSpent: number;
@@ -155,7 +153,6 @@ export interface DashboardEchoApp {
   id: string;
   name: string;
   description?: string;
-  isActive: boolean;
   createdAt: string;
   totalTokens: number;
   totalCost: number;

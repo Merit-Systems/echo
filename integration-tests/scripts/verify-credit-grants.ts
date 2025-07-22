@@ -43,7 +43,6 @@ async function verifyCreditGrants() {
       console.log(`  Amount: $${grant.amount}`);
       console.log(`  Source: ${grant.source}`);
       console.log(`  Description: ${grant.description}`);
-      console.log(`  Active: ${grant.isActive}`);
 
       if (grant.payment) {
         console.log(
@@ -60,11 +59,11 @@ async function verifyCreditGrants() {
 
     // Calculate balance
     const credits = creditGrants
-      .filter(g => g.type === 'credit' && g.isActive)
+      .filter(g => g.type === 'credit' && !g.isArchived)
       .reduce((sum, g) => sum + Number(g.amount), 0);
 
     const debits = creditGrants
-      .filter(g => g.type === 'debit' && g.isActive)
+      .filter(g => g.type === 'debit' && !g.isArchived)
       .reduce((sum, g) => sum + Number(g.amount), 0);
 
     const balance = credits - debits;

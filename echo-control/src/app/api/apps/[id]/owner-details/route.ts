@@ -31,7 +31,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const echoApp = await db.echoApp.findUnique({
       where: {
         id,
-        isActive: true,
         isArchived: false,
       },
       select: {

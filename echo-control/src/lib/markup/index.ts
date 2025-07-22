@@ -73,7 +73,6 @@ export async function setCurrentMarkup(
       data: {
         rate,
         name: name || `Markup ${rate}x`,
-        isActive: true,
         isDefault: true,
         echoAppId: appId,
       },
@@ -136,7 +135,6 @@ export async function deleteMarkup(markupId: string): Promise<Markup> {
     data: {
       isArchived: true,
       archivedAt: new Date(),
-      isActive: false,
       isDefault: false,
     },
   });

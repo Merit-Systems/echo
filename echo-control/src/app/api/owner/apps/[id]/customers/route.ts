@@ -76,11 +76,10 @@ export async function POST(
     const user = await getCurrentUser();
     const { userId } = await request.json();
 
-    // Verify the app exists and is active
+    // Verify the app exists
     const app = await db.echoApp.findFirst({
       where: {
         id: appId,
-        isActive: true,
         isArchived: false,
       },
     });

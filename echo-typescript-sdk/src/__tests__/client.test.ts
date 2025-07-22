@@ -372,7 +372,6 @@ describe('EchoClient', () => {
         {
           id: 'app1',
           name: 'Test App 1',
-          isActive: true,
           createdAt: '2024-01-01',
           updatedAt: '2024-01-01',
           userId: 'user1',
@@ -380,7 +379,6 @@ describe('EchoClient', () => {
         {
           id: 'app2',
           name: 'Test App 2',
-          isActive: false,
           createdAt: '2024-01-02',
           updatedAt: '2024-01-02',
           userId: 'user1',
@@ -410,7 +408,6 @@ describe('EchoClient', () => {
       const mockApp = {
         id: 'app1',
         name: 'Test App',
-        isActive: true,
         createdAt: '2024-01-01',
         updatedAt: '2024-01-01',
         userId: 'user1',

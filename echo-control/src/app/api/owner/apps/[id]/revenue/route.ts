@@ -41,7 +41,6 @@ export async function GET(
     const revenues = await db.revenue.findMany({
       where: {
         echoAppId: appId,
-        isActive: true,
         isArchived: false,
         ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
       },
@@ -83,7 +82,6 @@ export async function GET(
     const totalCount = await db.revenue.count({
       where: {
         echoAppId: appId,
-        isActive: true,
         isArchived: false,
         ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
       },
@@ -93,7 +91,6 @@ export async function GET(
     const revenueSummary = await db.revenue.aggregate({
       where: {
         echoAppId: appId,
-        isActive: true,
         isArchived: false,
         ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
       },
@@ -108,7 +105,6 @@ export async function GET(
       by: ['type'],
       where: {
         echoAppId: appId,
-        isActive: true,
         isArchived: false,
         ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
       },

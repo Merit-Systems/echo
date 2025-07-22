@@ -124,7 +124,6 @@ export const TEST_DATA = {
       inputPricePerToken: 0.00000000000001,
       outputPricePerToken: 0.00000000000001,
       category: 'llm',
-      isActive: true,
       isArchived: false,
       echoAppId: '87654321-4321-4321-4321-fedcba987654', // References primary test app
     },
@@ -138,7 +137,6 @@ export const TEST_DATA = {
       inputPricePerToken: 0.0000005,
       outputPricePerToken: 0.0000015,
       category: 'llm',
-      isActive: true,
       isArchived: false,
       echoAppId: '87654321-4321-4321-4321-fedcba987654', // References primary test app
     },

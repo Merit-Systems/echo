@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
     try {
       /* 2️⃣ Validate client_id (Echo app) and redirect_uri */
       echoApp = await db.echoApp.findUnique({
-        where: { id: clientId, isActive: true },
+        where: { id: clientId },
         select: {
           id: true,
           name: true,
@@ -107,7 +107,6 @@ export async function GET(req: NextRequest) {
           bannerImageUrl: true,
           homepageUrl: true,
           description: true,
-          isActive: true,
           isArchived: true,
           archivedAt: true,
           createdAt: true,

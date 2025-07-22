@@ -175,7 +175,6 @@ class SubscriptionHandler {
       where: { id: subscriptionId },
       data: {
         stripeSubscriptionId: stripeSubscriptionId,
-        isActive: true,
         status: 'active',
         updatedAt: new Date(),
       },
@@ -194,7 +193,6 @@ class SubscriptionHandler {
       await db.subscription.update({
         where: { id: subscriptionId },
         data: {
-          isActive: true,
           status: 'active',
           updatedAt: new Date(),
         },
@@ -216,7 +214,6 @@ class SubscriptionHandler {
       await db.subscription.update({
         where: { id: subscriptionId },
         data: {
-          isActive: false,
           status: 'incomplete',
           updatedAt: new Date(),
         },
@@ -246,7 +243,6 @@ class SubscriptionHandler {
       await db.subscription.update({
         where: { id: subscription.id },
         data: {
-          isActive: true,
           status: 'active',
           updatedAt: new Date(),
         },
@@ -274,7 +270,6 @@ class SubscriptionHandler {
       await db.subscription.update({
         where: { id: subscription.id },
         data: {
-          isActive: true,
           status: 'active',
           updatedAt: new Date(),
         },
@@ -304,7 +299,6 @@ class SubscriptionHandler {
       await db.subscription.update({
         where: { id: subscription.id },
         data: {
-          isActive: false,
           status: 'past_due',
           updatedAt: new Date(),
         },
@@ -337,7 +331,6 @@ class SubscriptionHandler {
       await db.subscription.update({
         where: { id: subscription.id },
         data: {
-          isActive: false,
           status: 'incomplete',
           updatedAt: new Date(),
         },
@@ -383,7 +376,6 @@ class SubscriptionHandler {
                   .current_period_end * 1000
               )
             : null,
-          isActive: ['active', 'trialing'].includes(subscription.status),
           updatedAt: new Date(),
         },
       });
@@ -391,7 +383,6 @@ class SubscriptionHandler {
       console.log('✅ Updated subscription details:', {
         id: dbSubscription.id,
         status: subscription.status,
-        isActive: ['active', 'trialing'].includes(subscription.status),
       });
     }
   }
@@ -410,7 +401,6 @@ class SubscriptionHandler {
         where: { id: dbSubscription.id },
         data: {
           status: 'canceled',
-          isActive: false,
           isArchived: true,
           updatedAt: new Date(),
         },

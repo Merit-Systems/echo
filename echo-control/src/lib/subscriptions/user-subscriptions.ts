@@ -23,7 +23,6 @@ export class UserSubscriptionService {
         user: {
           clerkId: clerkUserId,
         },
-        isActive: true,
         isArchived: false,
         status: {
           in: ['active', 'trialing'], // Active or in trial period
@@ -67,7 +66,6 @@ export class UserSubscriptionService {
           id: true,
           stripeSubscriptionId: true,
           status: true,
-          isActive: true,
           isArchived: true,
           createdAt: true,
         },
@@ -92,7 +90,6 @@ export class UserSubscriptionService {
             id: sub.subscriptionPackage.id,
             name: sub.subscriptionPackage.name,
             description: sub.subscriptionPackage.description || undefined,
-            isActive: sub.subscriptionPackage.isActive,
             createdAt: sub.subscriptionPackage.createdAt.toISOString(),
             updatedAt: sub.subscriptionPackage.updatedAt.toISOString(),
             products: sub.subscriptionPackage.subscriptionPackageProducts.map(
@@ -104,7 +101,6 @@ export class UserSubscriptionService {
                 stripePriceId: spp.product.stripePriceId,
                 price: Number(spp.product.price),
                 currency: spp.product.currency,
-                isActive: spp.product.isActive,
                 createdAt: spp.product.createdAt.toISOString(),
                 updatedAt: spp.product.updatedAt.toISOString(),
               })
@@ -124,7 +120,6 @@ export class UserSubscriptionService {
         stripePriceId: sp.product.stripePriceId,
         price: Number(sp.product.price),
         currency: sp.product.currency,
-        isActive: sp.product.isActive,
         createdAt: sp.product.createdAt.toISOString(),
         updatedAt: sp.product.updatedAt.toISOString(),
       })),
@@ -214,7 +209,6 @@ export class UserSubscriptionService {
         user: {
           clerkId: clerkUserId,
         },
-        isActive: true,
         isArchived: false,
       },
     });
@@ -243,7 +237,6 @@ export class UserSubscriptionService {
         where: { id: subscriptionId },
         data: {
           status: stripeSubscription.status,
-          isActive: stripeSubscription.status === 'active',
           updatedAt: new Date(),
         },
       });
@@ -332,7 +325,6 @@ export class UserSubscriptionService {
         where: { id: subscriptionId },
         data: {
           status: updatedStripeSubscription.status,
-          isActive: true,
           updatedAt: new Date(),
         },
       });

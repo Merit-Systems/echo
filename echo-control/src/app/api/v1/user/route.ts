@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { User } from '@/generated/prisma';
 import { formatUserForApiResponse } from '@/lib/user';
+import { getBalance } from '@/lib/balance';
 
 // GET /api/v1/user - Get authenticated user information
 export async function GET(request: NextRequest) {
@@ -15,7 +16,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const responseData = formatUserForApiResponse(user);
+    const balance = await getBalance(user);
+    const responseData = formatUserForApiResponse(user, balance);
 
     return NextResponse.json(responseData);
   } catch (error) {

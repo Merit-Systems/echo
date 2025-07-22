@@ -13,9 +13,7 @@ const PopularAppsFullPage: React.FC = () => {
       throw new Error('Network response was not ok.');
     }
 
-    return (data.apps as PublicEchoApp[]).filter(
-      (app: PublicEchoApp) => app.isActive
-    );
+    return data.apps as PublicEchoApp[];
   };
 
   return (

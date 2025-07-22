@@ -76,8 +76,6 @@ export class EchoDbService {
             clerkId: true,
             createdAt: true,
             updatedAt: true,
-            totalPaid: true,
-            totalSpent: true,
           },
         });
 
@@ -89,7 +87,6 @@ export class EchoDbService {
             id: true,
             name: true,
             description: true,
-            isActive: true,
             isArchived: true,
             createdAt: true,
             updatedAt: true,
@@ -115,7 +112,6 @@ export class EchoDbService {
             id: app.id,
             name: app.name,
             ...(app.description && { description: app.description }),
-            isActive: app.isActive,
             createdAt: app.createdAt.toISOString(),
             updatedAt: app.updatedAt.toISOString(),
           },
@@ -135,14 +131,12 @@ export class EchoDbService {
         },
       });
 
-      // Verify the API key is valid and all related entities are active
+      // Verify the API key is valid and all related entities are not archived
       if (
         !apiKeyRecord ||
-        !apiKeyRecord.isActive ||
         apiKeyRecord.isArchived ||
         apiKeyRecord.user.isArchived ||
-        apiKeyRecord.echoApp.isArchived ||
-        !apiKeyRecord.echoApp.isActive
+        apiKeyRecord.echoApp.isArchived
       ) {
         return null;
       }
@@ -164,7 +158,6 @@ export class EchoDbService {
           ...(apiKeyRecord.echoApp.description && {
             description: apiKeyRecord.echoApp.description,
           }),
-          isActive: apiKeyRecord.echoApp.isActive,
           createdAt: apiKeyRecord.echoApp.createdAt.toISOString(),
           updatedAt: apiKeyRecord.echoApp.updatedAt.toISOString(),
         },
@@ -213,7 +206,6 @@ export class EchoDbService {
           this.db.creditGrant.aggregate({
             where: {
               userId,
-              isActive: true,
               isArchived: false,
               type: 'credit',
             },
@@ -226,7 +218,6 @@ export class EchoDbService {
           this.db.creditGrant.aggregate({
             where: {
               userId,
-              isActive: true,
               isArchived: false,
               type: 'credit',
               OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
@@ -240,7 +231,6 @@ export class EchoDbService {
           this.db.creditGrant.aggregate({
             where: {
               userId,
-              isActive: true,
               isArchived: false,
               type: 'debit',
             },
@@ -329,7 +319,6 @@ export class EchoDbService {
             where: {
               model: transaction.model,
               echoAppId: echoAppId,
-              isActive: true,
               isArchived: false,
             },
           });
@@ -371,7 +360,6 @@ export class EchoDbService {
             userId: userId,
             transactionId: dbTransaction.id,
             markupId: markupConfig?.id || null, // Link to markup configuration
-            isActive: true,
           },
         });
 
@@ -390,7 +378,6 @@ export class EchoDbService {
               markupId: markupConfig?.id || null, // Link to markup configuration
               creditGrantId: debitCreditGrant.id,
               transactionId: dbTransaction.id,
-              isActive: true,
             },
           });
         }

@@ -199,7 +199,6 @@ export async function handleRefreshToken(
   const echoRefreshTokenRecord = await db.refreshToken.findUnique({
     where: {
       token: refreshToken,
-      isActive: true,
     },
     include: {
       user: true,
@@ -217,10 +216,10 @@ export async function handleRefreshToken(
 
   /* 2️⃣ Check if refresh token is expired */
   if (echoRefreshTokenRecord.expiresAt < new Date()) {
-    // Deactivate expired token
+    // Archive expired token
     await db.refreshToken.update({
       where: { id: echoRefreshTokenRecord.id },
-      data: { isActive: false },
+      data: { isArchived: true, archivedAt: new Date() },
     });
 
     return {
@@ -229,11 +228,11 @@ export async function handleRefreshToken(
     };
   }
 
-  /* 3️⃣ Check if echo app is still active */
-  if (!echoRefreshTokenRecord.echoApp.isActive) {
+  /* 3️⃣ Check if echo app is still not archived */
+  if (echoRefreshTokenRecord.echoApp.isArchived) {
     return {
       error: 'invalid_grant',
-      error_description: 'Echo app is no longer active',
+      error_description: 'Echo app is archived',
     };
   }
 
@@ -241,10 +240,10 @@ export async function handleRefreshToken(
   const newEchoRefreshTokenValue = `refresh_${nanoid(48)}`;
   const newEchoRefreshTokenExpiry = createEchoRefreshTokenExpiry();
 
-  // Deactivate old refresh token
+  // Archive old refresh token
   await db.refreshToken.update({
     where: { id: echoRefreshTokenRecord.id },
-    data: { isActive: false },
+    data: { isArchived: true, archivedAt: new Date() },
   });
 
   // Create new refresh token
@@ -255,7 +254,6 @@ export async function handleRefreshToken(
       userId: echoRefreshTokenRecord.userId,
       echoAppId: echoRefreshTokenRecord.echoAppId,
       scope: echoRefreshTokenRecord.scope,
-      isActive: true,
     },
   });
 
@@ -392,7 +390,7 @@ export async function handleInitialTokenIssuance(
   const echoApp = await db.echoApp.findFirst({
     where: {
       id: client_id,
-      isActive: true,
+      isArchived: false,
     },
   });
 
@@ -467,9 +465,9 @@ export async function handleInitialTokenIssuance(
     where: {
       userId: user.id,
       echoAppId: echoApp.id,
-      isActive: true,
+      isArchived: false,
     },
-    data: { isActive: false },
+    data: { isArchived: true, archivedAt: new Date() },
   });
 
   // Create new refresh token
@@ -480,7 +478,6 @@ export async function handleInitialTokenIssuance(
       userId: user.id,
       echoAppId: echoApp.id,
       scope: authData.scope,
-      isActive: true,
     },
   });
 

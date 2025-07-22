@@ -94,7 +94,6 @@ export async function createCreditGrant(
         userId: user.id,
         paymentId,
         transactionId,
-        isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -132,7 +131,6 @@ export async function createCreditGrant(
           echoAppId: transaction.echoAppId,
           creditGrantId: creditGrant.id,
           transactionId: transactionId!,
-          isActive: true,
         },
       });
 
@@ -213,7 +211,6 @@ export async function getCreditGrants(
   const {
     type,
     source,
-    isActive,
     isExpired,
     paymentId,
     transactionId,
@@ -228,7 +225,6 @@ export async function getCreditGrants(
 
   if (type) whereClause.type = type;
   if (source) whereClause.source = source;
-  if (isActive !== undefined) whereClause.isActive = isActive;
   if (paymentId) whereClause.paymentId = paymentId;
   if (transactionId) whereClause.transactionId = transactionId;
 
@@ -291,7 +287,6 @@ export async function calculateBalanceFromCreditGrants(
     db.creditGrant.aggregate({
       where: {
         userId,
-        isActive: true,
         isArchived: false,
         type: CreditGrantType.CREDIT,
       },
@@ -304,7 +299,6 @@ export async function calculateBalanceFromCreditGrants(
     db.creditGrant.aggregate({
       where: {
         userId,
-        isActive: true,
         isArchived: false,
         type: CreditGrantType.CREDIT,
         OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
@@ -318,7 +312,6 @@ export async function calculateBalanceFromCreditGrants(
     db.creditGrant.aggregate({
       where: {
         userId,
-        isActive: true,
         isArchived: false,
         type: CreditGrantType.CREDIT,
         expiresAt: {
@@ -334,7 +327,6 @@ export async function calculateBalanceFromCreditGrants(
     db.creditGrant.aggregate({
       where: {
         userId,
-        isActive: true,
         isArchived: false,
         type: CreditGrantType.DEBIT,
       },
@@ -387,7 +379,6 @@ export async function getCreditGrantSummaryBySource(userId: string): Promise<
     by: ['source', 'type'],
     where: {
       userId,
-      isActive: true,
       isArchived: false,
     },
     _sum: {
@@ -468,7 +459,6 @@ export async function deactivateCreditGrant(
   return db.creditGrant.update({
     where: { id: creditGrantId },
     data: {
-      isActive: false,
       updatedAt: new Date(),
     },
   });
@@ -485,7 +475,6 @@ export async function processExpiredCreditGrants(
   const now = new Date();
 
   const whereClause: Prisma.CreditGrantWhereInput = {
-    isActive: true,
     isArchived: false,
     type: CreditGrantType.CREDIT, // Only credits can expire
     expiresAt: {
@@ -500,7 +489,6 @@ export async function processExpiredCreditGrants(
   const result = await db.creditGrant.updateMany({
     where: whereClause,
     data: {
-      isActive: false,
       updatedAt: now,
     },
   });

@@ -29,7 +29,7 @@ export function useMemberApps(): UseMemberAppsReturn {
 
       // Filter for apps where user is a member but not the owner
       const membershipApps = allApps
-        .filter(app => app.isActive && app.userRole !== AppRole.OWNER)
+        .filter(app => app.userRole !== AppRole.OWNER)
         .sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()

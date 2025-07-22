@@ -47,7 +47,6 @@ async function createCreditGrant(
       userId,
       paymentId: paymentId || null,
       transactionId: transactionId || null,
-      isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -125,7 +124,6 @@ export async function seedIntegrationDatabase() {
       data: {
         ...TEST_DATA.echoApps.primary,
         authorizedCallbackUrls: TEST_DATA.oauth.defaultCallbackUrls,
-        isActive: true,
       },
     });
 
@@ -148,7 +146,6 @@ export async function seedIntegrationDatabase() {
         ...TEST_DATA.apiKeys.primary,
         userId: testUser.id,
         echoAppId: testApp.id,
-        isActive: true,
       },
     });
 
@@ -166,7 +163,6 @@ export async function seedIntegrationDatabase() {
       data: {
         ...TEST_DATA.echoApps.secondary,
         authorizedCallbackUrls: TEST_DATA.oauth.secondaryCallbackUrls,
-        isActive: true,
       },
     });
 

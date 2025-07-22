@@ -294,7 +294,7 @@ export function AppProfile({
       case AppRole.CUSTOMER:
         return 'bg-orange-500';
       default:
-        return app.isActive ? 'bg-green-500' : 'bg-gray-400';
+        return 'bg-green-500';
     }
   };
 
@@ -684,7 +684,6 @@ interface Product {
   stripePriceId: string;
   price: number;
   currency: string;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -695,7 +694,6 @@ interface SubscriptionPackage {
   description?: string;
   products: Product[];
   totalPrice: number;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }

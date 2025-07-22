@@ -15,7 +15,6 @@ export interface CreateCreditGrantRequest {
 export interface CreditGrantFilters {
   type?: CreditGrantType;
   source?: CreditGrantSource;
-  isActive?: boolean;
   isExpired?: boolean;
   paymentId?: string;
   transactionId?: string;

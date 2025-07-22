@@ -17,7 +17,6 @@ export interface CreateEchoAppOptions {
   description?: string;
   userId: string;
   authorizedCallbackUrls?: string[];
-  isActive?: boolean;
 }
 
 export interface CreateApiKeyOptions {
@@ -26,7 +25,6 @@ export interface CreateApiKeyOptions {
   name?: string;
   userId: string;
   echoAppId: string;
-  isActive?: boolean;
 }
 
 export interface CreatePaymentOptions {
@@ -109,7 +107,6 @@ export class TestDataFactory {
           'http://localhost:3000/callback',
           'http://localhost:3001/callback',
         ],
-        isActive: options.isActive ?? true,
       },
     });
   }
@@ -122,7 +119,6 @@ export class TestDataFactory {
         name: options.name || 'Test API Key',
         userId: options.userId,
         echoAppId: options.echoAppId,
-        isActive: options.isActive ?? true,
       },
     });
   }
@@ -187,7 +183,6 @@ export class TestDataFactory {
         apiKeyId: options.apiKeyId,
         expiresAt,
         scope: options.scope || 'llm:invoke offline_access',
-        isActive: true,
       },
     });
   }

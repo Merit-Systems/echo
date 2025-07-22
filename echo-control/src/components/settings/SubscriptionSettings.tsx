@@ -7,7 +7,6 @@ import {
   Plus,
   Calendar,
   CheckCircle,
-  XCircle,
   X,
   AlertCircle,
   Layers,
@@ -24,7 +23,6 @@ interface Product {
   stripePriceId: string;
   price: number;
   currency: string;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,7 +33,6 @@ interface SubscriptionPackage {
   description?: string;
   products: Product[];
   totalPrice: number;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -596,14 +593,6 @@ export default function SubscriptionSettings({
                         <h5 className="font-semibold text-foreground">
                           {product.name}
                         </h5>
-                        <Badge variant={product.isActive ? 'success' : 'muted'}>
-                          {product.isActive ? (
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                          ) : (
-                            <XCircle className="h-3 w-3 mr-1" />
-                          )}
-                          {product.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
                       </div>
                       {product.description && (
                         <p className="text-sm text-muted-foreground mb-2">
@@ -691,13 +680,9 @@ export default function SubscriptionSettings({
                         <h5 className="font-semibold text-foreground">
                           {pkg.name}
                         </h5>
-                        <Badge variant={pkg.isActive ? 'success' : 'muted'}>
-                          {pkg.isActive ? (
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                          ) : (
-                            <XCircle className="h-3 w-3 mr-1" />
-                          )}
-                          {pkg.isActive ? 'Active' : 'Inactive'}
+                        <Badge variant="success">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Active
                         </Badge>
                       </div>
                       {pkg.description && (

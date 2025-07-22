@@ -153,9 +153,6 @@ export async function listEchoApps(
       if (app.description) {
         console.log(`   ${chalk.gray(app.description)}`);
       }
-      console.log(
-        `   Status: ${app.isActive ? chalk.green('Active') : chalk.red('Inactive')}`
-      );
       if (app.totalTokens !== undefined) {
         console.log(
           `   Tokens: ${chalk.blue(app.totalTokens.toLocaleString())}`

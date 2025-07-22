@@ -2,7 +2,6 @@ export interface EchoApp {
   id: string;
   name: string;
   description?: string;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
   totalTokens?: number;
@@ -18,7 +17,6 @@ export interface ApiKey {
   id: string;
   key: string;
   name?: string;
-  isActive: boolean;
   lastUsed?: string;
   metadata?: any;
   createdAt: string;

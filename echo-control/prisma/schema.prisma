@@ -20,9 +20,6 @@ model User {
   createdAt       DateTime         @default(now()) @db.Timestamptz
   updatedAt       DateTime         @updatedAt @db.Timestamptz
   
-  totalPaid       Decimal  @db.Decimal(65, 14)   // Aggregate for Total payment amount - supports unlimited dollars with pico-cent precision
-  totalSpent      Decimal  @db.Decimal(65, 14)  // Aggregate for Total spent across apps - supports unlimited dollars with pico-cent precision
-  
   apiKeys         ApiKey[]         // API keys owned by user
   transactions    Transaction[]    // Transactions
   payments        Payment[]        // payments made to the app
@@ -43,7 +40,6 @@ model EchoApp {
   bannerImageUrl    String?        // Custom banner image for the app
   homepageUrl     String?          // Homepage URL for the app
   currentMarkupId String?          @unique @db.Uuid         // Foreign key to current markup
-  isActive        Boolean          @default(true)
   isPublic        Boolean          @default(false)
   isArchived      Boolean          @default(false)
   archivedAt      DateTime?        @db.Timestamptz
@@ -90,7 +86,6 @@ model ApiKey {
   id              String    @id @default(uuid()) @db.Uuid
   keyHash         String    @unique /// Deterministic HMAC-SHA256 hash of the API key for secure storage and O(1) lookup
   name            String?
-  isActive        Boolean   @default(true)
   isArchived      Boolean   @default(false)
   archivedAt      DateTime? @db.Timestamptz
   lastUsed        DateTime? @db.Timestamptz
@@ -116,7 +111,6 @@ model RefreshToken {
   isArchived      Boolean   @default(false)
   archivedAt      DateTime? @db.Timestamptz
   expiresAt DateTime @db.Timestamptz
-  isActive  Boolean  @default(true)
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
   userId    String   @db.Uuid
@@ -157,7 +151,6 @@ model UsageProduct {
   inputPricePerToken  Decimal?  @db.Decimal(65, 14) // Price per input token
   outputPricePerToken Decimal?  @db.Decimal(65, 14) // Price per output token
   category        String    @default("llm") // "llm", "image", "audio", etc.
-  isActive        Boolean   @default(true)
   isArchived      Boolean   @default(false)
   archivedAt      DateTime? @db.Timestamptz
   createdAt       DateTime  @default(now()) @db.Timestamptz
@@ -207,7 +200,6 @@ model CreditGrant {
   source        String    // 'payment', 'promotion', 'refund', 'adjustment', 'transaction', etc.
   description   String?   // Optional description for the credit grant
   expiresAt     DateTime? @db.Timestamptz // Optional expiration date for credits
-  isActive      Boolean   @default(true)
   isArchived    Boolean   @default(false)
   archivedAt    DateTime? @db.Timestamptz
   createdAt     DateTime  @default(now()) @db.Timestamptz
@@ -234,7 +226,6 @@ model Product {
   stripePriceId   String           @unique // Stripe price ID  
   price           Decimal          @db.Decimal(65, 14) // Price in dollars
   currency        String           @default("usd")
-  isActive        Boolean          @default(true)
   isArchived      Boolean          @default(false)
   archivedAt      DateTime?        @db.Timestamptz
   createdAt       DateTime         @default(now()) @db.Timestamptz
@@ -252,7 +243,6 @@ model SubscriptionPackage {
   id          String           @id @default(uuid()) @db.Uuid
   name        String
   description String?
-  isActive    Boolean          @default(true)
   isArchived  Boolean          @default(false)
   archivedAt  DateTime?        @db.Timestamptz
   createdAt   DateTime         @default(now()) @db.Timestamptz
@@ -270,7 +260,6 @@ model SubscriptionPackageProduct {
   id                     String              @id @default(uuid()) @db.Uuid
   subscriptionPackageId  String              @db.Uuid
   productId              String              @db.Uuid
-  isActive               Boolean             @default(true)
   createdAt              DateTime            @default(now()) @db.Timestamptz
   updatedAt              DateTime            @updatedAt @db.Timestamptz
   
@@ -288,7 +277,6 @@ model Subscription {
   status                String           // active, inactive, canceled, etc.
   currentPeriodStart    DateTime?        @db.Timestamptz
   currentPeriodEnd      DateTime?        @db.Timestamptz
-  isActive              Boolean          @default(false)
   isArchived            Boolean          @default(false)
   archivedAt            DateTime?        @db.Timestamptz
   createdAt             DateTime         @default(now()) @db.Timestamptz
@@ -309,7 +297,6 @@ model SubscriptionProduct {
   id             String       @id @default(uuid()) @db.Uuid
   subscriptionId String       @db.Uuid
   productId      String       @db.Uuid
-  isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now()) @db.Timestamptz
   updatedAt      DateTime     @updatedAt @db.Timestamptz
   
@@ -324,7 +311,6 @@ model Markup {
   id              String    @id @default(uuid()) @db.Uuid
   rate            Decimal   @db.Decimal(65, 14) @default(1.0) // Markup rate - supports unlimited precision
   name            String?   // Optional name/description for the markup
-  isActive        Boolean   @default(true)
   isDefault       Boolean   @default(false) // Whether this is the default markup for the membership
   isArchived      Boolean   @default(false)
   archivedAt      DateTime? @db.Timestamptz
@@ -348,7 +334,6 @@ model Revenue {
   amount         Decimal   @db.Decimal(65, 14) // Final revenue amount after markup (rawCost * markupRate) - supports unlimited precision
   type           String    // 'subscription_payment', 'credit_debit', 'transaction_fee', etc.
   description    String?   // Optional description for the revenue entry
-  isActive       Boolean   @default(true)
   isArchived     Boolean   @default(false)
   archivedAt     DateTime? @db.Timestamptz
   createdAt      DateTime  @default(now()) @db.Timestamptz

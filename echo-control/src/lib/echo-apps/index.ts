@@ -85,7 +85,6 @@ export const verifyArgs = (data: {
   profilePictureUrl?: string;
   bannerImageUrl?: string;
   homepageUrl?: string;
-  isActive?: boolean;
   isPublic?: boolean;
 }): string | null => {
   // Validate name
@@ -171,13 +170,6 @@ export const verifyArgs = (data: {
     if (homepageUrlError) return homepageUrlError;
   }
 
-  // Validate isActive
-  if (data.isActive !== undefined) {
-    if (typeof data.isActive !== 'boolean') {
-      return 'isActive must be a boolean';
-    }
-  }
-
   // Validate isPublic
   if (data.isPublic !== undefined) {
     if (typeof data.isPublic !== 'boolean') {
@@ -234,7 +226,7 @@ export const listAppsWithDetails = async (
           _count: {
             select: {
               apiKeys: {
-                where: { isActive: true, isArchived: false },
+                where: { isArchived: false },
               },
               transactions: {
                 where: { isArchived: false },
@@ -300,7 +292,6 @@ export const listAppsWithDetails = async (
       description: app.description,
       profilePictureUrl: app.profilePictureUrl,
       bannerImageUrl: app.bannerImageUrl,
-      isActive: app.isActive,
       isPublic: app.isPublic || false,
       createdAt: app.createdAt.toISOString(),
       updatedAt: app.updatedAt.toISOString(),
@@ -338,7 +329,6 @@ export const getPublicAppInfo = async (
       homepageUrl: true,
       githubId: true,
       githubType: true,
-      isActive: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -514,7 +504,6 @@ export const getDetailedAppInfo = async (
       homepageUrl: true,
       githubId: true,
       githubType: true,
-      isActive: true,
       isPublic: true,
       createdAt: true,
       updatedAt: true,
@@ -528,7 +517,6 @@ export const getDetailedAppInfo = async (
         select: {
           id: true,
           name: true,
-          isActive: true,
           createdAt: true,
           lastUsed: true,
           user: {
@@ -777,7 +765,6 @@ export const createEchoApp = async (userId: string, data: AppCreateInput) => {
           totalSpent: 0,
         },
       },
-      isActive: true,
       authorizedCallbackUrls: data.authorizedCallbackUrls || [], // Start with empty callback URLs
     },
     select: {
@@ -786,7 +773,6 @@ export const createEchoApp = async (userId: string, data: AppCreateInput) => {
       description: true,
       githubType: true,
       githubId: true,
-      isActive: true,
       createdAt: true,
       updatedAt: true,
       authorizedCallbackUrls: true,
@@ -868,7 +854,6 @@ export const updateEchoAppById = async (
       ...(data.description !== undefined && {
         description: data.description?.trim() || null,
       }),
-      ...(data.isActive !== undefined && { isActive: data.isActive }),
       ...(data.githubType !== undefined && { githubType: data.githubType }),
       ...(data.githubId !== undefined && {
         githubId: data.githubId?.trim() || null,
@@ -892,7 +877,6 @@ export const updateEchoAppById = async (
         select: {
           id: true,
           name: true,
-          isActive: true,
           createdAt: true,
         },
       },
@@ -968,7 +952,6 @@ export const findEchoApp = async (
       currentMarkup: true,
       githubId: true,
       githubType: true,
-      isActive: true,
       isPublic: true,
       authorizedCallbackUrls: true,
       isArchived: true,

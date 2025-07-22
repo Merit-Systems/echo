@@ -49,7 +49,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const activeTokens = await db.refreshToken.findMany({
       where: {
         echoAppId: id,
-        isActive: true,
         isArchived: false,
         expiresAt: {
           gt: new Date(), // Only tokens that haven't expired

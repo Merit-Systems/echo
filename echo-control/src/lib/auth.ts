@@ -39,8 +39,6 @@ export async function getCurrentUser(): Promise<User> {
           `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() ||
           null,
         profilePictureUrl: clerkUser.imageUrl || null, // Get profile picture from Clerk
-        totalPaid: 0, // Initialize with zero paid amount
-        totalSpent: 0, // Initialize with zero spent amount
       },
     });
   } else {
@@ -83,8 +81,6 @@ export async function getOrCreateUserFromClerkId(
           `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() ||
           null,
         profilePictureUrl: clerkUser.imageUrl || null, // Get profile picture from Clerk
-        totalPaid: 0, // Initialize with zero paid amount
-        totalSpent: 0, // Initialize with zero spent amount
       },
     });
   } else {
@@ -171,16 +167,14 @@ export async function getCurrentUserByApiKeyOrEchoJwt(
       },
     });
 
-    // Verify the API key is valid and all related entities are active
+    // Verify the API key is valid and all related entities are not archived
     if (
       !apiKeyRecord ||
-      !apiKeyRecord.isActive ||
       apiKeyRecord.isArchived ||
       apiKeyRecord.user.isArchived ||
-      apiKeyRecord.echoApp.isArchived ||
-      !apiKeyRecord.echoApp.isActive
+      apiKeyRecord.echoApp.isArchived
     ) {
-      throw new Error('Invalid or inactive API key');
+      throw new Error('Invalid or archived API key');
     }
 
     // Update last used timestamp and metadata

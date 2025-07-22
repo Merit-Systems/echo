@@ -165,15 +165,6 @@ export default function EchoAppsDashboard() {
                       {app.name}
                     </h3>
                     <div className="flex items-center space-x-2">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          app.isActive
-                            ? 'bg-secondary/20 text-secondary'
-                            : 'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        {app.isActive ? 'Active' : 'Inactive'}
-                      </span>
                       <GlassButton
                         onClick={() => {
                           const syntheticEvent = {

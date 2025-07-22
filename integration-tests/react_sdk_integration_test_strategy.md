@@ -746,7 +746,6 @@ export async function seedIntegrationDatabase() {
       redirectUris: ['http://localhost:3000/callback'],
       allowedScopes: ['llm:invoke', 'offline_access'],
       userId: testUser.id,
-      isActive: true,
     },
   });
 
@@ -758,7 +757,6 @@ export async function seedIntegrationDatabase() {
       keyHash: 'hashed-test-key',
       userId: testUser.id,
       echoAppId: testApp.id,
-      isActive: true,
     },
   });
 

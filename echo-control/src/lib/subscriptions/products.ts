@@ -170,7 +170,6 @@ export class SubscriptionProductService {
       stripePriceId: product.stripePriceId,
       price: Number(product.price),
       currency: product.currency,
-      isActive: product.isActive,
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),
     }));
@@ -185,11 +184,11 @@ export class SubscriptionProductService {
     // Verify the app exists and is active
     const app = await db.echoApp.findUnique({
       where: { id: appId },
-      select: { id: true, isActive: true },
+      select: { id: true },
     });
 
-    if (!app || !app.isActive) {
-      throw new Error('App not found or inactive');
+    if (!app) {
+      throw new Error('App not found');
     }
 
     // Get all active products for the app
@@ -197,7 +196,6 @@ export class SubscriptionProductService {
       where: {
         echoAppId: appId,
         isArchived: false,
-        isActive: true,
       },
       select: {
         id: true,
@@ -207,7 +205,6 @@ export class SubscriptionProductService {
         stripePriceId: true,
         price: true,
         currency: true,
-        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -222,7 +219,6 @@ export class SubscriptionProductService {
       stripePriceId: product.stripePriceId,
       price: Number(product.price),
       currency: product.currency,
-      isActive: product.isActive,
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),
     }));

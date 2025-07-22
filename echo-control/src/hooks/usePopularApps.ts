@@ -21,9 +21,7 @@ export function usePopularApps(): UsePopularAppsReturn {
         throw new Error('Network response was not ok.');
       }
       const data = await response.json();
-      const popularApps = (data.apps as PublicEchoApp[]).filter(
-        app => app.isActive
-      );
+      const popularApps = data.apps as PublicEchoApp[];
       setApps(popularApps);
     } catch (error) {
       console.error('Error fetching popular apps:', error);

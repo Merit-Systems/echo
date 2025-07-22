@@ -26,7 +26,6 @@ export interface SubscriptionProductInfo {
   stripePriceId: string;
   price: number;
   currency: string;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,7 +34,6 @@ export interface SubscriptionPackageInfo {
   id: string;
   name: string;
   description?: string;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
   products: SubscriptionProductInfo[];

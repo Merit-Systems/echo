@@ -159,7 +159,6 @@ model EchoApp {
   id          String   @id @default(cuid())
   name        String
   description String?
-  isActive    Boolean  @default(true)
   userId      String
 }
 ```

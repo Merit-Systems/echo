@@ -20,7 +20,6 @@ export const getCostPerToken = async (
     where: {
       model: model,
       echoAppId: echoAppId,
-      isActive: true,
       isArchived: false,
     },
   });

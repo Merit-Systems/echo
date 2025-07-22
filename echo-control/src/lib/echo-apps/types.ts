@@ -14,7 +14,6 @@ export interface AppCreateInput {
 export interface AppUpdateInput {
   name?: string;
   description?: string;
-  isActive?: boolean;
   isPublic?: boolean;
   githubType?: 'user' | 'repo';
   githubId?: string;
@@ -29,7 +28,6 @@ export interface AppWithDetails {
   id: string;
   name: string;
   description: string | null;
-  isActive: boolean;
   isPublic: boolean;
   profilePictureUrl?: string | null;
   bannerImageUrl?: string | null;

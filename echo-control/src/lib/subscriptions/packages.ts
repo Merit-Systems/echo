@@ -54,7 +54,6 @@ export class SubscriptionPackageService {
       where: {
         id: { in: productIds },
         echoAppId: appId,
-        isActive: true,
         isArchived: false,
       },
     });
@@ -106,7 +105,6 @@ export class SubscriptionPackageService {
       id: completePackage!.id,
       name: completePackage!.name,
       description: completePackage!.description || undefined,
-      isActive: completePackage!.isActive,
       createdAt: completePackage!.createdAt.toISOString(),
       updatedAt: completePackage!.updatedAt.toISOString(),
       products: completePackage!.subscriptionPackageProducts.map(
@@ -122,8 +120,6 @@ export class SubscriptionPackageService {
             .stripePriceId,
           price: Number((spp as { product: { price: unknown } }).product.price),
           currency: (spp as { product: { currency: string } }).product.currency,
-          isActive: (spp as { product: { isActive: boolean } }).product
-            .isActive,
           createdAt: (
             spp as { product: { createdAt: Date } }
           ).product.createdAt.toISOString(),
@@ -179,7 +175,6 @@ export class SubscriptionPackageService {
                 stripePriceId: true,
                 price: true,
                 currency: true,
-                isActive: true,
                 createdAt: true,
                 updatedAt: true,
               },
@@ -205,7 +200,6 @@ export class SubscriptionPackageService {
           .stripePriceId,
         price: Number((spp as { product: { price: unknown } }).product.price),
         currency: (spp as { product: { currency: string } }).product.currency,
-        isActive: (spp as { product: { isActive: boolean } }).product.isActive,
         createdAt: (
           spp as { product: { createdAt: Date } }
         ).product.createdAt.toISOString(),
@@ -224,7 +218,6 @@ export class SubscriptionPackageService {
         name: (pkg as { name: string }).name,
         description:
           (pkg as { description: string | null }).description || undefined,
-        isActive: (pkg as { isActive: boolean }).isActive,
         createdAt: (pkg as { createdAt: Date }).createdAt.toISOString(),
         updatedAt: (pkg as { updatedAt: Date }).updatedAt.toISOString(),
         products,
@@ -256,7 +249,6 @@ export class SubscriptionPackageService {
     const packages = await db.subscriptionPackage.findMany({
       where: {
         echoAppId: appId,
-        isActive: true,
         isArchived: false,
       },
       include: {
@@ -271,7 +263,6 @@ export class SubscriptionPackageService {
                 stripePriceId: true,
                 price: true,
                 currency: true,
-                isActive: true,
                 isArchived: true,
                 createdAt: true,
                 updatedAt: true,
@@ -289,10 +280,7 @@ export class SubscriptionPackageService {
       ).subscriptionPackageProducts
         .filter(
           (spp: unknown) =>
-            (spp as { product: { isActive: boolean; isArchived: boolean } })
-              .product.isActive &&
-            !(spp as { product: { isActive: boolean; isArchived: boolean } })
-              .product.isArchived
+            !(spp as { product: { isArchived: boolean } }).product.isArchived
         )
         .map((spp: unknown) => ({
           id: (spp as { product: { id: string } }).product.id,
@@ -306,8 +294,6 @@ export class SubscriptionPackageService {
             .stripePriceId,
           price: Number((spp as { product: { price: unknown } }).product.price),
           currency: (spp as { product: { currency: string } }).product.currency,
-          isActive: (spp as { product: { isActive: boolean } }).product
-            .isActive,
           createdAt: (
             spp as { product: { createdAt: Date } }
           ).product.createdAt.toISOString(),
@@ -326,7 +312,6 @@ export class SubscriptionPackageService {
         name: (pkg as { name: string }).name,
         description:
           (pkg as { description: string | null }).description || undefined,
-        isActive: (pkg as { isActive: boolean }).isActive,
         createdAt: (pkg as { createdAt: Date }).createdAt.toISOString(),
         updatedAt: (pkg as { updatedAt: Date }).updatedAt.toISOString(),
         products,

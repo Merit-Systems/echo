@@ -8,7 +8,6 @@ export async function getSupportedModels(): Promise<SupportedModelsResult> {
   const usageProducts = await db.usageProduct.findMany({
     where: {
       category: 'llm',
-      isActive: true,
       isArchived: false,
     },
     select: {

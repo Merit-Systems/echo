@@ -9,7 +9,6 @@ export interface UpdateAppData {
   profilePictureUrl?: string;
   bannerImageUrl?: string;
   homepageUrl?: string;
-  isActive?: boolean;
   isPublic?: boolean;
 }
 

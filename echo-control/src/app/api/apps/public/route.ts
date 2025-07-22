@@ -11,7 +11,6 @@ export async function GET() {
     const publicApps = await db.echoApp.findMany({
       where: {
         isPublic: true,
-        isActive: true,
         isArchived: false,
       },
       select: {
@@ -20,7 +19,6 @@ export async function GET() {
         description: true,
         profilePictureUrl: true,
         bannerImageUrl: true,
-        isActive: true,
         isPublic: true,
         createdAt: true,
         updatedAt: true,
@@ -28,7 +26,7 @@ export async function GET() {
         _count: {
           select: {
             apiKeys: {
-              where: { isActive: true, isArchived: false },
+              where: { isArchived: false },
             },
             transactions: {
               where: { isArchived: false },
@@ -87,7 +85,6 @@ export async function GET() {
           description: app.description,
           profilePictureUrl: app.profilePictureUrl,
           bannerImageUrl: app.bannerImageUrl,
-          isActive: app.isActive,
           isPublic: app.isPublic,
           createdAt: app.createdAt.toISOString(),
           updatedAt: app.updatedAt.toISOString(),
