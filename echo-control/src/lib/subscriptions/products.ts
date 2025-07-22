@@ -16,9 +16,24 @@ export class SubscriptionProductService {
     userId: string,
     request: CreateProductRequest
   ): Promise<{
-    product: any;
-    price: any;
-    dbProduct: any;
+    product: {
+      id: string;
+      name: string;
+      description: string | null;
+      [key: string]: unknown;
+    };
+    price: {
+      id: string;
+      unit_amount: number | null;
+      currency: string;
+      [key: string]: unknown;
+    };
+    dbProduct: {
+      id: string;
+      name: string;
+      description: string | null;
+      price: unknown;
+    };
     appId: string;
     appName: string;
   }> {

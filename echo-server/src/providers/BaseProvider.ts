@@ -1,6 +1,8 @@
 import type { EchoControlService } from '../services/EchoControlService';
+import { getCostPerToken } from '../services/AccountingService';
 
 import type { ProviderType } from './ProviderType';
+import { UsageProduct } from 'generated/prisma';
 
 export abstract class BaseProvider {
   protected readonly OPENAI_BASE_URL = 'https://api.openai.com/v1';
@@ -57,6 +59,30 @@ export abstract class BaseProvider {
   async getAppMarkup(): Promise<number> {
     const markUp = await this.echoControlService.getAppMarkup();
     return markUp;
+  }
+
+  /**
+   * Calculate cost per token using the AccountingService
+   * This method properly provides all required parameters to getCostPerToken
+   */
+  async getCostPerToken(
+    inputTokens: number,
+    outputTokens: number
+  ): Promise<{ cost: number; usageProduct: UsageProduct }> {
+    const db = this.echoControlService.getDb();
+    const echoAppId = this.echoControlService.getEchoAppId();
+
+    if (!echoAppId) {
+      throw new Error('No echo app ID available for cost calculation');
+    }
+
+    return await getCostPerToken(
+      db,
+      this.model,
+      echoAppId,
+      inputTokens,
+      outputTokens
+    );
   }
 
   // This is specific to OpenAI Format, Anthropic Native and others will need to override this

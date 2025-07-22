@@ -1,5 +1,9 @@
 import { db } from '../db';
 import { User } from '@/generated/prisma';
+import {
+  calculateBalanceFromCreditGrants,
+  calculateAppSpecificBalanceFromCreditGrants,
+} from '../credit-grants';
 
 export interface BalanceResult {
   balance: number;
@@ -10,10 +14,20 @@ export interface BalanceResult {
   echoAppName: string | null;
 }
 
+export interface EnhancedBalanceResult extends BalanceResult {
+  usedCreditGrants: boolean; // Indicates if balance was calculated from credit grants
+  creditGrantData?: {
+    totalCredits: number;
+    totalDebits: number;
+    activeCredits: number;
+    expiredCredits: number;
+  };
+}
+
 /**
- * Get balance for a user, optionally for a specific app
+ * Get balance for a user using credit grants system
  * @param user - The authenticated user
- * @param echoAppId - Optional app ID to get app-specific balance
+ * @param echoAppId - Optional app ID to get app-specific balance (uses traditional calculation)
  * @returns Balance information
  */
 export async function getBalance(
@@ -26,7 +40,8 @@ export async function getBalance(
   let echoAppName: string | null = null;
 
   if (echoAppId) {
-    // App-specific balance: use User.totalPaid for credits and AppMembership.totalSpent for app spending
+    // App-specific balance: use global credit grants (same as global balance)
+    // Debits maintain app reference via transactionId for audit purposes
     const appMembership = await db.appMembership.findUnique({
       where: {
         userId_echoAppId: {
@@ -35,7 +50,6 @@ export async function getBalance(
         },
       },
       include: {
-        user: true,
         echoApp: true,
       },
     });
@@ -45,14 +59,21 @@ export async function getBalance(
     }
 
     echoAppName = appMembership.echoApp?.name || null;
-    totalPaid = Number(appMembership.user.totalPaid);
-    totalSpent = Number(appMembership.totalSpent);
-    balance = totalPaid - totalSpent;
+
+    // Calculate balance using global credit grants (credits and debits are both global)
+    const appCreditGrantBalance =
+      await calculateAppSpecificBalanceFromCreditGrants(user.id, echoAppId);
+
+    balance = appCreditGrantBalance.balance;
+    totalPaid = appCreditGrantBalance.totalCredits;
+    totalSpent = appCreditGrantBalance.totalDebits;
   } else {
-    // Overall balance: use User.totalPaid and User.totalSpent
-    totalPaid = Number(user.totalPaid);
-    totalSpent = Number(user.totalSpent);
-    balance = totalPaid - totalSpent;
+    // Global balance: use credit grants system
+    const creditGrantBalance = await calculateBalanceFromCreditGrants(user.id);
+
+    balance = creditGrantBalance.balance;
+    totalPaid = creditGrantBalance.totalCredits;
+    totalSpent = creditGrantBalance.totalDebits;
   }
 
   return {
@@ -63,6 +84,65 @@ export async function getBalance(
     echoAppId: echoAppId || null,
     echoAppName,
   };
+}
+
+/**
+ * Get enhanced balance for a user with detailed credit grant information
+ * @param user - The authenticated user
+ * @param options - Configuration options
+ * @returns Enhanced balance information with credit grant breakdown
+ */
+export async function getEnhancedBalance(
+  user: User,
+  options: {
+    includeExpiredCredits?: boolean;
+    echoAppId?: string | null;
+  } = {}
+): Promise<EnhancedBalanceResult> {
+  const { includeExpiredCredits = false, echoAppId } = options;
+
+  // Get the base balance
+  const baseBalance = await getBalance(user, echoAppId);
+
+  if (!echoAppId) {
+    // For global balance, provide detailed credit grant information
+    const creditGrantData = await calculateBalanceFromCreditGrants(
+      user.id,
+      includeExpiredCredits
+    );
+
+    return {
+      ...baseBalance,
+      balance: creditGrantData.balance,
+      usedCreditGrants: true,
+      creditGrantData: {
+        totalCredits: creditGrantData.totalCredits,
+        totalDebits: creditGrantData.totalDebits,
+        activeCredits: creditGrantData.activeCredits,
+        expiredCredits: creditGrantData.expiredCredits,
+      },
+    };
+  } else {
+    // For app-specific balance, provide global credit grant information (same as global)
+    const appCreditGrantData =
+      await calculateAppSpecificBalanceFromCreditGrants(
+        user.id,
+        echoAppId,
+        includeExpiredCredits
+      );
+
+    return {
+      ...baseBalance,
+      balance: appCreditGrantData.balance,
+      usedCreditGrants: true,
+      creditGrantData: {
+        totalCredits: appCreditGrantData.totalCredits,
+        totalDebits: appCreditGrantData.totalDebits,
+        activeCredits: appCreditGrantData.activeCredits,
+        expiredCredits: appCreditGrantData.expiredCredits,
+      },
+    };
+  }
 }
 
 // Helper function to safely format currency

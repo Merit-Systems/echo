@@ -1,5 +1,7 @@
 import Stripe from 'stripe';
 import { db } from '@/lib/db';
+import { createCreditGrantFromPayment } from '@/lib/credit-grants';
+import { Payment } from '@/generated/prisma';
 
 /**
  * Webhook service for handling Stripe events with proper separation between
@@ -231,7 +233,9 @@ class SubscriptionHandler {
       invoice.id
     );
 
-    const stripeSubscriptionId = (invoice as any).subscription as string;
+    const stripeSubscriptionId = (
+      invoice as unknown as { subscription: string }
+    ).subscription;
     if (!stripeSubscriptionId) return;
 
     const subscription = await db.subscription.findFirst({
@@ -257,7 +261,9 @@ class SubscriptionHandler {
   static async handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     console.log('💰 Handling subscription invoice paid:', invoice.id);
 
-    const stripeSubscriptionId = (invoice as any).subscription as string;
+    const stripeSubscriptionId = (
+      invoice as unknown as { subscription: string }
+    ).subscription;
     if (!stripeSubscriptionId) return;
 
     const subscription = await db.subscription.findFirst({
@@ -285,7 +291,9 @@ class SubscriptionHandler {
   ): Promise<void> {
     console.log('❌ Handling subscription invoice payment failed:', invoice.id);
 
-    const stripeSubscriptionId = (invoice as any).subscription as string;
+    const stripeSubscriptionId = (
+      invoice as unknown as { subscription: string }
+    ).subscription;
     if (!stripeSubscriptionId) return;
 
     const subscription = await db.subscription.findFirst({
@@ -316,7 +324,9 @@ class SubscriptionHandler {
       invoice.id
     );
 
-    const stripeSubscriptionId = (invoice as any).subscription as string;
+    const stripeSubscriptionId = (
+      invoice as unknown as { subscription: string }
+    ).subscription;
     if (!stripeSubscriptionId) return;
 
     const subscription = await db.subscription.findFirst({
@@ -349,16 +359,29 @@ class SubscriptionHandler {
     });
 
     if (dbSubscription) {
-      const subscriptionData = subscription as any;
+      const subscriptionData = subscription as Stripe.Subscription;
       await db.subscription.update({
         where: { id: dbSubscription.id },
         data: {
           status: subscription.status,
-          currentPeriodStart: subscriptionData.current_period_start
-            ? new Date(subscriptionData.current_period_start * 1000)
+          currentPeriodStart: (
+            subscriptionData as unknown as { current_period_start?: number }
+          ).current_period_start
+            ? new Date(
+                (
+                  subscriptionData as unknown as {
+                    current_period_start: number;
+                  }
+                ).current_period_start * 1000
+              )
             : null,
-          currentPeriodEnd: subscriptionData.current_period_end
-            ? new Date(subscriptionData.current_period_end * 1000)
+          currentPeriodEnd: (
+            subscriptionData as unknown as { current_period_end?: number }
+          ).current_period_end
+            ? new Date(
+                (subscriptionData as unknown as { current_period_end: number })
+                  .current_period_end * 1000
+              )
             : null,
           isActive: ['active', 'trialing'].includes(subscription.status),
           updatedAt: new Date(),
@@ -413,7 +436,6 @@ class PaymentLinkHandler {
     const { metadata, amount_total, currency, payment_link, payment_intent } =
       session;
     const userId = metadata?.userId;
-    const echoAppId = metadata?.echoAppId;
     const description = metadata?.description;
 
     if (!userId || !amount_total) {
@@ -436,7 +458,8 @@ class PaymentLinkHandler {
       return;
     }
 
-    // Update payment and user balance atomically
+    // Update payment and create credit grant atomically
+    let completedPayment: Payment | null = null;
     await db.$transaction(async tx => {
       // Update or create payment record
       const updatedPayment = await tx.payment.updateMany({
@@ -452,28 +475,46 @@ class PaymentLinkHandler {
 
       if (updatedPayment.count === 0) {
         console.log(`Creating new payment record for: ${paymentId}`);
-        await tx.payment.create({
+        completedPayment = await tx.payment.create({
           data: {
             stripePaymentId: paymentId,
-            amount: amount_total,
+            amount: amount_total / 100, // Convert cents to dollars
             currency: currency || 'usd',
             status: 'completed',
             description: description || 'Echo credits purchase',
             userId,
           },
         });
-      }
-
-      // Update user's total paid amount
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          totalPaid: {
-            increment: amount_total / 100, // Convert cents to dollars
+      } else {
+        // Fetch the updated payment record
+        completedPayment = await tx.payment.findFirst({
+          where: {
+            stripePaymentId: paymentId,
+            status: 'completed',
           },
-        },
-      });
+        });
+      }
     });
+
+    // Create credit grant from the completed payment
+    if (completedPayment) {
+      try {
+        await createCreditGrantFromPayment(
+          completedPayment,
+          description || 'Credit from payment link'
+        );
+        console.log(
+          `✅ Created credit grant for payment ${paymentId}: $${amount_total / 100}`
+        );
+      } catch (error) {
+        console.error(
+          `❌ Failed to create credit grant for payment ${paymentId}:`,
+          error
+        );
+        // Don't fail the whole webhook if credit grant creation fails
+        // The payment is still completed and user balance is updated
+      }
+    }
 
     const creditsAdded = Math.floor(amount_total / 100);
     console.log(
@@ -497,9 +538,10 @@ class PaymentLinkHandler {
       return;
     }
 
+    let completedPayment: Payment | null = null;
     await db.$transaction(async tx => {
       // Update or create payment record
-      await tx.payment.upsert({
+      completedPayment = await tx.payment.upsert({
         where: { stripePaymentId: id },
         update: {
           status: 'completed',
@@ -507,24 +549,33 @@ class PaymentLinkHandler {
         },
         create: {
           stripePaymentId: id,
-          amount,
+          amount: amount / 100, // Convert cents to dollars
           currency,
           status: 'completed',
           description: 'Echo credits purchase',
           userId,
         },
       });
-
-      // Update user's total paid
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          totalPaid: {
-            increment: amount / 100, // Convert cents to dollars
-          },
-        },
-      });
     });
+
+    // Create credit grant from the completed payment
+    if (completedPayment) {
+      try {
+        await createCreditGrantFromPayment(
+          completedPayment,
+          'Credit from payment intent'
+        );
+        console.log(
+          `✅ Created credit grant for payment intent ${id}: $${amount / 100}`
+        );
+      } catch (error) {
+        console.error(
+          `❌ Failed to create credit grant for payment intent ${id}:`,
+          error
+        );
+        // Don't fail the whole webhook if credit grant creation fails
+      }
+    }
 
     console.log(`✅ Payment link payment succeeded: ${id}`);
   }

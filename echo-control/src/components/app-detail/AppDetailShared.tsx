@@ -29,7 +29,6 @@ import { Button } from '@/components/ui/button';
 import { ProfileAvatar } from '@/components/ui/profile-avatar';
 import { CommitChart } from '@/components/activity-chart/chart';
 import { DotPattern } from '@/components/ui/dot-background';
-import { GlassButton } from '@/components/glass-button';
 import { DetailedEchoApp } from '@/hooks/useEchoAppDetail';
 import { AppRole } from '@/lib/permissions/types';
 
@@ -1280,8 +1279,8 @@ export function ActiveSubscriptionsCard({
             </div>
 
             <p className="text-muted-foreground mb-6">
-              Are you sure you want to cancel "
-              {showCancelConfirm.subscriptionName}"? This will cancel your
+              Are you sure you want to cancel &quot;
+              {showCancelConfirm.subscriptionName}&quot;? This will cancel your
               subscription at the end of the current billing period.
             </p>
 

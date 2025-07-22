@@ -177,8 +177,9 @@ export class EchoDbService {
   }
 
   /**
-   * Calculate total balance for a user across all apps
-   * Uses User.totalPaid and User.totalSpent for consistent balance calculation
+   * Calculate total balance for a user using credit grants system
+   * Uses credit grants (credits - debits) for accurate balance calculation
+   * Uses efficient database-level aggregation with expiration filtering
    */
   async getBalance(userId: string): Promise<Balance> {
     try {
@@ -191,8 +192,6 @@ export class EchoDbService {
           clerkId: true,
           createdAt: true,
           updatedAt: true,
-          totalPaid: true,
-          totalSpent: true,
         },
       });
 
@@ -205,14 +204,63 @@ export class EchoDbService {
         };
       }
 
-      const totalPaid = Number(user.totalPaid);
-      const totalSpent = Number(user.totalSpent);
-      const balance = totalPaid - totalSpent;
+      const now = new Date();
+
+      // Run all aggregation queries in parallel for efficiency
+      const [totalCreditsResult, activeCreditsResult, totalDebitsResult] =
+        await Promise.all([
+          // Get total credits (all credits regardless of expiration)
+          this.db.creditGrant.aggregate({
+            where: {
+              userId,
+              isActive: true,
+              isArchived: false,
+              type: 'credit',
+            },
+            _sum: {
+              amount: true,
+            },
+          }),
+
+          // Get active credits (non-expired credits) - used for balance calculation
+          this.db.creditGrant.aggregate({
+            where: {
+              userId,
+              isActive: true,
+              isArchived: false,
+              type: 'credit',
+              OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+            },
+            _sum: {
+              amount: true,
+            },
+          }),
+
+          // Get total debits
+          this.db.creditGrant.aggregate({
+            where: {
+              userId,
+              isActive: true,
+              isArchived: false,
+              type: 'debit',
+            },
+            _sum: {
+              amount: true,
+            },
+          }),
+        ]);
+
+      const totalCredits = Number(totalCreditsResult._sum.amount || 0);
+      const activeCredits = Number(activeCreditsResult._sum.amount || 0);
+      const totalDebits = Number(totalDebitsResult._sum.amount || 0);
+
+      // Balance = Active Credits - Total Debits (excludes expired credits)
+      const balance = activeCredits - totalDebits;
 
       return {
         balance,
-        totalPaid,
-        totalSpent,
+        totalPaid: totalCredits, // Use total credits for totalPaid (includes expired)
+        totalSpent: totalDebits,
       };
     } catch (error) {
       console.error('Error fetching balance:', error);
@@ -225,8 +273,10 @@ export class EchoDbService {
   }
 
   /**
-   * Create an LLM transaction record and atomically update user's totalSpent
-   * Centralized logic for transaction creation with atomic balance updates
+   * Create an LLM transaction record and create corresponding debit credit grant
+   * Centralized logic for transaction creation with credit grant-based balance tracking
+   *
+   * Now expects UsageProducts to be pre-seeded. Run 'pnpm run seed-usage-products' to populate them.
    */
   async createLlmTransaction(
     userId: string,
@@ -243,7 +293,10 @@ export class EchoDbService {
       status?: string;
       errorMessage?: string;
     },
-    apiKeyId?: string
+    apiKeyId?: string,
+    usageProduct?: any,
+    markupRate?: number,
+    markupConfig?: any
   ): Promise<string | null> {
     try {
       // Validate required fields
@@ -259,17 +312,44 @@ export class EchoDbService {
           'Missing required fields: model, inputTokens, outputTokens, totalTokens, cost, providerId'
         );
       }
-      // Use a database transaction to atomically create the LLM transaction and update user balance
+
+      // Calculate costs - transaction stores raw cost, credit grant and revenue use markup
+      const rawCost = transaction.cost;
+      const finalMarkupRate = markupRate || 1.0;
+      const totalCost = rawCost * finalMarkupRate;
+      const markupAmount = totalCost - rawCost;
+
+      // Use a database transaction to atomically create the LLM transaction and debit credit grant
       const result = await this.db.$transaction(async tx => {
-        // Create the LLM transaction
-        const dbTransaction = await tx.llmTransaction.create({
+        let finalUsageProduct = usageProduct;
+
+        // If no usageProduct provided, find it in the database
+        if (!finalUsageProduct) {
+          finalUsageProduct = await tx.usageProduct.findFirst({
+            where: {
+              model: transaction.model,
+              echoAppId: echoAppId,
+              isActive: true,
+              isArchived: false,
+            },
+          });
+
+          if (!finalUsageProduct) {
+            throw new Error(
+              `UsageProduct not found for model '${transaction.model}' in app '${echoAppId}'`
+            );
+          }
+        }
+
+        // Create the LLM transaction with raw cost (without markup)
+        const dbTransaction = await tx.transaction.create({
           data: {
             model: transaction.model,
             inputTokens: transaction.inputTokens,
             providerId: transaction.providerId,
             outputTokens: transaction.outputTokens,
             totalTokens: transaction.totalTokens,
-            cost: transaction.cost,
+            cost: rawCost, // Store raw cost without markup
             prompt: transaction.prompt || null,
             response: transaction.response || null,
             status: transaction.status || 'success',
@@ -277,18 +357,43 @@ export class EchoDbService {
             userId: userId,
             echoAppId: echoAppId,
             apiKeyId: apiKeyId || null,
+            usageProductId: finalUsageProduct.id,
           },
         });
 
-        // Atomically update user's totalSpent
-        await tx.user.update({
-          where: { id: userId },
+        // Create debit credit grant for the total cost (raw cost * markup) and link to markup
+        const debitCreditGrant = await tx.creditGrant.create({
           data: {
-            totalSpent: {
-              increment: transaction.cost,
-            },
+            type: 'debit',
+            amount: totalCost, // Total cost with markup applied
+            source: 'transaction',
+            description: `LLM usage: ${transaction.model}`,
+            userId: userId,
+            transactionId: dbTransaction.id,
+            markupId: markupConfig?.id || null, // Link to markup configuration
+            isActive: true,
           },
         });
+
+        // Create revenue record for the app - only the markup amount
+        if (markupAmount > 0) {
+          await tx.revenue.create({
+            data: {
+              rawCost: rawCost,
+              markupRate: finalMarkupRate,
+              markupAmount: markupAmount,
+              amount: markupAmount, // Revenue is only the markup amount
+              type: 'transaction_fee',
+              description: `Markup revenue from LLM usage: ${transaction.model}`,
+              userId: userId,
+              echoAppId: echoAppId,
+              markupId: markupConfig?.id || null, // Link to markup configuration
+              creditGrantId: debitCreditGrant.id,
+              transactionId: dbTransaction.id,
+              isActive: true,
+            },
+          });
+        }
 
         if (apiKeyId) {
           await tx.apiKey.update({
@@ -303,12 +408,21 @@ export class EchoDbService {
       });
 
       console.log(
-        `Created transaction for model ${transaction.model}: $${transaction.cost}, updated user totalSpent`,
+        `Created transaction for model ${transaction.model}: raw cost $${rawCost}, total cost with markup $${totalCost}, markup amount $${markupAmount}`,
         result.id
       );
       return result.id;
     } catch (error) {
-      console.error('Error creating transaction and updating balance:', error);
+      console.error('Error creating transaction and credit grant:', error);
+
+      // Re-throw with more helpful messaging for missing UsageProducts
+      if (
+        error instanceof Error &&
+        error.message.includes('UsageProduct not found')
+      ) {
+        throw error; // Already has helpful message
+      }
+
       return null;
     }
   }

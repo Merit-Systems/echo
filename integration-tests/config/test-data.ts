@@ -82,7 +82,7 @@ export const TEST_DATA = {
     testPayment: {
       id: '55555555-5555-5555-5555-555555555555',
       stripePaymentId: 'pi_test_1234567890',
-      amount: 1000, // $10.00 in cents
+      amount: 10.0, // $10.00 in dollars (for credit grants system)
       currency: 'usd',
       status: 'succeeded',
       description: 'Test payment for integration testing',
@@ -90,7 +90,7 @@ export const TEST_DATA = {
   },
 
   // LLM transaction test data
-  llmTransactions: {
+  transactions: {
     testTransaction: {
       id: '66666666-6666-6666-6666-666666666666',
       model: 'claude-3-5-sonnet-20241022',
@@ -101,6 +101,46 @@ export const TEST_DATA = {
       prompt: 'Test prompt for integration testing',
       response: 'Test response from integration testing',
       status: 'completed',
+    },
+
+    gptTransaction: {
+      id: '88888888-8888-8888-8888-888888888888',
+      model: 'gpt-3.5-turbo',
+      inputTokens: 100,
+      outputTokens: 50,
+      totalTokens: 150,
+      cost: 0.1,
+      prompt: 'Test GPT prompt for integration testing',
+      response: 'Test GPT response from integration testing',
+      status: 'completed',
+    },
+
+    usageProduct: {
+      id: '77777777-7777-7777-7777-777777777777',
+      name: 'Test Claude Usage Product',
+      description: 'Test Claude usage product for integration testing',
+      providerId: 'anthropic',
+      model: 'claude-3-5-sonnet-20241022',
+      inputPricePerToken: 0.00000000000001,
+      outputPricePerToken: 0.00000000000001,
+      category: 'llm',
+      isActive: true,
+      isArchived: false,
+      echoAppId: '87654321-4321-4321-4321-fedcba987654', // References primary test app
+    },
+
+    gptUsageProduct: {
+      id: '99999999-9999-9999-9999-999999999999',
+      name: 'Test GPT Usage Product',
+      description: 'Test GPT usage product for integration testing',
+      providerId: 'openai',
+      model: 'gpt-3.5-turbo',
+      inputPricePerToken: 0.0000005,
+      outputPricePerToken: 0.0000015,
+      category: 'llm',
+      isActive: true,
+      isArchived: false,
+      echoAppId: '87654321-4321-4321-4321-fedcba987654', // References primary test app
     },
   },
 

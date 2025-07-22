@@ -19,6 +19,7 @@
     "gemini-client": "npx tsx src/clients/gemini-client.ts",
     "gemini-gpt-client": "npx tsx src/clients/gemini-gpt-client.ts",
     "openai-client": "npx tsx src/clients/gpt-client.ts",
+    "seed-usage-products": "npx tsx scripts/seed-usage-products.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc && pnpm run copy-prisma-to-dist",

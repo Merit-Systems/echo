@@ -25,7 +25,7 @@ interface EchoApp {
   totalCost: number;
   _count: {
     apiKeys: number;
-    llmTransactions: number;
+    transactions: number;
   };
 }
 
@@ -284,7 +284,7 @@ export default function EchoAppsDashboard() {
                         Transactions
                       </div>
                       <div className="font-semibold text-card-foreground">
-                        {app._count.llmTransactions.toLocaleString()}
+                        {app._count.transactions.toLocaleString()}
                       </div>
                     </div>
                   </div>

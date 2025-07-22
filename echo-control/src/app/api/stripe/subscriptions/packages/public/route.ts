@@ -15,13 +15,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const packages = await SubscriptionPackageService.getPublicPackages(appId);
+    const packages = await SubscriptionPackageService.getActiveAppPackages(
+      '',
+      appId
+    );
 
     return NextResponse.json({
       packages,
     });
   } catch (error) {
-    console.error('Error fetching public subscription packages:', error);
+    console.error('Error fe tching public subscription packages:', error);
 
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

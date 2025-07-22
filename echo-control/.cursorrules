@@ -1,0 +1,125 @@
+# Next.js Project Rules
+
+## Project Structure & Organization
+- ALL business logic must be placed in the `@lib` folder (e.g., `@lib/subscriptions/`, `@lib/permissions/`, `@lib/echo-apps/`)
+- Use feature-based organization with dedicated directories for each major feature
+- ALL TypeScript types should be defined in feature-specific `types.ts` files or in `@lib/types/` for shared types
+- Use barrel exports (index.ts files) in feature directories for clean imports
+- Keep components purely presentational - move all logic to custom hooks or utility functions
+- Custom hooks should be in `src/hooks/` directory (not in @lib)
+- Organize `@lib` structure as follows:
+  ```
+  @lib/
+  ├── [feature-name]/     # Feature-based directories (e.g., subscriptions/, permissions/)
+  │   ├── index.ts        # Barrel exports for the feature
+  │   ├── types.ts        # Feature-specific types
+  │   └── [service].ts    # Feature implementation files
+  ├── types/              # Shared TypeScript interfaces and types
+  ├── shared/             # Shared utilities and enums
+  │   └── enums.ts        # Application-wide enums
+  ├── utils.ts            # General utility functions
+  ├── auth.ts             # Authentication utilities
+  ├── crypto.ts           # Cryptographic utilities
+  ├── db.ts               # Database connection/utilities
+  └── [service].ts        # Standalone service files
+  ```
+
+## Feature-Based Organization
+- Group related functionality into feature directories in `@lib/`
+- Each feature directory should include:
+  - `index.ts` - Barrel exports for clean imports
+  - `types.ts` - Feature-specific TypeScript types
+  - Implementation files (services, utilities, etc.)
+- Use meaningful feature names (e.g., `subscriptions/`, `permissions/`, `echo-apps/`)
+- Export both individual functions and service classes from barrel exports
+- Keep shared utilities in `@lib/shared/` or as standalone files at the root level
+
+## React Component Best Practices
+- ALWAYS use functional components with hooks - never class components
+- Use custom hooks for all stateful logic, side effects, and data fetching
+- Keep components under 100 lines - extract logic to custom hooks if needed
+- Use TypeScript for all components with proper prop types
+- Prefer composition over inheritance
+- Use React.memo() for performance optimization when appropriate
+- Always destructure props in component parameters
+
+## Custom Hooks Guidelines
+- Prefix all custom hooks with 'use' (e.g., useUserData, useLocalStorage)
+- Custom hooks should be in `src/hooks/` directory
+- Each hook should have a single responsibility
+- Return objects from hooks, not arrays (except for simple state pairs)
+- Use proper TypeScript return types for all hooks
+- Handle loading and error states in data-fetching hooks
+
+## API and Data Fetching
+- All API calls should be in feature-based directories in `@lib/` (e.g., `@lib/subscriptions/`, `@lib/api-keys/`)- Create custom hooks in `src/hooks/` that wrap API calls (e.g., useGetUser, useCreatePost)
+- Handle errors gracefully with proper error boundaries
+- Use proper TypeScript types for all API responses
+- Implement proper loading states
+
+## TypeScript Best Practices
+- Use strict TypeScript configuration
+- Define feature-specific types in `[feature]/types.ts` files and shared types in `@lib/types/`
+- Use interfaces for object shapes, types for unions/primitives
+- Prefer type inference where possible, explicit types where needed
+- Use generic types for reusable components and hooks
+- Always type component props, hook returns, and API responses
+
+## Styling and UI
+- Use Tailwind CSS utility classes for styling
+- Create reusable UI components in `components/ui/` directory
+- Use CSS modules or styled-components for complex styling needs
+- Implement consistent spacing and color schemes
+- Ensure responsive design patterns
+
+## Performance and Optimization
+- Use Next.js Image component for all images
+- Implement proper code splitting with dynamic imports
+- Use React.lazy() for component lazy loading
+- Optimize bundle size by importing only needed functions
+- Use proper caching strategies for API calls
+- Implement proper SEO meta tags
+
+## Error Handling and Validation
+- Use Zod or similar for runtime validation (schemas in feature directories)
+- Implement proper error boundaries
+- Handle async errors with try-catch in hooks
+- Provide user-friendly error messages
+- Log errors appropriately for debugging
+
+## Code Quality
+- Use ESLint and Prettier for consistent formatting
+- Write meaningful variable and function names
+- Add JSDoc comments for complex functions
+- Keep functions pure when possible
+- Use early returns to reduce nesting
+- Implement proper loading and empty states
+
+## File Naming Conventions
+- Use kebab-case for file names (e.g., user-profile.tsx)
+- Use PascalCase for component names
+- Use camelCase for functions and variables
+- Use UPPER_SNAKE_CASE for constants
+- Suffix types with 'Type' or 'Interface' when helpful
+
+## State Management
+- Use React's built-in state (useState, useReducer) for local component state
+- Use context for shared state across component trees
+- Consider Zustand or Redux Toolkit for complex global state
+- Keep state as close to where it's used as possible
+- Use proper state normalization for complex data structures
+
+## Testing Guidelines
+- Write unit tests for custom hooks in `src/hooks/`
+- Test business logic functions in feature directories (e.g., `@lib/subscriptions/`, `@lib/permissions/`)
+- Test utility functions in `@lib/utils.ts` and other standalone service files
+- Use React Testing Library for component tests
+- Mock external dependencies properly
+- Test error states and edge cases
+
+## Security Best Practices
+- Sanitize user inputs
+- Use environment variables for sensitive data
+- Implement proper authentication and authorization
+- Validate data on both client and server sides
+- Use HTTPS in production

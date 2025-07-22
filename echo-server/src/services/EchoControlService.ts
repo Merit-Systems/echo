@@ -8,7 +8,7 @@ import { EchoDbService } from './DbService';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient, UsageProduct } from '../generated/prisma';
 
 export class EchoControlService {
   private readonly db: PrismaClient;
@@ -89,6 +89,13 @@ export class EchoControlService {
   }
 
   /**
+   * Get the database instance for use by providers
+   */
+  getDb(): PrismaClient {
+    return this.db;
+  }
+
+  /**
    * Get balance for the authenticated user directly from the database
    * Uses centralized logic from EchoDbService
    */
@@ -116,23 +123,31 @@ export class EchoControlService {
       return 1.0;
     }
 
-    const appMarkup = await this.db.echoApp.findUnique({
+    const appWithMarkup = await this.db.echoApp.findUnique({
       where: {
         id: this.getEchoAppId() ?? '',
       },
-      select: {
-        markUp: true,
+      include: {
+        currentMarkup: true,
       },
     });
 
-    if (!appMarkup) {
+    if (!appWithMarkup) {
       throw new Error('EchoApp not found');
     }
-    if (appMarkup.markUp.toNumber() < 1.0) {
-      throw new Error('App markup must be greater than 1.0');
+
+    // If no current markup is set, default to 1.0 (no markup)
+    if (!appWithMarkup.currentMarkup) {
+      return 1.0;
     }
 
-    return appMarkup.markUp.toNumber();
+    const markupRate = Number(appWithMarkup.currentMarkup.rate);
+
+    if (markupRate < 1.0) {
+      throw new Error('App markup must be greater than or equal to 1.0');
+    }
+
+    return markupRate;
   }
 
   /**
@@ -140,7 +155,8 @@ export class EchoControlService {
    * Uses centralized logic from EchoDbService
    */
   async createTransaction(
-    transaction: CreateLlmTransactionRequest
+    transaction: CreateLlmTransactionRequest,
+    usageProduct?: UsageProduct
   ): Promise<void> {
     try {
       if (!this.authResult) {
@@ -153,18 +169,29 @@ export class EchoControlService {
         return;
       }
 
-      const cost = transaction.cost * this.appMarkup;
-      transaction.cost = cost;
+      // Get the current markup configuration for the app
+      const appWithMarkup = await this.db.echoApp.findUnique({
+        where: {
+          id: this.getEchoAppId() ?? '',
+        },
+        include: {
+          currentMarkup: true,
+        },
+      });
 
       const { userId, echoAppId, apiKeyId } = this.authResult;
       await this.dbService.createLlmTransaction(
         userId,
         echoAppId,
         transaction,
-        apiKeyId
+        apiKeyId,
+        usageProduct,
+        this.appMarkup,
+        appWithMarkup?.currentMarkup || null
       );
     } catch (error) {
       console.error('Error creating transaction:', error);
+      throw error;
     }
   }
 }

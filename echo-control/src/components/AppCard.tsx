@@ -46,7 +46,7 @@ export const AppCard: React.FC<AppCardProps> = ({
 
   const stats = {
     users: 0, // Not available in current data structure
-    requests: app._count.llmTransactions,
+    requests: app._count.transactions || 0,
     revenue: `${(app.totalCost / 100).toFixed(2)}`, // Convert from cents
   };
 

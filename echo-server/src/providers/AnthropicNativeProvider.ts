@@ -1,4 +1,3 @@
-import { getCostPerToken } from '../services/AccountingService';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 
@@ -126,16 +125,25 @@ export class AnthropicNativeProvider extends BaseProvider {
           throw new Error('No usage data found');
         }
 
+        // Calculate cost using the base provider method
+        const costResult = await this.getCostPerToken(
+          usage.input_tokens,
+          usage.output_tokens
+        );
+
         const model = this.getModel();
-        await this.getEchoControlService().createTransaction({
-          model: model,
-          inputTokens: usage.input_tokens,
-          outputTokens: usage.output_tokens,
-          totalTokens: usage.input_tokens + usage.output_tokens,
-          cost: getCostPerToken(model, usage.input_tokens, usage.output_tokens),
-          status: 'success',
-          providerId: usage.id,
-        });
+        await this.getEchoControlService().createTransaction(
+          {
+            model: model,
+            inputTokens: usage.input_tokens,
+            outputTokens: usage.output_tokens,
+            totalTokens: usage.input_tokens + usage.output_tokens,
+            cost: costResult.cost,
+            status: 'success',
+            providerId: usage.id,
+          },
+          costResult.usageProduct
+        );
       } else {
         const parsed = JSON.parse(data);
 
@@ -151,16 +159,25 @@ export class AnthropicNativeProvider extends BaseProvider {
         );
         console.log('Message ID: ', parsed.id);
 
+        // Calculate cost using the base provider method
+        const costResult = await this.getCostPerToken(
+          inputTokens,
+          outputTokens
+        );
+
         // Create transaction with proper model info and token details
-        await this.getEchoControlService().createTransaction({
-          model: this.getModel(),
-          inputTokens: inputTokens,
-          outputTokens: outputTokens,
-          totalTokens: totalTokens,
-          cost: getCostPerToken(this.getModel(), inputTokens, outputTokens),
-          status: 'success',
-          providerId: parsed.id,
-        });
+        await this.getEchoControlService().createTransaction(
+          {
+            model: this.getModel(),
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            totalTokens: totalTokens,
+            cost: costResult.cost,
+            status: 'success',
+            providerId: parsed.id,
+          },
+          costResult.usageProduct
+        );
       }
     } catch (error) {
       console.error('Error processing data:', error);

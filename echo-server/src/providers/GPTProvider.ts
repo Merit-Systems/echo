@@ -1,4 +1,3 @@
-import { getCostPerToken } from '../services/AccountingService';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 
@@ -93,20 +92,25 @@ export class GPTProvider extends BaseProvider {
         providerId = parsed.id || 'null';
       }
 
+      // Calculate cost using the base provider method
+      const costResult = await this.getCostPerToken(
+        prompt_tokens,
+        completion_tokens
+      );
+
       // Create transaction with proper model info and token details
-      await this.getEchoControlService().createTransaction({
-        model: this.getModel(),
-        inputTokens: prompt_tokens,
-        outputTokens: completion_tokens,
-        totalTokens: total_tokens,
-        cost: getCostPerToken(
-          this.getModel(),
-          prompt_tokens,
-          completion_tokens
-        ),
-        status: 'success',
-        providerId: providerId,
-      });
+      await this.getEchoControlService().createTransaction(
+        {
+          model: this.getModel(),
+          inputTokens: prompt_tokens,
+          outputTokens: completion_tokens,
+          totalTokens: total_tokens,
+          cost: costResult.cost,
+          status: 'success',
+          providerId: providerId,
+        },
+        costResult.usageProduct
+      );
     } catch (error) {
       console.error('Error processing data:', error);
       throw error;

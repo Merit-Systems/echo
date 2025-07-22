@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { PermissionService } from '@/lib/permissions/service';
 import { Permission } from '@/lib/permissions/types';
+import { getCurrentMarkup, setCurrentMarkup } from '@/lib/markup';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -37,7 +38,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         id: true,
         name: true,
         description: true,
-        markUp: true,
         appMemberships: {
           where: {
             role: 'owner',
@@ -64,6 +64,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Get current markup for the app
+    const currentMarkupRate = await getCurrentMarkup(id);
+
     // Find the owner
     const owner = echoApp.appMemberships.find(
       membership => membership.role === 'owner'
@@ -73,7 +76,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       id: echoApp.id,
       name: echoApp.name,
       description: echoApp.description,
-      markup: echoApp.markUp,
+      markup: currentMarkupRate || 1.0, // Default to 1.0 if no markup set
       owner: owner
         ? {
             name: owner.user.name,
@@ -144,37 +147,24 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const { markup } = body;
 
     // Validate markup
-    if (typeof markup !== 'number' || markup <= 0) {
+    if (typeof markup !== 'number' || markup < 1.0) {
       return NextResponse.json(
-        { error: 'Markup must be a positive decimal number' },
+        { error: 'Markup must be a number 1.0 or higher' },
         { status: 400 }
       );
     }
 
-    // Update the app markup
-    const updatedApp = await db.echoApp.update({
-      where: {
-        id,
-        isActive: true,
-        isArchived: false,
-      },
-      data: {
-        markUp: markup,
-      },
-      select: {
-        id: true,
-        name: true,
-        markUp: true,
-      },
-    });
+    // Update the app markup using the new markup system
+    const result = await setCurrentMarkup(id, markup, `Markup ${markup}x`);
 
     return NextResponse.json({
       success: true,
       app: {
-        id: updatedApp.id,
-        name: updatedApp.name,
-        markup: updatedApp.markUp,
+        id: result.app.id,
+        name: result.app.name,
+        markup: Number(result.markup.rate),
       },
+      markupId: result.markup.id,
     });
   } catch (error) {
     console.error('Error updating app markup:', error);

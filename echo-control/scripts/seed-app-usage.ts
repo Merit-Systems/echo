@@ -78,9 +78,25 @@ const SAMPLE_USER_NAMES = [
   'Olivia Martinez',
 ];
 
-const USER_ROLES = ['owner', 'admin', 'customer'] as const;
-const MEMBERSHIP_STATUS = ['active', 'pending'] as const;
-const API_KEY_SCOPES = ['owner', 'admin', 'customer'] as const;
+import {
+  AppRole,
+  MembershipStatus,
+  ApiKeyScope,
+  APP_ROLES,
+  MEMBERSHIP_STATUSES,
+  API_KEY_SCOPES,
+} from '../src/lib/shared/enums';
+
+const USER_ROLES = [AppRole.OWNER, AppRole.ADMIN, AppRole.CUSTOMER] as const;
+const MEMBERSHIP_STATUS_OPTIONS = [
+  MembershipStatus.ACTIVE,
+  MembershipStatus.PENDING,
+] as const;
+const API_KEY_SCOPE_OPTIONS = [
+  ApiKeyScope.OWNER,
+  ApiKeyScope.ADMIN,
+  ApiKeyScope.CUSTOMER,
+] as const;
 
 interface SeedOptions {
   appId?: string;
@@ -171,7 +187,7 @@ async function createAppMembership(
   userId: string,
   appId: string,
   role: (typeof USER_ROLES)[number],
-  status: (typeof MEMBERSHIP_STATUS)[number] = 'active'
+  status: (typeof MEMBERSHIP_STATUS_OPTIONS)[number] = MembershipStatus.ACTIVE
 ): Promise<void> {
   await prisma.appMembership.create({
     data: {
@@ -243,11 +259,11 @@ async function createUsersForApp(
     // Determine role - first user is always owner, then mix of admin/customer
     let role: (typeof USER_ROLES)[number];
     if (i === 0) {
-      role = 'owner';
+      role = AppRole.OWNER;
     } else if (i < Math.ceil(userCount * 0.2)) {
-      role = 'admin'; // 20% admins
+      role = AppRole.ADMIN; // 20% admins
     } else {
-      role = 'customer'; // Rest are customers
+      role = AppRole.CUSTOMER; // Rest are customers
     }
 
     // Create app membership
@@ -262,17 +278,17 @@ async function createUsersForApp(
           : `${name}'s API Key ${j + 1}`;
 
       // API key scope should not exceed user's membership role
-      let keyScope: (typeof API_KEY_SCOPES)[number];
-      if (role === 'owner') {
-        keyScope = ['owner', 'admin', 'customer'][
+      let keyScope: (typeof API_KEY_SCOPE_OPTIONS)[number];
+      if (role === AppRole.OWNER) {
+        keyScope = [ApiKeyScope.OWNER, ApiKeyScope.ADMIN, ApiKeyScope.CUSTOMER][
           Math.floor(Math.random() * 3)
-        ] as (typeof API_KEY_SCOPES)[number];
-      } else if (role === 'admin') {
-        keyScope = ['admin', 'customer'][
+        ];
+      } else if (role === AppRole.ADMIN) {
+        keyScope = [ApiKeyScope.ADMIN, ApiKeyScope.CUSTOMER][
           Math.floor(Math.random() * 2)
-        ] as (typeof API_KEY_SCOPES)[number];
+        ];
       } else {
-        keyScope = 'customer';
+        keyScope = ApiKeyScope.CUSTOMER;
       }
 
       const apiKeyId = await createApiKey(userId, appId, keyName, keyScope);
@@ -347,6 +363,8 @@ function generateTransaction(
     userId,
     echoAppId: appId,
     apiKeyId,
+    // Generate a placeholder usageProductId for seeding
+    usageProductId: crypto.randomUUID(),
   };
 }
 
@@ -465,7 +483,7 @@ async function seedAppUsage(
 
   for (let i = 0; i < transactions.length; i += batchSize) {
     const batch = transactions.slice(i, i + batchSize);
-    await prisma.llmTransaction.createMany({
+    await prisma.transaction.createMany({
       data: batch,
     });
     totalInserted += batch.length;
@@ -528,19 +546,21 @@ async function seedAppUsage(
     }
   }
 
-  // Update user and app membership totals
+  // Create debit credit grants for user spending (instead of updating totalSpent directly)
   for (const [userId, totalCost] of userSpending.entries()) {
-    // Update user total spent
-    await prisma.user.update({
-      where: { id: userId },
+    // Create a debit credit grant for the total spending
+    await prisma.creditGrant.create({
       data: {
-        totalSpent: {
-          increment: totalCost,
-        },
+        type: 'debit',
+        amount: totalCost,
+        source: 'transaction',
+        description: `Seeded LLM usage for app: ${app.name}`,
+        userId: userId,
+        isActive: true,
       },
     });
 
-    // Update app membership total spent
+    // Still update app membership total spent for app-specific tracking
     await prisma.appMembership.update({
       where: {
         userId_echoAppId: {

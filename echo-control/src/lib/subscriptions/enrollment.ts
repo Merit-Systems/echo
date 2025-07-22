@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { db } from '@/lib/db';
 import { EnrollSubscriptionRequest, SubscriptionCreateResponse } from './types';
+import { Product, SubscriptionPackage } from '@/generated/prisma';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-05-28.basil',
@@ -48,8 +49,8 @@ export class SubscriptionEnrollmentService {
     }
 
     let subscriptionItems: { price: string }[] = [];
-    let dbProducts: any[] = [];
-    let subscriptionPackageToUse: any = null;
+    let dbProducts: Product[] = [];
+    let subscriptionPackageToUse: SubscriptionPackage | null = null;
 
     if (type === 'package') {
       // Handle package subscription
@@ -107,7 +108,7 @@ export class SubscriptionEnrollmentService {
       select: { stripeCustomerId: true },
     });
 
-    let stripeCustomerId = (user as any)?.stripeCustomerId;
+    let stripeCustomerId = user?.stripeCustomerId;
 
     if (!stripeCustomerId) {
       // Create Stripe customer
@@ -125,7 +126,7 @@ export class SubscriptionEnrollmentService {
       // Update user record with Stripe customer ID
       await db.user.update({
         where: { id: userId },
-        data: { stripeCustomerId } as any,
+        data: { stripeCustomerId },
       });
     }
 
@@ -152,11 +153,21 @@ export class SubscriptionEnrollmentService {
         stripeSubscriptionId: subscription.id,
         stripeCustomerId,
         status: subscription.status,
-        currentPeriodStart: (subscription as any).current_period_start
-          ? new Date((subscription as any).current_period_start * 1000)
+        currentPeriodStart: (
+          subscription as unknown as { current_period_start?: number }
+        ).current_period_start
+          ? new Date(
+              (subscription as unknown as { current_period_start: number })
+                .current_period_start * 1000
+            )
           : null,
-        currentPeriodEnd: (subscription as any).current_period_end
-          ? new Date((subscription as any).current_period_end * 1000)
+        currentPeriodEnd: (
+          subscription as unknown as { current_period_end?: number }
+        ).current_period_end
+          ? new Date(
+              (subscription as unknown as { current_period_end: number })
+                .current_period_end * 1000
+            )
           : null,
         isActive: false, // Will be activated when payment succeeds
         userId: userId,
@@ -218,13 +229,20 @@ export class SubscriptionEnrollmentService {
     const invoice = subscription.latest_invoice as Stripe.Invoice;
     let paymentUrl = '';
 
-    if (invoice && (invoice as any).payment_intent) {
-      const paymentIntent = (invoice as any)
-        .payment_intent as Stripe.PaymentIntent;
+    if (
+      invoice &&
+      (invoice as unknown as { payment_intent?: Stripe.PaymentIntent })
+        .payment_intent
+    ) {
+      const paymentIntent = (
+        invoice as unknown as { payment_intent: Stripe.PaymentIntent }
+      ).payment_intent;
       if (paymentIntent.client_secret) {
         // For a more robust implementation, you might want to create a custom payment page
         // For now, we'll use the hosted invoice URL
-        paymentUrl = (invoice as any).hosted_invoice_url || '';
+        paymentUrl =
+          (invoice as unknown as { hosted_invoice_url?: string })
+            .hosted_invoice_url || '';
       }
     }
 

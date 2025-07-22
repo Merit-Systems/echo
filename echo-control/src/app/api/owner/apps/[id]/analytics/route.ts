@@ -41,7 +41,7 @@ export async function GET(
       },
     });
 
-    const transactionUsers = await db.llmTransaction.findMany({
+    const transactionUsers = await db.transaction.findMany({
       where: {
         echoAppId: appId,
         isArchived: false,
@@ -91,7 +91,7 @@ export async function GET(
     });
 
     // Get aggregate spending per user
-    const userSpending = await db.llmTransaction.groupBy({
+    const userSpending = await db.transaction.groupBy({
       by: ['userId'],
       where: {
         echoAppId: appId,
@@ -120,7 +120,7 @@ export async function GET(
     });
 
     // Get total spending for the app
-    const totalSpending = await db.llmTransaction.aggregate({
+    const totalSpending = await db.transaction.aggregate({
       where: {
         echoAppId: appId,
         isArchived: false,

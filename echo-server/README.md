@@ -75,6 +75,32 @@ CMD ["pnpm", "start"]
 - `dev`: Runs the development server (with auto-copy)
 - `build`: Builds the TypeScript code (with auto-copy)
 - `start`: Starts the production server (with auto-copy)
+- `seed-usage-products`: Seeds UsageProducts from model_prices.json into the database
+
+### Usage Products Seeding
+
+The `seed-usage-products` script creates UsageProduct records from the model_prices.json file, which contains pricing and metadata for various LLM models.
+
+```bash
+# Seed all apps with usage products
+pnpm run seed-usage-products
+
+# Seed specific app with verbose output
+pnpm run seed-usage-products abc-123-app-id --verbose
+
+# Overwrite existing usage products
+pnpm run seed-usage-products --overwrite
+
+# Show help
+pnpm run seed-usage-products --help
+```
+
+This script maps model data from model_prices.json to the UsageProduct table with:
+
+- Model pricing (input/output cost per token)
+- Provider information (OpenAI, Anthropic, Google)
+- Model metadata and descriptions
+- Category set to "llm" for all products
 
 ## Error Handling
 

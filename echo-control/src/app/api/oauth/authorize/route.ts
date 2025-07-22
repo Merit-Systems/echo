@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
           archivedAt: true,
           createdAt: true,
           updatedAt: true,
-          markUp: true,
+          currentMarkupId: true,
           githubId: true,
           githubType: true,
         },

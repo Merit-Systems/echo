@@ -1,4 +1,3 @@
-import { getCostPerToken } from '../services/AccountingService';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 
@@ -161,18 +160,27 @@ export class GeminiProvider extends BaseProvider {
         totalTokens
       );
 
+      // Calculate cost using the base provider method
+      const costResult = await this.getCostPerToken(
+        promptTokens,
+        candidatesTokens
+      );
+
       // Create transaction with proper model info and token details
-      await this.getEchoControlService().createTransaction({
-        model: this.getModel(),
-        inputTokens: promptTokens,
-        outputTokens: candidatesTokens,
-        totalTokens: totalTokens,
-        cost: getCostPerToken(this.getModel(), promptTokens, candidatesTokens),
-        status: 'success',
-        providerId: providerId,
-      });
+      await this.getEchoControlService().createTransaction(
+        {
+          model: this.getModel(),
+          inputTokens: promptTokens,
+          outputTokens: candidatesTokens,
+          totalTokens: totalTokens,
+          cost: costResult.cost,
+          status: 'success',
+          providerId: providerId,
+        },
+        costResult.usageProduct
+      );
     } catch (error) {
-      console.error('Error processing Gemini response data:', error);
+      console.error('Error processing Gemini data:', error);
       throw error;
     }
   }
@@ -180,7 +188,7 @@ export class GeminiProvider extends BaseProvider {
   override ensureStreamUsage(
     reqBody: Record<string, unknown>
   ): Record<string, unknown> {
-    // Gemini includes usage metadata in streaming responses by default
+    // Gemini doesn't use the same stream options as OpenAI
     return reqBody;
   }
 }

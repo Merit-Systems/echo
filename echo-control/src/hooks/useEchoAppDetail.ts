@@ -87,7 +87,7 @@ export function useEchoAppDetail(appId: string): UseEchoAppDetailReturn {
                 authorizedCallbackUrls: [], // Public users don't have access to callback URLs
                 apiKeys: [],
                 stats: {
-                  totalTransactions: publicApp._count?.llmTransactions || 0,
+                  totalTransactions: publicApp._count?.transactions || 0,
                   totalTokens: publicApp.totalTokens || 0,
                   totalInputTokens: 0,
                   totalOutputTokens: 0,

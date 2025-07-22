@@ -13,7 +13,8 @@
     "prisma:push": "pnpx prisma db push",
     "prisma:studio": "pnpx prisma studio",
     "copy:model-prices": "cp ../echo-server/model_prices.json ./model_prices.json",
-    "seed-app": "tsx scripts/seed-app-usage.ts"
+    "seed-app": "tsx scripts/seed-app-usage.ts",
+    "seed-usage-products": "tsx ../echo-server/scripts/seed-usage-products.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.20.2",

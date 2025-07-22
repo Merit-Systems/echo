@@ -1,15 +1,7 @@
-export enum AppRole {
-  OWNER = 'owner',
-  ADMIN = 'admin',
-  CUSTOMER = 'customer',
-  PUBLIC = 'public',
-}
+import { AppRole, MembershipStatus } from '../shared/enums';
 
-export enum MembershipStatus {
-  ACTIVE = 'active',
-  PENDING = 'pending',
-  REVOKED = 'revoked',
-}
+// Re-export shared enums for convenience in permissions context
+export { AppRole, MembershipStatus };
 
 export enum Permission {
   // App management

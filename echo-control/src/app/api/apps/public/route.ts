@@ -30,7 +30,7 @@ export async function GET() {
             apiKeys: {
               where: { isActive: true, isArchived: false },
             },
-            llmTransactions: {
+            transactions: {
               where: { isArchived: false },
             },
           },
@@ -62,7 +62,7 @@ export async function GET() {
     const appsWithStats = await Promise.all(
       publicApps.map(async app => {
         const [transactionStats, activity] = await Promise.all([
-          db.llmTransaction.aggregate({
+          db.transaction.aggregate({
             where: {
               echoAppId: app.id,
               isArchived: false,
@@ -96,7 +96,7 @@ export async function GET() {
           totalCost: Number(transactionStats._sum.cost || 0),
           _count: {
             apiKeys: app._count.apiKeys,
-            llmTransactions: app._count.llmTransactions,
+            transactions: app._count.transactions,
           },
           owner: {
             id: owner.id,

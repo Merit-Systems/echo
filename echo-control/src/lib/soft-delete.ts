@@ -26,7 +26,7 @@ export async function softDeleteEchoApp(appId: string) {
   });
 
   // Archive related transactions
-  await db.llmTransaction.updateMany({
+  await db.transaction.updateMany({
     where: {
       echoAppId: appId,
       isArchived: false,
@@ -146,7 +146,7 @@ export async function softDeleteUser(userId: string) {
     },
   });
 
-  await db.llmTransaction.updateMany({
+  await db.transaction.updateMany({
     where: {
       userId,
       isArchived: false,
@@ -212,5 +212,5 @@ export const nonArchivedFilters = {
   echoApp: { isArchived: false },
   apiKey: { isArchived: false },
   payment: { isArchived: false },
-  llmTransaction: { isArchived: false },
+  transaction: { isArchived: false },
 } as const;

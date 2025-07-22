@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 import Stripe from 'stripe';
 import { StripeWebhookService } from '@/lib/subscriptions';
 

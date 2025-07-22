@@ -23,7 +23,7 @@ export interface PublicEchoApp {
   permissions: Permission[];
   _count: {
     apiKeys: number;
-    llmTransactions: number;
+    transactions: number;
   };
   owner: {
     id: string;

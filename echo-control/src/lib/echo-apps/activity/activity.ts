@@ -19,7 +19,7 @@ export const getAppActivity = async (
   const endDate = new Date(days[days.length - 1]);
   endDate.setDate(endDate.getDate() + 1); // End of last day
 
-  const transactions = await db.llmTransaction.findMany({
+  const transactions = await db.transaction.findMany({
     where: {
       echoAppId: appId,
       createdAt: {

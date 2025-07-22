@@ -1,4 +1,3 @@
-import { getCostPerToken } from '../services/AccountingService';
 import type { CompletionStateBody, StreamingChunkBody } from './GPTProvider';
 import { GPTProvider } from './GPTProvider';
 import { ProviderType } from './ProviderType';
@@ -86,20 +85,25 @@ export class AnthropicGPTProvider extends GPTProvider {
         providerId = parsed.id;
       }
 
+      // Calculate cost using the base provider method
+      const costResult = await this.getCostPerToken(
+        prompt_tokens,
+        completion_tokens
+      );
+
       // Create transaction with proper model info and token details
-      await this.getEchoControlService().createTransaction({
-        model: this.getModel(),
-        inputTokens: prompt_tokens,
-        outputTokens: completion_tokens,
-        totalTokens: total_tokens,
-        cost: getCostPerToken(
-          this.getModel(),
-          prompt_tokens,
-          completion_tokens
-        ),
-        status: 'success',
-        providerId: providerId,
-      });
+      await this.getEchoControlService().createTransaction(
+        {
+          model: this.getModel(),
+          inputTokens: prompt_tokens,
+          outputTokens: completion_tokens,
+          totalTokens: total_tokens,
+          cost: costResult.cost,
+          status: 'success',
+          providerId: providerId,
+        },
+        costResult.usageProduct
+      );
     } catch (error) {
       console.error('Error processing data:', error);
       throw error;

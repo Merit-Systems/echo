@@ -30,14 +30,16 @@ export class SubscriptionPackageService {
     const hasPermission = await PermissionService.hasPermission(
       userId,
       appId,
-      Permission.EDIT_APP
+      Permission.MANAGE_BILLING
     );
 
     if (!hasPermission) {
-      throw new Error('Permission denied');
+      throw new Error(
+        'You do not have permission to create packages for this app'
+      );
     }
 
-    // Verify the app exists
+    // Get app info
     const app = await db.echoApp.findUnique({
       where: { id: appId },
       select: { id: true, name: true },
@@ -47,26 +49,25 @@ export class SubscriptionPackageService {
       throw new Error('App not found');
     }
 
-    // Verify all products exist and belong to the app
+    // Verify all products exist and belong to this app
     const products = await db.product.findMany({
       where: {
         id: { in: productIds },
         echoAppId: appId,
+        isActive: true,
         isArchived: false,
       },
     });
 
     if (products.length !== productIds.length) {
-      throw new Error(
-        'One or more products not found or do not belong to this app'
-      );
+      throw new Error('One or more products not found or not accessible');
     }
 
     // Create the subscription package
     const subscriptionPackage = await db.subscriptionPackage.create({
       data: {
-        name: name.trim(),
-        description: description?.trim() || undefined,
+        name,
+        description,
         echoAppId: appId,
       },
     });
@@ -96,7 +97,8 @@ export class SubscriptionPackageService {
     });
 
     const totalPrice = completePackage!.subscriptionPackageProducts.reduce(
-      (sum: number, spp: any) => sum + Number(spp.product.price),
+      (sum: number, spp: unknown) =>
+        sum + Number((spp as { product: { price: unknown } }).product.price),
       0
     );
 
@@ -108,17 +110,26 @@ export class SubscriptionPackageService {
       createdAt: completePackage!.createdAt.toISOString(),
       updatedAt: completePackage!.updatedAt.toISOString(),
       products: completePackage!.subscriptionPackageProducts.map(
-        (spp: any) => ({
-          id: spp.product.id,
-          name: spp.product.name,
-          description: spp.product.description || undefined,
-          stripeProductId: spp.product.stripeProductId,
-          stripePriceId: spp.product.stripePriceId,
-          price: Number(spp.product.price),
-          currency: spp.product.currency,
-          isActive: spp.product.isActive,
-          createdAt: spp.product.createdAt.toISOString(),
-          updatedAt: spp.product.updatedAt.toISOString(),
+        (spp: unknown) => ({
+          id: (spp as { product: { id: string } }).product.id,
+          name: (spp as { product: { name: string } }).product.name,
+          description:
+            (spp as { product: { description: string | null } }).product
+              .description || undefined,
+          stripeProductId: (spp as { product: { stripeProductId: string } })
+            .product.stripeProductId,
+          stripePriceId: (spp as { product: { stripePriceId: string } }).product
+            .stripePriceId,
+          price: Number((spp as { product: { price: unknown } }).product.price),
+          currency: (spp as { product: { currency: string } }).product.currency,
+          isActive: (spp as { product: { isActive: boolean } }).product
+            .isActive,
+          createdAt: (
+            spp as { product: { createdAt: Date } }
+          ).product.createdAt.toISOString(),
+          updatedAt: (
+            spp as { product: { updatedAt: Date } }
+          ).product.updatedAt.toISOString(),
         })
       ),
       totalPrice,
@@ -132,24 +143,25 @@ export class SubscriptionPackageService {
   }
 
   /**
-   * Get all subscription packages for an app (owner only)
+   * Get all subscription packages for an app
    */
   static async getAppPackages(
     userId: string,
     appId: string
   ): Promise<SubscriptionPackageInfo[]> {
-    // Check if user has permission to view the app's packages
+    // Check if user has permission to view the app
     const hasPermission = await PermissionService.hasPermission(
       userId,
       appId,
-      Permission.EDIT_APP
+      Permission.READ_APP
     );
 
     if (!hasPermission) {
-      throw new Error('Permission denied');
+      throw new Error(
+        'You do not have permission to view packages for this app'
+      );
     }
 
-    // Get all subscription packages for the app
     const packages = await db.subscriptionPackage.findMany({
       where: {
         echoAppId: appId,
@@ -178,32 +190,43 @@ export class SubscriptionPackageService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return packages.map((pkg: any) => {
-      const products = pkg.subscriptionPackageProducts.map((spp: any) => ({
-        id: spp.product.id,
-        name: spp.product.name,
-        description: spp.product.description || undefined,
-        stripeProductId: spp.product.stripeProductId,
-        stripePriceId: spp.product.stripePriceId,
-        price: Number(spp.product.price),
-        currency: spp.product.currency,
-        isActive: spp.product.isActive,
-        createdAt: spp.product.createdAt.toISOString(),
-        updatedAt: spp.product.updatedAt.toISOString(),
+    return packages.map((pkg: unknown) => {
+      const products = (
+        pkg as { subscriptionPackageProducts: unknown[] }
+      ).subscriptionPackageProducts.map((spp: unknown) => ({
+        id: (spp as { product: { id: string } }).product.id,
+        name: (spp as { product: { name: string } }).product.name,
+        description:
+          (spp as { product: { description: string | null } }).product
+            .description || undefined,
+        stripeProductId: (spp as { product: { stripeProductId: string } })
+          .product.stripeProductId,
+        stripePriceId: (spp as { product: { stripePriceId: string } }).product
+          .stripePriceId,
+        price: Number((spp as { product: { price: unknown } }).product.price),
+        currency: (spp as { product: { currency: string } }).product.currency,
+        isActive: (spp as { product: { isActive: boolean } }).product.isActive,
+        createdAt: (
+          spp as { product: { createdAt: Date } }
+        ).product.createdAt.toISOString(),
+        updatedAt: (
+          spp as { product: { updatedAt: Date } }
+        ).product.updatedAt.toISOString(),
       }));
 
       const totalPrice = products.reduce(
-        (sum: number, product: any) => sum + product.price,
+        (sum: number, product: { price: number }) => sum + product.price,
         0
       );
 
       return {
-        id: pkg.id,
-        name: pkg.name,
-        description: pkg.description || undefined,
-        isActive: pkg.isActive,
-        createdAt: pkg.createdAt.toISOString(),
-        updatedAt: pkg.updatedAt.toISOString(),
+        id: (pkg as { id: string }).id,
+        name: (pkg as { name: string }).name,
+        description:
+          (pkg as { description: string | null }).description || undefined,
+        isActive: (pkg as { isActive: boolean }).isActive,
+        createdAt: (pkg as { createdAt: Date }).createdAt.toISOString(),
+        updatedAt: (pkg as { updatedAt: Date }).updatedAt.toISOString(),
         products,
         totalPrice,
       };
@@ -211,27 +234,30 @@ export class SubscriptionPackageService {
   }
 
   /**
-   * Get public packages for an app (accessible to customers)
+   * Get active subscription packages for an app (customer view)
    */
-  static async getPublicPackages(
+  static async getActiveAppPackages(
+    userId: string,
     appId: string
   ): Promise<SubscriptionPackageInfo[]> {
-    // Verify the app exists and is active
-    const app = await db.echoApp.findUnique({
-      where: { id: appId },
-      select: { id: true, isActive: true },
-    });
+    // Check if user has permission to view the app
+    const hasPermission = await PermissionService.hasPermission(
+      userId,
+      appId,
+      Permission.READ_APP
+    );
 
-    if (!app || !app.isActive) {
-      throw new Error('App not found or inactive');
+    if (!hasPermission) {
+      throw new Error(
+        'You do not have permission to view packages for this app'
+      );
     }
 
-    // Get all active subscription packages for the app
     const packages = await db.subscriptionPackage.findMany({
       where: {
         echoAppId: appId,
-        isArchived: false,
         isActive: true,
+        isArchived: false,
       },
       include: {
         subscriptionPackageProducts: {
@@ -257,34 +283,52 @@ export class SubscriptionPackageService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return packages.map((pkg: any) => {
-      const products = pkg.subscriptionPackageProducts
-        .filter((spp: any) => spp.product.isActive && !spp.product.isArchived)
-        .map((spp: any) => ({
-          id: spp.product.id,
-          name: spp.product.name,
-          description: spp.product.description || undefined,
-          stripeProductId: spp.product.stripeProductId,
-          stripePriceId: spp.product.stripePriceId,
-          price: Number(spp.product.price),
-          currency: spp.product.currency,
-          isActive: spp.product.isActive,
-          createdAt: spp.product.createdAt.toISOString(),
-          updatedAt: spp.product.updatedAt.toISOString(),
+    return packages.map((pkg: unknown) => {
+      const products = (
+        pkg as { subscriptionPackageProducts: unknown[] }
+      ).subscriptionPackageProducts
+        .filter(
+          (spp: unknown) =>
+            (spp as { product: { isActive: boolean; isArchived: boolean } })
+              .product.isActive &&
+            !(spp as { product: { isActive: boolean; isArchived: boolean } })
+              .product.isArchived
+        )
+        .map((spp: unknown) => ({
+          id: (spp as { product: { id: string } }).product.id,
+          name: (spp as { product: { name: string } }).product.name,
+          description:
+            (spp as { product: { description: string | null } }).product
+              .description || undefined,
+          stripeProductId: (spp as { product: { stripeProductId: string } })
+            .product.stripeProductId,
+          stripePriceId: (spp as { product: { stripePriceId: string } }).product
+            .stripePriceId,
+          price: Number((spp as { product: { price: unknown } }).product.price),
+          currency: (spp as { product: { currency: string } }).product.currency,
+          isActive: (spp as { product: { isActive: boolean } }).product
+            .isActive,
+          createdAt: (
+            spp as { product: { createdAt: Date } }
+          ).product.createdAt.toISOString(),
+          updatedAt: (
+            spp as { product: { updatedAt: Date } }
+          ).product.updatedAt.toISOString(),
         }));
 
       const totalPrice = products.reduce(
-        (sum: number, product: any) => sum + product.price,
+        (sum: number, product: { price: number }) => sum + product.price,
         0
       );
 
       return {
-        id: pkg.id,
-        name: pkg.name,
-        description: pkg.description || undefined,
-        isActive: pkg.isActive,
-        createdAt: pkg.createdAt.toISOString(),
-        updatedAt: pkg.updatedAt.toISOString(),
+        id: (pkg as { id: string }).id,
+        name: (pkg as { name: string }).name,
+        description:
+          (pkg as { description: string | null }).description || undefined,
+        isActive: (pkg as { isActive: boolean }).isActive,
+        createdAt: (pkg as { createdAt: Date }).createdAt.toISOString(),
+        updatedAt: (pkg as { updatedAt: Date }).updatedAt.toISOString(),
         products,
         totalPrice,
       };

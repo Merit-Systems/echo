@@ -52,7 +52,7 @@ export interface AppWithDetails {
   totalCost: number;
   _count: {
     apiKeys: number;
-    llmTransactions: number;
+    transactions: number;
   };
   owner: {
     id: string;
@@ -287,7 +287,7 @@ export const listAppsWithDetails = async (
               apiKeys: {
                 where: { isActive: true, isArchived: false },
               },
-              llmTransactions: {
+              transactions: {
                 where: { isArchived: false },
               },
             },
@@ -299,7 +299,7 @@ export const listAppsWithDetails = async (
 
   // Get transaction totals for all apps in batch
   const appIds = userMemberships.map(m => m.echoApp.id);
-  const transactionStats = await db.llmTransaction.groupBy({
+  const transactionStats = await db.transaction.groupBy({
     by: ['echoAppId'],
     where: {
       echoAppId: { in: appIds },
@@ -361,7 +361,7 @@ export const listAppsWithDetails = async (
       totalCost: stats.totalCost,
       _count: {
         apiKeys: app._count.apiKeys,
-        llmTransactions: app._count.llmTransactions,
+        transactions: app._count.transactions,
       },
       owner: owner,
       activityData,
@@ -416,7 +416,7 @@ export const getPublicAppInfo = async (
   });
 
   // Get full aggregated statistics for public view (always global)
-  const stats = await db.llmTransaction.aggregate({
+  const stats = await db.transaction.aggregate({
     where: {
       echoAppId: appId,
       isArchived: false,
@@ -431,7 +431,7 @@ export const getPublicAppInfo = async (
   });
 
   // Get model usage breakdown (always global for public view)
-  const modelUsage = await db.llmTransaction.groupBy({
+  const modelUsage = await db.transaction.groupBy({
     by: ['model'],
     where: {
       echoAppId: appId,
@@ -450,7 +450,7 @@ export const getPublicAppInfo = async (
   });
 
   // Get recent transactions (always global for public view)
-  const recentTransactions = await db.llmTransaction.findMany({
+  const recentTransactions = await db.transaction.findMany({
     where: {
       echoAppId: appId,
       isArchived: false,
@@ -484,7 +484,7 @@ export const getPublicAppInfo = async (
     authorizedCallbackUrls: [],
     _count: {
       apiKeys: 0,
-      llmTransactions: stats._count || 0,
+      transactions: stats._count || 0,
     },
     owner: ownerMembership?.user
       ? {
@@ -599,7 +599,7 @@ export const getDetailedAppInfo = async (
               ...(userRole === AppRole.CUSTOMER && { userId }),
             },
           },
-          llmTransactions: {
+          transactions: {
             where: {
               isArchived: false,
               ...(userRole === AppRole.CUSTOMER && { userId }),
@@ -635,7 +635,7 @@ export const getDetailedAppInfo = async (
   }
 
   // Get aggregated statistics for the app (filtered by user for customers unless globalView is true)
-  const stats = await db.llmTransaction.aggregate({
+  const stats = await db.transaction.aggregate({
     where: {
       echoAppId: appId,
       isArchived: false,
@@ -652,7 +652,7 @@ export const getDetailedAppInfo = async (
   });
 
   // Get model usage breakdown (filtered by user for customers unless globalView is true)
-  const modelUsage = await db.llmTransaction.groupBy({
+  const modelUsage = await db.transaction.groupBy({
     by: ['model'],
     where: {
       echoAppId: appId,
@@ -673,7 +673,7 @@ export const getDetailedAppInfo = async (
   });
 
   // Get recent transactions (filtered by user for customers unless globalView is true)
-  const recentTransactions = await db.llmTransaction.findMany({
+  const recentTransactions = await db.transaction.findMany({
     where: {
       echoAppId: appId,
       isArchived: false,
@@ -704,7 +704,7 @@ export const getDetailedAppInfo = async (
   const apiKeysWithSpending = await Promise.all(
     app.apiKeys.map(async apiKey => {
       // Get total spending for this API key using the new apiKeyId field
-      const spendingResult = await db.llmTransaction.aggregate({
+      const spendingResult = await db.transaction.aggregate({
         where: {
           apiKeyId: apiKey.id,
           isArchived: false,
@@ -754,7 +754,7 @@ export const getDetailedAppInfo = async (
         },
     _count: {
       apiKeys: app._count.apiKeys,
-      llmTransactions: app._count.llmTransactions,
+      transactions: app._count.transactions,
     },
     apiKeys: apiKeysWithSpending.map(key => ({
       ...key,
@@ -950,7 +950,7 @@ export const updateEchoAppById = async (
       _count: {
         select: {
           apiKeys: true,
-          llmTransactions: true,
+          transactions: true,
         },
       },
     },
@@ -1015,7 +1015,8 @@ export const findEchoApp = async (
       profilePictureUrl: true,
       bannerImageUrl: true,
       homepageUrl: true,
-      markUp: true,
+      currentMarkupId: true,
+      currentMarkup: true,
       githubId: true,
       githubType: true,
       isActive: true,

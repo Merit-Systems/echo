@@ -31,7 +31,7 @@ export async function GET(
     const skip = (page - 1) * limit;
 
     // Get all LLM transactions for the app with pagination
-    const transactions = await db.llmTransaction.findMany({
+    const transactions = await db.transaction.findMany({
       where: {
         echoAppId: appId,
         isArchived: false,
@@ -58,7 +58,7 @@ export async function GET(
     });
 
     // Get total count for pagination
-    const totalCount = await db.llmTransaction.count({
+    const totalCount = await db.transaction.count({
       where: {
         echoAppId: appId,
         isArchived: false,

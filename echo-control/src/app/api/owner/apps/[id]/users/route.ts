@@ -73,7 +73,7 @@ export async function GET(
               isArchived: false,
             },
           }),
-          db.llmTransaction.aggregate({
+          db.transaction.aggregate({
             where: {
               userId: membership.userId,
               echoAppId: appId,

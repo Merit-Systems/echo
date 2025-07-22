@@ -178,7 +178,7 @@ export const Carousel: React.FC<CarouselProps> = ({
                         <div className="flex items-center gap-1 text-lg text-muted-foreground">
                           <Zap className="h-5 w-5" />
                           <span>
-                            {app._count.llmTransactions.toLocaleString()}
+                            {app._count.transactions.toLocaleString()}
                           </span>
                         </div>
                       </div>
