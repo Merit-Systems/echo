@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { patchApiKey, deleteApiKey } from '@/lib/api-keys/api-keys';
 
 // PATCH /api/api-keys/[id] - Update an API key (rename)

@@ -39,7 +39,7 @@ export const useAllApps = (
     if (isUserLoaded) {
       loadApps();
     }
-  }, [fetchApps, isUserLoaded]);
+  }, [fetchApps, isUserLoaded, loadApps]);
 
   return {
     apps,

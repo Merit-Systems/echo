@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { createPaymentLink, isValidUrl } from '@/lib/stripe/payment-link';
+import { createPaymentLink } from '@/lib/stripe/payment-link';
 import Stripe from 'stripe';
 import { User } from '@/generated/prisma';
 

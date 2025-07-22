@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getApp, updateApp, deleteApp } from '@/lib/echo-apps/apps';
 
 // GET /api/apps/[id] - Get detailed app information

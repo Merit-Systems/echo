@@ -4,12 +4,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Balance } from '@/lib/types/apps';
 
-interface BalanceAdjustment {
-  amount: number;
-  operation: 'increment' | 'decrement';
-  description: string;
-}
-
 export function useUserBalance() {
   const { user, isLoaded } = useUser();
   const [balance, setBalance] = useState<Balance | null>(null);

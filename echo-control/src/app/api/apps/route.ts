@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getApps, createApp } from '@/lib/echo-apps/apps';
 
 // GET /api/apps - List all Echo apps for the authenticated user
