@@ -13,6 +13,9 @@ import {
   CREDIT_GRANT_TYPES,
   CREDIT_GRANT_SOURCES,
 } from '../shared/enums';
+import { CreateCreditGrantRequest, CreditGrantFilters } from './types';
+
+export * from './types';
 import { getCurrentMarkup } from '@/lib/markup';
 
 /**
@@ -25,28 +28,6 @@ import { getCurrentMarkup } from '@/lib/markup';
  *
  * All amounts support pico-cent precision with DECIMAL(65,14) storage.
  */
-
-export interface CreateCreditGrantRequest {
-  type: CreditGrantType;
-  amount: number; // Amount in dollars (will be stored with pico-cent precision)
-  source: CreditGrantSource;
-  description?: string;
-  expiresAt?: Date; // Optional expiration date for credits
-  paymentId?: string; // Link to payment if created from payment
-  transactionId?: string; // Link to transaction if created from transaction debit
-}
-
-export interface CreditGrantFilters {
-  type?: CreditGrantType;
-  source?: CreditGrantSource;
-  isActive?: boolean;
-  isExpired?: boolean;
-  paymentId?: string;
-  transactionId?: string;
-  dateFrom?: Date;
-  dateTo?: Date;
-}
-
 /**
  * Create a new credit grant for a user
  * @param user - The user to grant credits to

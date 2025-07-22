@@ -148,6 +148,24 @@ export interface EnhancedAppData extends DetailedEchoApp {
 }
 
 /**
+ * Simplified Echo App interface for dashboard listings.
+ * Used in dashboard components that display app summary information.
+ */
+export interface DashboardEchoApp {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  totalTokens: number;
+  totalCost: number;
+  _count: {
+    apiKeys: number;
+    transactions: number;
+  };
+}
+
+/**
  * A union type representing any shape of an Echo App.
  * Useful for components that can handle both public and authenticated app data.
  */

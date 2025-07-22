@@ -1,7 +1,7 @@
 import { AppRole } from '@/lib/permissions/types';
 import { DetailedEchoApp } from '@/hooks/useEchoAppDetail';
 import { formatCurrency } from '@/lib/balance';
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { UserPlus } from 'lucide-react';
 import {
@@ -17,98 +17,31 @@ import { UserCountCard } from './UserCountCard';
 import { GlobalModelsCard } from './GlobalModelsCard';
 import { AppHomepageCard } from './AppHomepageCard';
 import JoinAppModal from '../JoinAppModal';
-
-// Enhanced interfaces for global data
-interface EnhancedAppData extends DetailedEchoApp {
-  globalStats?: {
-    totalTransactions: number;
-    totalTokens: number;
-    totalInputTokens: number;
-    totalOutputTokens: number;
-    totalCost: number;
-    modelUsage: Array<{
-      model: string;
-      _sum: {
-        totalTokens: number | null;
-        cost: number | null;
-      };
-      _count: number;
-    }>;
-  };
-  globalActivityData?: number[];
-  globalRecentTransactions?: Array<{
-    id: string;
-    model: string;
-    totalTokens: number;
-    cost: number;
-    status: string;
-    createdAt: string;
-  }>;
-}
+import { useGlobalAppData } from '@/hooks/useGlobalAppData';
+import { useJoinApp } from '@/hooks/useJoinApp';
 
 interface PublicAppDetailProps {
   app: DetailedEchoApp;
 }
 
 export function PublicAppDetail({ app }: PublicAppDetailProps) {
-  const [enhancedApp, setEnhancedApp] = useState<EnhancedAppData>(app);
-  const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
-  const [showJoinModal, setShowJoinModal] = useState(false);
-  const [joining, setJoining] = useState(false);
   const { user, isLoaded } = useUser();
-
-  // Function to fetch global data
-  const fetchGlobalData = useCallback(async () => {
-    if (enhancedApp.globalStats) return; // Already fetched
-
-    setIsLoadingGlobal(true);
-    try {
-      const response = await fetch(`/api/apps/${app.id}?view=global`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch global data');
-      }
-      const globalData = await response.json();
-      setEnhancedApp(prev => ({
-        ...prev,
-        globalStats: globalData.stats,
-        globalActivityData: globalData.activityData,
-        globalRecentTransactions: globalData.recentTransactions,
-      }));
-    } catch (error) {
-      console.error('Error fetching global data:', error);
-    } finally {
-      setIsLoadingGlobal(false);
-    }
-  }, [app.id, enhancedApp.globalStats]);
+  const { enhancedApp, isLoadingGlobal, fetchGlobalData } =
+    useGlobalAppData(app);
+  const {
+    joining,
+    showJoinModal,
+    setShowJoinModal,
+    handleJoinApp: joinApp,
+  } = useJoinApp();
 
   // Fetch global data on component mount
   useEffect(() => {
     fetchGlobalData();
-  }, [app.id, fetchGlobalData]);
+  }, [fetchGlobalData]);
 
-  // Function to handle joining the app as a customer
   const handleJoinApp = async () => {
-    setJoining(true);
-    try {
-      const response = await fetch(`/api/owner/apps/${app.id}/customers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}), // Empty body for self-enrollment
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to join app');
-      }
-
-      // Success - redirect to refresh the page and show customer view
-      window.location.reload();
-    } catch (error) {
-      console.error('Error joining app:', error);
-      throw error;
-    } finally {
-      setJoining(false);
-    }
+    await joinApp(app.id);
   };
 
   // Show join button only for authenticated users who are not already customers

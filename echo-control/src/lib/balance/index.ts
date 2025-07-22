@@ -4,25 +4,7 @@ import {
   calculateBalanceFromCreditGrants,
   calculateAppSpecificBalanceFromCreditGrants,
 } from '../credit-grants';
-
-export interface BalanceResult {
-  balance: number;
-  totalPaid: number;
-  totalSpent: number;
-  currency: string;
-  echoAppId: string | null;
-  echoAppName: string | null;
-}
-
-export interface EnhancedBalanceResult extends BalanceResult {
-  usedCreditGrants: boolean; // Indicates if balance was calculated from credit grants
-  creditGrantData?: {
-    totalCredits: number;
-    totalDebits: number;
-    activeCredits: number;
-    expiredCredits: number;
-  };
-}
+import { BalanceResult, EnhancedBalanceResult } from './types';
 
 /**
  * Get balance for a user using credit grants system
@@ -160,3 +142,5 @@ export const formatCurrency = (value: number | null | undefined): string => {
 
   return `$${numValue.toFixed(2)}`;
 };
+
+export * from './types';

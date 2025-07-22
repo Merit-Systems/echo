@@ -1,6 +1,9 @@
 import { db } from '../db';
 import { User, Payment } from '@/generated/prisma';
 import Stripe from 'stripe';
+import { CreatePaymentLinkRequest, CreatePaymentLinkResult } from './types';
+
+export * from './types';
 
 /**
  * PICO-CENT PRECISION SUPPORT
@@ -37,28 +40,6 @@ export function isValidUrl(urlString: string): boolean {
   }
 }
 
-export interface CreatePaymentLinkRequest {
-  amount: number;
-  description?: string;
-  successUrl?: string;
-}
-
-export interface CreatePaymentLinkResult {
-  paymentLink: {
-    id: string;
-    url: string;
-    amount: number;
-    currency: string;
-    status: string;
-    created: number;
-    metadata: {
-      userId: string;
-      description: string;
-    };
-  };
-  payment: Payment; // Payment record from database
-}
-
 /**
  * Create a Stripe payment link for purchasing credits
  * @param user - The authenticated user
@@ -70,6 +51,10 @@ export async function createPaymentLink(
   request: CreatePaymentLinkRequest
 ): Promise<CreatePaymentLinkResult> {
   const { amount, description = 'Echo Credits', successUrl } = request;
+
+  if (successUrl && !isValidUrl(successUrl)) {
+    throw new Error('Invalid success URL format');
+  }
 
   if (!amount || amount <= 0) {
     throw new Error('Valid amount is required');

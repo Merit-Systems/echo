@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import {
   BarChart,
   TrendingUpIcon,
@@ -9,53 +9,14 @@ import {
   DollarSignIcon,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/balance';
-
-interface AppAnalytics {
-  totalUsers: number;
-  totalApiKeys: number;
-  totalSpent: number;
-  topUsers: Array<{
-    id: string;
-    email: string;
-    name?: string;
-    apiKeyCount: number;
-    totalSpent: number;
-  }>;
-}
+import { useAnalyticsSettings } from '@/hooks/useAnalyticsSettings';
 
 interface AnalyticsSettingsProps {
   appId: string;
 }
 
 export default function AnalyticsSettings({ appId }: AnalyticsSettingsProps) {
-  const [analytics, setAnalytics] = useState<AppAnalytics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAnalytics = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`/api/owner/apps/${appId}/analytics`);
-
-      if (response.ok) {
-        const data = await response.json();
-        setAnalytics(data.analytics);
-      } else {
-        throw new Error('Failed to fetch analytics');
-      }
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
-      setError('Failed to load analytics data');
-    } finally {
-      setLoading(false);
-    }
-  }, [appId]);
-
-  useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
+  const { analytics, loading, error } = useAnalyticsSettings(appId);
 
   if (loading) {
     return (

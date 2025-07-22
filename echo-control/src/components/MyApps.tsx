@@ -1,50 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
-import { AppRole } from '@/lib/permissions/types';
-import { AuthenticatedEchoApp } from '@/lib/types/apps';
+import React from 'react';
 import AppPreviewList from './AppPreviewList';
+import { useMyApps } from '@/hooks/useMyApps';
 
 export const MyApps: React.FC = () => {
-  const { user, isLoaded } = useUser();
-  const [userApps, setUserApps] = useState<AuthenticatedEchoApp[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isLoaded && user) {
-      fetchApps();
-    } else if (isLoaded && !user) {
-      setLoading(false);
-    }
-  }, [isLoaded, user]);
-
-  const fetchApps = async () => {
-    try {
-      setError(null);
-      const response = await fetch('/api/owner/apps');
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch echo apps');
-      }
-
-      const allApps = (data.apps || []) as AuthenticatedEchoApp[];
-
-      // Filter for owner apps
-      const owner = allApps.filter(app => app.userRole === AppRole.OWNER);
-
-      setUserApps(owner);
-    } catch (error) {
-      console.error('Error fetching echo apps:', error);
-      setError(
-        error instanceof Error ? error.message : 'Failed to fetch echo apps'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { userApps, loading, error } = useMyApps();
 
   return (
     <AppPreviewList

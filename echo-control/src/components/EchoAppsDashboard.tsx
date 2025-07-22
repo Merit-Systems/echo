@@ -12,59 +12,24 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { GlassButton } from './glass-button';
-
-interface EchoApp {
-  id: string;
-  name: string;
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-  totalTokens: number;
-  totalCost: number;
-  _count: {
-    apiKeys: number;
-    transactions: number;
-  };
-}
+import { useEchoAppsDashboard } from '@/hooks/useEchoAppsDashboard';
 
 export default function EchoAppsDashboard() {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
-  const [echoApps, setEchoApps] = useState<EchoApp[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [deletingAppId, setDeletingAppId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      fetchEchoApps();
-    }
-  }, [isLoaded, user]);
-
-  const fetchEchoApps = async () => {
-    try {
-      setError(null);
-      const response = await fetch('/api/apps');
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch echo apps');
-      }
-
-      setEchoApps(data.apps || []);
-    } catch (error) {
-      console.error('Error fetching echo apps:', error);
-      setError(
-        error instanceof Error ? error.message : 'Failed to fetch echo apps'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    echoApps,
+    loading,
+    error,
+    deletingAppId,
+    handleCreateApp: createApp,
+    handleArchiveApp: archiveApp,
+  } = useEchoAppsDashboard();
 
   const handleCreateApp = async (appData: {
     name: string;
@@ -72,20 +37,7 @@ export default function EchoAppsDashboard() {
     githubType?: 'user' | 'repo';
     githubId?: string;
   }) => {
-    setError(null);
-    const response = await fetch('/api/apps', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(appData),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to create echo app');
-    }
-
-    await fetchEchoApps(); // Refresh the list
+    await createApp(appData);
     setShowCreateModal(false);
   };
 
@@ -93,28 +45,7 @@ export default function EchoAppsDashboard() {
     event.preventDefault(); // Prevent navigation to app detail page
     event.stopPropagation(); // Stop event propagation
 
-    setDeletingAppId(id);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/apps/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to archive echo app');
-      }
-
-      await fetchEchoApps(); // Refresh the list
-    } catch (error) {
-      console.error('Error archiving echo app:', error);
-      setError(
-        error instanceof Error ? error.message : 'Failed to archive echo app'
-      );
-    } finally {
-      setDeletingAppId(null);
-    }
+    await archiveApp(id);
   };
 
   if (!isLoaded || loading) {

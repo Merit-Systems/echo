@@ -18,14 +18,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Validate callback URLs if provided
-    if (body.successUrl && !isValidUrl(body.successUrl)) {
-      return NextResponse.json(
-        { error: 'Invalid success URL format' },
-        { status: 400 }
-      );
-    }
-
     const result = await createPaymentLink(user, body);
 
     return NextResponse.json(result, { status: 201 });

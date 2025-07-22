@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getBalance } from '@/lib/balance';
-import { Balance } from '@/lib/types/apps';
+import { formatBalanceResult } from '@/lib/balance/utils';
 
 // GET /api/balance - Get authenticated user balance (optionally for a specific app)
 export async function GET(request: NextRequest) {
@@ -12,13 +12,7 @@ export async function GET(request: NextRequest) {
 
     const balanceResult = await getBalance(user, echoAppId);
 
-    // Convert BalanceResult to Balance format expected by UI
-    const balance: Balance = {
-      balance: balanceResult.balance.toString(),
-      totalPaid: balanceResult.totalPaid.toString(),
-      totalSpent: balanceResult.totalSpent.toString(),
-      currency: balanceResult.currency,
-    };
+    const balance = formatBalanceResult(balanceResult);
 
     return NextResponse.json(balance);
   } catch (error) {

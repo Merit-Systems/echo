@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
 import {
   CreditCardIcon,
   PlusIcon,
@@ -12,89 +10,51 @@ import { useRouter } from 'next/navigation';
 import { GlassButton } from './glass-button';
 import { formatCurrency } from '@/lib/balance';
 import { Logo } from './ui/logo';
-import { Balance } from '@/lib/types/apps';
+import { useUserBalance } from '@/hooks/useUserBalance';
 
 interface BalanceCardProps {
   compact?: boolean;
 }
 
 export default function BalanceCard({ compact = false }: BalanceCardProps) {
-  const { user, isLoaded } = useUser();
   const router = useRouter();
-  const [balance, setBalance] = useState<Balance | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [adjustmentAmount, setAdjustmentAmount] = useState('');
-  const [adjustmentType, setAdjustmentType] = useState<
-    'increment' | 'decrement'
-  >('increment');
-
-  useEffect(() => {
-    if (isLoaded && user) {
-      fetchBalance();
-    }
-  }, [isLoaded, user]);
-
-  const fetchBalance = async () => {
-    try {
-      const response = await fetch('/api/balance');
-      const data = await response.json();
-      setBalance(data);
-    } catch (error) {
-      console.error('Error fetching balance:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBalanceAdjustment = async () => {
-    if (!adjustmentAmount || isNaN(Number(adjustmentAmount))) return;
-
-    try {
-      const response = await fetch('/api/balance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: Number(adjustmentAmount),
-          operation: adjustmentType,
-          description: `Manual ${adjustmentType} of $${adjustmentAmount}`,
-        }),
-      });
-
-      if (response.ok) {
-        await fetchBalance();
-        setAdjustmentAmount('');
-      }
-    } catch (error) {
-      console.error('Error adjusting balance:', error);
-    }
-  };
+  const {
+    balance,
+    loading,
+    adjustmentAmount,
+    adjustmentType,
+    setAdjustmentAmount,
+    setAdjustmentType,
+    handleBalanceAdjustment,
+  } = useUserBalance();
 
   const handleNavigateToCredits = () => {
     router.push('/credits');
   };
 
-  if (!isLoaded || loading) {
+  if (loading) {
     if (compact) {
       return (
         <div className="flex items-center space-x-2 animate-pulse">
           <div className="h-6 w-6 bg-muted rounded"></div>
-          <div className="h-4 bg-muted rounded w-16"></div>
+          <div className="h-5 w-24 bg-muted rounded"></div>
         </div>
       );
     }
 
     return (
-      <div className="bg-card rounded-lg border border-border p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
-          <div className="h-4 bg-muted rounded w-3/4"></div>
+      <div className="bg-card border border-border rounded-xl p-6">
+        <div className="flex items-center justify-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-secondary border-t-transparent"></div>
         </div>
       </div>
     );
   }
 
-  // Compact version for header
+  if (!balance) {
+    return null;
+  }
+
   if (compact) {
     return (
       <button
@@ -111,91 +71,100 @@ export default function BalanceCard({ compact = false }: BalanceCardProps) {
     );
   }
 
-  // Full version for standalone use
   return (
-    <div className="bg-card rounded-lg border border-border p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-card-foreground">
-          Overall Account Balance
-        </h3>
-        <CreditCardIcon className="h-6 w-6 text-muted-foreground" />
-      </div>
-
-      {balance && (
-        <div className="space-y-4">
+    <div className="bg-card border border-border rounded-xl p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
+            <CreditCardIcon className="h-5 w-5 text-secondary" />
+          </div>
           <div>
-            <div className="text-3xl font-bold text-secondary">
-              ${balance.balance}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Total available balance across all apps
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-            <div>
-              <div className="text-sm text-muted-foreground">Total Credits</div>
-              <div className="font-semibold text-secondary">
-                +${balance.totalPaid}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Total Spent</div>
-              <div className="font-semibold text-destructive">
-                {formatCurrency(Number(balance.totalSpent))}
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-border">
-            <div className="bg-muted/30 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground text-center">
-                💡 To add credits, visit any of your individual app pages where
-                you can purchase credits specific to that app.
-              </p>
-            </div>
-          </div>
-
-          {/* Admin Balance Controls */}
-          <div className="border-t border-border pt-4">
-            <div className="text-sm font-medium text-card-foreground mb-2">
-              Admin Controls:
-            </div>
-            <div className="flex space-x-2">
-              <select
-                value={adjustmentType}
-                onChange={e =>
-                  setAdjustmentType(e.target.value as 'increment' | 'decrement')
-                }
-                className="text-sm border border-input bg-input text-input-foreground rounded px-2 py-1"
-              >
-                <option value="increment">Add</option>
-                <option value="decrement">Remove</option>
-              </select>
-              <input
-                type="number"
-                step="0.01"
-                value={adjustmentAmount}
-                onChange={e => setAdjustmentAmount(e.target.value)}
-                placeholder="Amount"
-                className="flex-1 text-sm border border-input bg-input text-input-foreground rounded px-2 py-1 placeholder-muted-foreground"
-              />
-              <GlassButton
-                onClick={handleBalanceAdjustment}
-                disabled={!adjustmentAmount}
-                variant="secondary"
-                className="!h-8 !w-10"
-              >
-                {adjustmentType === 'increment' ? (
-                  <PlusIcon className="h-4 w-4" />
-                ) : (
-                  <MinusIcon className="h-4 w-4" />
-                )}
-              </GlassButton>
-            </div>
+            <h3 className="font-semibold text-foreground">Credits Balance</h3>
+            <p className="text-sm text-muted-foreground">
+              Available spending credits
+            </p>
           </div>
         </div>
-      )}
+        <div className="text-right">
+          <div className="text-3xl font-bold text-foreground">
+            {formatCurrency(Number(balance.balance))}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {balance.currency.toUpperCase()}
+          </div>
+        </div>
+      </div>
+
+      {/* Balance Adjustment Section */}
+      <div className="space-y-4 border-t border-border pt-4">
+        <div className="flex items-center space-x-2">
+          <h4 className="text-sm font-medium text-foreground">
+            Adjust Balance
+          </h4>
+          <div className="flex-1 h-px bg-border"></div>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <select
+            value={adjustmentType}
+            onChange={e =>
+              setAdjustmentType(e.target.value as 'increment' | 'decrement')
+            }
+            className="px-3 py-2 border border-input bg-background text-foreground rounded-lg text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+          >
+            <option value="increment">Add</option>
+            <option value="decrement">Subtract</option>
+          </select>
+
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">
+              $
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={adjustmentAmount}
+              onChange={e => setAdjustmentAmount(e.target.value)}
+              className="w-full pl-8 pr-4 py-2 border border-input bg-background text-foreground rounded-lg text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+              placeholder="0.00"
+            />
+          </div>
+
+          <GlassButton
+            onClick={handleBalanceAdjustment}
+            disabled={!adjustmentAmount || isNaN(Number(adjustmentAmount))}
+            variant="secondary"
+          >
+            {adjustmentType === 'increment' ? (
+              <PlusIcon className="h-4 w-4" />
+            ) : (
+              <MinusIcon className="h-4 w-4" />
+            )}
+          </GlassButton>
+        </div>
+      </div>
+
+      {/* Purchase Credits Section */}
+      <div className="space-y-3 border-t border-border pt-4">
+        <div className="flex items-center space-x-2">
+          <h4 className="text-sm font-medium text-foreground">
+            Purchase Credits
+          </h4>
+          <div className="flex-1 h-px bg-border"></div>
+        </div>
+
+        <GlassButton
+          onClick={handleNavigateToCredits}
+          variant="primary"
+          className="w-full flex items-center justify-center space-x-2"
+        >
+          <Logo className="h-4 w-4" />
+          <span>Buy Credits</span>
+          <ArrowUpRight className="h-4 w-4" />
+        </GlassButton>
+      </div>
     </div>
   );
 }

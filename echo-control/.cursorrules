@@ -56,6 +56,8 @@
 - Handle errors gracefully with proper error boundaries
 - Use proper TypeScript types for all API responses
 - Implement proper loading states
+- There are two APIs that should be maintained. /api should be used by the front-end and /api/v1 is used by other clients such as the typescript SDK.
+- API endpoints that are not called should be removed. Unless explicitly stated, API endpoints should have very tight access control.
 
 ## TypeScript Best Practices
 - Use strict TypeScript configuration
@@ -81,7 +83,6 @@
 - Implement proper SEO meta tags
 
 ## Error Handling and Validation
-- Use Zod or similar for runtime validation (schemas in feature directories)
 - Implement proper error boundaries
 - Handle async errors with try-catch in hooks
 - Provide user-friendly error messages
@@ -96,7 +97,8 @@
 - Implement proper loading and empty states
 
 ## File Naming Conventions
-- Use kebab-case for file names (e.g., user-profile.tsx)
+- use PascalCase for component files.
+- use kebab-case for all lib and business logic files that do not contain components.
 - Use PascalCase for component names
 - Use camelCase for functions and variables
 - Use UPPER_SNAKE_CASE for constants

@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { EchoApp } from '@/lib/types/apps';
 import AppCard from '@/components/AppCard';
 import { Skeleton } from '@/components/skeleton';
-import { useUser } from '@clerk/nextjs';
+import { useAllApps } from '@/hooks/useAllApps';
 
 interface AllAppsPageProps {
   title: string;
@@ -19,32 +19,7 @@ export const AllAppsPage: React.FC<AllAppsPageProps> = ({
   fetchApps,
   emptyStateMessage = 'No apps found.',
 }) => {
-  const { isLoaded: isUserLoaded } = useUser();
-  const [apps, setApps] = useState<EchoApp[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadApps = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const fetchedApps = await fetchApps();
-        setApps(fetchedApps);
-      } catch (err) {
-        console.error('Error fetching apps:', err);
-        setError(
-          err instanceof Error ? err.message : 'Failed to load applications.'
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (isUserLoaded) {
-      loadApps();
-    }
-  }, [fetchApps, isUserLoaded]);
+  const { apps, loading, error } = useAllApps(fetchApps);
 
   if (loading) {
     return (

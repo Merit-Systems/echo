@@ -4,6 +4,8 @@ import { AppRole, Permission } from '../permissions/types';
 import { PermissionService } from '../permissions';
 import { generateApiKey, hashApiKey } from '../crypto';
 
+export * from './api-keys';
+
 export async function findApiKey(
   id: string,
   userId: string

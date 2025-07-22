@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { User } from '@/generated/prisma';
+import { formatUserForApiResponse } from '@/lib/user';
 
 // GET /api/v1/user - Get authenticated user information
 export async function GET(request: NextRequest) {
@@ -14,16 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Return user data in the format expected by the TypeScript SDK
-    const responseData = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-      totalPaid: Number(user.totalPaid),
-      totalSpent: Number(user.totalSpent),
-    };
+    const responseData = formatUserForApiResponse(user);
 
     return NextResponse.json(responseData);
   } catch (error) {
