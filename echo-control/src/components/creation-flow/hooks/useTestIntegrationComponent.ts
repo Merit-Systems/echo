@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 export interface UseTestIntegrationComponentReturn {
   integrationVerified: boolean;
@@ -16,6 +16,10 @@ export function useTestIntegrationComponent(
   const [integrationVerified, setIntegrationVerified] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Store references to interval and timeout for cleanup
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // For this step, isUpdating is the same as isPolling
   const isUpdating = isPolling;
@@ -40,27 +44,40 @@ export function useTestIntegrationComponent(
     []
   );
 
+  const stopPolling = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setIsPolling(false);
+  }, []);
+
   const startPolling = useCallback(
     (appId: string) => {
+      // Stop any existing polling first
+      stopPolling();
+
       setIsPolling(true);
       setError(null);
 
-      const interval = setInterval(async () => {
+      intervalRef.current = setInterval(async () => {
         const hasTokens = await checkForRefreshToken(appId);
         if (hasTokens) {
           setIntegrationVerified(true);
-          setIsPolling(false);
-          clearInterval(interval);
+          stopPolling();
         }
       }, 3000); // Poll every 3 seconds
 
       // Stop polling after 5 minutes
-      setTimeout(() => {
-        clearInterval(interval);
-        setIsPolling(false);
+      timeoutRef.current = setTimeout(() => {
+        stopPolling();
       }, 300000);
     },
-    [checkForRefreshToken]
+    [checkForRefreshToken, stopPolling]
   );
 
   // Update method (no-op for test step as it's verification only)
@@ -82,6 +99,13 @@ export function useTestIntegrationComponent(
     setIsPolling(false);
     setError(null);
   }, [appId]);
+
+  // Cleanup polling when component unmounts
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, [stopPolling]);
 
   return {
     integrationVerified,

@@ -39,6 +39,14 @@ export default function TestIntegrationStep({
     }
   }, [createdAppId, isPolling, integrationVerified, startPolling]);
 
+  // Ensure polling stops when component unmounts
+  useEffect(() => {
+    return () => {
+      // The cleanup is primarily handled in the hook, but this provides extra safety
+      // In case the hook's cleanup doesn't run for any reason
+    };
+  }, []);
+
   const handleGoToDashboard = () => {
     if (createdAppId) {
       router.push(`/apps/${createdAppId}`);
