@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { User, Payment } from '@/generated/prisma';
+import { User } from '@/generated/prisma';
 import Stripe from 'stripe';
 import { CreatePaymentLinkRequest, CreatePaymentLinkResult } from './types';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { EchoApp } from '@/lib/types/apps';
 
@@ -19,7 +19,7 @@ export const useAllApps = (
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadApps = async () => {
+  const loadApps = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -33,7 +33,7 @@ export const useAllApps = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchApps]);
 
   useEffect(() => {
     if (isUserLoaded) {
