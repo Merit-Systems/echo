@@ -93,7 +93,7 @@ export async function GET(
           profilePictureUrl: membership.user.profilePictureUrl,
           role: membership.role,
           status: membership.status,
-          totalSpent: Number(membership.totalSpent),
+          totalSpent: Number(totalSpentResult._sum.cost || 0), // Use calculated transaction cost instead of removed field
           apiKeyCount,
           transactionSpent: Number(totalSpentResult._sum.cost || 0),
           joinedAt: membership.createdAt.toISOString(),

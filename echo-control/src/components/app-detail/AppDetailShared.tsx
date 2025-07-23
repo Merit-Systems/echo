@@ -443,7 +443,7 @@ export function OverviewStats({
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">Total Spent</span>
+          <span className="text-muted-foreground">Total Revenue</span>
           <Badge className="text-black dark:text-white border-[1px] bg-transparent shadow-none">
             {formatCurrency(app.stats?.totalCost)}
           </Badge>

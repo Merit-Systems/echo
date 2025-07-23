@@ -100,7 +100,7 @@ export function PublicAppDetail({ app }: PublicAppDetailProps) {
 
       <div>
         <p className="text-sm font-medium text-muted-foreground mb-1">
-          Total Spending
+          Total Revenue
         </p>
         <p className="text-lg font-bold text-foreground">
           {isLoadingGlobal ? '...' : formatCurrency(currentStats?.totalCost)}

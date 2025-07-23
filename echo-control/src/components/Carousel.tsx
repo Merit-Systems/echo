@@ -185,7 +185,7 @@ export const Carousel: React.FC<CarouselProps> = ({
 
                       <div className="flex items-center gap-2">
                         <Badge className="shrink-0 text-black dark:text-white border-[1px] bg-transparent shadow-none w-fit text-base">
-                          ${(app.totalCost / 100).toFixed(1)}k
+                          ${(app.totalCost / 1000).toFixed(1)}k
                         </Badge>
                       </div>
                     </div>

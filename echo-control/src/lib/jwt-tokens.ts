@@ -430,7 +430,6 @@ export async function handleInitialTokenIssuance(
           echoAppId: echoApp.id,
           status: MembershipStatus.ACTIVE,
           role: AppRole.CUSTOMER,
-          totalSpent: 0,
           createdAt: new Date(),
           updatedAt: new Date(),
         },

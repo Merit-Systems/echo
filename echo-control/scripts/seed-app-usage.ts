@@ -193,7 +193,6 @@ async function createAppMembership(
       echoAppId: appId,
       role,
       status,
-      totalSpent: 0, // Will be updated as transactions are created
     },
   });
 }
@@ -525,11 +524,7 @@ async function seedAppUsage(
           echoAppId: appId,
         },
       },
-      data: {
-        totalSpent: {
-          increment: totalCost,
-        },
-      },
+      data: {},
     });
   }
 

@@ -59,7 +59,7 @@ export async function GET() {
     // Get transaction stats and activity data for each app
     const appsWithStats = await Promise.all(
       publicApps.map(async app => {
-        const [transactionStats, activity] = await Promise.all([
+        const [transactionStats, revenueStats, activity] = await Promise.all([
           db.transaction.aggregate({
             where: {
               echoAppId: app.id,
@@ -68,6 +68,15 @@ export async function GET() {
             _sum: {
               totalTokens: true,
               cost: true,
+            },
+          }),
+          db.revenue.aggregate({
+            where: {
+              echoAppId: app.id,
+              isArchived: false,
+            },
+            _sum: {
+              amount: true,
             },
           }),
           getAppActivity(app.id).catch(error => {
@@ -90,7 +99,7 @@ export async function GET() {
           updatedAt: app.updatedAt.toISOString(),
           authorizedCallbackUrls: app.authorizedCallbackUrls,
           totalTokens: transactionStats._sum.totalTokens || 0,
-          totalCost: Number(transactionStats._sum.cost || 0),
+          totalCost: Number(revenueStats._sum.amount || 0), // Use revenue instead of transaction cost
           _count: {
             apiKeys: app._count.apiKeys,
             transactions: app._count.transactions,

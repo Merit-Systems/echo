@@ -252,6 +252,18 @@ export const listAppsWithDetails = async (
     },
   });
 
+  // Get revenue totals for all apps in batch
+  const revenueStats = await db.revenue.groupBy({
+    by: ['echoAppId'],
+    where: {
+      echoAppId: { in: appIds },
+      isArchived: false,
+    },
+    _sum: {
+      amount: true,
+    },
+  });
+
   // Create a map for quick lookup of transaction stats
   const statsMap = new Map(
     transactionStats.map(stat => [
@@ -261,6 +273,11 @@ export const listAppsWithDetails = async (
         totalCost: Number(stat._sum.cost || 0),
       },
     ])
+  );
+
+  // Create a map for quick lookup of revenue stats
+  const revenueMap = new Map(
+    revenueStats.map(stat => [stat.echoAppId, Number(stat._sum.amount || 0)])
   );
 
   // Get activity data for all apps in batch
@@ -284,6 +301,7 @@ export const listAppsWithDetails = async (
     const app = membership.echoApp;
     const owner = app.appMemberships[0]?.user || null;
     const stats = statsMap.get(app.id) || { totalTokens: 0, totalCost: 0 };
+    const revenue = revenueMap.get(app.id) || 0;
     const activityData = activityDataMap.get(app.id) || [];
 
     return {
@@ -298,7 +316,7 @@ export const listAppsWithDetails = async (
       authorizedCallbackUrls: app.authorizedCallbackUrls,
       userRole: membership.role as AppRole,
       totalTokens: stats.totalTokens,
-      totalCost: stats.totalCost,
+      totalCost: revenue, // Use revenue instead of transaction cost
       _count: {
         apiKeys: app._count.apiKeys,
         transactions: app._count.transactions,
@@ -369,6 +387,9 @@ export const getPublicAppInfo = async (
     },
   });
 
+  // Get total revenue for the app
+  const totalRevenue = await getRevenueForApp(appId);
+
   // Get model usage breakdown (always global for public view)
   const modelUsage = await db.transaction.groupBy({
     by: ['model'],
@@ -419,7 +440,7 @@ export const getPublicAppInfo = async (
     userRole: AppRole.PUBLIC,
     permissions: [Permission.READ_APP],
     totalTokens: stats._sum.totalTokens || 0,
-    totalCost: Number(stats._sum.cost || 0),
+    totalCost: totalRevenue, // Use revenue instead of transaction cost
     authorizedCallbackUrls: [],
     _count: {
       apiKeys: 0,
@@ -588,6 +609,12 @@ export const getDetailedAppInfo = async (
     },
   });
 
+  // Get revenue for the app (filtered by user for customers unless globalView is true)
+  const totalRevenue = await getRevenueForApp(
+    appId,
+    userRole === AppRole.CUSTOMER && !globalView ? userId : undefined
+  );
+
   // Get model usage breakdown (filtered by user for customers unless globalView is true)
   const modelUsage = await db.transaction.groupBy({
     by: ['model'],
@@ -675,7 +702,7 @@ export const getDetailedAppInfo = async (
     userRole,
     permissions: PermissionService.getPermissionsForRole(userRole),
     totalTokens: stats._sum.totalTokens || 0,
-    totalCost: Number(stats._sum.cost || 0),
+    totalCost: totalRevenue, // Use revenue instead of transaction cost
     owner: ownerMembership?.user
       ? {
           id: ownerMembership.user.id,
@@ -710,7 +737,7 @@ export const getDetailedAppInfo = async (
       totalTokens: stats._sum.totalTokens || 0,
       totalInputTokens: stats._sum.inputTokens || 0,
       totalOutputTokens: stats._sum.outputTokens || 0,
-      totalCost: Number(stats._sum.cost || 0),
+      totalCost: totalRevenue, // Use revenue instead of transaction cost
       modelUsage: modelUsage.map(usage => ({
         ...usage,
         _sum: {
@@ -762,7 +789,6 @@ export const createEchoApp = async (userId: string, data: AppCreateInput) => {
           role: AppRole.OWNER,
           status: MembershipStatus.ACTIVE,
           isArchived: false,
-          totalSpent: 0,
         },
       },
       authorizedCallbackUrls: data.authorizedCallbackUrls || [], // Start with empty callback URLs
@@ -981,6 +1007,31 @@ export const updateEchoApp = async (
     data,
     select,
   });
+};
+
+/**
+ * Get total revenue for an app from the Revenue table
+ * @param appId - The Echo app ID to get revenue for
+ * @param userId - Optional user ID to filter revenue by user (for customer view)
+ * @returns The total revenue amount
+ */
+export const getRevenueForApp = async (
+  appId: string,
+  userId?: string
+): Promise<number> => {
+  const result = await db.revenue.aggregate({
+    where: {
+      echoAppId: appId,
+      isArchived: false,
+      // Filter by user if provided (for customer-specific revenue)
+      ...(userId && { userId }),
+    },
+    _sum: {
+      amount: true,
+    },
+  });
+
+  return Number(result._sum.amount || 0);
 };
 
 export * from './apps';

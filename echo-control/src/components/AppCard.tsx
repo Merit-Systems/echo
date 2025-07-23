@@ -47,7 +47,7 @@ export const AppCard: React.FC<AppCardProps> = ({
   const stats = {
     users: 0, // Not available in current data structure
     requests: app._count.transactions || 0,
-    revenue: `${(app.totalCost / 100).toFixed(2)}`, // Convert from cents
+    revenue: `${app.totalCost.toFixed(2)}`, // Revenue is already in dollars
   };
 
   // Set consistent minimum heights based on size

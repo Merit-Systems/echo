@@ -161,7 +161,7 @@ export function CustomerAppDetail({
 
         <div>
           <p className="text-sm font-medium text-muted-foreground mb-1">
-            {isGlobalView ? 'Total Spending' : 'Your Spending'}
+            {isGlobalView ? 'Total Revenue' : 'Your Revenue'}
           </p>
           <p className="text-lg font-bold text-foreground">
             {isLoadingGlobal && isGlobalView

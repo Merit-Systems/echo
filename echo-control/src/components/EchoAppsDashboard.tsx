@@ -213,7 +213,9 @@ export default function EchoAppsDashboard() {
 
                   <div className="mt-4 pt-4 border-t border-border">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Total Cost:</span>
+                      <span className="text-muted-foreground">
+                        Total Revenue:
+                      </span>
                       <span className="font-semibold text-card-foreground">
                         ${Number(app.totalCost).toFixed(2)}
                       </span>
