@@ -134,7 +134,6 @@ export async function seedIntegrationDatabase() {
         echoAppId: testApp.id,
         role: 'owner',
         status: 'active',
-        totalSpent: 0,
       },
     });
 
@@ -173,7 +172,6 @@ export async function seedIntegrationDatabase() {
         echoAppId: secondApp.id,
         role: 'owner',
         status: 'active',
-        totalSpent: 0,
       },
     });
 

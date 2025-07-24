@@ -12,16 +12,12 @@ export const TEST_DATA = {
       email: 'test@example.com',
       name: 'Integration Test User',
       clerkId: 'user_2mP4JRQPpWlDVDPuyrxBxwZU6cM', // links to the INTEGRATION_TEST_JWT user in Clerk
-      totalPaid: 0,
-      totalSpent: 0,
     },
     secondary: {
       id: '33333333-3333-3333-3333-333333333333',
       email: 'test2@example.com',
       name: 'Second Test User',
       clerkId: 'user_2yazGcnqOARrPN3GwgZ8j8QWDEL', // links to the INTEGRATION_TEST_JWT_USER_2 user in Clerk
-      totalPaid: 0,
-      totalSpent: 0,
     },
   },
 
