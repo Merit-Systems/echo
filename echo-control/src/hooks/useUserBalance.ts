@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { Balance } from '@/lib/types/apps';
+import { Balance } from '@/lib/echo-apps/types';
 
 export function useUserBalance() {
   const { user, isLoaded } = useUser();

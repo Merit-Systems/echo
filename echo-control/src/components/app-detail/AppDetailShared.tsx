@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/balance';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,12 +29,17 @@ import { Button } from '@/components/ui/button';
 import { ProfileAvatar } from '@/components/ui/profile-avatar';
 import { CommitChart } from '@/components/activity-chart/chart';
 import { DotPattern } from '@/components/ui/dot-background';
-import { DetailedEchoApp } from '@/hooks/useEchoAppDetail';
+import {
+  PublicEchoApp,
+  CustomerEchoApp,
+  OwnerEchoApp,
+  AppActivity,
+  ModelUsage,
+} from '@/lib/echo-apps/types';
+import { Transaction } from '@/generated/prisma';
 import { AppRole } from '@/lib/permissions/types';
-
-// Add GitHub API imports
 import { githubApi, GitHubUser, GitHubRepo } from '@/lib/github-api';
-import { useState, useEffect } from 'react';
+import { transformActivityData } from '@/lib/echo-apps/activity/activity';
 
 // Helper functions
 export const formatNumber = (value: number | null | undefined): string => {
@@ -49,19 +54,6 @@ export const formatCost = (value: number | null | undefined): string => {
     return '$0.0000';
   }
   return `${Number(value).toFixed(4)}`;
-};
-
-export const transformActivityData = (data: number[] | undefined) => {
-  if (!data || data.length === 0) {
-    return [];
-  }
-  return data.map((count, index) => ({
-    index,
-    count,
-    date: new Date(
-      Date.now() - (data.length - 1 - index) * 24 * 60 * 60 * 1000
-    ).toISOString(),
-  }));
 };
 
 // Shared Layout Component
@@ -117,7 +109,7 @@ export function AppDetailLayout({
 
 // Shared Banner Component
 interface AppBannerProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
   backUrl?: string;
 }
 
@@ -163,7 +155,7 @@ export function AppBanner({ app, backUrl = '/' }: AppBannerProps) {
 
 // App Profile Section
 interface AppProfileProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
   userRole: AppRole | null;
   roleLabel?: string;
   actions?: ReactNode;
@@ -380,11 +372,19 @@ export function AppProfile({
 
 // Activity Chart Card
 interface ActivityChartProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
   title?: string;
+  activityData?: AppActivity[];
 }
 
-export function ActivityChart({ app, title = 'Activity' }: ActivityChartProps) {
+export function ActivityChart({
+  app,
+  title = 'Activity',
+  activityData,
+}: ActivityChartProps) {
+  // Use provided activity data or default to global activity data
+  const dataToUse = activityData || app.stats.globalActivityData;
+
   return (
     <div className="flex flex-col">
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
@@ -392,10 +392,10 @@ export function ActivityChart({ app, title = 'Activity' }: ActivityChartProps) {
         <div className="h-64">
           <CommitChart
             data={{
-              data: transformActivityData(app.activityData),
+              data: transformActivityData(dataToUse),
               isLoading: false,
             }}
-            numPoints={app.activityData?.length || 0}
+            numPoints={dataToUse?.length || 0}
             timeWindowOption={{ value: '30d' }}
             startDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
             endDate={new Date()}
@@ -410,7 +410,7 @@ export function ActivityChart({ app, title = 'Activity' }: ActivityChartProps) {
 
 // Overview Stats Card
 interface OverviewStatsProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
   showAdvanced?: boolean;
 }
 
@@ -433,19 +433,27 @@ export function OverviewStats({
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">Total Transactions</span>
           <span className="font-bold">
-            {formatNumber(app.stats?.totalTransactions)}
+            {formatNumber(app.stats.globalTotalTransactions)}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">Total Tokens</span>
           <span className="font-bold">
-            {formatNumber(app.stats?.totalTokens)}
+            {formatNumber(
+              'personalTotalTokens' in app.stats
+                ? app.stats.personalTotalTokens
+                : app.stats.globalTotalTokens
+            )}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">Total Revenue</span>
           <Badge className="text-black dark:text-white border-[1px] bg-transparent shadow-none">
-            {formatCurrency(app.stats?.totalCost)}
+            {formatCurrency(
+              'personalTotalRevenue' in app.stats
+                ? app.stats.personalTotalRevenue
+                : app.stats.globalTotalRevenue
+            )}
           </Badge>
         </div>
         {showAdvanced && (
@@ -467,7 +475,7 @@ export function OverviewStats({
 
 // API Keys Card
 interface ApiKeysCardProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
   hasCreatePermission: boolean;
   hasManagePermission: boolean;
   onCreateApiKey?: () => void;
@@ -502,13 +510,17 @@ export function ApiKeysCard({
       <Separator className="my-4" />
 
       <div className="space-y-3 flex-1 overflow-auto">
-        {app.apiKeys && app.apiKeys.length > 0 ? (
+        {'personalApiKeys' in app.stats &&
+        app.stats.personalApiKeys &&
+        app.stats.personalApiKeys.length > 0 ? (
           <>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Active Keys</span>
-              <span className="font-bold">{app.apiKeys.length}</span>
+              <span className="font-bold">
+                {app.stats.personalApiKeys.length}
+              </span>
             </div>
-            {app.apiKeys.slice(0, 3).map(apiKey => (
+            {app.stats.personalApiKeys.slice(0, 3).map(apiKey => (
               <div
                 key={apiKey.id}
                 className="flex justify-between items-center text-sm"
@@ -518,7 +530,12 @@ export function ApiKeysCard({
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
-                    {formatCurrency(apiKey.totalSpent)}
+                    {formatCurrency(
+                      apiKey.transactions?.reduce(
+                        (sum, tx) => sum + Number(tx.cost || 0),
+                        0
+                      ) || 0
+                    )}
                   </span>
                   {hasManagePermission && onArchiveApiKey && (
                     <button
@@ -532,9 +549,9 @@ export function ApiKeysCard({
                 </div>
               </div>
             ))}
-            {app.apiKeys.length > 3 && (
+            {app.stats.personalApiKeys.length > 3 && (
               <p className="text-xs text-muted-foreground">
-                +{app.apiKeys.length - 3} more keys
+                +{app.stats.personalApiKeys.length - 3} more keys
               </p>
             )}
           </>
@@ -553,14 +570,23 @@ export function ApiKeysCard({
 
 // Recent Activity Card
 interface RecentActivityCardProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
   title?: string;
+  recentTransactions?: Transaction[];
 }
 
 export function RecentActivityCard({
   app,
   title = 'Recent Activity',
+  recentTransactions,
 }: RecentActivityCardProps) {
+  // Use provided transactions or fall back to personal transactions if available
+  const transactions =
+    recentTransactions ||
+    ('personalRecentTransactions' in app.stats
+      ? app.stats.personalRecentTransactions
+      : []);
+
   return (
     <Card className="p-6 hover:border-secondary relative shadow-secondary shadow-[0_0_8px] transition-all duration-300 bg-background/80 backdrop-blur-sm border-border/50 h-80 flex flex-col">
       <div className="flex items-center gap-3 mb-4">
@@ -570,9 +596,9 @@ export function RecentActivityCard({
       <Separator className="my-4" />
 
       <div className="space-y-3 flex-1 overflow-auto">
-        {app.recentTransactions && app.recentTransactions.length > 0 ? (
+        {transactions && transactions.length > 0 ? (
           <>
-            {app.recentTransactions.slice(0, 4).map(transaction => (
+            {transactions.slice(0, 4).map(transaction => (
               <div
                 key={transaction.id}
                 className="flex justify-between items-start text-sm"
@@ -584,16 +610,18 @@ export function RecentActivityCard({
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium">{formatCost(transaction.cost)}</p>
+                  <p className="font-medium">
+                    {formatCost(Number(transaction.cost))}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {formatNumber(transaction.totalTokens)} tokens
                   </p>
                 </div>
               </div>
             ))}
-            {app.recentTransactions.length > 4 && (
+            {transactions.length > 4 && (
               <p className="text-xs text-muted-foreground">
-                +{app.recentTransactions.length - 4} more transactions
+                +{transactions.length - 4} more transactions
               </p>
             )}
           </>
@@ -614,25 +642,36 @@ export function RecentActivityCard({
 
 // Top Models Card
 interface TopModelsCardProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
   title?: string;
+  modelUsage?: ModelUsage[];
 }
 
 export function TopModelsCard({
   app,
   title = 'Top Models',
+  modelUsage,
 }: TopModelsCardProps) {
+  // Use provided model usage or fall back to global/personal model usage
+  const usage =
+    modelUsage ||
+    ('personalModelUsage' in app.stats
+      ? app.stats.personalModelUsage
+      : 'globalModelUsage' in app.stats
+        ? app.stats.globalModelUsage
+        : []);
+
   return (
     <div className="flex flex-col">
       <Card className="flex-1 p-6 hover:border-secondary relative shadow-secondary shadow-[0_0_8px] transition-all duration-300 bg-background/80 backdrop-blur-sm border-border/50 h-80 flex flex-col">
         <h2 className="text-2xl font-bold mb-4">{title}</h2>
         <Separator className="my-4" />
         <CardContent className="p-0 h-full flex-1 overflow-auto">
-          {app.stats?.modelUsage && app.stats.modelUsage.length > 0 ? (
+          {usage && usage.length > 0 ? (
             <div className="space-y-4">
-              {app.stats.modelUsage.slice(0, 5).map((usage, index) => (
+              {usage.slice(0, 5).map((modelUsage, index) => (
                 <div
-                  key={usage.model}
+                  key={modelUsage.model}
                   className="flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
@@ -640,18 +679,18 @@ export function TopModelsCard({
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{usage.model}</p>
+                      <p className="font-medium text-sm">{modelUsage.model}</p>
                       <p className="text-xs text-muted-foreground">
-                        {formatNumber(usage._count)} requests
+                        Model usage
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-sm">
-                      {formatCost(usage._sum?.cost)}
+                      {formatCost(modelUsage.totalModelCost)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatNumber(usage._sum?.totalTokens)} tokens
+                      {formatNumber(modelUsage.totalTokens)} tokens
                     </p>
                   </div>
                 </div>
@@ -699,7 +738,7 @@ interface SubscriptionPackage {
 }
 
 interface SubscriptionCardProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
   onSubscribe?: (type: 'product' | 'package', id: string) => void;
 }
 
@@ -878,7 +917,7 @@ export function SubscriptionCard({ app, onSubscribe }: SubscriptionCardProps) {
 
 // Active Subscriptions Card
 interface ActiveSubscriptionsCardProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
   onSubscriptionUpdate?: () => void;
 }
 

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { DashboardEchoApp } from '@/lib/types/apps';
+import { OwnerEchoApp } from '@/lib/echo-apps/types';
 
 interface UseEchoAppsDashboardReturn {
-  echoApps: DashboardEchoApp[];
+  echoApps: OwnerEchoApp[];
   loading: boolean;
   error: string | null;
   deletingAppId: string | null;
@@ -19,7 +19,7 @@ interface UseEchoAppsDashboardReturn {
 
 export function useEchoAppsDashboard(): UseEchoAppsDashboardReturn {
   const { user, isLoaded } = useUser();
-  const [echoApps, setEchoApps] = useState<DashboardEchoApp[]>([]);
+  const [echoApps, setEchoApps] = useState<OwnerEchoApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingAppId, setDeletingAppId] = useState<string | null>(null);

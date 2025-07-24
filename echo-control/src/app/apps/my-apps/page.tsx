@@ -1,12 +1,11 @@
 'use client';
 
 import React from 'react';
-import { AppRole } from '@/lib/permissions/types';
-import { AuthenticatedEchoApp } from '@/lib/types/apps';
+import { OwnerEchoApp } from '@/lib/echo-apps/types';
 import AllAppsPage from '@/components/AllAppsPage';
 
 const MyAppsFullPage: React.FC = () => {
-  const fetchMyApps = async (): Promise<AuthenticatedEchoApp[]> => {
+  const fetchMyApps = async (): Promise<OwnerEchoApp[]> => {
     const response = await fetch('/api/owner/apps');
     const data = await response.json();
 
@@ -14,10 +13,8 @@ const MyAppsFullPage: React.FC = () => {
       throw new Error(data.error || 'Failed to fetch echo apps');
     }
 
-    const allApps = (data.apps || []) as AuthenticatedEchoApp[];
-    return allApps.filter(
-      (app: AuthenticatedEchoApp) => app.userRole === AppRole.OWNER
-    );
+    const allApps = (data.apps || []) as OwnerEchoApp[];
+    return allApps; // All apps returned should be OwnerEchoApp since user is the owner
   };
 
   return (

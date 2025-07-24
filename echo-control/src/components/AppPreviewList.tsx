@@ -5,12 +5,16 @@ import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import AppCard from './AppCard';
 import { Skeleton } from './skeleton';
-import { EchoApp } from '@/lib/types/apps';
+import {
+  CustomerEchoApp,
+  PublicEchoApp,
+  OwnerEchoApp,
+} from '@/lib/echo-apps/types';
 
 interface AppPreviewListProps {
   title: string;
   description: string;
-  apps: EchoApp[];
+  apps: CustomerEchoApp[] | PublicEchoApp[] | OwnerEchoApp[];
   href: string;
   loading: boolean;
   error?: string | null;
@@ -97,7 +101,6 @@ export const AppPreviewList: React.FC<AppPreviewListProps> = ({
               <AppCard
                 app={app}
                 href={`/apps/${app.id}`}
-                activityData={app.activityData || []}
                 size="small"
                 showChart={false}
               />

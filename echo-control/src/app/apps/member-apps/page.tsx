@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { AuthenticatedEchoApp } from '@/lib/types/apps';
+import { CustomerEchoApp } from '@/lib/echo-apps/types';
 import AllAppsPage from '@/components/AllAppsPage';
 
 const MemberAppsFullPage: React.FC = () => {
-  const fetchMemberApps = async (): Promise<AuthenticatedEchoApp[]> => {
+  const fetchMemberApps = async (): Promise<CustomerEchoApp[]> => {
     const response = await fetch('/api/apps');
     const data = await response.json();
 
@@ -13,9 +13,9 @@ const MemberAppsFullPage: React.FC = () => {
       throw new Error(data.error || 'Failed to fetch echo apps');
     }
 
-    const allApps = (data.apps || []) as AuthenticatedEchoApp[];
+    const allApps = (data.apps || []) as CustomerEchoApp[];
     return allApps.sort(
-      (a: AuthenticatedEchoApp, b: AuthenticatedEchoApp) =>
+      (a: CustomerEchoApp, b: CustomerEchoApp) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   };

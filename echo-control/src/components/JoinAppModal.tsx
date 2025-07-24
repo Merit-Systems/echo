@@ -4,19 +4,10 @@ import { useState } from 'react';
 import { X, Key } from 'lucide-react';
 import { GlassButton } from './glass-button';
 import { ProfileAvatar } from './ui/profile-avatar';
+import { PublicEchoApp } from '@/lib/echo-apps/types';
 
 interface JoinAppModalProps {
-  app: {
-    id: string;
-    name: string;
-    description?: string | null;
-    profilePictureUrl?: string | null;
-    user: {
-      name?: string | null;
-      email: string;
-      profilePictureUrl: string | null;
-    };
-  };
+  app: PublicEchoApp;
   onClose: () => void;
   onSubmit: () => Promise<void>;
 }
@@ -71,7 +62,7 @@ export default function JoinAppModal({
               <div className="flex flex-col">
                 <h4 className="font-medium text-foreground">{app.name}</h4>
                 <p className="text-sm text-muted-foreground">
-                  by {app.user.name || app.user.email}
+                  by {app.owner.name || app.owner.email}
                 </p>
               </div>
             </div>

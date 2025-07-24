@@ -1,11 +1,11 @@
-import { Zap, BarChart3 } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatNumber } from './AppDetailShared';
-import { DetailedEchoApp } from '@/hooks/useEchoAppDetail';
+import { PublicEchoApp, ModelUsage } from '@/lib/echo-apps/types';
 
 interface GlobalModelsCardProps {
-  app: DetailedEchoApp;
+  app: PublicEchoApp;
   title?: string;
 }
 
@@ -13,13 +13,19 @@ export function GlobalModelsCard({
   app,
   title = 'AI Models Used',
 }: GlobalModelsCardProps) {
+  // Direct access to type-safe properties for Public Apps
+  const modelUsage = app.stats.globalModelUsage;
+  const totalTokens = app.stats.globalTotalTokens;
+
   // Get the top 3 models by token usage for public display
-  const topModels = (app.stats?.modelUsage || [])
-    .sort((a, b) => (b._sum.totalTokens || 0) - (a._sum.totalTokens || 0))
+  const topModels = modelUsage
+    .sort(
+      (a: ModelUsage, b: ModelUsage) =>
+        (b.totalTokens || 0) - (a.totalTokens || 0)
+    )
     .slice(0, 3);
 
-  const totalModelsCount = app.stats?.modelUsage?.length || 0;
-  const totalTokens = app.stats?.totalTokens || 0;
+  const totalModelsCount = modelUsage.length;
 
   const getModelDisplayName = (model: string): string => {
     // Extract readable model names
@@ -48,48 +54,50 @@ export function GlobalModelsCard({
           <Zap className="h-4 w-4 text-muted-foreground" />
         </div>
 
-        <div className="space-y-4">
-          {/* Model Stats */}
-          <div className="flex items-center gap-4">
+        <div className="space-y-3">
+          {/* Summary Stats */}
+          <div className="flex items-center justify-between">
             <div>
-              <div className="text-2xl font-bold text-foreground">
+              <span className="text-2xl font-bold text-foreground">
                 {totalModelsCount}
-              </div>
-              <p className="text-xs text-muted-foreground">Models Used</p>
-            </div>
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <BarChart3 className="h-3 w-3" />
-              <span className="text-xs">
-                {formatNumber(totalTokens)} tokens
               </span>
+              <p className="text-xs text-muted-foreground">Models Active</p>
+            </div>
+            <div className="text-right">
+              <span className="text-sm font-medium text-foreground">
+                {formatNumber(totalTokens)}
+              </span>
+              <p className="text-xs text-muted-foreground">Total Tokens</p>
             </div>
           </div>
 
           {/* Top Models */}
-          {topModels.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground font-medium">
-                Most Used:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {topModels.map((modelUsage, index) => (
-                  <Badge
-                    key={modelUsage.model}
-                    variant="outline"
-                    className={`text-xs border ${getModelColor(modelUsage.model)}`}
-                  >
-                    #{index + 1} {getModelDisplayName(modelUsage.model)}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-xs text-muted-foreground">
+          <div className="space-y-2">
+            {topModels.length > 0 ? (
+              topModels.map((model: ModelUsage) => (
+                <div
+                  key={model.model}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={`text-xs px-2 py-1 ${getModelColor(model.model)}`}
+                    >
+                      {getModelDisplayName(model.model)}
+                    </Badge>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {formatNumber(model.totalTokens || 0)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-2">
                 No model usage data available
               </p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

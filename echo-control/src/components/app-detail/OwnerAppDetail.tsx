@@ -1,10 +1,9 @@
 import { Settings } from 'lucide-react';
 import Link from 'next/link';
-import { EnhancedAppData } from '@/hooks/useEchoAppDetail';
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AppRole, Permission } from '@/lib/permissions/types';
-import { DetailedEchoApp } from '@/hooks/useEchoAppDetail';
+import { OwnerEchoApp } from '@/lib/echo-apps/types';
 import { formatCurrency } from '@/lib/balance';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -20,7 +19,7 @@ import {
 import { AppHomepageCard } from './AppHomepageCard';
 
 interface OwnerAppDetailProps {
-  app: DetailedEchoApp;
+  app: OwnerEchoApp;
   hasPermission: (permission: Permission) => boolean;
   onCreateApiKey?: () => void;
   onArchiveApiKey?: (id: string) => void;
@@ -40,51 +39,31 @@ export function OwnerAppDetail({
 }: OwnerAppDetailProps) {
   // View toggle state - 0 for personal, 1 for global
   const [viewMode, setViewMode] = useState([1]);
-  const [enhancedApp, setEnhancedApp] = useState<EnhancedAppData>(app);
-  const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
   const isGlobalView = viewMode[0] === 1;
 
-  // Function to fetch global data
-  const fetchGlobalData = useCallback(async () => {
-    if (enhancedApp.globalStats) return; // Already fetched
+  // Cast to OwnerEchoApp for type safety
+  const ownerApp = app as OwnerEchoApp;
 
-    setIsLoadingGlobal(true);
-    try {
-      const response = await fetch(`/api/apps/${app.id}?view=global`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch global data');
-      }
-      const globalData = await response.json();
-      setEnhancedApp(prev => ({
-        ...prev,
-        globalStats: globalData.stats,
-        globalActivityData: globalData.activityData,
-        globalRecentTransactions: globalData.recentTransactions,
-      }));
-    } catch (error) {
-      console.error('Error fetching global data:', error);
-    } finally {
-      setIsLoadingGlobal(false);
-    }
-  }, [app.id, enhancedApp.globalStats]);
+  // Get activity data based on view mode
+  const getActivityData = () => {
+    return isGlobalView
+      ? ownerApp.stats.globalActivityData
+      : ownerApp.stats.personalActivityData;
+  };
 
-  // Fetch global data when switching to global view
-  useEffect(() => {
-    if (isGlobalView && !enhancedApp.globalStats) {
-      fetchGlobalData();
-    }
-  }, [isGlobalView, app.id, enhancedApp.globalStats, fetchGlobalData]);
+  // Get recent transactions based on view mode
+  const getRecentTransactions = () => {
+    return isGlobalView
+      ? ownerApp.stats.recentGlobalTransactions
+      : ownerApp.stats.personalRecentTransactions;
+  };
 
-  // Get current stats based on view
-  const currentStats = isGlobalView
-    ? enhancedApp.globalStats || app.stats
-    : app.stats;
-  const currentActivityData = isGlobalView
-    ? enhancedApp.globalActivityData || app.activityData
-    : app.activityData;
-  const currentRecentTransactions = isGlobalView
-    ? enhancedApp.globalRecentTransactions || app.recentTransactions
-    : app.recentTransactions;
+  // Get model usage based on view mode
+  const getModelUsage = () => {
+    return isGlobalView
+      ? ownerApp.stats.globalModelUsage
+      : ownerApp.stats.personalModelUsage;
+  };
 
   // Clean stats display with slider in bottom right
   const enhancedStats = (
@@ -97,7 +76,7 @@ export function OwnerAppDetail({
             Owner
           </p>
           <p className="text-sm text-foreground font-medium truncate">
-            {app.user?.name || app.user?.email || 'Unknown'}
+            {ownerApp.owner?.name || ownerApp.owner?.email || 'Unknown'}
           </p>
         </div>
 
@@ -106,9 +85,11 @@ export function OwnerAppDetail({
             {isGlobalView ? 'Total Requests' : 'Your Requests'}
           </p>
           <p className="text-lg font-bold text-foreground">
-            {isLoadingGlobal && isGlobalView
-              ? '...'
-              : formatNumber(currentStats?.totalTransactions)}
+            {formatNumber(
+              isGlobalView
+                ? ownerApp.stats.globalTotalTransactions
+                : ownerApp.stats.personalTotalTokens // Using tokens as proxy for transactions for personal view
+            )}
           </p>
         </div>
 
@@ -117,9 +98,11 @@ export function OwnerAppDetail({
             {isGlobalView ? 'Total Tokens' : 'Your Tokens'}
           </p>
           <p className="text-lg font-bold text-foreground">
-            {isLoadingGlobal && isGlobalView
-              ? '...'
-              : formatNumber(currentStats?.totalTokens)}
+            {formatNumber(
+              isGlobalView
+                ? ownerApp.stats.globalTotalTokens
+                : ownerApp.stats.personalTotalTokens
+            )}
           </p>
         </div>
 
@@ -128,9 +111,11 @@ export function OwnerAppDetail({
             {isGlobalView ? 'Total Revenue' : 'Your Revenue'}
           </p>
           <p className="text-lg font-bold text-foreground">
-            {isLoadingGlobal && isGlobalView
-              ? '...'
-              : formatCurrency(currentStats?.totalCost)}
+            {formatCurrency(
+              isGlobalView
+                ? ownerApp.stats.globalTotalRevenue
+                : ownerApp.stats.personalTotalRevenue
+            )}
           </p>
         </div>
 
@@ -139,7 +124,7 @@ export function OwnerAppDetail({
             Your API Keys
           </p>
           <p className="text-lg font-bold text-foreground">
-            {app.apiKeys?.length || 0}
+            {ownerApp.stats.personalApiKeys?.length || 0}
           </p>
         </div>
       </div>
@@ -148,7 +133,7 @@ export function OwnerAppDetail({
 
   const enhancedActions = (
     <div className="flex items-center gap-3">
-      <Link href={`/owner/${app.id}/settings`}>
+      <Link href={`/owner/${ownerApp.id}/settings`}>
         <Button size="default" variant="outline">
           <Settings className="h-4 w-4" />
           Settings
@@ -178,10 +163,10 @@ export function OwnerAppDetail({
       onDismissPaymentSuccess={onDismissPaymentSuccess}
     >
       <div className="relative z-10">
-        <AppBanner app={app} />
+        <AppBanner app={ownerApp} />
 
         <AppProfile
-          app={app}
+          app={ownerApp}
           userRole={AppRole.OWNER}
           roleLabel="Owner Access"
           actions={enhancedActions}
@@ -194,10 +179,8 @@ export function OwnerAppDetail({
       <div className="px-6 mb-32 relative z-10">
         <div className="h-64">
           <ActivityChart
-            app={{
-              ...app,
-              activityData: currentActivityData,
-            }}
+            app={ownerApp}
+            activityData={getActivityData()}
             title={
               isGlobalView ? 'Global Tokens Over Time' : 'Your Tokens Over Time'
             }
@@ -210,11 +193,11 @@ export function OwnerAppDetail({
         {/* First Row - Homepage and API Keys */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Homepage Card */}
-          <AppHomepageCard app={app} />
+          <AppHomepageCard app={ownerApp} />
 
           {/* API Keys Card */}
           <ApiKeysCard
-            app={app}
+            app={ownerApp}
             hasCreatePermission={hasPermission(Permission.CREATE_API_KEYS)}
             hasManagePermission={hasPermission(Permission.MANAGE_ALL_API_KEYS)}
             onCreateApiKey={onCreateApiKey}
@@ -227,10 +210,8 @@ export function OwnerAppDetail({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Recent Activity Card */}
           <RecentActivityCard
-            app={{
-              ...app,
-              recentTransactions: currentRecentTransactions,
-            }}
+            app={ownerApp}
+            recentTransactions={getRecentTransactions()}
             title={
               isGlobalView ? 'Global Recent Activity' : 'Your Recent Activity'
             }
@@ -238,10 +219,8 @@ export function OwnerAppDetail({
 
           {/* Models Usage Card */}
           <TopModelsCard
-            app={{
-              ...app,
-              stats: currentStats,
-            }}
+            app={ownerApp}
+            modelUsage={getModelUsage()}
             title={isGlobalView ? 'Global Model Usage' : 'Your Model Usage'}
           />
         </div>

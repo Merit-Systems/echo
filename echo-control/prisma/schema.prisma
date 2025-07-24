@@ -142,16 +142,18 @@ model UsageProduct {
   description         String?
   providerId          String
   model               String
-  inputPricePerToken  Decimal?      @db.Decimal(65, 14)
-  outputPricePerToken Decimal?      @db.Decimal(65, 14)
+  inputPricePerToken  Decimal?      @db.Decimal(65, 14) // For LLM usage products
+  outputPricePerToken Decimal?      @db.Decimal(65, 14) // For LLM usage products
+  price               Decimal?      @db.Decimal(65, 14) // For non-LLM usage products
+  metadata            Json?         @default("{}")
   category            String        @default("llm")
   isArchived          Boolean       @default(false)
   archivedAt          DateTime?     @db.Timestamptz(6)
   createdAt           DateTime      @default(now()) @db.Timestamptz(6)
   updatedAt           DateTime      @updatedAt @db.Timestamptz(6)
-  echoAppId           String        @db.Uuid
+  echoAppId           String?        @db.Uuid // Optionally, can be bound to a single Echo App.
   transactions        Transaction[]
-  echoApp             EchoApp       @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  echoApp             EchoApp?       @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
 
   @@map("usage_products")
 }

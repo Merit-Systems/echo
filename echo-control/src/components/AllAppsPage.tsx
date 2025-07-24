@@ -1,15 +1,21 @@
 'use client';
 
 import React from 'react';
-import { EchoApp } from '@/lib/types/apps';
+import {
+  PublicEchoApp,
+  CustomerEchoApp,
+  OwnerEchoApp,
+} from '@/lib/echo-apps/types';
 import AppCard from '@/components/AppCard';
 import { Skeleton } from '@/components/skeleton';
 import { useAllApps } from '@/hooks/useAllApps';
 
+type AppUnion = PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
+
 interface AllAppsPageProps {
   title: string;
   description: string;
-  fetchApps: () => Promise<EchoApp[]>;
+  fetchApps: () => Promise<AppUnion[]>;
   emptyStateMessage?: string;
 }
 
@@ -64,18 +70,15 @@ export const AllAppsPage: React.FC<AllAppsPageProps> = ({
       <h1 className="text-3xl font-bold mb-4">{title}</h1>
       <p className="text-muted-foreground mb-8">{description}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {apps.map(app => {
-          return (
-            <AppCard
-              key={app.id}
-              app={app}
-              href={`/apps/${app.id}`}
-              size="medium"
-              showChart={true}
-              activityData={app.activityData || []}
-            />
-          );
-        })}
+        {apps.map(app => (
+          <AppCard
+            key={app.id}
+            app={app}
+            href={`/apps/${app.id}`}
+            size="medium"
+            showChart={true}
+          />
+        ))}
       </div>
     </div>
   );

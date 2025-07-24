@@ -2,20 +2,26 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { EchoApp } from '@/lib/types/apps';
+import {
+  PublicEchoApp,
+  CustomerEchoApp,
+  OwnerEchoApp,
+} from '@/lib/echo-apps/types';
+
+type AppUnion = PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
 
 interface UseAllAppsResult {
-  apps: EchoApp[];
+  apps: AppUnion[];
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
 
 export const useAllApps = (
-  fetchApps: () => Promise<EchoApp[]>
+  fetchApps: () => Promise<AppUnion[]>
 ): UseAllAppsResult => {
   const { isLoaded: isUserLoaded } = useUser();
-  const [apps, setApps] = useState<EchoApp[]>([]);
+  const [apps, setApps] = useState<AppUnion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { AppRole } from '@/lib/permissions/types';
-import { AuthenticatedEchoApp } from '@/lib/types/apps';
+import { CustomerEchoApp } from '@/lib/echo-apps/types';
 
 interface UseMemberAppsReturn {
-  memberApps: AuthenticatedEchoApp[];
+  memberApps: CustomerEchoApp[];
   loading: boolean;
   error: string | null;
 }
 
 export function useMemberApps(): UseMemberAppsReturn {
   const { isLoaded } = useUser();
-  const [memberApps, setMemberApps] = useState<AuthenticatedEchoApp[]>([]);
+  const [memberApps, setMemberApps] = useState<CustomerEchoApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,15 +24,13 @@ export function useMemberApps(): UseMemberAppsReturn {
         throw new Error(data.error || 'Failed to fetch echo apps');
       }
 
-      const allApps = (data.apps || []) as AuthenticatedEchoApp[];
+      const allApps = (data.apps || []) as CustomerEchoApp[];
 
-      // Filter for apps where user is a member but not the owner
-      const membershipApps = allApps
-        .filter(app => app.userRole !== AppRole.OWNER)
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+      // Since we're specifically fetching customer apps, all apps should be CustomerEchoApp
+      const membershipApps = allApps.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
       setMemberApps(membershipApps);
     } catch (error) {

@@ -1,16 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DetailedEchoApp } from '../lib/types/apps';
+import {
+  PublicEchoApp,
+  CustomerEchoApp,
+  OwnerEchoApp,
+} from '../lib/echo-apps/types';
+
+type AppUnion = PublicEchoApp | CustomerEchoApp | OwnerEchoApp;
 
 interface UseCurrentAppReturn {
-  app: DetailedEchoApp | null;
+  app: AppUnion | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  updateApp: (updates: Partial<DetailedEchoApp>) => void;
+  updateApp: (updates: Partial<AppUnion>) => void;
 }
 
 export function useCurrentApp(appId?: string): UseCurrentAppReturn {
-  const [app, setApp] = useState<DetailedEchoApp | null>(null);
+  const [app, setApp] = useState<AppUnion | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,9 +46,9 @@ export function useCurrentApp(appId?: string): UseCurrentAppReturn {
   }, [fetchApp]);
 
   const updateApp = useCallback(
-    (updates: Partial<DetailedEchoApp>) => {
+    (updates: Partial<AppUnion>) => {
       if (!app) return;
-      setApp(prev => (prev ? { ...prev, ...updates } : null));
+      setApp(prev => (prev ? ({ ...prev, ...updates } as AppUnion) : null));
     },
     [app]
   );

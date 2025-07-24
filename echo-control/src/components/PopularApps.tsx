@@ -92,7 +92,6 @@ export const PopularApps: React.FC = () => {
             <AppCard
               app={app}
               href={`/apps/${app.id}`}
-              activityData={app.activityData || []}
               size="medium"
               showChart={true}
             />

@@ -5,13 +5,13 @@ import { useSearchParams } from 'next/navigation';
 
 import Step from '../../../../components/creation-flow/Step';
 import CreateApplicationStep from '../../../../components/creation-flow/CreateApplicationStep';
-import CallbackUrlStep from '../../../../components/creation-flow/CallbackUrlStep';
+// import CallbackUrlStep from '../../../../components/creation-flow/CallbackUrlStep';
 import GitHubStep from '../../../../components/creation-flow/GitHubStep';
 import ConfigurationStep from '../../../../components/creation-flow/ConfigurationStep';
 import TestIntegrationStep from '../../../../components/creation-flow/TestIntegrationStep';
 import { useCreationFlowNavigation } from '../../../../components/creation-flow/hooks/useCreationFlowNavigation';
 import { useCreateAppComponent } from '../../../../components/creation-flow/hooks/useCreateAppComponent';
-import { useCallbackUrlComponent } from '../../../../components/creation-flow/hooks/useCallbackUrlComponent';
+// import { useCallbackUrlComponent } from '../../../../components/creation-flow/hooks/useCallbackUrlComponent';
 import { useGitHubComponent } from '../../../../components/creation-flow/hooks/useGitHubComponent';
 import { useTestIntegrationComponent } from '../../../../components/creation-flow/hooks/useTestIntegrationComponent';
 
@@ -87,10 +87,10 @@ function CreateApplicationForm() {
 
   // Step-specific hooks
   const createAppHook = useCreateAppComponent(currentAppId);
-  const callbackUrlHook = useCallbackUrlComponent(
-    currentAppId || '',
-    app?.authorizedCallbackUrls?.[0] || ''
-  );
+  // const callbackUrlHook = useCallbackUrlComponent(
+  //   currentAppId || '',
+  //   app?.authorizedCallbackUrls?.[0] || ''
+  // );
   const githubHook = useGitHubComponent(
     currentAppId || '',
     app?.githubId || '',
@@ -107,12 +107,12 @@ function CreateApplicationForm() {
           update: createAppHook.update,
           error: createAppHook.error,
         };
-      case 'callbackUrl':
-        return {
-          canGoNext: callbackUrlHook.canGoNext,
-          update: callbackUrlHook.update,
-          error: callbackUrlHook.error,
-        };
+      // case 'callbackUrl':
+      //   return {
+      //     canGoNext: callbackUrlHook.canGoNext,
+      //     update: callbackUrlHook.update,
+      //     error: callbackUrlHook.error,
+      //   };
       case 'githubId':
         return {
           canGoNext: githubHook.canGoNext,
@@ -151,7 +151,7 @@ function CreateApplicationForm() {
   // Build form data from current app state This is only used for the stepHistory component
   const formData = {
     name: app?.name || createAppHook.stepRef.current?.getValue() || '',
-    callbackUrl: app?.authorizedCallbackUrls?.[0] || '',
+    // callbackUrl: app?.authorizedCallbackUrls?.[0] || '',
     githubId: app?.githubId || '',
     // Add other form fields as needed
   };
@@ -218,18 +218,18 @@ function CreateApplicationForm() {
             app?.name || createAppHook.stepRef.current?.getValue() || ''
           }
         />
-      ) : currentStepData?.key === 'callbackUrl' && app ? (
-        <CallbackUrlStep
-          isTransitioning={isTransitioning}
-          onNext={handleNext}
-          onBack={goToBack}
-          onError={setError}
-          callbackUrl={callbackUrlHook.callbackUrl}
-          setCallbackUrl={callbackUrlHook.setCallbackUrl}
-          isUpdating={callbackUrlHook.isUpdating}
-          error={callbackUrlHook.error}
-        />
-      ) : currentStepData?.key === 'githubId' && app ? (
+      ) : // ) : currentStepData?.key === 'callbackUrl' && app ? (
+      //   <CallbackUrlStep
+      //     isTransitioning={isTransitioning}
+      //     onNext={handleNext}
+      //     onBack={goToBack}
+      //     onError={setError}
+      //     callbackUrl={callbackUrlHook.callbackUrl}
+      //     setCallbackUrl={callbackUrlHook.setCallbackUrl}
+      //     isUpdating={callbackUrlHook.isUpdating}
+      //     error={callbackUrlHook.error}
+      //   />
+      currentStepData?.key === 'githubId' && app ? (
         <GitHubStep
           isTransitioning={isTransitioning}
           onNext={handleNext}

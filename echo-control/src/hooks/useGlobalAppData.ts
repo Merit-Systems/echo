@@ -1,19 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
-import { EnhancedAppData, DetailedEchoApp } from '@/lib/types/apps';
+import { OwnerEchoApp, CustomerEchoApp } from '@/lib/echo-apps/types';
+
+type AppWithPossibleGlobalData = CustomerEchoApp | OwnerEchoApp;
 
 interface UseGlobalAppDataReturn {
-  enhancedApp: EnhancedAppData;
+  enhancedApp: OwnerEchoApp;
   isLoadingGlobal: boolean;
   fetchGlobalData: () => Promise<void>;
 }
 
-export function useGlobalAppData(app: DetailedEchoApp): UseGlobalAppDataReturn {
-  const [enhancedApp, setEnhancedApp] = useState<EnhancedAppData>(app);
+export function useGlobalAppData(
+  app: AppWithPossibleGlobalData
+): UseGlobalAppDataReturn {
+  const [enhancedApp, setEnhancedApp] = useState<OwnerEchoApp>(
+    app as OwnerEchoApp
+  );
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
 
   // Function to fetch global data
   const fetchGlobalData = useCallback(async () => {
-    if (enhancedApp.globalStats) return; // Already fetched
+    // Check if this is already an OwnerEchoApp with global data
+    if ('globalTotalTransactions' in app.stats) {
+      setEnhancedApp(app as OwnerEchoApp);
+      return;
+    }
 
     setIsLoadingGlobal(true);
     try {
@@ -21,23 +31,20 @@ export function useGlobalAppData(app: DetailedEchoApp): UseGlobalAppDataReturn {
       if (!response.ok) {
         throw new Error('Failed to fetch global data');
       }
-      const globalData = await response.json();
-      setEnhancedApp(prev => ({
-        ...prev,
-        globalStats: globalData.stats,
-        globalActivityData: globalData.activityData,
-        globalRecentTransactions: globalData.recentTransactions,
-      }));
+      const globalData = (await response.json()) as OwnerEchoApp;
+      setEnhancedApp(globalData);
     } catch (error) {
       console.error('Error fetching global data:', error);
     } finally {
       setIsLoadingGlobal(false);
     }
-  }, [app.id, enhancedApp.globalStats]);
+  }, [app]);
 
   // Update enhanced app when the base app changes
   useEffect(() => {
-    setEnhancedApp(app);
+    if ('globalTotalTransactions' in app.stats) {
+      setEnhancedApp(app as OwnerEchoApp);
+    }
   }, [app]);
 
   return {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PublicEchoApp } from '@/lib/types/apps';
+import { PublicEchoApp } from '@/lib/echo-apps/types';
 
 interface UsePopularAppsReturn {
   apps: PublicEchoApp[];

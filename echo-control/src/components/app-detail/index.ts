@@ -11,7 +11,6 @@ export {
   TopModelsCard,
   formatNumber,
   formatCost,
-  transformActivityData,
 } from './AppDetailShared';
 export { PublicAppDetail } from './PublicAppDetail';
 export { CustomerAppDetail } from './CustomerAppDetail';

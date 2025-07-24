@@ -1,22 +1,22 @@
 import { getCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  listAppsWithDetails,
   createEchoApp,
   AppCreateInput,
-  getDetailedAppInfo,
   updateEchoAppById,
   deleteEchoAppById,
   AppUpdateInput,
-  verifyArgs,
+  getAppInfo,
 } from '@/lib/echo-apps';
 import { isValidUUID } from '@/lib/oauth-config/index';
+import { bulkGetAllUserAccessibleApps } from '@/lib/echo-apps';
+import { verifyArgs } from './utils';
 
 // GET /api/apps - List all Echo apps for the authenticated user
 export async function getApps() {
   try {
     const user = await getCurrentUser();
-    const apps = await listAppsWithDetails(user.id);
+    const apps = await bulkGetAllUserAccessibleApps(user.id);
 
     return NextResponse.json({ apps });
   } catch (error) {
@@ -101,9 +101,9 @@ export async function getApp(
     const resolvedParams = await params;
     const { id: appId } = resolvedParams;
 
-    // Check for view parameter
-    const { searchParams } = new URL(request.url);
-    const view = searchParams.get('view');
+    // Check for view parameter (currently unused but available for future use)
+    // const { searchParams } = new URL(request.url);
+    // const view = searchParams.get('view');
 
     // Validate UUID format
     if (!isValidUUID(appId)) {
@@ -114,11 +114,7 @@ export async function getApp(
     }
 
     // For global view, fetch global data
-    const appWithStats = await getDetailedAppInfo(
-      appId,
-      user.id,
-      view === 'global'
-    );
+    const appWithStats = await getAppInfo(appId, user.id);
 
     return NextResponse.json(appWithStats);
   } catch (error) {

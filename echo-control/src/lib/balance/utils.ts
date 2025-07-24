@@ -1,4 +1,4 @@
-import { Balance } from '@/lib/types/apps';
+import { Balance } from '@/lib/echo-apps/types';
 import { BalanceResult } from '.';
 
 export function formatBalanceResult(balanceResult: BalanceResult): Balance {

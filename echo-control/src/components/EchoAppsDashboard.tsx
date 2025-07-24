@@ -197,7 +197,7 @@ export default function EchoAppsDashboard() {
                         API Keys
                       </div>
                       <div className="font-semibold text-card-foreground">
-                        {app._count.apiKeys}
+                        {app.stats.globalApiKeys.length}
                       </div>
                     </div>
                     <div>
@@ -206,7 +206,7 @@ export default function EchoAppsDashboard() {
                         Transactions
                       </div>
                       <div className="font-semibold text-card-foreground">
-                        {app._count.transactions.toLocaleString()}
+                        {app.stats.globalTotalTransactions.toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -217,7 +217,7 @@ export default function EchoAppsDashboard() {
                         Total Revenue:
                       </span>
                       <span className="font-semibold text-card-foreground">
-                        ${Number(app.totalCost).toFixed(2)}
+                        ${Number(app.stats.globalTotalRevenue).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-sm mt-1">
@@ -225,7 +225,7 @@ export default function EchoAppsDashboard() {
                         Total Tokens:
                       </span>
                       <span className="font-semibold text-card-foreground">
-                        {app.totalTokens.toLocaleString()}
+                        {app.stats.globalTotalTokens.toLocaleString()}
                       </span>
                     </div>
                     <div className="text-xs text-muted-foreground mt-2">

@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { AppRole, Permission } from '@/lib/permissions/types';
-import { DetailedEchoApp } from '@/hooks/useEchoAppDetail';
+import {
+  CustomerEchoApp,
+  OwnerEchoApp,
+  OwnerStatistics,
+} from '@/lib/echo-apps/types';
 import { formatCurrency } from '@/lib/balance';
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -19,10 +23,9 @@ import {
   TopModelsCard,
 } from './AppDetailShared';
 import { AppHomepageCard } from './AppHomepageCard';
-import { EnhancedAppData } from '@/hooks/useEchoAppDetail';
 
 interface CustomerAppDetailProps {
-  app: DetailedEchoApp;
+  app: CustomerEchoApp | OwnerEchoApp;
   hasPermission: (permission: Permission) => boolean;
   onCreateApiKey?: () => void;
   onArchiveApiKey?: (id: string) => void;
@@ -42,13 +45,18 @@ export function CustomerAppDetail({
 }: CustomerAppDetailProps) {
   // View toggle state - 0 for personal, 1 for global
   const [viewMode, setViewMode] = useState([0]);
-  const [enhancedApp, setEnhancedApp] = useState<EnhancedAppData>(app);
+  const [globalStats, setGlobalStats] = useState<OwnerStatistics | null>(null);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
   const isGlobalView = viewMode[0] === 1;
 
-  // Function to fetch global data
+  // Check if this is an OwnerEchoApp (which has both personal and global stats)
+  const isOwnerApp = 'globalTotalTransactions' in app.stats;
+  const ownerApp = isOwnerApp ? (app as OwnerEchoApp) : null;
+  const customerApp = app as CustomerEchoApp;
+
+  // Function to fetch global data if not already available
   const fetchGlobalData = useCallback(async () => {
-    if (enhancedApp.globalStats) return; // Already fetched
+    if (isOwnerApp || globalStats) return; // Already have global data or this is an owner app
 
     setIsLoadingGlobal(true);
     try {
@@ -57,36 +65,20 @@ export function CustomerAppDetail({
         throw new Error('Failed to fetch global data');
       }
       const globalData = await response.json();
-      setEnhancedApp(prev => ({
-        ...prev,
-        globalStats: globalData.stats,
-        globalActivityData: globalData.activityData,
-        globalRecentTransactions: globalData.recentTransactions,
-      }));
+      setGlobalStats(globalData.stats);
     } catch (error) {
       console.error('Error fetching global data:', error);
     } finally {
       setIsLoadingGlobal(false);
     }
-  }, [app.id, enhancedApp.globalStats]);
+  }, [app.id, isOwnerApp, globalStats]);
 
   // Fetch global data when switching to global view
   useEffect(() => {
-    if (isGlobalView && !enhancedApp.globalStats) {
+    if (isGlobalView && !isOwnerApp && !globalStats) {
       fetchGlobalData();
     }
-  }, [isGlobalView, app.id, enhancedApp.globalStats, fetchGlobalData]);
-
-  // Get current stats based on view
-  const currentStats = isGlobalView
-    ? enhancedApp.globalStats || app.stats
-    : app.stats;
-  const currentActivityData = isGlobalView
-    ? enhancedApp.globalActivityData || app.activityData
-    : app.activityData;
-  const currentRecentTransactions = isGlobalView
-    ? enhancedApp.globalRecentTransactions || app.recentTransactions
-    : app.recentTransactions;
+  }, [isGlobalView, isOwnerApp, globalStats, fetchGlobalData]);
 
   // Handle subscription enrollment
   const handleSubscribe = async (type: 'product' | 'package', id: string) => {
@@ -122,6 +114,39 @@ export function CustomerAppDetail({
     }
   };
 
+  // Get activity data based on view mode
+  const getActivityData = () => {
+    if (isGlobalView) {
+      if (ownerApp) {
+        return ownerApp.stats.globalActivityData;
+      }
+      return globalStats?.globalActivityData || [];
+    }
+    return customerApp.stats.personalActivityData || [];
+  };
+
+  // Get recent transactions based on view mode
+  const getRecentTransactions = () => {
+    if (isGlobalView) {
+      if (ownerApp) {
+        return ownerApp.stats.recentGlobalTransactions;
+      }
+      return globalStats?.recentGlobalTransactions || [];
+    }
+    return customerApp.stats.personalRecentTransactions || [];
+  };
+
+  // Get model usage based on view mode
+  const getModelUsage = () => {
+    if (isGlobalView) {
+      if (ownerApp) {
+        return ownerApp.stats.globalModelUsage;
+      }
+      return globalStats?.globalModelUsage || [];
+    }
+    return customerApp.stats.personalModelUsage || [];
+  };
+
   // Clean stats display with slider in bottom right
   const enhancedStats = (
     <div className="relative">
@@ -133,7 +158,7 @@ export function CustomerAppDetail({
             Owner
           </p>
           <p className="text-sm text-foreground font-medium truncate">
-            {app.user?.name || app.user?.email || 'Unknown'}
+            {app.owner?.name || app.owner?.email || 'Unknown'}
           </p>
         </div>
 
@@ -142,9 +167,15 @@ export function CustomerAppDetail({
             {isGlobalView ? 'Total Requests' : 'Your Requests'}
           </p>
           <p className="text-lg font-bold text-foreground">
-            {isLoadingGlobal && isGlobalView
+            {isLoadingGlobal && isGlobalView && !isOwnerApp
               ? '...'
-              : formatNumber(currentStats?.totalTransactions)}
+              : formatNumber(
+                  isGlobalView
+                    ? ownerApp
+                      ? ownerApp.stats.globalTotalTransactions
+                      : globalStats?.globalTotalTransactions
+                    : customerApp.stats.personalTotalTokens // Using tokens as proxy for transactions for personal view
+                )}
           </p>
         </div>
 
@@ -153,9 +184,15 @@ export function CustomerAppDetail({
             {isGlobalView ? 'Total Tokens' : 'Your Tokens'}
           </p>
           <p className="text-lg font-bold text-foreground">
-            {isLoadingGlobal && isGlobalView
+            {isLoadingGlobal && isGlobalView && !isOwnerApp
               ? '...'
-              : formatNumber(currentStats?.totalTokens)}
+              : formatNumber(
+                  isGlobalView
+                    ? ownerApp
+                      ? ownerApp.stats.globalTotalTokens
+                      : globalStats?.globalTotalTokens
+                    : customerApp.stats.personalTotalTokens
+                )}
           </p>
         </div>
 
@@ -164,9 +201,15 @@ export function CustomerAppDetail({
             {isGlobalView ? 'Total Revenue' : 'Your Revenue'}
           </p>
           <p className="text-lg font-bold text-foreground">
-            {isLoadingGlobal && isGlobalView
+            {isLoadingGlobal && isGlobalView && !isOwnerApp
               ? '...'
-              : formatCurrency(currentStats?.totalCost)}
+              : formatCurrency(
+                  isGlobalView
+                    ? ownerApp
+                      ? ownerApp.stats.globalTotalRevenue
+                      : globalStats?.globalTotalRevenue
+                    : customerApp.stats.personalTotalRevenue
+                )}
           </p>
         </div>
 
@@ -175,7 +218,7 @@ export function CustomerAppDetail({
             Your API Keys
           </p>
           <p className="text-lg font-bold text-foreground">
-            {app.apiKeys?.length || 0}
+            {customerApp.stats.personalApiKeys?.length || 0}
           </p>
         </div>
       </div>
@@ -230,10 +273,8 @@ export function CustomerAppDetail({
       <div className="px-6 mb-32 relative z-10">
         <div className="h-64">
           <ActivityChart
-            app={{
-              ...app,
-              activityData: currentActivityData,
-            }}
+            app={app}
+            activityData={getActivityData()}
             title={
               isGlobalView ? 'Global Tokens Over Time' : 'Your Tokens Over Time'
             }
@@ -251,7 +292,7 @@ export function CustomerAppDetail({
           {/* API Keys Card */}
           <ApiKeysCard
             app={app}
-            hasCreatePermission={hasPermission(Permission.MANAGE_OWN_API_KEYS)}
+            hasCreatePermission={hasPermission(Permission.CREATE_API_KEYS)}
             hasManagePermission={hasPermission(Permission.MANAGE_OWN_API_KEYS)}
             onCreateApiKey={onCreateApiKey}
             onArchiveApiKey={onArchiveApiKey}
@@ -269,10 +310,8 @@ export function CustomerAppDetail({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Recent Activity Card */}
           <RecentActivityCard
-            app={{
-              ...app,
-              recentTransactions: currentRecentTransactions,
-            }}
+            app={app}
+            recentTransactions={getRecentTransactions()}
             title={
               isGlobalView ? 'Global Recent Activity' : 'Your Recent Activity'
             }
@@ -280,10 +319,8 @@ export function CustomerAppDetail({
 
           {/* Models Usage Card */}
           <TopModelsCard
-            app={{
-              ...app,
-              stats: currentStats,
-            }}
+            app={app}
+            modelUsage={getModelUsage()}
             title={isGlobalView ? 'Global Model Usage' : 'Your Model Usage'}
           />
         </div>

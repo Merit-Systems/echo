@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { AppRole } from '@/lib/permissions/types';
-import { AuthenticatedEchoApp } from '@/lib/types/apps';
+import { OwnerEchoApp } from '@/lib/echo-apps/types';
 
 interface UseMyAppsReturn {
-  userApps: AuthenticatedEchoApp[];
+  userApps: OwnerEchoApp[];
   loading: boolean;
   error: string | null;
 }
 
 export function useMyApps(): UseMyAppsReturn {
   const { user, isLoaded } = useUser();
-  const [userApps, setUserApps] = useState<AuthenticatedEchoApp[]>([]);
+  const [userApps, setUserApps] = useState<OwnerEchoApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,10 +24,10 @@ export function useMyApps(): UseMyAppsReturn {
         throw new Error(data.error || 'Failed to fetch echo apps');
       }
 
-      const allApps = (data.apps || []) as AuthenticatedEchoApp[];
+      const allApps = (data.apps || []) as OwnerEchoApp[];
 
-      // Filter for owner apps
-      const owner = allApps.filter(app => app.userRole === AppRole.OWNER);
+      // Since we're specifically fetching owner apps, all apps should be OwnerEchoApp
+      const owner = allApps;
 
       setUserApps(owner);
     } catch (error) {

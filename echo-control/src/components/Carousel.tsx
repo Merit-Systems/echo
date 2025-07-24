@@ -9,20 +9,11 @@ import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { ProfileAvatar } from './ui/profile-avatar';
 import { CommitChart } from './activity-chart/chart';
-import { EchoApp } from '@/lib/types/apps';
-
-const transformActivityData = (data: number[]) => {
-  return data.map((count, index) => ({
-    index,
-    count,
-    date: new Date(
-      Date.now() - (data.length - 1 - index) * 24 * 60 * 60 * 1000
-    ).toISOString(),
-  }));
-};
+import { PublicEchoApp } from '@/lib/echo-apps/types';
+import { transformActivityData } from '@/lib/echo-apps/activity/activity';
 
 interface CarouselProps {
-  apps: EchoApp[];
+  apps: PublicEchoApp[];
   autoPlay?: boolean;
   autoPlayInterval?: number;
   className?: string;
@@ -100,7 +91,7 @@ export const Carousel: React.FC<CarouselProps> = ({
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
             {apps.map(app => {
-              const activityData = app.activityData || [];
+              const activityData = app.stats.globalActivityData || [];
               const ownerName = app.owner.name || app.owner.email;
 
               return (
@@ -173,19 +164,21 @@ export const Carousel: React.FC<CarouselProps> = ({
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 text-lg text-muted-foreground">
                           <Users className="h-5 w-5" />
-                          <span>{app._count.apiKeys.toLocaleString()}</span>
+                          <span>
+                            {app.stats.globalTotalTokens.toLocaleString()}
+                          </span>
                         </div>
                         <div className="flex items-center gap-1 text-lg text-muted-foreground">
                           <Zap className="h-5 w-5" />
                           <span>
-                            {app._count.transactions.toLocaleString()}
+                            {app.stats.globalTotalTransactions.toLocaleString()}
                           </span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Badge className="shrink-0 text-black dark:text-white border-[1px] bg-transparent shadow-none w-fit text-base">
-                          ${(app.totalCost / 1000).toFixed(1)}k
+                          ${(app.stats.globalTotalRevenue / 1000).toFixed(1)}k
                         </Badge>
                       </div>
                     </div>

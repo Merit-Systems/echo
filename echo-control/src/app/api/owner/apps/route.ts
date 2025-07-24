@@ -1,13 +1,12 @@
 import { getCurrentUser } from '@/lib/auth';
-import { listAppsWithDetails } from '@/lib/echo-apps';
-import { AppRole } from '@/lib/permissions/types';
 import { NextResponse } from 'next/server';
+import { bulkGetOwnerAppInfo } from '@/lib/echo-apps';
 
 // GET /api/apps - List all Echo apps for the authenticated user
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    const apps = await listAppsWithDetails(user.id, AppRole.OWNER);
+    const apps = await bulkGetOwnerAppInfo(user.id);
 
     return NextResponse.json({ apps });
   } catch (error) {

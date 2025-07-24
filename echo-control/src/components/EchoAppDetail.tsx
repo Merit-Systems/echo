@@ -8,6 +8,7 @@ import { useEchoAppDetail } from '@/hooks/useEchoAppDetail';
 import { PublicAppDetail } from './app-detail/PublicAppDetail';
 import { CustomerAppDetail } from './app-detail/CustomerAppDetail';
 import { OwnerAppDetail } from './app-detail/OwnerAppDetail';
+import { CustomerEchoApp, OwnerEchoApp } from '@/lib/echo-apps';
 
 interface EchoAppDetailProps {
   appId: string;
@@ -146,7 +147,7 @@ export default function EchoAppDetail({ appId }: EchoAppDetailProps) {
     if (userPermissions.userRole === AppRole.CUSTOMER) {
       return (
         <CustomerAppDetail
-          app={app}
+          app={app as CustomerEchoApp}
           hasPermission={hasPermission}
           onCreateApiKey={() => setShowCreateApiKeyModal(true)}
           onArchiveApiKey={handleArchiveApiKey}
@@ -160,7 +161,7 @@ export default function EchoAppDetail({ appId }: EchoAppDetailProps) {
     // Owner/Admin view with full access
     return (
       <OwnerAppDetail
-        app={app}
+        app={app as OwnerEchoApp}
         hasPermission={hasPermission}
         onCreateApiKey={() => setShowCreateApiKeyModal(true)}
         onArchiveApiKey={handleArchiveApiKey}

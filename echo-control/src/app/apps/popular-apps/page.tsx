@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { PublicEchoApp } from '@/lib/types/apps';
+import { PublicEchoApp } from '@/lib/echo-apps/types';
 import AllAppsPage from '@/components/AllAppsPage';
 
 const PopularAppsFullPage: React.FC = () => {

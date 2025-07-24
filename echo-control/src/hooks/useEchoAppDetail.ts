@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppRole, Permission } from '@/lib/permissions/types';
 import { PermissionService } from '@/lib/permissions/service';
-import { PublicEchoApp, DetailedEchoApp } from '@/lib/types/apps';
-
-// Re-export types for backward compatibility
-export type { DetailedEchoApp, EnhancedAppData } from '@/lib/types/apps';
+import {
+  PublicEchoApp,
+  CustomerEchoApp,
+  OwnerEchoApp,
+} from '@/lib/echo-apps/types';
 
 export interface UserPermissions {
   isAuthenticated: boolean;
@@ -13,7 +14,7 @@ export interface UserPermissions {
 }
 
 export interface UseEchoAppDetailReturn {
-  app: DetailedEchoApp | null;
+  app: PublicEchoApp | CustomerEchoApp | OwnerEchoApp | null;
   loading: boolean;
   error: string | null;
   userPermissions: UserPermissions;
@@ -22,7 +23,9 @@ export interface UseEchoAppDetailReturn {
 }
 
 export function useEchoAppDetail(appId: string): UseEchoAppDetailReturn {
-  const [app, setApp] = useState<DetailedEchoApp | null>(null);
+  const [app, setApp] = useState<
+    PublicEchoApp | CustomerEchoApp | OwnerEchoApp | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({
@@ -31,16 +34,29 @@ export function useEchoAppDetail(appId: string): UseEchoAppDetailReturn {
     permissions: [],
   });
 
-  // Helper function to determine user permissions based on app data
-  const determineUserPermissions = (app: DetailedEchoApp): UserPermissions => {
-    const roleString = app.userRole as string;
-    const userRole = roleString as AppRole;
-    const isAuthenticated = !!roleString && roleString !== AppRole.PUBLIC;
+  // Helper function to determine user permissions based on app data and context
+  const determineUserPermissions = (
+    appType: 'public' | 'customer' | 'owner'
+  ): UserPermissions => {
+    let userRole: AppRole;
+    let isAuthenticated: boolean;
 
-    // Use the centralized permission service instead of duplicating logic
-    const permissions = userRole
-      ? PermissionService.getPermissionsForRole(userRole)
-      : [Permission.READ_APP];
+    switch (appType) {
+      case 'public':
+        userRole = AppRole.PUBLIC;
+        isAuthenticated = false;
+        break;
+      case 'customer':
+        userRole = AppRole.CUSTOMER;
+        isAuthenticated = true;
+        break;
+      case 'owner':
+        userRole = AppRole.OWNER;
+        isAuthenticated = true;
+        break;
+    }
+
+    const permissions = PermissionService.getPermissionsForRole(userRole);
 
     return {
       isAuthenticated,
@@ -77,34 +93,8 @@ export function useEchoAppDetail(appId: string): UseEchoAppDetailReturn {
             );
 
             if (publicApp) {
-              const appData: DetailedEchoApp = {
-                ...publicApp,
-                userRole: AppRole.PUBLIC,
-                permissions: [Permission.READ_APP],
-                description: publicApp.description || '',
-                profilePictureUrl: publicApp.profilePictureUrl || '',
-                bannerImageUrl: publicApp.bannerImageUrl || '',
-                authorizedCallbackUrls: [], // Public users don't have access to callback URLs
-                apiKeys: [],
-                stats: {
-                  totalTransactions: publicApp._count?.transactions || 0,
-                  totalTokens: publicApp.totalTokens || 0,
-                  totalInputTokens: 0,
-                  totalOutputTokens: 0,
-                  totalCost: publicApp.totalCost || 0,
-                  modelUsage: [],
-                },
-                recentTransactions: [],
-                user: {
-                  id: publicApp.owner.id,
-                  email: publicApp.owner.email,
-                  name: publicApp.owner.name || undefined,
-                  profilePictureUrl:
-                    publicApp.owner.profilePictureUrl || undefined,
-                },
-              };
-              setApp(appData);
-              setUserPermissions(determineUserPermissions(appData));
+              setApp(publicApp);
+              setUserPermissions(determineUserPermissions('public'));
               return;
             }
           } catch (publicError) {
@@ -116,7 +106,24 @@ export function useEchoAppDetail(appId: string): UseEchoAppDetailReturn {
       }
 
       setApp(data);
-      setUserPermissions(determineUserPermissions(data));
+
+      // Determine the app type based on the statistics structure
+      let appType: 'public' | 'customer' | 'owner';
+      if (
+        'globalTotalTransactions' in data.stats &&
+        'personalTotalRevenue' in data.stats
+      ) {
+        // Has both global and personal stats - this is an owner view
+        appType = 'owner';
+      } else if ('personalTotalRevenue' in data.stats) {
+        // Has personal stats but no global stats - this is a customer view
+        appType = 'customer';
+      } else {
+        // Only has global stats - this is a public view
+        appType = 'public';
+      }
+
+      setUserPermissions(determineUserPermissions(appType));
     } catch (error) {
       console.error('Error fetching app details:', error);
       setError('Failed to load app details');
