@@ -1,0 +1,47 @@
+{
+  "name": "@zdql/echo-openai",
+  "version": "1.0.19",
+  "description": "TypeScript SDK for Echo platform",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "pnpx eslint src/**/*.ts",
+    "lint:fix": "pnpx eslint src/**/*.ts --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "echo",
+    "typescript",
+    "sdk",
+    "api"
+  ],
+  "author": "Echo Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
+    "eslint": "^9.29.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}
