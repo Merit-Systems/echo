@@ -51,7 +51,7 @@ export default function ChatProvider() {
   return (
     <EchoProvider
       config={{
-        appId: '9aabddcd-94be-428b-a914-51d3416fd443',
+        appId: '169194c8-9f6f-4609-94a1-573489806f08',
         apiUrl: 'https://echo.merit.systems',
         redirectUri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/chat`,
       }}
