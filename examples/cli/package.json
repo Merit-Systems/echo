@@ -1,0 +1,27 @@
+{
+  "name": "cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsx index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.14.0",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.5",
+    "@ai-sdk/openai": "^2.0.17",
+    "@merit-systems/echo-typescript-sdk": "workspace:*",
+    "@types/prompts": "^2.4.9",
+    "ai": "^5.0.19",
+    "open": "^10.2.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.19.1"
+  }
+}
