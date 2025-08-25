@@ -161,9 +161,21 @@ else
     echo "🌱 Seeding integration test database..."
     INTEGRATION_TEST_MODE=true cd ../integration-tests && pnpm db:seed
     
-    echo "🚀 Starting echo-control test server..."
-    cd ../echo-control && INTEGRATION_TEST_MODE=true pnpm build
+    echo "🚀 Building both services in parallel..."
+    cd ../echo-control && INTEGRATION_TEST_MODE=true pnpm build &
+    ECHO_CONTROL_BUILD_PID=$!
     
+    cd ../echo-server && pnpm build &
+    ECHO_DATA_SERVER_BUILD_PID=$!
+    
+    # Wait for both builds to complete
+    echo "⏳ Waiting for builds to complete..."
+    wait $ECHO_CONTROL_BUILD_PID
+    echo "✅ echo-control build completed"
+    wait $ECHO_DATA_SERVER_BUILD_PID
+    echo "✅ echo-data-server build completed"
+    
+    echo "🚀 Starting echo-control test server..."
     # Start echo-control in background with explicit port and all required environment variables
     cd ../echo-control && \
     PORT=3001 \
@@ -191,8 +203,8 @@ else
     while ! curl -f http://localhost:3001/api/health >/dev/null 2>&1; do
         current_time=$(date +%s)
         elapsed=$((current_time - start_time))
-        if [ $elapsed -ge 60 ]; then
-            echo "❌ echo-control failed to start within 60 seconds"
+        if [ $elapsed -ge 30 ]; then
+            echo "❌ echo-control failed to start within 30 seconds"
             echo "🔍 Process status: $(ps -p $ECHO_CONTROL_PID >/dev/null 2>&1 && echo 'running' || echo 'not running')"
             echo "🔍 Port status: $(netstat -tulpn 2>/dev/null | grep :3001 || echo 'no process listening on port 3001')"
             echo "🔍 Port 3000 status: $(netstat -tulpn 2>/dev/null | grep :3000 || echo 'no process listening on port 3000')"
@@ -210,7 +222,7 @@ else
         fi
         
         echo "⏳ Waiting for echo-control health check... (${elapsed}s elapsed)"
-        sleep 2
+        sleep 1
     done
     
     echo "✅ echo-control is healthy at http://localhost:3001"
@@ -219,10 +231,7 @@ else
     echo "🚀 Starting echo-data-server test server..."
     cd ../echo-server
     
-    # Build echo-data-server
-    pnpm build
-    
-    # Start echo-data-server in background
+    # Start echo-data-server in background (already built in parallel)
     ECHO_CONTROL_URL="http://localhost:3001" NODE_ENV=test PORT=3069 pnpm start &
     ECHO_DATA_SERVER_PID=$!
     echo "$ECHO_DATA_SERVER_PID" > /tmp/echo-data-server.pid
@@ -232,16 +241,16 @@ else
     while ! curl -f "$ECHO_DATA_SERVER_URL/health" >/dev/null 2>&1; do
         current_time=$(date +%s)
         elapsed=$((current_time - start_time))
-        if [ $elapsed -ge 60 ]; then
-            echo "❌ echo-data-server failed to start within 60 seconds"
+        if [ $elapsed -ge 30 ]; then
+            echo "❌ echo-data-server failed to start within 30 seconds"
             kill $ECHO_CONTROL_PID 2>/dev/null || true
             kill $ECHO_DATA_SERVER_PID 2>/dev/null || true
             exit 1
         fi
         echo "⏳ Waiting for echo-data-server health check... (${elapsed}s elapsed)"
-        sleep 2
+        sleep 1
     done || {
-        echo "❌ echo-data-server failed to start within 60 seconds"
+        echo "❌ echo-data-server failed to start within 30 seconds"
         kill $ECHO_CONTROL_PID 2>/dev/null || true
         kill $ECHO_DATA_SERVER_PID 2>/dev/null || true
         exit 1

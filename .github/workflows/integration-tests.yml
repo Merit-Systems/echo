@@ -55,6 +55,18 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            echo-control/.next
+            echo-control/src/generated
+            echo-server/dist
+            echo-server/node_modules/.prisma
+          key: ${{ runner.os }}-build-${{ hashFiles('**/pnpm-lock.yaml', 'echo-control/**', 'echo-server/**') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
@@ -92,8 +104,8 @@ jobs:
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
 
           # OAuth Configuration
-          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=1
-          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=1
+          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=2
+          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=2
 
           # Environment Flags
           CI=true
@@ -112,9 +124,9 @@ jobs:
 
       - name: Wait for PostgreSQL to be ready
         run: |
-          timeout 30 bash -c 'until pg_isready -h localhost -p 5433 -U test -d echo_integration_test; do 
+          timeout 20 bash -c 'until pg_isready -h localhost -p 5433 -U test -d echo_integration_test; do 
             echo "Waiting for PostgreSQL..."
-            sleep 2
+            sleep 1
           done'
 
       - name: Setup Prisma schema
@@ -136,8 +148,8 @@ jobs:
           INTEGRATION_TEST_JWT_USER_2: ${{ secrets.INTEGRATION_TEST_JWT_USER_2 }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 1
-          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: 1
+          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 2
+          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: 2
           CI: true
           NODE_ENV: test
           INTEGRATION_TEST_MODE: true
@@ -218,8 +230,8 @@ jobs:
           INTEGRATION_TEST_JWT=${{ secrets.INTEGRATION_TEST_JWT }}
           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=1
-          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=1
+          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=2
+          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=2
           CI=true
           NODE_ENV=test
           HEADLESS=true

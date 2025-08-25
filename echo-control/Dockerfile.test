@@ -20,7 +20,7 @@ COPY create-echo-app/package.json ./create-echo-app/
 COPY integration-tests/package.json ./integration-tests/
 
 # Install dependencies for the entire workspace
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy echo-control source code
 COPY echo-control/ ./echo-control/
