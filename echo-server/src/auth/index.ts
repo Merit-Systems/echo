@@ -1,7 +1,14 @@
 import { verifyUserHeaderCheck } from './headers';
-import { extractAppIdFromPath } from '../services/PathDataService';
+import { extractAppIdFromPath, isRepoSlugAppId, hasAppId } from '../services/PathDataService';
 import { EchoControlService } from '../services/EchoControlService';
+import { RepoSlugService } from '../services/RepoSlugService';
 import { UnauthorizedError } from '../errors/http';
+import { PrismaClient } from '../generated/prisma';
+import logger from '../logger';
+
+// Shared database instance for repo slug service
+const db = new PrismaClient();
+const repoSlugService = new RepoSlugService(db);
 
 /**
  * Handles complete authentication flow including path extraction, header verification, and app ID validation.
@@ -24,20 +31,44 @@ export async function authenticateRequest(
   echoControlService: EchoControlService;
   forwardingPath: string;
 }> {
-  // Extract app ID from path if present
-  const { appId: pathAppId, remainingPath } = extractAppIdFromPath(path);
-
+  // Extract app identifier from path if present
+  const pathResult = extractAppIdFromPath(path);
+  
   // Use the remaining path for provider forwarding, or original path if no app ID found
-  const forwardingPath = pathAppId ? remainingPath : path;
+  const forwardingPath = hasAppId(pathResult) ? pathResult.remainingPath : path;
 
   // Process headers and instantiate provider
   const [processedHeaders, echoControlService] =
     await verifyUserHeaderCheck(headers);
 
-  // Validate app ID authorization if app ID is in path
-  if (pathAppId) {
+  // Validate app ID authorization if app identifier is in path
+  if (hasAppId(pathResult)) {
+    let resolvedAppId: string = pathResult.appId;
+
+    // If we detected a repo slug, resolve it to an app UUID
+    if (isRepoSlugAppId(pathResult)) {
+      const [owner, repo] = pathResult.appId.split('/');
+      logger.debug(`Resolving repo slug ${pathResult.appId} to app UUID`);
+
+      const resolution = await repoSlugService.resolveSlugToAppId(owner, repo);
+      
+      if (!resolution) {
+        logger.warn(`Failed to resolve repo slug ${pathResult.appId}: repo not found or private`);
+        throw new UnauthorizedError('Repository not found or not accessible.');
+      }
+
+      resolvedAppId = resolution.appId;
+      
+      if (resolution.wasCreated) {
+        logger.info(`Auto-created app ${resolvedAppId} for repository ${pathResult.appId}`);
+      } else {
+        logger.debug(`Resolved repo slug ${pathResult.appId} to existing app ${resolvedAppId}`);
+      }
+    }
+
+    // Validate that the authenticated user has permission to use this app
     const authResult = echoControlService.getAuthResult();
-    if (!authResult?.echoAppId || authResult.echoAppId !== pathAppId) {
+    if (!authResult?.echoAppId || authResult.echoAppId !== resolvedAppId) {
       throw new UnauthorizedError('Unauthorized use of this app.');
     }
   }

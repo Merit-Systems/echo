@@ -91,6 +91,7 @@ model EchoApp {
   appMemberships          AppMembership[] // Customers of app and owners
   markUp                  MarkUp? // The markup rate for this app (one-to-one)
   githubLink              GithubLink? // The GitHub link for this app (one-to-one)
+  repoSlugMappings        RepoSlugMapping[] // Repository slug mappings for this app
   spendPools              SpendPool[] // Spend pools associated with this app
   ReferralCode            ReferralCode[]
   currentReferralRewardId String?          @db.Uuid // Reference to current active referral reward
@@ -347,4 +348,24 @@ model ReferralReward {
   Transaction    Transaction[]
 
   @@map("referral_rewards")
+}
+
+model RepoSlugMapping {
+  id          String    @id @default(uuid()) @db.Uuid
+  echoAppId   String    @db.Uuid // Reference to the Echo app this slug maps to
+  owner       String    @db.VarChar(255) // GitHub repository owner (user or organization)
+  repo        String    @db.VarChar(255) // GitHub repository name
+  isCanonical Boolean   @default(true) // Whether this is the canonical slug for the app
+  isArchived  Boolean   @default(false)
+  archivedAt  DateTime? @db.Timestamptz
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @db.Timestamptz
+
+  echoApp EchoApp @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+
+  // Ensure only one canonical slug per owner/repo combination
+  @@unique([owner, repo], name: "unique_owner_repo_active")
+  @@index([owner, repo], name: "idx_repo_slug_lookup")
+  @@index([echoAppId], name: "idx_repo_slug_app")
+  @@map("repo_slug_mappings")
 }
