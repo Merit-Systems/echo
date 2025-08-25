@@ -92,8 +92,8 @@ jobs:
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
 
           # OAuth Configuration
-          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=5
-          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=5
+          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=1
+          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=1
 
           # Environment Flags
           CI=true
@@ -136,8 +136,8 @@ jobs:
           INTEGRATION_TEST_JWT_USER_2: ${{ secrets.INTEGRATION_TEST_JWT_USER_2 }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 2592000
-          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: 86400
+          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 1
+          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: 1
           CI: true
           NODE_ENV: test
           INTEGRATION_TEST_MODE: true
@@ -218,7 +218,8 @@ jobs:
           INTEGRATION_TEST_JWT=${{ secrets.INTEGRATION_TEST_JWT }}
           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=2592000
+          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=1
+          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=1
           CI=true
           NODE_ENV=test
           HEADLESS=true
