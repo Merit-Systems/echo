@@ -195,6 +195,11 @@ export async function setUserReferrerForAppIfExists(
     return false;
   }
 
+  if (referralCode.userId === userId) {
+    // user can't refer themselves
+    return false;
+  }
+
   await client.appMembership.update({
     where: {
       userId_echoAppId: {

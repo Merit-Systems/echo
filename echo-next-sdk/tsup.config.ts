@@ -7,7 +7,14 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   outDir: 'dist',
-  external: ['axios'],
+  external: [
+    'react',
+    'react-dom',
+    'next',
+    'next/navigation',
+    'next/headers',
+    'axios',
+  ],
   splitting: false,
   bundle: true,
 });

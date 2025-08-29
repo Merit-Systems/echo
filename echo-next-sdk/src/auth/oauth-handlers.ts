@@ -44,9 +44,11 @@ export async function handleSignIn(
   const { origin } = req.nextUrl;
   const basePath = config.basePath || '/api/echo';
 
+  const referralCode = req.nextUrl.searchParams.get('referral_code');
   const baseUrl = resolveEchoBaseUrl(config);
 
   const redirectUrl = new URL(`${baseUrl}/api/oauth/authorize`);
+  redirectUrl.searchParams.set('referral_code', referralCode || '');
   redirectUrl.searchParams.set('client_id', config.appId);
   redirectUrl.searchParams.set('redirect_uri', `${origin}${basePath}/callback`);
   redirectUrl.searchParams.set('response_type', 'code');
