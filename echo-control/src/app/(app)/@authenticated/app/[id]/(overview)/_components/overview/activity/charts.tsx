@@ -8,7 +8,7 @@ import {
 import { ChartData } from '@/app/(app)/@authenticated/_components/charts/base-chart';
 
 import { api } from '@/trpc/client';
-import { useActivityContext } from '../../../../../../_components/activity-data-selectors/context';
+import { useActivityContext } from '@/app/(app)/@authenticated/_components/activity-data-selectors/context';
 
 import { formatCurrency } from '@/lib/utils';
 import { useMemo } from 'react';
