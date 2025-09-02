@@ -10,6 +10,7 @@ interface SeedAppUsageOptions {
   transactionsPerDay: number;
   users: number;
   quiet?: boolean;
+  updateCreatedAt?: boolean;
 }
 
 function parseArgs(): SeedAppUsageOptions {
@@ -28,6 +29,7 @@ function parseArgs(): SeedAppUsageOptions {
     transactionsPerDay: 50,
     users: 5,
     quiet: false,
+    updateCreatedAt: true,
   };
 
   for (let i = 1; i < args.length; i++) {
@@ -46,6 +48,9 @@ function parseArgs(): SeedAppUsageOptions {
       case '--quiet':
         options.quiet = true;
         break;
+      case '--no-update-created-at':
+        options.updateCreatedAt = false;
+        break;
       case '--help':
       case '-h':
         console.log(`
@@ -61,12 +66,14 @@ Options:
   --transactions-per-day <number>  Average transactions per day (default: 50)
   --users <number>          Number of users to generate transactions for (default: 5)
   --quiet                   Suppress verbose output
+  --no-update-created-at    Don't update app's createdAt to first transaction date (default: update)
   --help, -h                Show this help message
 
 Examples:
   tsx seed-app-usage.ts 12345-app-id                                # Seed specific app
   tsx seed-app-usage.ts 12345-app-id --days 7 --transactions-per-day 100  # Custom options
   tsx seed-app-usage.ts 12345-app-id --days 14 --users 10          # 14 days, 10 users
+  tsx seed-app-usage.ts 12345-app-id --no-update-created-at        # Don't update app createdAt
         `);
         process.exit(0);
     }
@@ -246,6 +253,37 @@ async function createTransaction(
   }
 }
 
+async function updateAppCreatedAt(
+  appId: string,
+  quiet: boolean
+): Promise<void> {
+  // Find the earliest transaction for this app
+  const earliestTransaction = await db.transaction.findFirst({
+    where: { echoAppId: appId },
+    orderBy: { createdAt: 'asc' },
+    select: { createdAt: true },
+  });
+
+  if (!earliestTransaction) {
+    if (!quiet) {
+      console.log('⚠️  No transactions found, skipping createdAt update');
+    }
+    return;
+  }
+
+  // Update the app's createdAt to match the earliest transaction minus one day
+  await db.echoApp.update({
+    where: { id: appId },
+    data: { createdAt: subDays(earliestTransaction.createdAt, 1) },
+  });
+
+  if (!quiet) {
+    console.log(
+      `📅 Updated app createdAt to ${format(earliestTransaction.createdAt, 'yyyy-MM-dd HH:mm:ss')}`
+    );
+  }
+}
+
 async function createRefreshToken(
   userId: string,
   appId: string,
@@ -363,6 +401,16 @@ async function seedAppUsage(): Promise<void> {
         currentDate,
         options.quiet ?? false
       );
+    }
+
+    // Update app's createdAt to match the first transaction if requested
+    if (options.updateCreatedAt) {
+      if (!options.quiet) {
+        console.log(
+          '\n🔄 Updating app createdAt to match earliest transaction...'
+        );
+      }
+      await updateAppCreatedAt(options.appId, options.quiet ?? false);
     }
 
     if (!options.quiet) {
