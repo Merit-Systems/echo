@@ -22,13 +22,23 @@ import {
 import { ActivityTimeframe } from './types';
 
 export const RangeSelector = () => {
-  const { startDate, endDate, setDateRange, timeframe, setTimeframe } =
-    useActivityContext();
+  const {
+    startDate,
+    endDate,
+    setDateRange,
+    timeframe,
+    setTimeframe,
+    createdAt,
+  } = useActivityContext();
 
   // Get only the numeric enum values
   const timeframeValues = Object.values(ActivityTimeframe).filter(
     value => typeof value === 'number'
   ) as ActivityTimeframe[];
+
+  // Only show "All Time" if createdAt is available
+  // We don't yet have a good concept for All Time for the user overview page
+  const showAllTime = Boolean(createdAt);
 
   const formatRange = (startDate: Date, endDate: Date) => {
     if (startDate.getFullYear() === endDate.getFullYear()) {
@@ -86,20 +96,28 @@ export const RangeSelector = () => {
         <SelectTrigger className="rounded-l-none border-border shadow-none border-l-[0.5px] text-xs">
           {timeframe !== ActivityTimeframe.Custom && (
             <span>
-              {timeframe === 1 ? 'Past 24 Hours' : `Past ${timeframe} Days`}
+              {timeframe === ActivityTimeframe.AllTime
+                ? 'All Time'
+                : timeframe === 1
+                  ? 'Past 24 Hours'
+                  : `Past ${timeframe} Days`}
             </span>
           )}
         </SelectTrigger>
         <SelectContent align="end">
-          {timeframeValues.map(value => (
-            <SelectItem key={value} value={value.toString()}>
-              {value === 0
-                ? 'Custom'
-                : value === 1
-                  ? 'Past 24 Hours'
-                  : `Past ${value} Days`}
-            </SelectItem>
-          ))}
+          {timeframeValues
+            .filter(value => showAllTime || value !== ActivityTimeframe.AllTime)
+            .map(value => (
+              <SelectItem key={value} value={value.toString()}>
+                {value === ActivityTimeframe.AllTime
+                  ? 'All Time'
+                  : value === 0
+                    ? 'Custom'
+                    : value === 1
+                      ? 'Past 24 Hours'
+                      : `Past ${value} Days`}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
     </div>

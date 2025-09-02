@@ -246,6 +246,51 @@ async function createTransaction(
   }
 }
 
+async function createRefreshToken(
+  userId: string,
+  appId: string,
+  date: Date,
+  quiet: boolean
+): Promise<void> {
+  // First create an AppSession
+  const appSession = await db.appSession.create({
+    data: {
+      userId,
+      echoAppId: appId,
+      deviceName: faker.helpers.arrayElement([
+        'iPhone',
+        'Android',
+        'Desktop',
+        'Tablet',
+        'Web Browser',
+      ]),
+      userAgent: faker.internet.userAgent(),
+      ipAddress: faker.internet.ip(),
+      createdAt: date,
+      lastSeenAt: date,
+    },
+  });
+
+  // Then create the RefreshToken with the valid sessionId
+  await db.refreshToken.create({
+    data: {
+      userId,
+      echoAppId: appId,
+      token: faker.string.uuid(),
+      expiresAt: addDays(date, 7),
+      scope: 'llm:invoke offline_access',
+      sessionId: appSession.id,
+      createdAt: date,
+    },
+  });
+
+  if (!quiet) {
+    console.log(
+      `🔑 Created refresh token for user ${userId} at ${format(date, 'yyyy-MM-dd HH:mm:ss')}`
+    );
+  }
+}
+
 async function seedAppUsage(): Promise<void> {
   const options = parseArgs();
 
@@ -312,6 +357,12 @@ async function seedAppUsage(): Promise<void> {
         );
         totalTransactions++;
       }
+      await createRefreshToken(
+        faker.helpers.arrayElement(userIds),
+        options.appId,
+        currentDate,
+        options.quiet ?? false
+      );
     }
 
     if (!options.quiet) {

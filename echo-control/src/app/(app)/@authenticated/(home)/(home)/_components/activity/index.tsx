@@ -14,6 +14,7 @@ import { ActivityContextProvider } from '@/app/(app)/@authenticated/_components/
 import { ActivityCharts, LoadingActivityCharts } from './charts';
 import { ActivityOverlay } from './overlay';
 import { ViewModeSelector } from '@/app/(app)/@authenticated/_components/activity-data-selectors/view-mode-selector';
+import { ActivityTimeframe } from '@/app/(app)/@authenticated/_components/activity-data-selectors/types';
 
 const ActivityContainer = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -46,6 +47,8 @@ export const Activity: React.FC = () => {
       <ActivityContextProvider
         initialStartDate={defaultStartDate}
         initialEndDate={defaultEndDate}
+        initialTimeframe={ActivityTimeframe.SevenDays}
+        createdAt={undefined}
       >
         <ActivityContainer>
           <ErrorBoundary
