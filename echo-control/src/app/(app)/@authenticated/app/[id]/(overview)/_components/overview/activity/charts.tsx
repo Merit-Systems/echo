@@ -223,7 +223,7 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
         },
       ]}
       chartData={chartData}
-      isCumulative={isCumulative}
+      isCumulative={isCumulative} // For tooltips
     />
   );
 };
