@@ -8,9 +8,10 @@ import { Card } from '@/components/ui/card';
 
 import { api, HydrateClient } from '@/trpc/server';
 
-import { RangeSelector } from '../../../../../../_components/time-range-selector/range-selector';
+import { RangeSelector } from '../../../../../../_components/activity-data-selectors/range-selector';
+import { ViewModeSelector } from '../../../../../../_components/activity-data-selectors/view-mode-selector';
 import { ActivityCharts, LoadingActivityCharts } from './charts';
-import { ActivityContextProvider } from '../../../../../../_components/time-range-selector/context';
+import { ActivityContextProvider } from '../../../../../../_components/activity-data-selectors/context';
 import { ActivityOverlay } from './overlay';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -29,7 +30,19 @@ const ActivityContainer = ({
     <div className="w-full flex flex-col gap-4 md:gap-6">
       <div className="flex justify-between items-center">
         <h3 className="text-2xl font-bold">App Activity</h3>
-        {isLoading ? <Skeleton className="w-24 h-8" /> : <RangeSelector />}
+        <div className="flex items-center gap-2">
+          {isLoading ? (
+            <>
+              <Skeleton className="w-32 h-6" />
+              <Skeleton className="w-24 h-6" />
+            </>
+          ) : (
+            <>
+              <ViewModeSelector />
+              <RangeSelector />
+            </>
+          )}
+        </div>
       </div>
       <Card className="p-0 overflow-hidden relative">{children}</Card>
     </div>

@@ -8,7 +8,7 @@ import {
 import { ChartData } from '@/app/(app)/@authenticated/_components/charts/base-chart';
 
 import { api } from '@/trpc/client';
-import { useActivityContext } from '../../../../../../_components/time-range-selector/context';
+import { useActivityContext } from '../../../../../../_components/activity-data-selectors/context';
 
 import { formatCurrency } from '@/lib/utils';
 import { useMemo } from 'react';
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export const ActivityCharts: React.FC<Props> = ({ appId }) => {
-  const { startDate, endDate } = useActivityContext();
+  const { startDate, endDate, isCumulative } = useActivityContext();
 
   const [activity] = api.apps.app.activity.get.useSuspenseQuery({
     appId,
@@ -39,8 +39,10 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
   // Transform data for the chart
   const chartData: ChartData<Omit<(typeof activity)[number], 'timestamp'>>[] =
     useMemo(() => {
+      let data: ChartData<Omit<(typeof activity)[number], 'timestamp'>>[];
+
       if (!isInitialized) {
-        return Array.from({ length: 48 }, (_, i) => ({
+        data = Array.from({ length: 48 }, (_, i) => ({
           timestamp: format(subDays(new Date(), i), 'MMM dd HH:mm yyyy'),
           totalProfit: Math.random() * 100,
           totalCost: Math.random() * 100,
@@ -49,13 +51,47 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
           totalOutputTokens: Math.random() * 100,
           transactionCount: Math.random() * 100,
         }));
+      } else {
+        data = activity.map(({ timestamp, ...rest }) => ({
+          ...rest,
+          timestamp: format(timestamp, 'MMM dd HH:mm yyyy'),
+        }));
       }
 
-      return activity.map(({ timestamp, ...rest }) => ({
-        ...rest,
-        timestamp: format(timestamp, 'MMM dd HH:mm yyyy'),
-      }));
-    }, [activity, isInitialized]);
+      if (isCumulative) {
+        const keys = Object.keys(data[0] || {}).filter(
+          key => key !== 'timestamp'
+        ) as (keyof Omit<(typeof activity)[number], 'timestamp'>)[];
+        const cumulativeData: ChartData<
+          Omit<(typeof activity)[number], 'timestamp'>
+        >[] = [];
+        const cumulatives: Record<
+          keyof Omit<(typeof activity)[number], 'timestamp'>,
+          number
+        > = {} as Record<
+          keyof Omit<(typeof activity)[number], 'timestamp'>,
+          number
+        >;
+
+        // Initialize cumulative counters
+        keys.forEach(key => {
+          cumulatives[key] = 0;
+        });
+
+        data.forEach(item => {
+          const cumulativeItem = { ...item };
+          keys.forEach(key => {
+            cumulatives[key] += item[key];
+            (cumulativeItem[key] as number) = cumulatives[key];
+          });
+          cumulativeData.push(cumulativeItem);
+        });
+
+        return cumulativeData;
+      }
+
+      return data;
+    }, [activity, isInitialized, isCumulative]);
 
   const totalProfit = chartData.reduce(
     (acc, item) => acc + item.totalProfit,
@@ -187,6 +223,7 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
         },
       ]}
       chartData={chartData}
+      isCumulative={isCumulative}
     />
   );
 };

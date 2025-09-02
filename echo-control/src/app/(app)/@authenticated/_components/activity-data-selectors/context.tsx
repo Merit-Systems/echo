@@ -12,6 +12,8 @@ interface ActivityContextType {
   timeframe: ActivityTimeframe;
   setTimeframe: (timeframe: ActivityTimeframe) => void;
   setDateRange: (startDate: Date, endDate: Date) => void;
+  isCumulative: boolean;
+  setIsCumulative: (isCumulative: boolean) => void;
 }
 
 export const ActivityContext = createContext<ActivityContextType>({
@@ -20,6 +22,8 @@ export const ActivityContext = createContext<ActivityContextType>({
   timeframe: ActivityTimeframe.SevenDays,
   setTimeframe: () => {},
   setDateRange: () => {},
+  isCumulative: false,
+  setIsCumulative: () => {},
 });
 
 interface Props {
@@ -38,6 +42,7 @@ export const ActivityContextProvider = ({
   );
   const [endDate, setEndDate] = useState<Date>(initialEndDate);
   const [startDate, setStartDate] = useState<Date>(initialStartDate);
+  const [isCumulative, setIsCumulative] = useState<boolean>(false);
 
   useEffect(() => {
     if (timeframe === ActivityTimeframe.Custom) {
@@ -54,7 +59,15 @@ export const ActivityContextProvider = ({
 
   return (
     <ActivityContext.Provider
-      value={{ startDate, endDate, timeframe, setTimeframe, setDateRange }}
+      value={{
+        startDate,
+        endDate,
+        timeframe,
+        setTimeframe,
+        setDateRange,
+        isCumulative,
+        setIsCumulative,
+      }}
     >
       {children}
     </ActivityContext.Provider>

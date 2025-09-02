@@ -8,18 +8,22 @@ import { Card } from '@/components/ui/card';
 
 import { api, HydrateClient } from '@/trpc/server';
 
-import { RangeSelector } from '@/app/(app)/@authenticated/_components/time-range-selector/range-selector';
-import { ActivityContextProvider } from '@/app/(app)/@authenticated/_components/time-range-selector/context';
+import { RangeSelector } from '@/app/(app)/@authenticated/_components/activity-data-selectors/range-selector';
+import { ActivityContextProvider } from '@/app/(app)/@authenticated/_components/activity-data-selectors/context';
 
 import { ActivityCharts, LoadingActivityCharts } from './charts';
 import { ActivityOverlay } from './overlay';
+import { ViewModeSelector } from '@/app/(app)/@authenticated/_components/activity-data-selectors/view-mode-selector';
 
 const ActivityContainer = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="w-full flex flex-col gap-2 md:gap-3 max-w-full">
       <div className="flex justify-between items-center">
         <h3 className="font-bold">Your Earnings</h3>
-        <RangeSelector />
+        <div className="flex items-center gap-2">
+          <ViewModeSelector />
+          <RangeSelector />
+        </div>
       </div>
       <Card className="p-0 overflow-hidden relative">{children}</Card>
     </div>
