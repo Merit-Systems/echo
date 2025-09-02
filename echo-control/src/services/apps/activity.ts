@@ -8,6 +8,7 @@ export const getAppActivitySchema = z.object({
   endDate: z.date(),
   numBuckets: z.number().optional().default(48),
   userId: z.uuid().optional(),
+  isCumulative: z.boolean().optional().default(false),
 });
 
 export const getAppActivity = async ({
@@ -16,13 +17,15 @@ export const getAppActivity = async ({
   endDate,
   numBuckets,
   userId,
+  isCumulative,
 }: z.infer<typeof getAppActivitySchema>) => {
   // Get all transactions for the time period
+  // For cumulative view, fetch from the beginning of time to get true cumulative data
   const transactions = await db.transaction.findMany({
     where: {
       echoAppId: appId,
       createdAt: {
-        gte: startDate,
+        gte: isCumulative ? new Date(0) : startDate, // Fetch from beginning of time for cumulative
         lte: endDate,
       },
       isArchived: false,
@@ -54,29 +57,84 @@ export const getAppActivity = async ({
     };
   });
 
-  // Group transactions into buckets
-  for (const transaction of transactions) {
-    const bucketIndex = Math.floor(
-      (transaction.createdAt.getTime() - startDate.getTime()) / bucketSizeMs
+  if (isCumulative) {
+    // For cumulative view, calculate cumulative totals up to each bucket timestamp
+    let cumulativeCost = 0;
+    let cumulativeProfit = 0;
+    let cumulativeTokens = 0;
+    let cumulativeInputTokens = 0;
+    let cumulativeOutputTokens = 0;
+    let cumulativeTransactionCount = 0;
+
+    // Sort transactions by creation date
+    const sortedTransactions = transactions.sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
     );
 
-    if (bucketIndex >= 0 && bucketIndex < numBuckets) {
-      const bucket = buckets[bucketIndex];
-      bucket.totalCost += Number(transaction.rawTransactionCost);
-      bucket.totalProfit += Number(transaction.markUpProfit);
-      bucket.transactionCount += 1;
-      // Extract token information from transactionMetadata
-      if (transaction.transactionMetadata) {
-        const metadata = transaction.transactionMetadata;
+    let transactionIndex = 0;
 
-        if (metadata.totalTokens) {
-          bucket.totalTokens += Number(metadata.totalTokens);
+    for (let i = 0; i < numBuckets; i++) {
+      const bucketEnd = new Date(startDate.getTime() + (i + 1) * bucketSizeMs);
+
+      // Add all transactions up to this bucket's end time
+      while (
+        transactionIndex < sortedTransactions.length &&
+        sortedTransactions[transactionIndex].createdAt <= bucketEnd
+      ) {
+        const transaction = sortedTransactions[transactionIndex];
+        cumulativeCost += Number(transaction.rawTransactionCost);
+        cumulativeProfit += Number(transaction.markUpProfit);
+        cumulativeTransactionCount += 1;
+
+        // Extract token information from transactionMetadata
+        if (transaction.transactionMetadata) {
+          const metadata = transaction.transactionMetadata;
+          if (metadata.totalTokens) {
+            cumulativeTokens += Number(metadata.totalTokens);
+          }
+          if (metadata.inputTokens) {
+            cumulativeInputTokens += Number(metadata.inputTokens);
+          }
+          if (metadata.outputTokens) {
+            cumulativeOutputTokens += Number(metadata.outputTokens);
+          }
         }
-        if (metadata.inputTokens) {
-          bucket.totalInputTokens += Number(metadata.inputTokens);
-        }
-        if (metadata.outputTokens) {
-          bucket.totalOutputTokens += Number(metadata.outputTokens);
+        transactionIndex++;
+      }
+
+      // Set cumulative values for this bucket
+      buckets[i].totalCost = cumulativeCost;
+      buckets[i].totalProfit = cumulativeProfit;
+      buckets[i].totalTokens = cumulativeTokens;
+      buckets[i].totalInputTokens = cumulativeInputTokens;
+      buckets[i].totalOutputTokens = cumulativeOutputTokens;
+      buckets[i].transactionCount = cumulativeTransactionCount;
+    }
+  } else {
+    // For non-cumulative view, group transactions into buckets as before
+    for (const transaction of transactions) {
+      const bucketIndex = Math.floor(
+        (transaction.createdAt.getTime() - startDate.getTime()) / bucketSizeMs
+      );
+
+      if (bucketIndex >= 0 && bucketIndex < numBuckets) {
+        const bucket = buckets[bucketIndex];
+        bucket.totalCost += Number(transaction.rawTransactionCost);
+        bucket.totalProfit += Number(transaction.markUpProfit);
+        bucket.transactionCount += 1;
+        // Extract token information from transactionMetadata
+        if (transaction.transactionMetadata) {
+          const metadata = transaction.transactionMetadata;
+
+          if (metadata.totalTokens) {
+            bucket.totalTokens += Number(metadata.totalTokens);
+          }
+          if (metadata.inputTokens) {
+            bucket.totalInputTokens += Number(metadata.inputTokens);
+          }
+          if (metadata.outputTokens) {
+            bucket.totalOutputTokens += Number(metadata.outputTokens);
+          }
         }
       }
     }

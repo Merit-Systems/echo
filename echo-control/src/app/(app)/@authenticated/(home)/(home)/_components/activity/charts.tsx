@@ -19,6 +19,7 @@ export const ActivityCharts: React.FC = () => {
   const [activity] = api.activity.creator.getCurrent.useSuspenseQuery({
     startDate,
     endDate,
+    isCumulative,
   });
   const [numApps] = api.apps.count.owner.useSuspenseQuery();
 
@@ -29,11 +30,9 @@ export const ActivityCharts: React.FC = () => {
   // Transform data for the chart
   const chartData: ChartData<Omit<(typeof activity)[number], 'timestamp'>>[] =
     useMemo(() => {
-      let data: ChartData<Omit<(typeof activity)[number], 'timestamp'>>[] = [];
-
       if (!hasApps) {
         // Show placeholder data if user has no apps
-        data = Array.from({ length: 48 }, (_, i) => ({
+        return Array.from({ length: 48 }, (_, i) => ({
           timestamp: format(
             new Date(Date.now() - i * 60 * 60 * 1000),
             'MMM dd HH:mm yyyy'
@@ -45,47 +44,12 @@ export const ActivityCharts: React.FC = () => {
           totalOutputTokens: Math.random() * 100,
           transactionCount: Math.random() * 100,
         }));
-      } else {
-        data = activity.map(({ timestamp, ...rest }) => ({
-          ...rest,
-          timestamp: format(timestamp, 'MMM dd HH:mm yyyy'),
-        }));
       }
-
-      if (isCumulative) {
-        const keys = Object.keys(data[0] || {}).filter(
-          key => key !== 'timestamp'
-        ) as (keyof Omit<(typeof activity)[number], 'timestamp'>)[];
-        const cumulativeData: ChartData<
-          Omit<(typeof activity)[number], 'timestamp'>
-        >[] = [];
-        const cumulatives: Record<
-          keyof Omit<(typeof activity)[number], 'timestamp'>,
-          number
-        > = {} as Record<
-          keyof Omit<(typeof activity)[number], 'timestamp'>,
-          number
-        >;
-
-        // Initialize cumulative counters
-        keys.forEach(key => {
-          cumulatives[key] = 0;
-        });
-
-        data.forEach(item => {
-          const cumulativeItem = { ...item };
-          keys.forEach(key => {
-            cumulatives[key] += item[key];
-            (cumulativeItem[key] as number) = cumulatives[key];
-          });
-          cumulativeData.push(cumulativeItem);
-        });
-
-        return cumulativeData;
-      }
-
-      return data;
-    }, [activity, hasApps, isCumulative]);
+      return activity.map(({ timestamp, ...rest }) => ({
+        ...rest,
+        timestamp: format(timestamp, 'MMM dd HH:mm yyyy'),
+      }));
+    }, [activity, hasApps]);
 
   const totalProfit = chartData.reduce(
     (acc, item) => acc + item.totalProfit,

@@ -8,10 +8,10 @@ import { Card } from '@/components/ui/card';
 
 import { api, HydrateClient } from '@/trpc/server';
 
-import { RangeSelector } from '../../../../../../_components/activity-data-selectors/range-selector';
-import { ViewModeSelector } from '../../../../../../_components/activity-data-selectors/view-mode-selector';
+import { RangeSelector } from '@/app/(app)/@authenticated/_components/activity-data-selectors/range-selector';
+import { ViewModeSelector } from '@/app/(app)/@authenticated/_components/activity-data-selectors/view-mode-selector';
 import { ActivityCharts, LoadingActivityCharts } from './charts';
-import { ActivityContextProvider } from '../../../../../../_components/activity-data-selectors/context';
+import { ActivityContextProvider } from '@/app/(app)/@authenticated/_components/activity-data-selectors/context';
 import { ActivityOverlay } from './overlay';
 import { Skeleton } from '@/components/ui/skeleton';
 

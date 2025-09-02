@@ -37,6 +37,7 @@ export const Activity: React.FC = () => {
   api.activity.creator.getCurrent.prefetch({
     startDate: defaultStartDate,
     endDate: defaultEndDate,
+    isCumulative: false, // Default to non-cumulative for prefetch
   });
   api.apps.count.owner.prefetch();
 
