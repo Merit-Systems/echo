@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useDeferredValue, useState, useTransition } from 'react';
 
 import { Percent } from 'lucide-react';
 
@@ -47,6 +47,8 @@ export const MarkupInput = ({ markup, onMarkupChange }: Props) => {
     MARKUP_OPTIONS.find(option => option.value === markup)?.label ??
       MarkupOption.Custom
   );
+  const [, startTransition] = useTransition();
+  const deferredMarkup = useDeferredValue(markup);
 
   return (
     <div className="flex flex-col">
@@ -67,7 +69,7 @@ export const MarkupInput = ({ markup, onMarkupChange }: Props) => {
               e.stopPropagation();
               setSelectedMarkupLabel(label);
               if (label !== MarkupOption.Custom) {
-                onMarkupChange(value);
+                startTransition(() => onMarkupChange(value));
               }
             }}
             className="flex-1 flex-col gap-0 h-full p-2 justify-start"
@@ -109,7 +111,7 @@ export const MarkupInput = ({ markup, onMarkupChange }: Props) => {
                 onChange={e => {
                   const value =
                     e.target.value === '' ? 0 : Number(e.target.value);
-                  onMarkupChange(value / 100 + 1);
+                  startTransition(() => onMarkupChange(value / 100 + 1));
                 }}
                 className="w-18 pr-6"
               />
@@ -120,13 +122,15 @@ export const MarkupInput = ({ markup, onMarkupChange }: Props) => {
               max={10}
               step={0.01}
               value={[markup]}
-              onValueChange={value => onMarkupChange(value[0])}
+              onValueChange={value =>
+                startTransition(() => onMarkupChange(value[0]))
+              }
             />
           </motion.div>
         )}
       </AnimatePresence>
       <div className="w-full mt-4">
-        <ProfitChart markup={markup - 1} />
+        <ProfitChart markup={deferredMarkup - 1} />
       </div>
     </div>
   );
