@@ -22,6 +22,13 @@ import { useEchoClient } from '../hooks/useEchoClient';
 import { useEchoPayments } from '../hooks/useEchoPayments';
 import { EchoAuthConfig, EchoBalance, EchoUser } from '../types';
 
+export interface PaymentRequiredInfo {
+  message: string;
+  endpoint?: string;
+  context?: string;
+  timestamp: number;
+}
+
 export interface EchoContextValue {
   // Auth & User
   rawUser: User | null | undefined; // directly piped from oidc
@@ -44,6 +51,9 @@ export interface EchoContextValue {
   getToken: () => Promise<string | null>;
   clearAuth: () => Promise<void>;
   config: EchoConfig;
+  // 402 Payment Required handling
+  paymentRequired: PaymentRequiredInfo | null;
+  clearPaymentRequired: () => void;
 }
 
 // Separate context for refresh state to prevent unnecessary re-renders
@@ -72,6 +82,10 @@ function EchoProviderInternal({ config, children }: EchoProviderProps) {
 
   const echoClient = useEchoClient({ apiUrl });
 
+  // 402 Payment Required state
+  const [paymentRequired, setPaymentRequired] =
+    useState<PaymentRequiredInfo | null>(null);
+
   const {
     balance,
     freeTierBalance,
@@ -97,6 +111,82 @@ function EchoProviderInternal({ config, children }: EchoProviderProps) {
   const getToken = useCallback(async (): Promise<string | null> => {
     return auth.user?.access_token || null;
   }, [auth.user?.access_token]);
+
+  const clearPaymentRequired = useCallback(() => {
+    setPaymentRequired(null);
+  }, []);
+
+  // Set up fetch interceptor to catch 402 responses
+  useEffect(() => {
+    const originalFetch = globalThis.fetch;
+
+    // Only set up interceptor if not already done
+    if (!(originalFetch as any)._echoIntercepted) {
+      globalThis.fetch = async (...args: Parameters<typeof fetch>) => {
+        try {
+          const response = await originalFetch(...args);
+
+          // Check for 402 Payment Required responses
+          if (response.status === 402) {
+            let message = 'Payment Required';
+            let endpoint = '';
+
+            try {
+              // Try to extract error message from response
+              const responseClone = response.clone();
+              const errorText = await responseClone.text();
+              if (errorText) {
+                message = errorText;
+              }
+            } catch (err) {
+              console.warn('Could not read 402 response body:', err);
+            }
+
+            // Extract endpoint from request URL
+            if (args[0]) {
+              if (typeof args[0] === 'string') {
+                endpoint = args[0];
+              } else if (args[0] instanceof Request) {
+                endpoint = args[0].url;
+              } else if (args[0] instanceof URL) {
+                endpoint = args[0].toString();
+              }
+            }
+
+            // Set payment required state
+            setPaymentRequired({
+              message,
+              endpoint,
+              context: 'LLM request',
+              timestamp: Date.now(),
+            });
+
+            // Also refresh balance to show current state
+            if (echoClient) {
+              refreshBalance().catch(err => {
+                console.error('Failed to refresh balance after 402:', err);
+              });
+            }
+          }
+
+          return response;
+        } catch (error) {
+          // Re-throw any network errors
+          throw error;
+        }
+      };
+
+      // Mark that we've already intercepted to avoid double-wrapping
+      (globalThis.fetch as any)._echoIntercepted = true;
+    }
+
+    // Cleanup function
+    return () => {
+      // Note: We don't restore the original fetch here because other components
+      // might still need the interceptor. In a real app, you'd want a more
+      // sophisticated cleanup mechanism.
+    };
+  }, [echoClient, refreshBalance]);
 
   // Combine errors from different sources
   const combinedError =
@@ -128,6 +218,8 @@ function EchoProviderInternal({ config, children }: EchoProviderProps) {
       getToken,
       clearAuth,
       config,
+      paymentRequired,
+      clearPaymentRequired,
     }),
     [
       echoUser,
@@ -145,6 +237,8 @@ function EchoProviderInternal({ config, children }: EchoProviderProps) {
       createPaymentLink,
       getToken,
       config,
+      paymentRequired,
+      clearPaymentRequired,
     ]
   );
 

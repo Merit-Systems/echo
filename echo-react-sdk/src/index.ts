@@ -32,4 +32,7 @@ export type {
   EchoTokenPurchaseProps,
 } from './types';
 
-export type { EchoContextValue } from './components/EchoProvider';
+export type {
+  EchoContextValue,
+  PaymentRequiredInfo,
+} from './components/EchoProvider';

@@ -137,12 +137,26 @@ export function EchoTokens({
   children,
   showAvatar = false,
 }: EchoTokensProps) {
-  const { createPaymentLink, user, balance, freeTierBalance, refreshBalance } =
-    useEcho();
+  const {
+    createPaymentLink,
+    user,
+    balance,
+    freeTierBalance,
+    refreshBalance,
+    paymentRequired,
+    clearPaymentRequired,
+  } = useEcho();
   const [isProcessing, setIsProcessing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCustomAmount, setShowCustomAmount] = useState(false);
+
+  // Automatically show modal when payment is required (402 error)
+  useEffect(() => {
+    if (paymentRequired && user) {
+      setIsModalOpen(true);
+    }
+  }, [paymentRequired, user]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -217,6 +231,10 @@ export function EchoTokens({
     setIsModalOpen(false);
     setShowCustomAmount(false);
     setPurchaseError(null);
+    // Clear payment required state when modal is closed
+    if (paymentRequired) {
+      clearPaymentRequired();
+    }
   };
 
   if (!user) {
@@ -381,6 +399,25 @@ export function EchoTokens({
                 Credits
               </h2>
             </div>
+
+            {/* Payment Required Message */}
+            {paymentRequired && (
+              <div
+                style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  backgroundColor: '#fef3c7',
+                  color: '#92400e',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontFamily: 'HelveticaNowDisplay, sans-serif',
+                  border: '1px solid #fbbf24',
+                }}
+              >
+                <strong>Insufficient Credits:</strong>{' '}
+                {paymentRequired.message || 'Please add credits to continue.'}
+              </div>
+            )}
           </div>
 
           {/* Current Balance Section */}

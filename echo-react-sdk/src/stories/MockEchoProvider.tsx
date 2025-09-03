@@ -52,6 +52,8 @@ const createMockContext = (
   isLoading: false,
   token: 'mock-token',
   error: null,
+  paymentRequired: null,
+  clearPaymentRequired: () => {},
   echoClient: null,
   config: {
     appId: 'mock-app-123',
