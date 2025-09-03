@@ -14,9 +14,11 @@ import { ActivityCharts, LoadingActivityCharts } from './charts';
 import { ActivityContextProvider } from '@/app/(app)/@authenticated/_components/activity-data-selectors/context';
 import { ActivityOverlay } from './overlay';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ActivityTimeframe } from '@/app/(app)/@authenticated/_components/activity-data-selectors/types';
 
 interface Props {
   appId: string;
+  createdAt: Date;
 }
 
 const ActivityContainer = ({
@@ -49,14 +51,24 @@ const ActivityContainer = ({
   );
 };
 
-export const Activity: React.FC<Props> = ({ appId }) => {
-  const defaultStartDate = subDays(new Date(), 7);
-  const defaultEndDate = endOfDay(new Date());
+export const Activity: React.FC<Props> = ({ appId, createdAt }) => {
+  const now = new Date();
+  const sevenDaysAgo = subDays(now, 7);
 
+  // If app was created more than 7 days ago, use 7-day timeframe
+  // If app was created less than 7 days ago, use "All Time" from creation date
+  const isAppOlderThan7Days = createdAt < sevenDaysAgo;
+
+  const defaultStartDate = isAppOlderThan7Days ? sevenDaysAgo : createdAt;
+  const defaultEndDate = endOfDay(now);
+  const initialTimeframe = isAppOlderThan7Days
+    ? ActivityTimeframe.SevenDays
+    : ActivityTimeframe.AllTime;
   api.apps.app.activity.get.prefetch({
     appId,
     startDate: defaultStartDate,
     endDate: defaultEndDate,
+    isCumulative: false, // Default to non-cumulative for prefetch
   });
 
   return (
@@ -64,6 +76,8 @@ export const Activity: React.FC<Props> = ({ appId }) => {
       <ActivityContextProvider
         initialStartDate={defaultStartDate}
         initialEndDate={defaultEndDate}
+        initialTimeframe={initialTimeframe}
+        createdAt={createdAt}
       >
         <ActivityContainer>
           <ErrorBoundary

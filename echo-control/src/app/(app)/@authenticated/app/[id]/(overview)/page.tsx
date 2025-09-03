@@ -45,7 +45,7 @@ export default async function AppPage({ params }: PageProps<'/app/[id]'>) {
             <Setup appId={id} />
           </Suspense>
         </ErrorBoundary>
-        <Overview appId={id} />
+        <Overview appId={id} createdAt={app.createdAt} />
       </Body>
     </HydrateClient>
   );
