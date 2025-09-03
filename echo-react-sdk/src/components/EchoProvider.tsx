@@ -153,19 +153,22 @@ function EchoProviderInternal({ config, children }: EchoProviderProps) {
               }
             }
 
-            // Set payment required state
-            setPaymentRequired({
-              message,
-              endpoint,
-              context: 'LLM request',
-              timestamp: Date.now(),
-            });
-
-            // Also refresh balance to show current state
-            if (echoClient) {
-              refreshBalance().catch(err => {
-                console.error('Failed to refresh balance after 402:', err);
+            // Only set payment required if the endpoint is in the config.baseEchoUrl
+            if (endpoint.startsWith(apiUrl)) {
+              // Set payment required state
+              setPaymentRequired({
+                message,
+                endpoint,
+                context: 'LLM request',
+                timestamp: Date.now(),
               });
+
+              // Also refresh balance to show current state
+              if (echoClient) {
+                refreshBalance().catch(err => {
+                  console.error('Failed to refresh balance after 402:', err);
+                });
+              }
             }
           }
 
@@ -186,7 +189,7 @@ function EchoProviderInternal({ config, children }: EchoProviderProps) {
       // might still need the interceptor. In a real app, you'd want a more
       // sophisticated cleanup mechanism.
     };
-  }, [echoClient, refreshBalance]);
+  }, [echoClient, refreshBalance, apiUrl]);
 
   // Combine errors from different sources
   const combinedError =
