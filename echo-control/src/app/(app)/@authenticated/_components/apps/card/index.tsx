@@ -51,9 +51,7 @@ export const AppCard = ({
               <CardDescription
                 className={cn(
                   'text-xs text-muted-foreground/60',
-                  homepageUrl
-                    ? 'underline text-foreground/80'
-                    : 'text-foreground/40'
+                  homepageUrl ? 'text-foreground/80' : 'text-foreground/40'
                 )}
               >
                 {homepageUrl ?? 'No homepage URL'}

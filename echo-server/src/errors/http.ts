@@ -21,6 +21,12 @@ export class PaymentRequiredError extends HttpError {
   }
 }
 
+export class MaxInFlightRequestsError extends HttpError {
+  constructor(message: string = 'Max In Flight Requests') {
+    super(429, message);
+  }
+}
+
 export class UnknownModelError extends HttpError {
   constructor(message: string = 'Unknown Model argument passed in') {
     super(400, message);

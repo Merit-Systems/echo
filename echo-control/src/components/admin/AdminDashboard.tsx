@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import { UserSearch } from './UserSearch';
 import { AppSearch } from './AppSearch';
 import { CreditMinter } from './CreditMinter';
-import { UserEarningsTable, UserSpendingTable } from '@/app/admin/_components';
+import {
+  UserEarningsTable,
+  UserSpendingTable,
+} from '@/app/(app)/@authenticated/admin/_components';
 import {
   Card,
   CardContent,

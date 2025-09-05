@@ -16,7 +16,6 @@ COPY echo-control/package.json ./echo-control/
 COPY echo-server/package.json ./echo-server/
 COPY echo-typescript-sdk/package.json ./echo-typescript-sdk/
 COPY echo-react-sdk/package.json ./echo-react-sdk/
-COPY create-echo-app/package.json ./create-echo-app/
 COPY integration-tests/package.json ./integration-tests/
 
 # Install dependencies for the entire workspace

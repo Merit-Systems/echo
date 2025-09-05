@@ -10,28 +10,31 @@ datasource db {
 }
 
 model User {
-  id             String               @id @default(uuid()) @db.Uuid
-  email          String               @unique
-  name           String?
-  emailVerified  DateTime?
-  image          String?
-  isArchived     Boolean              @default(false)
-  archivedAt     DateTime?            @db.Timestamptz(6)
-  createdAt      DateTime             @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime             @updatedAt @db.Timestamptz(6)
-  totalPaid      Decimal              @default(0) @db.Decimal(65, 14)
-  totalSpent     Decimal              @default(0) @db.Decimal(65, 14)
-  admin          Boolean              @default(false)
-  accounts       Account[]
-  sessions       Session[]
-  apiKeys        ApiKey[]
-  appMemberships AppMembership[]
-  payments       Payment[]
-  refreshTokens  RefreshToken[]
-  transactions   Transaction[]
-  spendPoolUsage UserSpendPoolUsage[]
-  ReferralCode   ReferralCode[]
-  appSessions    AppSession[]
+  id                   String               @id @default(uuid()) @db.Uuid
+  email                String               @unique
+  name                 String?
+  emailVerified        DateTime?
+  image                String?
+  isArchived           Boolean              @default(false)
+  archivedAt           DateTime?            @db.Timestamptz(6)
+  createdAt            DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime             @updatedAt @db.Timestamptz(6)
+  totalPaid            Decimal              @default(0) @db.Decimal(65, 14)
+  totalSpent           Decimal              @default(0) @db.Decimal(65, 14)
+  admin                Boolean              @default(false)
+  referralGithubUserId String?              @db.Uuid
+  accounts             Account[]
+  sessions             Session[]
+  apiKeys              ApiKey[]
+  appMemberships       AppMembership[]
+  payments             Payment[]
+  refreshTokens        RefreshToken[]
+  transactions         Transaction[]
+  spendPoolUsage       UserSpendPoolUsage[]
+  ReferralCode         ReferralCode[]
+  appSessions          AppSession[]
+  Payout               Payout[]
+  githubLink           GithubLink?
 
   @@map("users")
 }
@@ -98,6 +101,7 @@ model EchoApp {
   currentReferralReward   ReferralReward?  @relation("CurrentReferralReward", fields: [currentReferralRewardId], references: [id])
   ReferralRewards         ReferralReward[] @relation("AppReferralRewards") // All referral rewards for this app
   appSessions             AppSession[]
+  payouts                 Payout[]
 
   @@map("echo_apps")
 }
@@ -209,6 +213,27 @@ model Payment {
   @@map("payments")
 }
 
+model Payout {
+  id                    String      @id @default(uuid()) @db.Uuid
+  amount                Decimal     @db.Decimal(65, 14)
+  status                String
+  type                  String // "markup" or "referral"
+  createdAt             DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime    @updatedAt @db.Timestamptz(6)
+  description           String?
+  transactionId         String?
+  senderAddress         String?
+  recipientGithubLinkId String?     @db.Uuid
+  recipientAddress      String?
+  userId                String?     @db.Uuid // User ID if type is "referral"
+  echoAppId             String?     @db.Uuid // App ID if type is "markup"
+  recipientGithubLink   GithubLink? @relation(fields: [recipientGithubLinkId], references: [id])
+  user                  User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  echoApp               EchoApp?    @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+
+  @@map("payouts")
+}
+
 model MarkUp {
   id           String        @id @default(uuid()) @db.Uuid
   amount       Decimal       @default(1.0) @db.Decimal(65, 14)
@@ -234,9 +259,11 @@ model GithubLink {
   archivedAt   DateTime?     @db.Timestamptz(6)
   createdAt    DateTime      @default(now()) @db.Timestamptz(6)
   updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
-  echoAppId    String        @unique @db.Uuid
-  echoApp      EchoApp       @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
-  Transactions Transaction[]
+  echoAppId    String?       @unique @db.Uuid
+  userId       String?       @unique @db.Uuid
+  echoApp      EchoApp?      @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Payout       Payout[]
 
   @@map("github_links")
 }
@@ -262,14 +289,12 @@ model Transaction {
   echoAppId             String               @db.Uuid
   apiKeyId              String?              @db.Uuid
   markUpId              String?              @db.Uuid
-  githubLinkId          String?              @db.Uuid
   spendPoolId           String?              @db.Uuid
   userSpendPoolUsageId  String?              @db.Uuid
   referralCodeId        String?              @db.Uuid
   referrerRewardId      String?              @db.Uuid
   apiKey                ApiKey?              @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
   echoApp               EchoApp              @relation(fields: [echoAppId], references: [id])
-  githubLink            GithubLink?          @relation(fields: [githubLinkId], references: [id])
   markUp                MarkUp?              @relation(fields: [markUpId], references: [id])
   spendPool             SpendPool?           @relation(fields: [spendPoolId], references: [id])
   transactionMetadata   TransactionMetadata? @relation(fields: [transactionMetadataId], references: [id])
@@ -377,4 +402,20 @@ model ReferralReward {
   Transaction    Transaction[]
 
   @@map("referral_rewards")
+}
+
+
+
+
+model InFlightRequest {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  echoAppId String @db.Uuid
+  numberInFlight Int @default(0)
+  totalEscrowed Decimal @default(0.0) @db.Decimal(65, 14)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, echoAppId])
+  @@map("in_flight_requests")
 }

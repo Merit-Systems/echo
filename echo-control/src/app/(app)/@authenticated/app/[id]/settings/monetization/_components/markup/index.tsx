@@ -14,13 +14,14 @@ export const MarkupForm: React.FC<Props> = async ({ appId }) => {
   return (
     <MarkupFormProvider
       defaultValues={{
-        markup: Number(markup?.amount) ?? 2,
+        markup: Math.max(1, Math.min(Number(markup?.amount) ?? 2, 10)),
       }}
       action={async values => {
         'use server';
+        const clamped = Math.max(1, Math.min(values.markup, 10));
         await api.apps.app.markup.update({
           appId,
-          markup: values.markup,
+          markup: clamped,
         });
       }}
     >

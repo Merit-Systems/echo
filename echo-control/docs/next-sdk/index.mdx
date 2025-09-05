@@ -1,99 +1,12 @@
 ---
 title: Overview
-description: Server-first OAuth2 + PKCE authentication with seamless Vercel AI SDK integration
+description: Echo Next.js SDK overview.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+Echo's Next.js SDK handles authentication between your web app and Echo.
 
-# Next.js SDK
+Get started quickly with the Next.js [quickstart guide](https://echo.merit.systems/docs/getting-started/next-js).
 
-The Echo Next.js SDK provides server-side authentication with automatic token management. Built for Next.js 15+ App Router, it enables secure LLM calls from server components, API routes, and server actions without API keys.
+- [Server](./next-sdk/server): Next.js App Router server routes and authentication logic.
+- [Client](./next-sdk/client): Client-side utilities for Echo authentication.
 
-```typescript
-import { streamText } from 'ai';
-
-import Echo from '@merit-systems/echo-next-sdk';
-// Server component - no API keys needed
-const { isSignedIn, openai } = Echo({ appId: 'your-echo-app-id' });
-
-export default async function ChatPage() {
-  if (!(await isSignedIn())) return <SignIn />;
-  
-  // Direct LLM calls from server with automatic token management
-  const result = streamText({
-    model: await openai('gpt-4'),
-    messages: [{ role: 'user', content: 'Hello!' }]
-  });
-  
-  return result.toUIMessageStreamResponse();
-}
-```
-
-
-## Core API
-
-### Configuration
-
-<AutoTypeTable 
-  path="../echo-next-sdk/src/types.ts" 
-  name="EchoConfig" 
-/>
-
-### Main Export
-
-The `Echo()` function returns all functionality:
-
-<AutoTypeTable 
-  path="../echo-next-sdk/src/types.ts" 
-  name="EchoResult" 
-/>
-
-### Authentication State
-
-Server-side authentication checking:
-
-```typescript
-isSignedIn(): Promise<boolean>     // Check if user authenticated
-getUser(): Promise<User | null>    // Get current user info
-```
-
-### HTTP Handlers
-
-OAuth2 route handlers for App Router:
-
-```typescript
-handlers: {
-  GET: (req: NextRequest) => Promise<Response>
-  POST: (req: NextRequest) => Promise<Response>
-}
-```
-
-Handles three OAuth routes:
-- `/signin` - Initiates OAuth2 + PKCE flow
-- `/callback` - Processes authorization code exchange
-- `/refresh` - Refreshes expired access tokens
-
-### LLM Providers
-
-Async providers with automatic token management:
-
-```typescript
-openai: EchoOpenAIProvider        // OpenAI integration
-anthropic: EchoAnthropicProvider  // Anthropic integration
-google: EchoGoogleProvider  // Google integration
-```
-
-All provider methods return Promises:
-
-```typescript
-// Vercel AI SDK integration
-const model = await openai('gpt-4');
-const result = streamText({ model, messages });
-```
-
-## Documentation Sections
-
-- **[Authentication](authentication.mdx)** - OAuth2 + PKCE flow and token management
-- **[Client](client.mdx)** - Provider usage with Vercel AI SDK
-- **[Providers](llm-integration.mdx)** - Custom configuration and troubleshooting

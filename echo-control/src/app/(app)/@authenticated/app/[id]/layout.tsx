@@ -9,8 +9,6 @@ export default async function AuthenticatedAppLayout({
 
   const isOwner = await api.apps.app.isOwner(id);
 
-  console.log(isOwner);
-
   return (
     <div>
       <Nav

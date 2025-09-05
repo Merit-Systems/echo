@@ -14,11 +14,22 @@ Echo standardizes AI billing like Clerk standardized auth. Drop in our SDK, set 
 
 Result: Your users get one universal balance that works across all Echo-powered apps, creating network effects that grow your user base while you focus on building.
 
-For example, here's how you can monetize LLM usage within your app:
+For example, here's how you can add complete user management and LLM billing to your app:
 
 ```tsx
-import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { EchoProvider, EchoTokens, useEchoModelProviders } from '@merit-systems/echo-react-sdk';
 import { generateText } from 'ai';
+
+function App() {
+  return (
+    <EchoProvider config={{ appId: 'your-app-id' }}>
+      {/* Complete user management - handles auth, billing, sign-out */}
+      <EchoTokens showAvatar={true} />
+      
+      <ChatComponent />
+    </EchoProvider>
+  );
+}
 
 function ChatComponent() {
   const { openai } = useEchoModelProviders();
@@ -36,9 +47,9 @@ function ChatComponent() {
 ```
 
 **Three integration patterns:**
-- **React SDK** — OAuth2 + PKCE for secure client-side LLM calls
-- **Next.js SDK** — Server-side auth with automatic token management  
-- **TypeScript SDK** — API keys for backends and CLI tools
+- [**React SDK**](/docs/react-sdk) — OAuth2 + PKCE for secure client-side LLM calls
+- [**Next.js SDK**](/docs/next-sdk) — Server-side auth with automatic token management  
+- [**TypeScript SDK**](/docs/typescript-sdk) — API keys for backends and CLI tools
 
 The React and Next.js SDKs are opinionated wrappers around the TypeScript SDK, providing framework-specific patterns while the TypeScript SDK offers direct API access for maximum flexibility.
 

@@ -1,6 +1,6 @@
 {
   "name": "@merit-systems/echo-react-sdk",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "React SDK for Echo OAuth2 + PKCE authentication and token management",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -59,7 +59,7 @@
     }
   },
   "dependencies": {
-    "@merit-systems/echo-typescript-sdk": "1.0.7",
+    "@merit-systems/echo-typescript-sdk": "1.0.8",
     "@ai-sdk/react": "^2.0.17",
     "ai": "^5.0.19",
     "dompurify": "^3.2.6",

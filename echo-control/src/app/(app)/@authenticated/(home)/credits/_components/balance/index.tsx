@@ -19,7 +19,7 @@ import { BalanceAmount, LoadingBalanceAmount } from './amount';
 
 const BalanceContainer = ({ children }: { children: React.ReactNode }) => {
   return (
-    <Card className="border rounded-lg overflow-hidden flex items-center justify-between p-4">
+    <Card className="border rounded-lg overflow-hidden flex flex-col items-start gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
       {children}
     </Card>
   );
@@ -46,10 +46,10 @@ export const Balance = () => {
           <BalanceAmount />
         </Suspense>
       </BalanceAmountContainer>
-      <div className="flex items-center gap-2">
+      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="turbo">
+            <Button variant="turbo" className="w-full sm:w-auto">
               <Plus className="size-4" />
               Buy Credits
             </Button>
@@ -66,7 +66,7 @@ export const Balance = () => {
         </Dialog>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Gift className="size-4" />
               Redeem Code
             </Button>

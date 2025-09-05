@@ -1,4 +1,5 @@
 import { Nav } from '../_components/layout/nav';
+import { Route } from 'next';
 
 export default function AuthenticatedHomeLayout({
   children,
@@ -24,6 +25,11 @@ export default function AuthenticatedHomeLayout({
           {
             label: 'Create',
             href: '/new',
+          },
+          {
+            label: 'Docs',
+            href: '/docs' as Route<'/docs'>,
+            external: true,
           },
         ]}
       />

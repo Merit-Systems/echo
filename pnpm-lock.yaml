@@ -106,6 +106,9 @@ importers:
       '@merit-systems/echo-typescript-sdk':
         specifier: 1.0.6
         version: 1.0.6(zod@4.0.17)
+      '@merit-systems/sdk':
+        specifier: ^0.0.7
+        version: 0.0.7
       '@number-flow/react':
         specifier: ^0.5.10
         version: 0.5.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -454,8 +457,8 @@ importers:
         specifier: ^2.0.17
         version: 2.0.19(react@19.1.1)(zod@4.0.17)
       '@merit-systems/echo-typescript-sdk':
-        specifier: 1.0.7
-        version: 1.0.7(zod@4.0.17)
+        specifier: 1.0.8
+        version: 1.0.8(zod@4.0.17)
       ai:
         specifier: ^5.0.19
         version: 5.0.22(zod@4.0.17)
@@ -569,8 +572,8 @@ importers:
         specifier: ^1.34.0
         version: 1.34.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@merit-systems/echo-typescript-sdk':
-        specifier: 1.0.6
-        version: 1.0.6(zod@4.0.17)
+        specifier: 1.0.8
+        version: 1.0.8(zod@3.25.76)
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.0
@@ -645,7 +648,7 @@ importers:
         version: 2.7.0
       openai:
         specifier: ^4.97.0
-        version: 4.104.0(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.0.17)
+        version: 4.104.0(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76)
       prisma:
         specifier: ^6.8.2
         version: 6.9.0(typescript@5.8.3)
@@ -658,9 +661,12 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.8.3
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
       viem:
         specifier: ^2.33.3
-        version: 2.33.3(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@4.0.17)
+        version: 2.33.3(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       winston:
         specifier: ^3.17.0
         version: 3.17.0
@@ -1955,6 +1961,13 @@ packages:
 
   '@merit-systems/echo-typescript-sdk@1.0.7':
     resolution: {integrity: sha512-7QlJOgv0clajCdbWQMv+Z79WAYHngyAFaPMITnXxFQncECdA3wOsSGgC7K23+qNiSCCJqG6p3cazuPHAdKACBA==}
+
+  '@merit-systems/echo-typescript-sdk@1.0.8':
+    resolution: {integrity: sha512-97AgOYiP7mmlPz0lUOHBn8mza/PGLGixIEBcE9XI+xi0PJshbhtOANVNKx1EPK2zuo0kUl3vII36RaZyHWmhEA==}
+
+  '@merit-systems/sdk@0.0.7':
+    resolution: {integrity: sha512-gUfuAGyhfrg/LxwmOcs3VDELk/1uUPz9xEU3act18+g+ZIdH48S66keCC4cUnCLGo5iRSaGICcYYrIQJEpWoBg==}
+    engines: {node: '>=18'}
 
   '@metamask/eth-json-rpc-provider@1.0.1':
     resolution: {integrity: sha512-whiUMPlAOrVGmX8aKYVPvlKyG4CpQXiNNyt74vE1xb5sPvmx5oA7B/kOi/JdBvhGQq97U1/AVdXEdk2zkP8qyA==}
@@ -9570,6 +9583,14 @@ packages:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
 
+  uuid@10.0.0:
+    resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    hasBin: true
+
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
@@ -10001,11 +10022,23 @@ snapshots:
 
   '@adraffy/ens-normalize@1.11.0': {}
 
+  '@ai-sdk/anthropic@2.0.6(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.5(zod@3.25.76)
+      zod: 3.25.76
+
   '@ai-sdk/anthropic@2.0.6(zod@4.0.17)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.5(zod@4.0.17)
       zod: 4.0.17
+
+  '@ai-sdk/gateway@1.0.11(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.5(zod@3.25.76)
+      zod: 3.25.76
 
   '@ai-sdk/gateway@1.0.11(zod@4.0.17)':
     dependencies:
@@ -10025,11 +10058,23 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.4(zod@4.0.17)
       zod: 4.0.17
 
+  '@ai-sdk/google@2.0.8(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.5(zod@3.25.76)
+      zod: 3.25.76
+
   '@ai-sdk/google@2.0.8(zod@4.0.17)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.5(zod@4.0.17)
       zod: 4.0.17
+
+  '@ai-sdk/openai@2.0.19(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.5(zod@3.25.76)
+      zod: 3.25.76
 
   '@ai-sdk/openai@2.0.19(zod@4.0.17)':
     dependencies:
@@ -10044,6 +10089,14 @@ snapshots:
       eventsource-parser: 3.0.5
       zod: 4.0.17
       zod-to-json-schema: 3.24.6(zod@4.0.17)
+
+  '@ai-sdk/provider-utils@3.0.5(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.5
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.6(zod@3.25.76)
 
   '@ai-sdk/provider-utils@3.0.5(zod@4.0.17)':
     dependencies:
@@ -11003,6 +11056,28 @@ snapshots:
       ai: 5.0.22(zod@4.0.17)
     transitivePeerDependencies:
       - zod
+
+  '@merit-systems/echo-typescript-sdk@1.0.8(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/anthropic': 2.0.6(zod@3.25.76)
+      '@ai-sdk/google': 2.0.8(zod@3.25.76)
+      '@ai-sdk/openai': 2.0.19(zod@3.25.76)
+      ai: 5.0.22(zod@3.25.76)
+    transitivePeerDependencies:
+      - zod
+
+  '@merit-systems/echo-typescript-sdk@1.0.8(zod@4.0.17)':
+    dependencies:
+      '@ai-sdk/anthropic': 2.0.6(zod@4.0.17)
+      '@ai-sdk/google': 2.0.8(zod@4.0.17)
+      '@ai-sdk/openai': 2.0.19(zod@4.0.17)
+      ai: 5.0.22(zod@4.0.17)
+    transitivePeerDependencies:
+      - zod
+
+  '@merit-systems/sdk@0.0.7':
+    dependencies:
+      uuid: 10.0.0
 
   '@metamask/eth-json-rpc-provider@1.0.1':
     dependencies:
@@ -14583,7 +14658,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.14
       tinyrainbow: 2.0.0
-      vitest: 3.2.3(@types/debug@4.1.12)(@types/node@24.0.3)(@vitest/ui@3.2.3)(jiti@2.4.2)(jsdom@26.1.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(lightningcss@1.30.1)(msw@2.10.2(@types/node@24.0.3)(typescript@5.8.3))(terser@5.42.0)(tsx@4.20.3)(yaml@2.8.0)
+      vitest: 3.2.3(@types/debug@4.1.12)(@types/node@20.19.1)(@vitest/ui@3.2.3)(jiti@2.4.2)(jsdom@26.1.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(lightningcss@1.30.1)(msw@2.10.2(@types/node@20.19.1)(typescript@5.8.3))(terser@5.42.0)(tsx@4.20.3)(yaml@2.8.0)
 
   '@vitest/utils@3.0.9':
     dependencies:
@@ -15280,6 +15355,14 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.4(zod@4.0.17)
       '@opentelemetry/api': 1.9.0
       zod: 4.0.17
+
+  ai@5.0.22(zod@3.25.76):
+    dependencies:
+      '@ai-sdk/gateway': 1.0.11(zod@3.25.76)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.5(zod@3.25.76)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.76
 
   ai@5.0.22(zod@4.0.17):
     dependencies:
@@ -18794,6 +18877,21 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
+  openai@4.104.0(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76):
+    dependencies:
+      '@types/node': 18.19.112
+      '@types/node-fetch': 2.6.12
+      abort-controller: 3.0.0
+      agentkeepalive: 4.6.0
+      form-data-encoder: 1.7.2
+      formdata-node: 4.4.1
+      node-fetch: 2.7.0
+    optionalDependencies:
+      ws: 8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - encoding
+
   openai@4.104.0(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.0.17):
     dependencies:
       '@types/node': 18.19.112
@@ -20715,6 +20813,10 @@ snapshots:
 
   utils-merge@1.0.1: {}
 
+  uuid@10.0.0: {}
+
+  uuid@11.1.0: {}
+
   uuid@8.3.2: {}
 
   uuid@9.0.1: {}
@@ -21347,6 +21449,10 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   yoctocolors-cjs@2.1.2: {}
+
+  zod-to-json-schema@3.24.6(zod@3.25.76):
+    dependencies:
+      zod: 3.25.76
 
   zod-to-json-schema@3.24.6(zod@4.0.17):
     dependencies:

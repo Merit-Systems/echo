@@ -1,4 +1,4 @@
 {
   "title": "Next.js SDK",
-  "pages": ["index", "setup", "authentication", "llm-integration", "client"]
+  "pages": ["index", "server", "client"]
 }

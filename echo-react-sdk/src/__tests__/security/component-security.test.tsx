@@ -26,7 +26,7 @@ import React from 'react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { EchoContext } from '../../components/EchoProvider';
 import { EchoSignIn } from '../../components/EchoSignIn';
-import { EchoTokenPurchase } from '../../components/EchoTokenPurchase';
+import { EchoTokens } from '../../components/EchoTokens';
 import {
   createMockAuthenticatedUser,
   createMockAuthenticatedUserWithUserInfo,
@@ -132,7 +132,7 @@ describe('Component Security Integration', () => {
   });
 
   // TODO: Re-enable when Next.js SDK is implemented (requires authentication)
-  describe.skip('EchoTokenPurchase - CSP Compatibility & Security (requires auth)', () => {
+  describe.skip('EchoTokens - CSP Compatibility & Security (requires auth)', () => {
     /**
      * SECURITY TEST: Verifies payment component uses CSP-compatible payment flow
      *
@@ -151,7 +151,7 @@ describe('Component Security Integration', () => {
       window.open = vi.fn().mockReturnValue(null);
 
       await act(async () => {
-        renderWithEcho(<EchoTokenPurchase amount={100} />, { mockUserManager });
+        renderWithEcho(<EchoTokens amount={100} />, { mockUserManager });
       });
 
       await waitFor(() => {
@@ -190,7 +190,7 @@ describe('Component Security Integration', () => {
       // MSW will handle the API call and return a safe URL due to URL sanitization
 
       await act(async () => {
-        renderWithEcho(<EchoTokenPurchase amount={100} />, { mockUserManager });
+        renderWithEcho(<EchoTokens amount={100} />, { mockUserManager });
       });
 
       await waitFor(() => {
@@ -223,7 +223,7 @@ describe('Component Security Integration', () => {
       // MSW will handle the API call with the malicious amount
 
       await act(async () => {
-        renderWithEcho(<EchoTokenPurchase amount={maliciousAmount} />, {
+        renderWithEcho(<EchoTokens amount={maliciousAmount} />, {
           mockUserManager,
         });
       });

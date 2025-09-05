@@ -22,6 +22,6 @@ The entire app is in `src/App.tsx` - just 70 lines of code demonstrating:
 1. Setting up `EchoProvider` with configuration
 2. Using `useEcho` hook to check authentication and balance
 3. Conditionally rendering different UI states
-4. Using `EchoSignIn` and `EchoTokenPurchase` components
+4. Using `EchoSignIn` and `EchoTokens` components
 
 This shows the complete user journey from sign-up to having a positive balance.

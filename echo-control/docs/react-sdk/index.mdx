@@ -20,14 +20,14 @@ function ChatComponent() {
   const handleGenerate = async () => {
     // Direct AI calls from the browser - no API keys needed!
     const { text } = await generateText({
-      model: await openai('gpt-5'),
+      model: await openai('gpt-5-nano'),
       prompt: 'Hello!'
     });
     
     return text;
   };
   
-  return <button onClick={handleGenerate}>Generate</button>;
+  return <button type="button" onClick={handleGenerate}>Generate</button>;
 }
 ```
 
@@ -75,7 +75,7 @@ This architecture provides:
 
 Wrap your app with `EchoProvider` and start making direct LLM calls:
 
-```tsx
+```tsx title="App.tsx"
 import { EchoProvider, EchoSignIn, useEcho, useEchoModelProviders } from '@merit-systems/echo-react-sdk';
 import { generateText } from 'ai';
 
@@ -99,15 +99,17 @@ function ChatApp() {
   
   const handleGenerate = async () => {
     const { text } = await generateText({
-      model: await openai('gpt-5'),
-      prompt: 'Tell me about React'
+      model: await openai('gpt-5-nano'),
+      prompt: 'Why did the chicken cross the road?'
     });
     
     console.log(text);
   };
   
-  return <button onClick={handleGenerate}>Ask AI</button>;
+  return <button type="button" onClick={handleGenerate}>Ask AI</button>;
 }
+
+export default App;
 ```
 
 ## Documentation Sections

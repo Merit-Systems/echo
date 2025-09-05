@@ -1,6 +1,6 @@
 {
   "name": "@merit-systems/echo-typescript-sdk",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "description": "TypeScript SDK for Echo platform",
   "type": "module",
   "main": "./dist/index.cjs",

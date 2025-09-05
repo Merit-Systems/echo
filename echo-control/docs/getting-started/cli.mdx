@@ -54,7 +54,7 @@ Create CLI tools that generate revenue from AI usage. Echo handles user authenti
 
         // Get API key from user
         console.log('Opening Echo to create your API key...');
-        await open(`https://echo.merit.systems/cli-auth/${APP_ID}`);
+        await open(`https://echo.merit.systems/app/${APP_ID}/keys`);
         
         const { apiKey } = await prompt({
           type: 'input',

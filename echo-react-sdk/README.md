@@ -42,7 +42,7 @@ connect-src https://echo.merit.systems;
 </EchoSignIn>
 
 // Token purchase
-<EchoTokenPurchase
+<EchoTokens
   amount={100}
   onPurchaseComplete={(balance) => console.log(balance)}
 />

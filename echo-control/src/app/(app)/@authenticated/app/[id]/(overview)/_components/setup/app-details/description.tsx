@@ -84,6 +84,24 @@ export const Description: React.FC<Props> = ({ appId, description }) => {
                   className="resize-none h-20"
                   rows={4}
                   maxLength={250}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      form.handleSubmit(handleSubmit)();
+                    }
+
+                    if (
+                      [
+                        'ArrowUp',
+                        'ArrowDown',
+                        'ArrowLeft',
+                        'ArrowRight',
+                      ].includes(e.key)
+                    ) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
                 />
               </FormControl>
               <FormMessage />

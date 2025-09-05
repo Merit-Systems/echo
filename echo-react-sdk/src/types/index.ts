@@ -23,10 +23,18 @@ export interface EchoSignInProps {
   children?: React.ReactNode;
 }
 
-export interface EchoTokenPurchaseProps {
+export interface EchoSignOutProps {
+  onSuccess?: () => void;
+  onError?: (error: Error) => void;
+  className?: string;
+  children?: React.ReactNode;
+}
+
+export interface EchoTokensProps {
   amount?: number;
   onPurchaseComplete?: (balance: EchoBalance) => void;
   onError?: (error: Error) => void;
   className?: string;
   children?: React.ReactNode;
+  showAvatar?: boolean;
 }

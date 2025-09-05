@@ -385,7 +385,7 @@ function Root() {
       <div className="py-10 text-center">
         <Link
           href="/"
-          className="px-8 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-lg transition-all duration-200 flex items-center gap-2 mx-auto inline-flex hover:gap-3"
+          className="px-8 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-lg transition-all duration-200 inline-flex items-center gap-2 mx-auto hover:gap-3"
         >
           Continue to My Apps <ArrowRightIcon className="h-5 w-5" />
         </Link>

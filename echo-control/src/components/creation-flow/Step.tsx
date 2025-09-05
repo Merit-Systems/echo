@@ -3,7 +3,7 @@ import { DotPattern } from '../ui/dot-background';
 import StepHistory from './StepHistory';
 import StepError from './StepError';
 import StepControls from './StepControls';
-import { StepConfig } from '@/app/owner/apps/create/page';
+import { StepConfig } from '@/app/(app)/@authenticated/owner/apps/create/page';
 
 export interface StepProps {
   currentStep: number;

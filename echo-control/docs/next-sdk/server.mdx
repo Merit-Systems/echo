@@ -1,0 +1,93 @@
+---
+title: Server 
+description: Echo's Next.js SDK server-side functionality.
+---
+
+Echo's Next.js SDK will handle all authentication logic out of the box.
+
+Configure Echo with the Echo constructor.
+
+```typescript title="src/echo/index.ts"
+import Echo from "@merit-systems/echo-next-sdk";
+
+export const { 
+    // Echo Auth Routes
+    handlers, 
+
+    // Server-side utils
+    getUser, isSignedIn, 
+
+    // AI Providers
+    openai, anthropic, google 
+} = Echo({
+  appId: "ECHO_APP_ID",
+});
+```
+
+By re-exporting the Echo constructor results, you can use throughout your server logic.
+
+
+The `Echo` constructor takes the following configuration params.
+<AutoTypeTable path="../echo-next-sdk/src/types.ts" name="EchoConfig" />
+
+
+## Handlers
+```typescript
+import handlers from '@/echo';
+
+export { GET, POST } = handlers;
+```
+
+Exporting these routes will expose default authentication routes which can be used from the client. In most cases your code will not need to touch these routes.
+- `api/echo/signin`
+- `api/echo/callback`
+- `api/echo/refresh`
+
+
+
+## Server Utilities
+```typescript
+import { getUser, isSignedIn } from "@/echo";
+
+export default async function Page() {
+    const signedIn = await isSignedIn();
+
+    if (!signedIn) {
+        return <SignIn />;
+    } else {
+        const user = await getUser();
+        return <Dashboard user={user} />;
+    }
+}
+
+```
+
+## AI Providers
+Echo's Next.js SDK provides a thin wrapper around the Vercel AI SDK.
+Echo follows their [recommended pattern](https://ai-sdk.dev/docs/getting-started/nextjs-app-router#create-a-route-handler) with a small diff, to route through Echo
+instead of the model provider.
+
+```typescript
+// [!code --:1]
+import { openai } from '@ai-sdk/openai';
+// [!code ++:1]
+import { openai } from "@/echo";
+import { streamText, UIMessage, convertToModelMessages } from 'ai';
+
+// Allow streaming responses up to 30 seconds
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  const { messages }: { messages: UIMessage[] } = await req.json();
+
+  const result = streamText({
+    // [!code --:1]
+    model: openai('gpt-5'),
+    // [!code ++:1]
+    model: await openai('gpt-5'),
+    messages: convertToModelMessages(messages),
+  });
+
+  return result.toUIMessageStreamResponse();
+}
+```

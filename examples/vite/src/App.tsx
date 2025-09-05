@@ -1,7 +1,7 @@
 import {
   EchoProvider,
   EchoSignIn,
-  EchoTokenPurchase,
+  EchoTokens,
   useEcho,
 } from '@merit-systems/echo-react-sdk';
 import { useState } from 'react';
@@ -76,7 +76,7 @@ function Dashboard() {
             Hi {user?.name}!
           </h1>
           <p className="text-gray-600 mb-6">You need tokens to get started.</p>
-          <EchoTokenPurchase amount={100} />
+          <EchoTokens amount={100} />
         </div>
       </div>
     );
@@ -174,7 +174,7 @@ function Dashboard() {
                   adding more credits.
                 </p>
               </div>
-              <EchoTokenPurchase amount={100} />
+              <EchoTokens amount={100} />
             </div>
           </div>
         )}

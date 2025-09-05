@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Loader2 } from 'lucide-react';
 
 import { Button, ButtonProps } from './button';
 import { toast } from 'sonner';
@@ -12,6 +12,7 @@ interface Props extends ButtonProps {
   toastMessage?: string;
   onCopy?: () => void;
   className?: string;
+  isLoading?: boolean;
 }
 
 export const CopyButton: React.FC<Props> = ({
@@ -19,6 +20,7 @@ export const CopyButton: React.FC<Props> = ({
   toastMessage,
   onCopy,
   className,
+  isLoading,
   ...props
 }) => {
   const { isCopied, copyToClipboard } = useCopyToClipboard(() => {
@@ -34,9 +36,16 @@ export const CopyButton: React.FC<Props> = ({
       variant="outline"
       className={cn('shrink-0 size-fit p-2', className)}
       size="icon"
+      disabled={isLoading}
       {...props}
     >
-      {isCopied ? <Check className="size-3" /> : <Copy className="size-3" />}
+      {isLoading ? (
+        <Loader2 className="size-3 animate-spin" />
+      ) : isCopied ? (
+        <Check className="size-3" />
+      ) : (
+        <Copy className="size-3" />
+      )}
     </Button>
   );
 };

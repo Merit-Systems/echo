@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { StepConfig } from '@/app/owner/apps/create/page';
+import { StepConfig } from '@/app/(app)/@authenticated/owner/apps/create/page';
 
 interface StepHistoryProps {
   formData: Record<string, unknown>;

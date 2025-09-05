@@ -7,6 +7,8 @@ import {
   User,
   UserLock,
   Users,
+  Book,
+  ExternalLink,
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -28,6 +30,7 @@ import { ColorModeToggle } from './color-mode-toggle';
 import type { User as NextAuthUser } from 'next-auth';
 import { signOut } from '@/auth';
 import { Button } from '@/components/ui/button';
+import { Route } from 'next';
 
 interface Props {
   user: NextAuthUser;
@@ -83,6 +86,25 @@ export const UserDropdown: React.FC<Props> = ({ user }) => {
             <DropdownMenuItem>
               <DollarSign className="size-4" />
               Earnings
+            </DropdownMenuItem>
+          </Link>
+          <Link href={`/owner/earnings/referral`}>
+            <DropdownMenuItem>
+              <DollarSign className="size-4" />
+              Referral Earnings
+            </DropdownMenuItem>
+          </Link>
+          <Link href={`/owner/earnings/markup`}>
+            <DropdownMenuItem>
+              <DollarSign className="size-4" />
+              Markup Earnings
+            </DropdownMenuItem>
+          </Link>
+          <Link href={'/docs' as Route<'/docs'>}>
+            <DropdownMenuItem>
+              <Book className="size-4" />
+              Docs
+              <ExternalLink className="size-4" />
             </DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>

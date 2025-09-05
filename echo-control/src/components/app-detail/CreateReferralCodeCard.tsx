@@ -5,7 +5,6 @@ import { Separator } from '../ui/separator';
 import { CustomerEchoApp } from '@/lib/types/apps';
 import { api } from '@/trpc/client';
 import { useState } from 'react';
-import { UserReferralCode } from '@/lib/referral-codes/types';
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 
 interface CreateReferralCodeCardProps {
@@ -13,37 +12,34 @@ interface CreateReferralCodeCardProps {
 }
 
 export function CreateReferralCodeCard({ app }: CreateReferralCodeCardProps) {
-  const [createdReferralCode, setCreatedReferralCode] =
-    useState<UserReferralCode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { copyToClipboard, isCopied } = useCopyToClipboard();
 
-  const { data: referralCodes } = api.user.referral.getReferralCodes.useQuery({
-    echoAppId: app.id,
-  });
+  const { data: referralCode } = api.apps.app.referralCode.get.byUser.useQuery(
+    app.id
+  );
 
   const utils = api.useUtils();
 
-  const mintReferralCodeMutation = api.user.referral.mint.useMutation({
-    onSuccess: data => {
-      setCreatedReferralCode(data);
+  const {
+    mutate: createReferralCode,
+    data: createdReferralCode,
+    isPending: isLoading,
+  } = api.apps.app.referralCode.create.useMutation({
+    onSuccess: () => {
       setError(null);
-      // Invalidate and refetch the referral codes list
-      utils.user.referral.getReferralCodes.invalidate({ echoAppId: app.id });
+      utils.apps.app.referralCode.get.byUser.invalidate(app.id);
     },
     onError: error => {
       setError(error.message || 'Failed to create referral code');
-      setCreatedReferralCode(null);
     },
   });
 
   const handleMintReferralCode = () => {
-    mintReferralCodeMutation.mutate({
-      echoAppId: app.id,
+    createReferralCode({
+      appId: app.id,
     });
   };
-
-  const isLoading = mintReferralCodeMutation.isPending;
 
   return (
     <Card className="p-6 hover:border-primary relative shadow-primary shadow-[0_0_8px] transition-all duration-300 bg-background/80 backdrop-blur-xs border-border/50 h-80 flex flex-col">
@@ -123,47 +119,39 @@ export function CreateReferralCodeCard({ app }: CreateReferralCodeCardProps) {
           </div>
         )}
 
-        {referralCodes && referralCodes.length > 0 ? (
+        {referralCode ? (
           <div className="space-y-4">
             <p className="text-sm font-medium text-foreground">
               Your Recent Referral Code:
             </p>
-            {referralCodes.slice(0, 1).map(code => (
-              <div key={code.code} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 p-3 bg-muted rounded-lg">
-                    <code className="text-sm font-mono break-all">
-                      {code.referralLinkUrl}
-                    </code>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyToClipboard(code.referralLinkUrl)}
-                    className={`transition-all duration-200 ${
-                      isCopied
-                        ? 'bg-green-50 border-green-200 text-green-700'
-                        : ''
-                    }`}
-                  >
-                    {isCopied ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
+            <div key={referralCode.code} className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 p-3 bg-muted rounded-lg">
+                  <code className="text-sm font-mono break-all">
+                    {referralCode.referralLinkUrl}
+                  </code>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Expires: {new Date(code.expiresAt).toLocaleDateString()}
-                </p>
-                {referralCodes.length > 1 && (
-                  <p className="text-xs text-muted-foreground">
-                    +{referralCodes.length - 1} more referral code
-                    {referralCodes.length > 2 ? 's' : ''}
-                  </p>
-                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(referralCode.referralLinkUrl)}
+                  className={`transition-all duration-200 ${
+                    isCopied
+                      ? 'bg-green-50 border-green-200 text-green-700'
+                      : ''
+                  }`}
+                >
+                  {isCopied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
-            ))}
+              <p className="text-xs text-muted-foreground">
+                Expires: {new Date(referralCode.expiresAt).toLocaleDateString()}
+              </p>
+            </div>
           </div>
         ) : (
           !createdReferralCode && (

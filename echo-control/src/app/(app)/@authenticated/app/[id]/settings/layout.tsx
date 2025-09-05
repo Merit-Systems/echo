@@ -26,8 +26,8 @@ export default async function AppSettingsLayout({
     <div>
       <Heading title="App Settings" />
       <Body>
-        <div className="flex gap-4">
-          <div className="hidden lg:block w-[240px] sticky top-0">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="lg:w-[240px] lg:sticky lg:top-0">
             <SettingsNav appId={id} />
           </div>
           <div className="flex-1 flex flex-col gap-6">{children}</div>

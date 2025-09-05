@@ -1,332 +1,90 @@
 import {
   authorizeParamsSchema,
   getAuthorizationRedirect,
+  isValidRedirectUri,
 } from '@/app/(auth)/_lib/authorize';
+import { createZodRoute } from '@/app/api/_utils/create-route';
 import { auth } from '@/auth';
-import { EchoApp } from '@/generated/prisma';
-import { getOrCreateUser } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { SignJWT } from 'jose';
-import { nanoid } from 'nanoid';
-import { NextRequest, NextResponse } from 'next/server';
-import { logger } from '@/logger';
+import { getApp } from '@/services/apps/app';
+import { NextResponse } from 'next/server';
+import z from 'zod';
 
-// TTL for the one-time authorization code (seconds)
-const AUTH_CODE_TTL = 300; // 5 minutes
+const querySchema = authorizeParamsSchema.extend({
+  prompt: z.literal('none').optional(),
+});
 
-// JWT secret for signing authorization codes (use a proper secret in production)
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.OAUTH_CODE_SIGNING_JWT_SECRET ||
-    'your-secret-key-change-in-production'
-);
+export const GET = createZodRoute()
+  .query(querySchema)
+  .handler(async (request, { query }) => {
+    const app = await getApp(query.client_id);
 
-export async function GET(req: NextRequest) {
-  try {
-    /* 1️⃣ Parse & validate required PKCE / OAuth params */
-    const url = new URL(req.url);
-    const qs = url.searchParams;
+    if (!app) {
+      return NextResponse.json(
+        { error: 'not_found', error_description: 'Echo app not found' },
+        { status: 404 }
+      );
+    }
 
-    const clientId = qs.get('client_id'); // Echo app ID
-    const redirectUri = qs.get('redirect_uri');
-    const codeChallenge = qs.get('code_challenge');
-    const codeChallengeMethod = qs.get('code_challenge_method');
-    const state = qs.get('state') || nanoid();
-    const scope = qs.get('scope') || 'llm:invoke offline_access';
-    const responseType = qs.get('response_type') || 'code';
-    const prompt = qs.get('prompt');
-
-    if (!clientId || !redirectUri || !codeChallenge) {
-      logger.emit({
-        severityText: 'WARN',
-        body: 'Missing required OAuth authorization parameters',
-        attributes: {
-          hasClientId: !!clientId,
-          hasRedirectUri: !!redirectUri,
-          hasCodeChallenge: !!codeChallenge,
-        },
-      });
+    if (!isValidRedirectUri(query.redirect_uri, app.authorizedCallbackUrls)) {
       return NextResponse.json(
         {
           error: 'invalid_request',
-          error_description:
-            'Missing required parameters: client_id, redirect_uri, code_challenge',
+          message: 'redirect_uri is not authorized for this app',
         },
         { status: 400 }
       );
     }
 
-    if (responseType !== 'code') {
-      return NextResponse.json(
-        {
-          error: 'unsupported_response_type',
-          error_description: 'Only response_type=code is supported',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate code_challenge_method (required and must be S256)
-    if (
-      !codeChallengeMethod ||
-      codeChallengeMethod === '' ||
-      codeChallengeMethod !== 'S256'
-    ) {
-      return NextResponse.json(
-        {
-          error: 'invalid_request',
-          error_description: 'Only code_challenge_method=S256 is supported',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate code challenge format (RFC 7636 Section 4.2)
-    // Must be 43-128 characters, base64url-encoded
-    if (
-      !codeChallenge ||
-      codeChallenge.length < 43 ||
-      codeChallenge.length > 128
-    ) {
-      return NextResponse.json(
-        {
-          error: 'invalid_request',
-          error_description: 'code_challenge must be 43-128 characters long',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate base64url format (no +, /, or = characters)
-    if (!/^[A-Za-z0-9_-]+$/.test(codeChallenge)) {
-      return NextResponse.json(
-        {
-          error: 'invalid_request',
-          error_description: 'code_challenge must be base64url encoded',
-        },
-        { status: 400 }
-      );
-    }
-
-    let echoApp: EchoApp | null = null;
-    try {
-      /* 2️⃣ Validate client_id (Echo app) and redirect_uri */
-      echoApp = await db.echoApp.findUnique({
-        where: { id: clientId },
-        select: {
-          id: true,
-          name: true,
-          authorizedCallbackUrls: true,
-          isPublic: true,
-          profilePictureUrl: true,
-          bannerImageUrl: true,
-          homepageUrl: true,
-          description: true,
-          isArchived: true,
-          archivedAt: true,
-          createdAt: true,
-          updatedAt: true,
-          markUp: true,
-          currentReferralRewardId: true,
-        },
-      });
-    } catch (error) {
-      logger.emit({
-        severityText: 'ERROR',
-        body: 'Error fetching echo app during OAuth authorization',
-        attributes: {
-          error: error instanceof Error ? error.message : String(error),
-          clientId,
-        },
-      });
-      return NextResponse.json(
-        {
-          error: 'invalid_client',
-          error_description: 'Invalid or inactive client_id',
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!echoApp) {
-      logger.emit({
-        severityText: 'WARN',
-        body: 'Echo app not found for client_id',
-        attributes: {
-          clientId,
-        },
-      });
-      return NextResponse.json(
-        {
-          error: 'invalid_client',
-          error_description: 'Invalid or inactive client_id',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate redirect_uri against authorized callback URLs
-    const isLocalhostUrl = redirectUri.startsWith('http://localhost:');
-    const redirectUriWithoutTrailingSlash = redirectUri.replace(/\/$/, '');
-    const isAuthorizedUrl =
-      echoApp.authorizedCallbackUrls.includes(redirectUri) ||
-      echoApp.authorizedCallbackUrls.includes(redirectUriWithoutTrailingSlash);
-
-    if (!isLocalhostUrl && !isAuthorizedUrl) {
-      return NextResponse.json(
-        {
-          error: 'invalid_request',
-          error_description:
-            'redirect_uri (' +
-            redirectUriWithoutTrailingSlash +
-            ') is not authorized for this app',
-        },
-        { status: 400 }
-      );
-    }
-
-    /* 2️⃣ Check if user is authenticated */
     const session = await auth();
-    const userId = session?.user?.id;
     if (!session?.user) {
-      // Handle prompt=none for unauthenticated users - SECURITY FIX
-      if (prompt === 'none') {
+      const signInUrl = new URL('/login', request.nextUrl.origin);
+      signInUrl.searchParams.set('redirect_url', request.url);
+      return NextResponse.redirect(signInUrl.toString(), 302);
+    }
+
+    if (query.prompt === 'none') {
+      if (process.env.INTEGRATION_TEST_MODE !== 'true') {
         return NextResponse.json(
           {
-            error: 'login_required',
-            error_description:
-              'Silent authentication failed - user not authenticated',
+            error: 'invalid_request',
+            message: 'prompt=none is not supported',
           },
           { status: 400 }
         );
       }
 
-      // Normal flow: preserve the original authorize URL so user can return after sign-in
-      const currentUrl = req.url;
-      const signInUrl = new URL('/login', req.nextUrl.origin);
-      signInUrl.searchParams.set('redirect_url', currentUrl);
+      const redirectUrl = await getAuthorizationRedirect(query);
 
-      return NextResponse.redirect(signInUrl.toString(), 302);
-    }
-
-    // Create a new user in the database if they do not exist
-    try {
-      await getOrCreateUser(userId!);
-    } catch (error) {
-      logger.emit({
-        severityText: 'ERROR',
-        body: 'Error creating user during OAuth authorization',
-        attributes: {
-          error: error instanceof Error ? error.message : String(error),
-          userId,
-          clientId,
-        },
-      });
-      return NextResponse.json(
-        { error: 'server_error', error_description: 'Error creating user' },
-        { status: 500 }
-      );
-    }
-
-    /* 3️⃣ Handle prompt=none for authenticated users - skip consent page */
-    if (prompt === 'none') {
-      // Generate authorization code immediately (same logic as POST handler)
-      const authCode = nanoid(32);
-      const exp = Math.floor(Date.now() / 1000) + AUTH_CODE_TTL;
-
-      const authCodeJwt = await new SignJWT({
-        clientId,
-        redirectUri,
-        codeChallenge,
-        codeChallengeMethod: 'S256', // Always S256 since we validated it above
-        scope,
-        userId,
-        exp,
-        code: authCode,
-      })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime(exp)
-        .sign(JWT_SECRET);
-
-      // Return direct redirect to callback URL with authorization code
-      const redirectUrl = new URL(redirectUri);
-      redirectUrl.searchParams.set('code', authCodeJwt);
-      if (state) redirectUrl.searchParams.set('state', state);
+      if (!redirectUrl) {
+        return NextResponse.json(
+          {
+            error: 'unauthorized',
+            error_description: 'User not authenticated',
+          },
+          { status: 400 }
+        );
+      }
 
       return NextResponse.redirect(redirectUrl.toString(), 302);
     }
 
-    /* 4️⃣ Normal flow: Redirect to consent page with OAuth parameters */
-    const consentUrl = new URL('/oauth/authorize', req.nextUrl.origin);
-    consentUrl.searchParams.set('client_id', clientId);
-    consentUrl.searchParams.set('redirect_uri', redirectUri);
-    consentUrl.searchParams.set('code_challenge', codeChallenge);
-    consentUrl.searchParams.set('code_challenge_method', 'S256'); // Always S256 since we validated it above
-    consentUrl.searchParams.set('scope', scope);
-    consentUrl.searchParams.set('response_type', responseType);
-    if (state) consentUrl.searchParams.set('state', state);
+    const consentUrl = new URL('/oauth/authorize', request.nextUrl.origin);
+    (
+      [
+        'client_id',
+        'redirect_uri',
+        'code_challenge',
+        'code_challenge_method',
+        'scope',
+        'response_type',
+        'state',
+        'referral_code',
+      ] as const
+    ).forEach(param => {
+      if (query[param]) {
+        consentUrl.searchParams.set(param, query[param]);
+      }
+    });
 
     return NextResponse.redirect(consentUrl.toString(), 302);
-  } catch (error) {
-    logger.emit({
-      severityText: 'ERROR',
-      body: 'OAuth authorization error',
-      attributes: {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      },
-    });
-    return NextResponse.json(
-      {
-        error: 'server_error',
-        error_description: 'Internal server error during authorization',
-      },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-
-    const parsedBody = authorizeParamsSchema.safeParse(body);
-
-    if (!parsedBody.success) {
-      return NextResponse.json(
-        {
-          error: 'invalid_request',
-          error_description: parsedBody.error.message,
-        },
-        { status: 400 }
-      );
-    }
-
-    const redirect_url = await getAuthorizationRedirect(parsedBody.data);
-
-    if (!redirect_url) {
-      return NextResponse.json(
-        { error: 'unauthorized', error_description: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
-
-    return NextResponse.json({ redirect_url });
-  } catch (error) {
-    logger.emit({
-      severityText: 'ERROR',
-      body: 'OAuth authorization POST error',
-      attributes: {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      },
-    });
-    return NextResponse.json(
-      {
-        error: 'server_error',
-        error_description: 'Internal server error during authorization',
-      },
-      { status: 500 }
-    );
-  }
-}
+  });

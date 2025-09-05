@@ -72,7 +72,6 @@ export interface TransactionRequest extends Transaction {
   echoAppId: string;
   apiKeyId?: string;
   markUpId?: string;
-  githubLinkId?: string;
   spendPoolId?: string;
   referralCodeId?: string;
   referrerRewardId?: string;

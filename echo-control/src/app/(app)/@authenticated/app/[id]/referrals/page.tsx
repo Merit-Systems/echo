@@ -1,28 +1,18 @@
-import { api, HydrateClient } from '@/trpc/server';
+import { PublicReferralsPage } from './_components/public';
+import { OwnerReferralsPage } from './_components/owner';
 
-import { Body, Heading } from '../../../_components/layout/page-utils';
-
-import { ReferralBonus } from './_components/referral-amount';
-import { Referrals } from './_components/referrals';
+import { getIsOwner } from '../_lib/fetch';
 
 export default async function AppReferralsPage({
   params,
 }: PageProps<'/app/[id]/referrals'>) {
   const { id } = await params;
 
-  api.apps.app.referralReward.get.prefetch(id);
-  api.apps.app.memberships.list.prefetch({ appId: id, referrerUserId: 'any' });
+  const isOwner = await getIsOwner(id);
 
-  return (
-    <HydrateClient>
-      <Heading
-        title="Referrals"
-        description="Incentivize users to share your app by allocating a percentage of the revenue to them."
-      />
-      <Body>
-        <ReferralBonus appId={id} />
-        <Referrals appId={id} />
-      </Body>
-    </HydrateClient>
-  );
+  if (isOwner) {
+    return <OwnerReferralsPage appId={id} />;
+  }
+
+  return <PublicReferralsPage appId={id} />;
 }

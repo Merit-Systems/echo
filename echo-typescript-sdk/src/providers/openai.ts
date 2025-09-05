@@ -4,19 +4,24 @@ import {
   OpenAIProvider,
 } from '@ai-sdk/openai';
 import { ROUTER_BASE_URL } from 'config';
+import { fetchWith402Interceptor } from './index';
 import { AsyncProvider, EchoConfig } from '../types';
 
 export type EchoOpenAIProvider = AsyncProvider<OpenAIProvider>;
 
 export function createEchoOpenAI(
   { appId, baseRouterUrl = ROUTER_BASE_URL }: EchoConfig,
-  getTokenFn: (appId: string) => Promise<string | null>
+  getTokenFn: (appId: string) => Promise<string | null>,
+  onInsufficientFunds?: () => void
 ): EchoOpenAIProvider {
   const getProvider = async () => {
     const token = await getTokenFn(appId);
     return createOpenAIBase({
       baseURL: baseRouterUrl,
       apiKey: token ?? '', // null will fail auth
+      ...(onInsufficientFunds && {
+        fetch: fetchWith402Interceptor(fetch, onInsufficientFunds),
+      }),
     });
   };
 

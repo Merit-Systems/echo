@@ -64,7 +64,7 @@ export const Activity: React.FC<Props> = ({ appId, createdAt }) => {
   const initialTimeframe = isAppOlderThan7Days
     ? ActivityTimeframe.SevenDays
     : ActivityTimeframe.AllTime;
-  api.apps.app.activity.get.prefetch({
+  api.apps.app.stats.bucketed.prefetch({
     appId,
     startDate: defaultStartDate,
     endDate: defaultEndDate,

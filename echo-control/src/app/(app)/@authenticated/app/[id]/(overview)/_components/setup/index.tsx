@@ -82,7 +82,7 @@ export const Setup: React.FC<Props> = ({ appId }) => {
     const connectionCompleted = connectionSteps.every(Boolean);
     const generateTextCompleted = generateTextSteps.every(Boolean);
 
-    let nextAccordionValue = accordionValue;
+    let nextAccordionValue = '';
 
     if (!appDetailsCompleted) {
       nextAccordionValue = 'app-details';
@@ -90,14 +90,14 @@ export const Setup: React.FC<Props> = ({ appId }) => {
       nextAccordionValue = 'connection';
     } else if (!generateTextCompleted) {
       nextAccordionValue = 'generate-text';
-    } else {
-      nextAccordionValue = '';
     }
 
-    if (accordionValue !== nextAccordionValue && nextAccordionValue !== '') {
-      setAccordionValue(nextAccordionValue);
+    if (nextAccordionValue !== '') {
+      setAccordionValue(prev =>
+        prev === nextAccordionValue ? prev : nextAccordionValue
+      );
     }
-  }, [appDetailsSteps, connectionSteps, generateTextSteps, accordionValue]);
+  }, [appDetailsSteps, connectionSteps, generateTextSteps]);
 
   return (
     <AnimatePresence mode="wait">

@@ -295,7 +295,7 @@ export class RouteHandlerBuilder<
         ): Promise<NextResponse> => {
           if (index >= this.middlewares.length) {
             try {
-              const result = handler(request, {
+              const result = await handler(request, {
                 params: params as z.infer<TParams>,
                 query: query as z.infer<TQuery>,
                 body: body as z.infer<TBody>,

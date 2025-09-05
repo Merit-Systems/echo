@@ -8,21 +8,21 @@ export const TEST_DATA = {
   // Test user configurations
   users: {
     primary: {
-      id: '11111111-1111-1111-1111-111111111111',
+      id: '11111111-1111-4111-8111-111111111111',
       email: 'test@example.com',
       name: 'Integration Test User',
       totalPaid: 0,
       totalSpent: 0,
     },
     secondary: {
-      id: '33333333-3333-3333-3333-333333333333',
+      id: '33333333-3333-4333-8333-333333333333',
       email: 'test2@example.com',
       name: 'Second Test User',
       totalPaid: 0,
       totalSpent: 0,
     },
     tertiary: {
-      id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       email: 'test3@example.com',
       name: 'Third Test User',
       totalPaid: 0,
@@ -33,17 +33,17 @@ export const TEST_DATA = {
   // Echo app (OAuth client) configurations
   echoApps: {
     primary: {
-      id: '87654321-4321-4321-4321-fedcba987654',
+      id: '87654321-4321-4321-8321-fedcba987654',
       name: 'Integration Test Client',
       description: 'OAuth client for integration testing',
     },
     secondary: {
-      id: '44444444-4444-4444-4444-444444444444',
+      id: '44444444-4444-4444-8444-444444444444',
       name: 'Second Integration Test Client',
       description: 'Second OAuth client for cross-client testing',
     },
     tertiary: {
-      id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+      id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
       name: 'Third Integration Test Client',
       description: 'Third OAuth client for multi-app testing',
     },
@@ -52,7 +52,7 @@ export const TEST_DATA = {
   // API key configurations
   apiKeys: {
     primary: {
-      id: '22222222-2222-2222-2222-222222222222',
+      id: '22222222-2222-4222-8222-222222222222',
       keyHash: hashApiKey(primaryApiKey),
       name: 'Integration Test API Key',
     },
@@ -90,7 +90,7 @@ export const TEST_DATA = {
   // Payment/billing test data
   payments: {
     testPayment: {
-      id: '55555555-5555-5555-5555-555555555555',
+      id: '55555555-5555-4555-8555-555555555555',
       paymentId: 'pi_test_1234567890',
       amount: 1000, // $10.00 in cents
       currency: 'usd',
@@ -102,7 +102,7 @@ export const TEST_DATA = {
   // LLM transaction test data
   llmTransactions: {
     testTransaction: {
-      id: '66666666-6666-6666-6666-666666666666',
+      id: '66666666-6666-4666-8666-666666666666',
       totalCost: 0.15,
       status: 'completed',
     },
@@ -111,22 +111,22 @@ export const TEST_DATA = {
   // Spend pool configurations
   spendPools: {
     primary: {
-      id: '77777777-7777-7777-7777-777777777777',
+      id: '77777777-7777-4777-8777-777777777777',
       name: 'Primary Test Spend Pool',
       description: 'Primary spend pool for integration testing',
       totalPaid: 1.0,
       perUserSpendLimit: 0.01,
       totalSpent: 0.0099,
-      echoAppId: 'cccccccc-cccc-cccc-cccc-cccccccccccc', // Reference to tertiary app
+      echoAppId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', // Reference to tertiary app
     },
   },
 
   // User spend pool usage configurations
   userSpendPoolUsage: {
     tertiaryUserPrimaryPool: {
-      id: '99999999-9999-9999-9999-999999999999',
-      userId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', // Tertiary test user
-      spendPoolId: '77777777-7777-7777-7777-777777777777', // Primary spend pool
+      id: '99999999-9999-4999-8999-999999999999',
+      userId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', // Tertiary test user
+      spendPoolId: '77777777-7777-4777-8777-777777777777', // Primary spend pool
       totalSpent: 0.0099,
     },
   },

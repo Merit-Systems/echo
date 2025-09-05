@@ -29,12 +29,10 @@ export default function ReferralRewardCard({ appId }: ReferralRewardCardProps) {
     isLoading: loading,
     error: queryError,
     refetch: refetchReferralReward,
-  } = api.user.referral.getCurrentReferralReward.useQuery({
-    echoAppId: appId,
-  });
+  } = api.apps.app.referralReward.get.useQuery(appId);
 
   const setReferralRewardMutation =
-    api.user.referral.setAppReferralReward.useMutation();
+    api.apps.app.referralReward.set.useMutation();
 
   const handleSave = async () => {
     const validation = validatePercentage(inputValue);
@@ -47,8 +45,8 @@ export default function ReferralRewardCard({ appId }: ReferralRewardCardProps) {
 
     setReferralRewardMutation.mutate(
       {
-        echoAppId: appId,
-        reward: newMultiplier,
+        appId,
+        percentage: newMultiplier,
       },
       {
         onSuccess: () => {

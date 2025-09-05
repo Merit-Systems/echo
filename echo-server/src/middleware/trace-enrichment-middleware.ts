@@ -9,7 +9,7 @@ export function traceEnrichmentMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  // attach a requestId (if you don't already generate one upstream)
+  // Set up span enrichment on response finish
   res.on('finish', () => {
     const span = trace.getSpan(context.active());
     if (!span) return;

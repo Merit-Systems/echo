@@ -1,3 +1,7 @@
+import Link from 'next/link';
+
+import { Button } from '@/components/ui/button';
+
 import { ErrorPage } from './_components/error-page';
 
 export default function NotFound() {
@@ -11,6 +15,13 @@ export default function NotFound() {
             the correct ID.
           </p>
         </div>
+      }
+      actions={
+        <Link href="/" className="flex-1">
+          <Button variant="outline" className="w-full">
+            Back to Home
+          </Button>
+        </Link>
       }
     />
   );

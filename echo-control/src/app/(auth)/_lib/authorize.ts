@@ -15,19 +15,26 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 export const authorizeParamsSchema = z.object({
-  client_id: z.string('missing client_id').min(1, 'client_id is required'),
+  client_id: z.uuid('client_id must be a valid UUID'),
   redirect_uri: z.url('redirect_uri must be a valid URL'),
   code_challenge: z
-    .string('missing code_challenge')
-    .min(1, 'code_challenge is required'),
+    .string('code_challenge must be a string')
+    .min(43, 'code_challenge must be at least 43 characters')
+    .max(128, 'code_challenge must be at most 128 characters')
+    .regex(/^[A-Za-z0-9_-]+$/, {
+      message: 'code_challenge must be base64url encoded',
+    }),
   code_challenge_method: z.literal('S256', {
     error: 'Only S256 code challenge method is supported',
   }),
-  scope: z.string('missing scope').min(1, 'scope is required'),
-  response_type: z.literal('code', {
-    error: 'Only authorization code flow (response_type=code) is supported',
-  }),
-  state: z.string().optional(),
+  scope: z.string('missing scope').default('llm:invoke offline_access'),
+  response_type: z
+    .literal('code', {
+      error: 'Only authorization code flow (response_type=code) is supported',
+    })
+    .default('code'),
+  state: z.string().default(nanoid),
+  referral_code: z.uuid().optional(),
 });
 
 export type AuthorizeParams = z.infer<typeof authorizeParamsSchema>;
@@ -71,4 +78,17 @@ export const getAuthorizationRedirect = async ({
   if (state) redirectUrl.searchParams.set('state', state);
 
   return redirectUrl.toString();
+};
+
+export const isValidRedirectUri = (
+  redirectUri: string,
+  authorizedCallbackUrls: string[]
+) => {
+  const isLocalRedirect = redirectUri.startsWith('http://localhost:');
+  const redirectWithoutTrailingSlash = redirectUri.replace(/\/$/, '');
+  return (
+    isLocalRedirect ||
+    authorizedCallbackUrls.includes(redirectUri) ||
+    authorizedCallbackUrls.includes(redirectWithoutTrailingSlash)
+  );
 };

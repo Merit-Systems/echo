@@ -68,7 +68,13 @@ export type GlobalStatistics = {
 
 export type AppGithubLink = Omit<
   GithubLink,
-  'id' | 'echoAppId' | 'createdAt' | 'updatedAt' | 'archivedAt' | 'Transactions'
+  | 'id'
+  | 'echoAppId'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'archivedAt'
+  | 'Transactions'
+  | 'userId'
 >;
 
 export type CustomerApiKey = Omit<

@@ -316,7 +316,6 @@ export class EchoDbService {
         echoAppId: transaction.echoAppId,
         apiKeyId: transaction.apiKeyId || null,
         markUpId: transaction.markUpId || null,
-        githubLinkId: transaction.githubLinkId || null,
         spendPoolId: transaction.spendPoolId || null,
         transactionMetadataId: transactionMetadata.id,
         referralCodeId: transaction.referralCodeId || null,

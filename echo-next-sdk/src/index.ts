@@ -2,13 +2,14 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { EchoClient } from '@merit-systems/echo-typescript-sdk';
-import { resolveEchoBaseUrl } from './config';
 import { EchoConfig, EchoResult } from './types';
 
 import { createEchoAnthropic } from 'providers/anthropic';
 import { createEchoGoogle } from 'providers/google';
 import { createEchoOpenAI } from 'providers/openai';
 
+import { resolveEchoBaseUrl } from 'config';
+import { handleEchoClientProxy } from 'proxy';
 import {
   handleCallback,
   handleRefresh,
@@ -28,7 +29,12 @@ export default function Echo(config: EchoConfig): EchoResult {
     const basePath = config.basePath || '/api/echo';
     const path = pathname.replace(basePath, '');
 
+    if (path.startsWith('/proxy')) {
+      return handleEchoClientProxy(req, config);
+    }
+
     switch (path) {
+      // all the auth stuff
       case '/signin':
         return handleSignIn(req, config);
 
@@ -39,6 +45,7 @@ export default function Echo(config: EchoConfig): EchoResult {
         return handleRefresh(req, config);
 
       default:
+        console.error('Unknown path', path);
         return NextResponse.error();
     }
   };
@@ -76,17 +83,17 @@ export default function Echo(config: EchoConfig): EchoResult {
   };
 
   return {
-    // http handlers
+    // HTTP handlers for Next.js API routes
     handlers: {
       GET: httpHandler,
       POST: httpHandler,
     },
 
-    // echo auth
+    // Authentication utilities (server-side only)
     getUser,
     isSignedIn,
 
-    // providers
+    // AI provider clients
     openai: createEchoOpenAI(config),
     anthropic: createEchoAnthropic(config),
     google: createEchoGoogle(config),

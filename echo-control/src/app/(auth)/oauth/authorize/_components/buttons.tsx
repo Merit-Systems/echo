@@ -39,7 +39,7 @@ export const AuthorizeButtons: React.FC<Props> = ({ params }) => {
             disabled={pending}
             className="w-full"
           >
-            {pending ? 'Authorizing...' : 'Authorize'}
+            {pending ? 'Connecting...' : 'Connect'}
           </Button>
         </form>
       </div>

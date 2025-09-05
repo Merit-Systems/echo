@@ -27,9 +27,7 @@ describe('OAuth 2.0 Protocol Compliance', () => {
           code_challenge: codeChallenge,
           code_challenge_method: 'S256',
         })
-      ).rejects.toThrow(
-        /invalid_request.*client_id|Missing required parameters/i
-      );
+      ).rejects.toThrow(/client_id must be a valid UUID/i);
 
       // Missing redirect_uri
       await expect(
@@ -40,9 +38,7 @@ describe('OAuth 2.0 Protocol Compliance', () => {
           code_challenge: codeChallenge,
           code_challenge_method: 'S256',
         })
-      ).rejects.toThrow(
-        /invalid_request.*redirect_uri|Missing required parameters/i
-      );
+      ).rejects.toThrow(/redirect_uri must be a valid URL/i);
 
       // Missing code_challenge
       await expect(
@@ -53,9 +49,7 @@ describe('OAuth 2.0 Protocol Compliance', () => {
           code_challenge: '',
           code_challenge_method: 'S256',
         })
-      ).rejects.toThrow(
-        /invalid_request.*code_challenge|Missing required parameters/i
-      );
+      ).rejects.toThrow(/code_challenge must be at least 43 characters/i);
     });
 
     test('validates client_id against database', async () => {
@@ -70,7 +64,7 @@ describe('OAuth 2.0 Protocol Compliance', () => {
           code_challenge: codeChallenge,
           code_challenge_method: 'S256',
         })
-      ).rejects.toThrow(/invalid_client.*Invalid or inactive client_id/i);
+      ).rejects.toThrow(/not_found.*Echo app not found/i);
     });
 
     test('enforces redirect URI allowlist', async () => {
@@ -91,9 +85,18 @@ describe('OAuth 2.0 Protocol Compliance', () => {
 
     test('validates PKCE challenge format', async () => {
       const invalidChallenges = [
-        'too-short', // Less than 43 chars
-        'A'.repeat(200), // More than 128 chars
-        'invalid+base64/chars=', // Not base64url
+        {
+          challenge: 'too-short',
+          expectedError: /code_challenge must be at least 43 characters/i,
+        },
+        {
+          challenge: 'A'.repeat(200),
+          expectedError: /code_challenge must be at most 128 characters/i,
+        },
+        {
+          challenge: 'invalid+base64/chars=',
+          expectedError: /code_challenge must be base64url encoded/i,
+        },
       ];
 
       for (const challenge of invalidChallenges) {
@@ -102,10 +105,10 @@ describe('OAuth 2.0 Protocol Compliance', () => {
             client_id: TEST_CLIENT_IDS.primary,
             redirect_uri: 'http://localhost:3000/callback',
             state: generateState(),
-            code_challenge: challenge,
+            code_challenge: challenge.challenge,
             code_challenge_method: 'S256',
           })
-        ).rejects.toThrow(/invalid_request.*code_challenge/i);
+        ).rejects.toThrow(challenge.expectedError);
       }
     });
 
@@ -141,9 +144,9 @@ describe('OAuth 2.0 Protocol Compliance', () => {
         if (response.status === 400) {
           // Parameter validation rejected it (ideal case)
           const result = await response.json();
-          expect(result.error).toBe('invalid_request');
-          expect(result.error_description).toMatch(
-            /code_challenge_method.*S256/i
+          expect(result.message).toBe('Invalid query');
+          expect(JSON.stringify(result.errors)).toMatch(
+            /Only S256 code challenge method is supported/i
           );
         } else if (response.status === 302) {
           // Parameter validation passed, but hit auth requirement
@@ -196,9 +199,9 @@ describe('OAuth 2.0 Protocol Compliance', () => {
         expect(response.status).toBe(400);
 
         const result = await response.json();
-        expect(result.error).toBe('unsupported_response_type');
-        expect(result.error_description).toMatch(
-          /response_type.*code.*supported/i
+        expect(result.message).toBe('Invalid query');
+        expect(JSON.stringify(result.errors)).toMatch(
+          /Only authorization code flow \(response_type=code\) is supported/i
         );
       }
     });

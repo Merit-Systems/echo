@@ -28,10 +28,7 @@ export class EchoControlService {
   private referralAmount: Decimal | null = null;
   private referrerRewardId: string | null = null;
   private referralCodeId: string | null = null;
-  private githubLinkId: string | null = null;
   private freeTierSpendPool: SpendPool | null = null;
-  private githubId: number | null = null;
-  private githubType: string | null = null;
 
   constructor(db: PrismaClient, apiKey: string) {
     // Check if the generated Prisma client exists
@@ -70,11 +67,6 @@ export class EchoControlService {
     this.markUpId = markupData.markUpId;
     this.referrerRewardId = markupData.referralId;
     this.referralAmount = markupData.referralAmount;
-
-    const githubLinkData = await this.getAppGithubLink();
-    this.githubLinkId = githubLinkData.id;
-    this.githubId = githubLinkData.githubId;
-    this.githubType = githubLinkData.githubType;
 
     const echoAppId = this.authResult?.echoAppId;
     const userId = this.authResult?.userId;
@@ -125,13 +117,6 @@ export class EchoControlService {
   }
 
   /**
-   * Get the cached GitHub link ID
-   */
-  getGithubLinkId(): string | null {
-    return this.githubLinkId;
-  }
-
-  /**
    * Get balance for the authenticated user directly from the database
    * Uses centralized logic from EchoDbService
    */
@@ -150,40 +135,6 @@ export class EchoControlService {
       logger.error(`Error fetching balance: ${error}`);
       return 0;
     }
-  }
-
-  async getAppGithubLink(): Promise<{
-    githubId: number | null;
-    githubType: string | null;
-    id: string | null;
-  }> {
-    if (!this.authResult) {
-      logger.error('No authentication result available');
-      return { githubId: null, githubType: null, id: null };
-    }
-
-    const githubLink = await this.db.githubLink.findUnique({
-      where: {
-        echoAppId: this.getEchoAppId() ?? '',
-      },
-      select: {
-        id: true,
-        githubId: true,
-        githubType: true,
-        isArchived: true,
-      },
-    });
-
-    // Return null values if no link exists or if it's inactive/archived
-    if (!githubLink || githubLink.isArchived) {
-      return { githubId: null, githubType: null, id: null };
-    }
-
-    return {
-      githubId: githubLink.githubId,
-      githubType: githubLink.githubType,
-      id: githubLink.id,
-    };
   }
 
   /**
@@ -217,10 +168,17 @@ export class EchoControlService {
   async getOrNoneFreeTierSpendPool(
     userId: string,
     appId: string
-  ): Promise<SpendPool | null> {
-    this.freeTierSpendPool =
+  ): Promise<{ spendPool: SpendPool; effectiveBalance: number } | null> {
+    const fetchSpendPoolInfo =
       await this.freeTierService.getOrNoneFreeTierSpendPool(appId, userId);
-    return this.freeTierSpendPool;
+    if (fetchSpendPoolInfo) {
+      this.freeTierSpendPool = fetchSpendPoolInfo.spendPool;
+      return {
+        spendPool: fetchSpendPoolInfo.spendPool,
+        effectiveBalance: fetchSpendPoolInfo.effectiveBalance,
+      };
+    }
+    return null;
   }
 
   async computeTransactionCosts(
@@ -306,9 +264,6 @@ export class EchoControlService {
       markUpProfit,
     } = await this.computeTransactionCosts(transaction, this.referralCodeId);
 
-    // Markup is checked, but not applied here because it is a free tier transaction
-    const githubLinkId = this.githubLinkId ?? undefined;
-
     const transactionData: TransactionRequest = {
       totalCost: totalTransactionCost,
       appProfit: totalAppProfit,
@@ -320,7 +275,6 @@ export class EchoControlService {
       userId: userId,
       echoAppId: echoAppId,
       ...(apiKeyId && { apiKeyId }),
-      ...(githubLinkId && { githubLinkId }),
       ...(this.markUpId && { markUpId: this.markUpId }),
       ...(this.freeTierSpendPool.id && {
         spendPoolId: this.freeTierSpendPool.id,
@@ -362,7 +316,6 @@ export class EchoControlService {
       userId: userId,
       echoAppId: echoAppId,
       ...(apiKeyId && { apiKeyId }),
-      ...(this.githubLinkId && { githubLinkId: this.githubLinkId }),
       ...(this.markUpId && { markUpId: this.markUpId }),
       ...(this.referralCodeId && { referralCodeId: this.referralCodeId }),
       ...(this.referrerRewardId && { referrerRewardId: this.referrerRewardId }),

@@ -22,7 +22,7 @@ export type HandlerFunction<
     ctx: TContext;
     metadata?: TMetadata;
   }
-) => NextResponse;
+) => NextResponse | Promise<NextResponse>;
 
 /**
  * Represents the merged context type between the existing context and new context added by middleware

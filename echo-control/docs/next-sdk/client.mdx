@@ -1,59 +1,74 @@
 ---
-title: Client Side Utilities
-description: Client-side sign-in helper
+title: Client
+description: Echo's Next.js SDK client-side functionality.
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
+Echo maintains authentication using HTTP Cookies. The browser does not have access
+to these so login state needs to be handled by server components.
 
-# Client
+# Client-Side Sign In
 
-Minimal client-side API for initiating the Echo OAuth flow.
-
-## signIn
-
-Starts the OAuth flow by redirecting the browser to your Echo OAuth route.
+In your application you can use the `signIn` method to initiate server-side Echo sign-in.
 
 ```typescript
-import { signIn } from '@merit-systems/echo-next-sdk/client';
+"use client"
 
-'use client';
+import { signIn } from "@merit-systems/echo-next-sdk/client";
 
-export default function SignInButton() {
-  return (
-    <button onClick={() => signIn()}>
-      Sign in with Echo
-    </button>
-  );
+export default SignInButton() {
+  return <button onClick={() => signIn()}>Sign In</button>
 }
 ```
 
-<Callout type="info">
-`signIn()` must be called from client components. It performs a full-page redirect to `/api/echo/signin` by default.
-</Callout>
+# Fetching information from the Echo API
 
-### Custom basePath
+The client side Echo API allows you to serve all the Echo API endpoints with the
+echo client directly through your routes. This means that all token handling is
+directly supported.
 
-If you placed your catch‑all route somewhere else, pass a `basePath` override:
-
-```typescript
-signIn({ basePath: '/api/auth/echo' });
-```
-
-Make sure the matching catch‑all route exists at `app/api/auth/echo/[...echo]/route.ts` and that your Echo instance is configured with the same `basePath`.
-
-## useChat
-
-Echo works seamlessly with Vercel AI SDK’s `useChat` hook; usage is the same as in their docs.
+## Handlers
 
 ```typescript
-import { useChat } from 'ai/react';
+import handlers from '@/echo';
+
+export { GET, POST } = handlers;
 ```
 
-See the official guide: [Vercel AI – useChat](https://ai-sdk.dev/docs/reference/ai-sdk-ui/use-chat#usechat).
+Exporting these routes will expose the echo client proxy route:
 
-### Other AI React hooks
+- `api/echo/proxy/:path*`
 
-Echo works out of the box with all `use*` hooks from the Vercel AI React SDK (for example `useCompletion`, `useAssistant`). No extra configuration is needed—the SDK handles auth via cookies and your API routes work the same.
+On the client side, you can use the `useEcho` hook to get the echo client.
 
-Browse the references: [AI SDK UI – React hooks](https://ai-sdk.dev/docs/reference/ai-sdk-ui).
+```typescript
+import { useEcho } from '@merit-systems/echo-next-sdk/client';
 
+const echoClient = useEcho();
+```
+
+Then you can invoke the echo client directly in a `useEffect`
+or whatever external data fetching strategy you are using.
+
+```typescript
+import { useEffect } from 'react';
+
+// get balance
+useEffect(() => {
+  const balance = echoClient.balance.getBalance();
+}, [echoClient]);
+
+// create a payment link
+useEffect(() => {
+  const paymentLink = echoClient.payments.createPaymentLink({
+    amount: 10,
+    description: 'Credits',
+  });
+}, [echoClient]);
+
+// get user info
+useEffect(() => {
+  const user = echoClient.users.getUserInfo();
+}, [echoClient]);
+```
+
+The rest of the supported methods are documented in the [TypeScript SDK](../typescript-sdk).

@@ -4,6 +4,7 @@ import z, { ZodError } from 'zod';
 import { auth } from '@/auth';
 import { Session } from 'next-auth';
 import { db } from '@/lib/db';
+import { timeBasedPaginationSchema } from '@/services/lib/pagination';
 
 /**
  * Context that is passed to all TRPC procedures
@@ -120,5 +121,13 @@ export const paginatedProcedure = t.procedure
         ...ctx,
         pagination: { page: input.cursor, page_size: input.page_size },
       },
+    });
+  });
+
+export const timeBasedPaginatedProcedure = t.procedure
+  .input(timeBasedPaginationSchema)
+  .use(async ({ ctx, next, input }) => {
+    return next({
+      ctx: { ...ctx, pagination: input },
     });
   });

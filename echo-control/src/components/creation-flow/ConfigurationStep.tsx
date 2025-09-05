@@ -63,7 +63,7 @@ const ConfigurationStep = ({
   useEcho,
   useEchoOpenAI,
   EchoSignIn,
-  EchoTokenPurchase,
+  EchoTokens,
 } from '@merit-systems/echo-react-sdk';
 import { useState } from 'react';`;
 
@@ -96,7 +96,7 @@ import { useState } from 'react';`;
       gap: '.5rem',
       height: '50vh',
     }}>
-      {isAuthenticated ? <EchoTokenPurchase /> : <EchoSignIn />}
+      {isAuthenticated ? <EchoTokens /> : <EchoSignIn />}
       <input type="text" value={input} onChange={(e) => setInput(e.target.value)} />
       <button onClick={getMessage}>Send Message</button>
       <p>{response}</p>

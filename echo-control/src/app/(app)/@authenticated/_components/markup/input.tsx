@@ -107,9 +107,14 @@ export const MarkupInput = ({ markup, onMarkupChange }: Props) => {
               <Input
                 value={((markup - 1) * 100).toFixed(0)}
                 onChange={e => {
-                  const value =
+                  const inputValue =
                     e.target.value === '' ? 0 : Number(e.target.value);
-                  onMarkupChange(value / 100 + 1);
+                  const clampedPercentage = Math.max(
+                    0,
+                    Math.min(inputValue, 1000)
+                  );
+                  const nextMarkup = clampedPercentage / 100 + 1;
+                  onMarkupChange(Math.max(1, Math.min(nextMarkup, 10)));
                 }}
                 className="w-18 pr-6"
               />
@@ -120,7 +125,9 @@ export const MarkupInput = ({ markup, onMarkupChange }: Props) => {
               max={10}
               step={0.01}
               value={[markup]}
-              onValueChange={value => onMarkupChange(value[0])}
+              onValueChange={value =>
+                onMarkupChange(Math.max(1, Math.min(value[0], 10)))
+              }
             />
           </motion.div>
         )}

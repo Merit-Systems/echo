@@ -148,10 +148,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const body = await req.json();
     const { markup } = body;
 
-    // Validate markup
-    if (typeof markup !== 'number' || markup <= 0) {
+    // Validate markup (1x to 10x inclusive)
+    if (typeof markup !== 'number' || markup < 1 || markup > 10) {
       return NextResponse.json(
-        { error: 'Markup must be a positive decimal number' },
+        { error: 'Markup must be between 1x and 10x (i.e. 0% - 1000%)' },
         { status: 400 }
       );
     }

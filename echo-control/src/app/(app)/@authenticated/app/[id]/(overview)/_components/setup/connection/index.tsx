@@ -70,7 +70,7 @@ export const Connection: React.FC<Props> = ({ appId }) => {
       </AccordionTrigger>
       <AccordionContent>
         <Tabs className="flex flex-col gap-2" defaultValue="next">
-          <div className="flex items-center gap-2 justify-between">
+          <div className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
             <TabsList className="rounded-lg">
               <TabsTrigger value="next" className="px-8 gap-2 rounded-lg">
                 <SiNextdotjs className="size-4" />
@@ -81,7 +81,7 @@ export const Connection: React.FC<Props> = ({ appId }) => {
                 React
               </TabsTrigger>
             </TabsList>
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-start md:items-end mt-2 md:mt-0">
               <p className="text-[10px] text-muted-foreground">Your App ID</p>
               <div className="flex items-center w-fit border border-primary rounded-md overflow-hidden pl-2 pr-1 py-1 bg-muted">
                 <p className="flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs no-scrollbar pr-2">
@@ -95,7 +95,7 @@ export const Connection: React.FC<Props> = ({ appId }) => {
               </div>
             </div>
           </div>
-          <TabsContents className="h-[354px]">
+          <TabsContents className="max-h-[70vh] md:h-[354px] overflow-y-auto no-scrollbar">
             <TabsContent value="next" className="gap-2 flex flex-col">
               <Card className="flex flex-col md:flex-row overflow-hidden divide-y md:divide-y-0 md:divide-x">
                 <NextStep1 />

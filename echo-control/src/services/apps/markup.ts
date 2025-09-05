@@ -16,8 +16,8 @@ export const getAppMarkup = async (appId: AppId) => {
 export const updateMarkupSchema = z.object({
   markup: z
     .number()
-    .min(1, 'Markup must be greater than 0')
-    .max(100, 'Markup must be less than 100'),
+    .min(1, 'Markup must be at least 1x')
+    .max(10, 'Markup cannot exceed 10x (1000%)'),
 });
 
 export const updateMarkup = async (

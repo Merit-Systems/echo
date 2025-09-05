@@ -16,6 +16,11 @@ const baseOptions: BaseLayoutProps = {
       url: 'https://terminal.merit.systems',
       external: true,
     },
+    {
+      text: 'llms-full.txt',
+      url: '/llms-full.txt',
+      external: true,
+    },
   ],
 };
 

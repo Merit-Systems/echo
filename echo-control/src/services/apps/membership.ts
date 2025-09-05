@@ -18,6 +18,7 @@ export const getAppMembership = async (userId: string, appId: AppId) => {
     select: {
       role: true,
       status: true,
+      referrerId: true,
       echoApp: {
         select: appSelect,
       },
@@ -25,8 +26,16 @@ export const getAppMembership = async (userId: string, appId: AppId) => {
   });
 };
 
+export const createAppMembershipSchema = z.object({
+  referrerId: z.uuid().optional(),
+});
+
 // this will succeed whether creating a new membership or if the user is already a member
-export const createAppMembership = async (userId: string, echoAppId: AppId) => {
+export const createAppMembership = async (
+  userId: string,
+  echoAppId: AppId,
+  input: z.infer<typeof createAppMembershipSchema>
+) => {
   return db.appMembership.upsert({
     where: {
       userId_echoAppId: {
@@ -40,10 +49,31 @@ export const createAppMembership = async (userId: string, echoAppId: AppId) => {
       role: AppRole.CUSTOMER,
       status: MembershipStatus.ACTIVE,
       totalSpent: 0,
+      referrerId: input.referrerId,
     },
     update: {
+      referrerId: input.referrerId,
       // Don't update any fields if the membership already exists
     },
+  });
+};
+
+export const updateAppMembershipReferrerSchema = z.object({
+  appId: z.uuid(),
+  referrerId: z.uuid(),
+});
+
+export const updateAppMembershipReferrer = async (
+  userId: string,
+  input: z.infer<typeof updateAppMembershipReferrerSchema>
+) => {
+  console.log('updateAppMembershipReferrer', userId, input);
+  return await db.appMembership.update({
+    where: {
+      userId_echoAppId: { userId, echoAppId: input.appId },
+      referrerId: null,
+    },
+    data: { referrerId: input.referrerId },
   });
 };
 

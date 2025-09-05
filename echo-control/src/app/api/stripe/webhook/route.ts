@@ -196,9 +196,12 @@ async function handleCheckoutSessionCompleted(
         });
       } else {
         // Get the existing payment record
-        paymentRecord = await tx.payment.findFirst({
+        paymentRecord = await tx.payment.update({
           where: {
             paymentId: paymentId,
+          },
+          data: {
+            status: PaymentStatus.COMPLETED,
           },
         });
       }

@@ -31,11 +31,11 @@ const Scope = ({ scope }: { scope: string }) => {
 
 const scopeData = {
   'llm:invoke': {
-    name: 'Make LLM API requests on your behalf',
+    name: 'Make AI requests',
     icon: BrainCircuit,
   },
   offline_access: {
-    name: "Read your account when you're not online",
+    name: 'Connect your user profile',
     icon: User,
   },
 };

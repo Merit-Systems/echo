@@ -27,6 +27,9 @@ import {
   getAppMembership,
   listAppMemberships,
   listAppMembershipsSchema,
+  createAppMembershipSchema,
+  updateAppMembershipReferrer,
+  updateAppMembershipReferrerSchema,
 } from '@/services/apps/membership';
 import {
   listAppsSchema,
@@ -64,7 +67,12 @@ import {
   listAppTransactions,
   listAppTransactionsSchema,
 } from '@/services/apps/transactions';
-import { getAppActivity, getAppActivitySchema } from '@/services/apps/activity';
+import {
+  getBucketedAppStats,
+  getBucketedAppStatsSchema,
+  getOverallAppStats,
+  getOverallAppStatsSchema,
+} from '@/services/apps/stats';
 import {
   listAppUsers,
   countAppUsers,
@@ -80,7 +88,15 @@ import {
   getAppReferralReward,
   setAppReferralReward,
   setAppReferralRewardSchema,
-} from '@/services/apps/referral-codes';
+} from '@/services/apps/referral-reward';
+import {
+  createAppReferralCode,
+  createAppReferralCodeSchema,
+  getAppReferralCodeSchema,
+  getReferralCodeByCode,
+  getReferralCodeByCodeSchema,
+  getUserAppReferralCode,
+} from '@/services/apps/referral-code';
 
 export const appsRouter = createTRPCRouter({
   create: protectedProcedure
@@ -198,6 +214,27 @@ export const appsRouter = createTRPCRouter({
         }),
     },
 
+    referralCode: {
+      get: {
+        byUser: protectedProcedure
+          .input(getAppReferralCodeSchema)
+          .query(async ({ input, ctx }) => {
+            return await getUserAppReferralCode(ctx.session.user.id, input);
+          }),
+        byCode: protectedProcedure
+          .input(getReferralCodeByCodeSchema)
+          .query(async ({ input }) => {
+            return await getReferralCodeByCode(input);
+          }),
+      },
+
+      create: protectedProcedure
+        .input(createAppReferralCodeSchema)
+        .mutation(async ({ input, ctx }) => {
+          return await createAppReferralCode(ctx.session.user.id, input);
+        }),
+    },
+
     transactions: {
       list: paginatedProcedure
         .concat(protectedProcedure)
@@ -227,11 +264,17 @@ export const appsRouter = createTRPCRouter({
         }),
     },
 
-    activity: {
-      get: protectedProcedure
-        .input(getAppActivitySchema)
+    stats: {
+      bucketed: protectedProcedure
+        .input(getBucketedAppStatsSchema)
         .query(async ({ input }) => {
-          return await getAppActivity(input);
+          return await getBucketedAppStats(input);
+        }),
+
+      overall: protectedProcedure
+        .input(getOverallAppStatsSchema)
+        .query(async ({ input }) => {
+          return await getOverallAppStats(input);
         }),
     },
 
@@ -244,9 +287,26 @@ export const appsRouter = createTRPCRouter({
     },
 
     memberships: {
-      create: protectedAppProcedure.mutation(async ({ ctx }) => {
-        return await createAppMembership(ctx.session.user.id, ctx.app.id);
-      }),
+      create: protectedAppProcedure
+        .input(createAppMembershipSchema)
+        .mutation(async ({ ctx, input }) => {
+          return await createAppMembership(
+            ctx.session.user.id,
+            ctx.app.id,
+            input
+          );
+        }),
+
+      update: {
+        referrer: protectedAppProcedure
+          .input(updateAppMembershipReferrerSchema)
+          .mutation(async ({ ctx, input }) => {
+            return await updateAppMembershipReferrer(
+              ctx.session.user.id,
+              input
+            );
+          }),
+      },
 
       get: protectedAppProcedure.query(async ({ ctx }) => {
         return await getAppMembership(ctx.session.user.id, ctx.app.id);

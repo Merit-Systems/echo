@@ -118,6 +118,8 @@
   --shadow-2xl: 0px 1px 2px 0px hsl(0 0% 0% / 0.45);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+    /* Fumadocs-specific secondary color override for light mode */
+    --color-fd-secondary: oklch(0.98 0 0);
 }
 
 .dark {
@@ -170,6 +172,8 @@
   --shadow-xl:
     0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 8px 10px -1px hsl(0 0% 0% / 0.18);
   --shadow-2xl: 0px 1px 2px 0px hsl(0 0% 0% / 0.45);
+  /* Fumadocs-specific secondary color override for dark mode */
+  --color-fd-secondary: oklch(0.25 0 0);
 }
 
 @theme inline {

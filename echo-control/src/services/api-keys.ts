@@ -99,19 +99,6 @@ export async function createApiKey(
 ) {
   const userRole = await PermissionService.getUserAppRole(userId, echoAppId);
 
-  if (
-    !PermissionService.roleHasPermission(
-      userRole,
-      Permission.CREATE_API_KEYS
-    ) &&
-    !PermissionService.roleHasPermission(
-      userRole,
-      Permission.MANAGE_ALL_API_KEYS
-    )
-  ) {
-    throw new Error('Permission denied');
-  }
-
   const scope = [AppRole.OWNER, AppRole.ADMIN].includes(userRole)
     ? 'owner'
     : 'customer';

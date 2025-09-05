@@ -101,8 +101,10 @@ const UserRow = ({ user }: { user: User }) => {
           <p className="text-sm font-medium">{user.name}</p>
         </div>
       </TableCell>
-      <TableCell>{user.totalTransactions}</TableCell>
-      <TableCell>{formatCurrency(user.rawCost)}</TableCell>
+      <TableCell className="text-center">{user.totalTransactions}</TableCell>
+      <TableCell className="text-center">
+        {formatCurrency(user.rawCost)}
+      </TableCell>
       <TableCell className="text-right pr-4 text-primary font-bold">
         {formatCurrency(user.totalProfit)}
       </TableCell>
@@ -120,13 +122,13 @@ const LoadingUserRow = () => {
         </div>
       </TableCell>
       <TableCell>
-        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-8 mx-auto" />
       </TableCell>
       <TableCell>
-        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-8 mx-auto" />
       </TableCell>
       <TableCell>
-        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-8 ml-auto" />
       </TableCell>
     </TableRow>
   );

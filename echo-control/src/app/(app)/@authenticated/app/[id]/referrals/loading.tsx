@@ -1,18 +1,13 @@
 import { Body, Heading } from '../../../_components/layout/page-utils';
 
-import { LoadingReferralBonus } from './_components/referral-amount';
-import { LoadingReferrals } from './_components/referrals';
+import { LoadingReferralBonus } from './_components/lib/referral-amount';
 
 export default async function LoadingAppReferralsPage() {
   return (
     <div>
-      <Heading
-        title="Referrals"
-        description="Incentivize users to share your app by allocating a percentage of the revenue to them."
-      />
+      <Heading title="Referrals" description={'\u00A0'} />
       <Body>
-        <LoadingReferralBonus />
-        <LoadingReferrals />
+        <LoadingReferralBonus title="Referral Bonus" description={'\u00A0'} />
       </Body>
     </div>
   );

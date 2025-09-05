@@ -15,7 +15,7 @@ class FreeTierService {
 
   checkValidFreeTierSpendPool(
     spendPool: SpendPool & { userUsage: UserSpendPoolUsage[] }
-  ): boolean {
+  ): { valid: boolean; effectiveBalance: number } {
     const spendPoolBalance =
       Number(spendPool.totalPaid) - Number(spendPool.totalSpent);
     const spendPoolHasBalance = spendPoolBalance > 0;
@@ -24,38 +24,50 @@ class FreeTierService {
       spendPool.userUsage[0] || undefined;
 
     if (!spendPoolHasBalance) {
-      return false;
+      return { valid: false, effectiveBalance: 0 };
     }
 
     if (!existingUserUsage) {
-      return true;
+      const effectiveBalance = Math.min(
+        Number(spendPool.perUserSpendLimit) || 0,
+        spendPoolBalance
+      );
+      return { valid: true, effectiveBalance: effectiveBalance };
     }
 
     return this.checkExistingUserUsage(
       existingUserUsage,
+      spendPoolBalance,
       Number(spendPool.perUserSpendLimit) || null
     );
   }
 
   checkExistingUserUsage(
     userUsage: UserSpendPoolUsage,
+    spendPoolBalance: number,
     perUserSpendLimit: number | null
-  ): boolean {
+  ): { valid: boolean; effectiveBalance: number } {
     if (!perUserSpendLimit) {
-      return true;
+      return { valid: true, effectiveBalance: spendPoolBalance };
     }
 
     if (perUserSpendLimit && Number(userUsage.totalSpent) < perUserSpendLimit) {
-      return true;
+      return {
+        valid: true,
+        effectiveBalance: perUserSpendLimit - Number(userUsage.totalSpent),
+      };
     }
 
-    return false;
+    return { valid: false, effectiveBalance: 0 };
   }
 
   async getOrNoneFreeTierSpendPool(
     appId: string,
     userId: string
-  ): Promise<(SpendPool & { userUsage: UserSpendPoolUsage[] }) | null> {
+  ): Promise<{
+    spendPool: SpendPool & { userUsage: UserSpendPoolUsage[] };
+    effectiveBalance: number;
+  } | null> {
     // First, find all non-archived spend pools for the app
     const spendPool = await this.db.spendPool.findFirst({
       where: {
@@ -75,7 +87,10 @@ class FreeTierService {
       return null;
     }
 
-    return this.checkValidFreeTierSpendPool(spendPool) ? spendPool : null;
+    const { valid, effectiveBalance } =
+      this.checkValidFreeTierSpendPool(spendPool);
+
+    return valid ? { spendPool, effectiveBalance } : null;
   }
   /**
    * Create a free tier transaction and update all related records atomically

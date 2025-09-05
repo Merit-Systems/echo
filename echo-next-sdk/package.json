@@ -1,6 +1,6 @@
 {
   "name": "@merit-systems/echo-next-sdk",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Next.js SDK for Echo",
   "type": "module",
   "main": "./dist/index.js",
