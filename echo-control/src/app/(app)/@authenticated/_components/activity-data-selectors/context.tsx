@@ -12,6 +12,9 @@ interface ActivityContextType {
   timeframe: ActivityTimeframe;
   setTimeframe: (timeframe: ActivityTimeframe) => void;
   setDateRange: (startDate: Date, endDate: Date) => void;
+  isCumulative: boolean;
+  setIsCumulative: (isCumulative: boolean) => void;
+  createdAt?: Date;
 }
 
 export const ActivityContext = createContext<ActivityContextType>({
@@ -20,32 +23,49 @@ export const ActivityContext = createContext<ActivityContextType>({
   timeframe: ActivityTimeframe.SevenDays,
   setTimeframe: () => {},
   setDateRange: () => {},
+  isCumulative: false,
+  setIsCumulative: () => {},
+  createdAt: undefined,
 });
 
 interface Props {
   children: React.ReactNode;
   initialStartDate: Date;
   initialEndDate: Date;
+  initialTimeframe: ActivityTimeframe;
+  createdAt?: Date;
 }
 
 export const ActivityContextProvider = ({
   children,
   initialStartDate,
   initialEndDate,
+  initialTimeframe = ActivityTimeframe.SevenDays,
+  createdAt,
 }: Props) => {
-  const [timeframe, setTimeframe] = useState<ActivityTimeframe>(
-    ActivityTimeframe.SevenDays
-  );
+  const [timeframe, setTimeframe] =
+    useState<ActivityTimeframe>(initialTimeframe);
   const [endDate, setEndDate] = useState<Date>(initialEndDate);
   const [startDate, setStartDate] = useState<Date>(initialStartDate);
+  const [isCumulative, setIsCumulative] = useState<boolean>(false);
 
   useEffect(() => {
     if (timeframe === ActivityTimeframe.Custom) {
       return;
     }
+
+    if (timeframe === ActivityTimeframe.AllTime) {
+      // Set start date to app creation date if available
+      if (createdAt) {
+        setStartDate(createdAt);
+        setEndDate(new Date());
+      }
+      return;
+    }
+
     setStartDate(subDays(new Date(), timeframe));
     setEndDate(new Date());
-  }, [timeframe]);
+  }, [timeframe, createdAt]);
 
   const setDateRange = (startDate: Date, endDate: Date) => {
     setStartDate(startDate);
@@ -54,7 +74,16 @@ export const ActivityContextProvider = ({
 
   return (
     <ActivityContext.Provider
-      value={{ startDate, endDate, timeframe, setTimeframe, setDateRange }}
+      value={{
+        startDate,
+        endDate,
+        timeframe,
+        setTimeframe,
+        setDateRange,
+        isCumulative,
+        setIsCumulative,
+        createdAt,
+      }}
     >
       {children}
     </ActivityContext.Provider>

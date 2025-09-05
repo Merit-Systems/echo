@@ -8,7 +8,7 @@ import {
 import { ChartData } from '@/app/(app)/@authenticated/_components/charts/base-chart';
 
 import { api } from '@/trpc/client';
-import { useActivityContext } from '../../../../../../_components/time-range-selector/context';
+import { useActivityContext } from '@/app/(app)/@authenticated/_components/activity-data-selectors/context';
 
 import { formatCurrency } from '@/lib/utils';
 import { useMemo } from 'react';
@@ -18,13 +18,14 @@ interface Props {
 }
 
 export const ActivityCharts: React.FC<Props> = ({ appId }) => {
-  const { startDate, endDate } = useActivityContext();
+  const { startDate, endDate, isCumulative } = useActivityContext();
 
   const [activity] = api.apps.app.stats.bucketed.useSuspenseQuery(
     {
       appId,
       startDate,
       endDate,
+      isCumulative,
     },
     {
       refetchInterval: 15000,
@@ -55,7 +56,6 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
           transactionCount: Math.random() * 100,
         }));
       }
-
       return activity.map(({ timestamp, ...rest }) => ({
         ...rest,
         timestamp: format(timestamp, 'MMM dd HH:mm yyyy'),
@@ -192,6 +192,7 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
         },
       ]}
       chartData={chartData}
+      isCumulative={isCumulative} // For tooltips
     />
   );
 };

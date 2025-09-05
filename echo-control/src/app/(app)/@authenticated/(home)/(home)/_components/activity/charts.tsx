@@ -8,17 +8,18 @@ import {
 import { ChartData } from '@/app/(app)/@authenticated/_components/charts/base-chart';
 
 import { api } from '@/trpc/client';
-import { useActivityContext } from '@/app/(app)/@authenticated/_components/time-range-selector/context';
+import { useActivityContext } from '@/app/(app)/@authenticated/_components/activity-data-selectors/context';
 
 import { formatCurrency } from '@/lib/utils';
 import { useMemo } from 'react';
 
 export const ActivityCharts: React.FC = () => {
-  const { startDate, endDate } = useActivityContext();
+  const { startDate, endDate, isCumulative } = useActivityContext();
 
   const [activity] = api.activity.creator.getCurrent.useSuspenseQuery({
     startDate,
     endDate,
+    isCumulative,
   });
   const [numApps] = api.apps.count.owner.useSuspenseQuery();
 
@@ -178,6 +179,7 @@ export const ActivityCharts: React.FC = () => {
         },
       ]}
       chartData={chartData}
+      isCumulative={isCumulative} // For tooltips
     />
   );
 };

@@ -38,7 +38,7 @@ export default async function AppPage({ params }: PageProps<'/app/[id]'>) {
           </Suspense>
         </ErrorBoundary>
         <div className="flex flex-col gap-8">
-          <Overview appId={id} />
+          <Overview appId={id} createdAt={app.createdAt} />
         </div>
       </Body>
     </HydrateClient>

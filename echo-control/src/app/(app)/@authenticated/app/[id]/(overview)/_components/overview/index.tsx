@@ -4,12 +4,13 @@ import { LoadingUsers, Users } from './users';
 
 interface Props {
   appId: string;
+  createdAt: Date;
 }
 
-export const Overview = ({ appId }: Props) => {
+export const Overview = ({ appId, createdAt }: Props) => {
   return (
     <div className="flex flex-col gap-4">
-      <Activity appId={appId} />
+      <Activity appId={appId} createdAt={createdAt} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Users appId={appId} />
         <Transactions appId={appId} />

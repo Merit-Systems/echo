@@ -26,6 +26,7 @@ export interface ChartProps<T extends Record<string, number>> {
   >;
   children?: React.ReactNode;
   tooltipRows?: Array<TooltipRowProps<T>>;
+  isCumulative?: boolean;
 }
 
 export const BaseChart = <T extends Omit<Record<string, number>, 'timestamp'>>({
@@ -33,6 +34,7 @@ export const BaseChart = <T extends Omit<Record<string, number>, 'timestamp'>>({
   children,
   tooltipRows,
   bars,
+  isCumulative = false,
 }: ChartProps<T>) => {
   return (
     <ResponsiveContainer width="100%" height={350}>
@@ -85,6 +87,7 @@ export const BaseChart = <T extends Omit<Record<string, number>, 'timestamp'>>({
                     <TooltipContent
                       data={payload[0].payload as ChartData<T>}
                       rows={tooltipRows}
+                      isCumulative={isCumulative}
                     />
                   </Card>
                 );
