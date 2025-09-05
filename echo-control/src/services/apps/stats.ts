@@ -40,6 +40,9 @@ export const getBucketedAppStats = async ({
       markUpProfit: true,
       createdAt: true,
     },
+    orderBy: {
+      createdAt: 'asc',
+    },
   });
 
   // Calculate bucket size in milliseconds
@@ -69,11 +72,6 @@ export const getBucketedAppStats = async ({
     let cumulativeOutputTokens = 0;
     let cumulativeTransactionCount = 0;
 
-    // Sort transactions by creation date
-    const sortedTransactions = transactions.sort(
-      (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-    );
-
     let transactionIndex = 0;
 
     for (let i = 0; i < numBuckets; i++) {
@@ -81,10 +79,10 @@ export const getBucketedAppStats = async ({
 
       // Add all transactions up to this bucket's end time
       while (
-        transactionIndex < sortedTransactions.length &&
-        sortedTransactions[transactionIndex].createdAt <= bucketEnd
+        transactionIndex < transactions.length &&
+        transactions[transactionIndex].createdAt <= bucketEnd
       ) {
-        const transaction = sortedTransactions[transactionIndex];
+        const transaction = transactions[transactionIndex];
         cumulativeCost += Number(transaction.rawTransactionCost);
         cumulativeProfit += Number(transaction.markUpProfit);
         cumulativeTransactionCount += 1;
