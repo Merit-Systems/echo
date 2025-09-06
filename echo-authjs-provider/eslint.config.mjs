@@ -1,28 +1,12 @@
-import js from '@eslint/js';
-import tseslint from '@typescript-eslint/eslint-plugin';
-import tsparser from '@typescript-eslint/parser';
+import { baseConfig } from '../eslint.config.mjs';
 
 export default [
-  js.configs.recommended,
+  ...baseConfig,
   {
-    files: ['**/*.ts', '**/*.tsx'],
-    languageOptions: {
-      parser: tsparser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-      },
-    },
-    plugins: {
-      '@typescript-eslint': tseslint,
-    },
+    name: 'echo-authjs-provider/provider-rules',
+    files: ['**/*.{ts,tsx}'],
     rules: {
-      ...tseslint.configs.recommended.rules,
-      '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      'no-console': 'warn', // Allow but warn for console in auth provider
     },
-  },
-  {
-    ignores: ['dist/**', 'node_modules/**'],
   },
 ];

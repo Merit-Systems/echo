@@ -1,18 +1,11 @@
-import ts from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
+import { baseConfig } from '../eslint.config.mjs';
 
 export default [
+  ...baseConfig,
   {
-    name: 'echo-server/ts-base',
-    files: ['**/*.{ts,tsx}'],
+    name: 'echo-server/node-globals',
+    files: ['**/*.{ts,js}'],
     languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        project: './tsconfig.json',
-        tsconfigRootDir: '.',
-      },
       globals: {
         console: 'readonly',
         process: 'readonly',
@@ -28,25 +21,24 @@ export default [
         setInterval: 'readonly',
         clearInterval: 'readonly',
         fetch: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        Response: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
+        ReadableStreamDefaultReader: 'readonly',
+        NodeJS: 'readonly',
       },
     },
-    plugins: {
-      '@typescript-eslint': ts,
-    },
     rules: {
-      '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      'no-debugger': 'error',
-      'no-var': 'error',
-      'prefer-const': 'error',
+      'no-console': 'off', // Allow console in server code
     },
   },
   {
     name: 'echo-server/tests',
-    files: ['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    files: ['**/__tests__/**/*.{ts,js}', '**/*.test.{ts,js}', '**/*.spec.{ts,js}'],
     languageOptions: {
       globals: {
-        jest: 'readonly',
         describe: 'readonly',
         it: 'readonly',
         test: 'readonly',
@@ -55,24 +47,12 @@ export default [
         afterAll: 'readonly',
         beforeEach: 'readonly',
         afterEach: 'readonly',
-        console: 'readonly',
-        process: 'readonly',
-        global: 'readonly',
-        require: 'readonly',
-        setTimeout: 'readonly',
-        TextEncoder: 'readonly',
-        TextDecoder: 'readonly',
+        vi: 'readonly', // Vitest global
+        vitest: 'readonly',
       },
     },
-  },
-  {
-    name: 'echo-server/ignores',
-    ignores: [
-      'node_modules/',
-      'dist/',
-      'build/',
-      'coverage/',
-      '**/*.d.ts',
-    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off', // Relax in tests
+    },
   },
 ]; 

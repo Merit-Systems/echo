@@ -1,38 +1,24 @@
-import ts from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { baseConfig } from '../eslint.config.mjs';
 
 export default [
+  ...baseConfig,
   {
-    name: 'echo-next-sdk/ts-base',
+    name: 'echo-next-sdk/next-rules',
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
-      parser: tsParser,
       parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        project: path.resolve(__dirname, './tsconfig.json'),
-        tsconfigRootDir: __dirname,
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      globals: {
+        React: 'readonly',
+        JSX: 'readonly',
       },
     },
-    plugins: {
-      '@typescript-eslint': ts,
-    },
     rules: {
-      '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      'no-debugger': 'error',
-      'no-var': 'error',
-      'prefer-const': 'error',
-      'no-undef': 'off',
+      'no-console': 'warn', // Allow but warn for console in Next.js SDK
+      'no-undef': 'off', // TypeScript handles this
     },
-  },
-  {
-    name: 'echo-next-sdk/ignores',
-    ignores: ['node_modules/', 'dist/', 'build/', 'coverage/', '**/*.d.ts'],
   },
 ];
