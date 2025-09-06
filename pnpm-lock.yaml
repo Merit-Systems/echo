@@ -451,8 +451,8 @@ importers:
         specifier: ^2.0.17
         version: 2.0.19(react@19.1.1)(zod@4.0.17)
       '@merit-systems/echo-typescript-sdk':
-        specifier: 1.0.11
-        version: 1.0.11(zod@4.0.17)
+        specifier: workspace:*
+        version: link:../echo-typescript-sdk
       ai:
         specifier: ^5.0.19
         version: 5.0.22(zod@4.0.17)
@@ -701,6 +701,9 @@ importers:
       '@ai-sdk/google':
         specifier: ^2.0.7
         version: 2.0.8(zod@4.0.17)
+      '@ai-sdk/groq':
+        specifier: ^2.0.17
+        version: 2.0.17(zod@4.0.17)
       '@ai-sdk/openai':
         specifier: ^2.0.16
         version: 2.0.19(zod@4.0.17)
@@ -1024,6 +1027,12 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4
 
+  '@ai-sdk/groq@2.0.17':
+    resolution: {integrity: sha512-Oh6Fk988KNvqy4w1crBhBQU8JIkfqhxSiYCbBZFqZSeDsagZ8SHsS2ni9+7pq6e0DR/XGp6fDGDFsm+01kmsmg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+
   '@ai-sdk/openai@2.0.19':
     resolution: {integrity: sha512-sG3/IVaPvV7Vn6513I1bcJILHpLCXbVif2ht6CyROcB9FzXCJe2K5uRbAg30HWsdCEe7xu4OAWtMK6yWTOcsSA==}
     engines: {node: '>=18'}
@@ -1044,6 +1053,12 @@ packages:
 
   '@ai-sdk/provider-utils@3.0.6':
     resolution: {integrity: sha512-s1+9okDSqbxKvwf1mqyyqtOY27/RV9O+XTzaRKEamVKbmVBM7BiCSfui7vH7A/1EETECtTJkS2MUL5D3Pw5GFw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+
+  '@ai-sdk/provider-utils@3.0.8':
+    resolution: {integrity: sha512-cDj1iigu7MW2tgAQeBzOiLhjHOUM9vENsgh4oAVitek0d//WdgfPCsKO3euP7m7LyO/j9a1vr/So+BGNdpFXYw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
@@ -9945,6 +9960,12 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.5(zod@4.0.17)
       zod: 4.0.17
 
+  '@ai-sdk/groq@2.0.17(zod@4.0.17)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.8(zod@4.0.17)
+      zod: 4.0.17
+
   '@ai-sdk/openai@2.0.19(zod@4.0.17)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
@@ -9968,6 +9989,13 @@ snapshots:
       zod-to-json-schema: 3.24.6(zod@4.0.17)
 
   '@ai-sdk/provider-utils@3.0.6(zod@4.0.17)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.5
+      zod: 4.0.17
+
+  '@ai-sdk/provider-utils@3.0.8(zod@4.0.17)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0

@@ -1,6 +1,7 @@
 export * from './anthropic';
 export * from './google';
 export * from './openai';
+export * from './groq';
 
 export function echoFetch(
   originalFetch: typeof fetch,

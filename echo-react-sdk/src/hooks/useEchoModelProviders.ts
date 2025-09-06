@@ -2,6 +2,7 @@ import {
   createEchoAnthropic,
   createEchoGoogle,
   createEchoOpenAI,
+  createEchoGroq,
 } from '@merit-systems/echo-typescript-sdk';
 import { useMemo } from 'react';
 import { useEcho } from './useEcho';
@@ -22,6 +23,7 @@ export const useEchoModelProviders = () => {
       openai: createEchoOpenAI(baseConfig, getToken, onInsufficientFunds),
       anthropic: createEchoAnthropic(baseConfig, getToken, onInsufficientFunds),
       google: createEchoGoogle(baseConfig, getToken, onInsufficientFunds),
+      groq: createEchoGroq(baseConfig, getToken, onInsufficientFunds),
     };
   }, [token, config.appId, config.baseRouterUrl, setIsInsufficientFunds]);
 };

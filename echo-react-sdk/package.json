@@ -59,7 +59,7 @@
     }
   },
   "dependencies": {
-    "@merit-systems/echo-typescript-sdk": "1.0.11",
+    "@merit-systems/echo-typescript-sdk": "workspace:*",
     "@ai-sdk/react": "^2.0.17",
     "ai": "^5.0.19",
     "dompurify": "^3.2.6",
