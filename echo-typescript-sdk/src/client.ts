@@ -2,6 +2,7 @@ import { ApiKeyTokenProvider, TokenProvider } from './auth/token-provider';
 import { EchoClientConfig, getConfig } from './config';
 import { HttpClient } from './http-client';
 import {
+  ApiKeysResource,
   AppsResource,
   BalanceResource,
   ModelsResource,
@@ -24,6 +25,7 @@ export class EchoClient {
   public readonly apps: AppsResource;
   public readonly users: UsersResource;
   public readonly models: ModelsResource;
+  public readonly apiKeys: ApiKeysResource;
 
   constructor(options?: EchoClientOptions) {
     this.config = getConfig(options);
@@ -49,5 +51,6 @@ export class EchoClient {
     this.apps = new AppsResource(this.http, this.config.baseUrl);
     this.users = new UsersResource(this.http);
     this.models = new ModelsResource(this.http);
+    this.apiKeys = new ApiKeysResource(this.http);
   }
 }
