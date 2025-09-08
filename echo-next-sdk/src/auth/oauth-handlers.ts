@@ -1,6 +1,7 @@
 import { EchoConfig } from '@merit-systems/echo-typescript-sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveEchoBaseUrl } from '../config';
+import { ECHO_COOKIE, namespacedCookie } from './cookie-names';
 import { getEchoToken, RefreshTokenResponse } from './token-manager';
 
 /**
@@ -60,13 +61,17 @@ export async function handleSignIn(
   const response = NextResponse.redirect(redirectUrl.toString());
 
   // Set the code verifier in a secure cookie that will be available during callback
-  response.cookies.set('echo_code_verifier', codeVerifier, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 300, // 5 minutes - same as auth code TTL
-    path: '/',
-  });
+  response.cookies.set(
+    namespacedCookie(ECHO_COOKIE.CODE_VERIFIER, config.appId),
+    codeVerifier,
+    {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 300, // 5 minutes - same as auth code TTL
+      path: '/',
+    }
+  );
 
   return response;
 }
@@ -84,19 +89,18 @@ export async function handleSignOut(
   const { origin } = req.nextUrl;
   const response = NextResponse.redirect(`${origin}`);
 
-  // Clear all authentication cookies to properly sign out the user
-  const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
-    maxAge: 0,
-    path: '/',
-  };
-
-  response.cookies.set('echo_access_token', '', cookieOptions);
-  response.cookies.set('echo_refresh_token', '', cookieOptions);
-  response.cookies.set('echo_user_info', '', cookieOptions);
-  response.cookies.set('echo_refresh_token_expires', '', cookieOptions);
+  response.cookies.delete(
+    namespacedCookie(ECHO_COOKIE.ACCESS_TOKEN, config.appId)
+  );
+  response.cookies.delete(
+    namespacedCookie(ECHO_COOKIE.REFRESH_TOKEN, config.appId)
+  );
+  response.cookies.delete(
+    namespacedCookie(ECHO_COOKIE.USER_INFO, config.appId)
+  );
+  response.cookies.delete(
+    namespacedCookie(ECHO_COOKIE.REFRESH_TOKEN_EXPIRES, config.appId)
+  );
 
   return response;
 }
@@ -130,7 +134,9 @@ export async function handleCallback(
   }
 
   // Retrieve the code verifier from the cookie
-  const codeVerifier = req.cookies.get('echo_code_verifier')?.value;
+  const codeVerifier = req.cookies.get(
+    namespacedCookie(ECHO_COOKIE.CODE_VERIFIER, config.appId)
+  )?.value;
 
   if (!codeVerifier) {
     return NextResponse.json(
@@ -172,44 +178,58 @@ export async function handleCallback(
   const response = NextResponse.redirect(`${origin}`);
 
   // Clear the code verifier cookie after successful token exchange
-  response.cookies.set('echo_code_verifier', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 0, // Expire immediately
-    path: '/',
-  });
+  response.cookies.set(
+    namespacedCookie(ECHO_COOKIE.CODE_VERIFIER, config.appId),
+    '',
+    {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0, // Expire immediately
+      path: '/',
+    }
+  );
 
   // Set the access token as a cookie
-  response.cookies.set('echo_access_token', tokenData.access_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: tokenData.expires_in, // expires_in is typically in seconds
-    path: '/',
-  });
+  response.cookies.set(
+    namespacedCookie(ECHO_COOKIE.ACCESS_TOKEN, config.appId),
+    tokenData.access_token,
+    {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: tokenData.expires_in, // expires_in is typically in seconds
+      path: '/',
+    }
+  );
 
-  tokenData.refresh_token_expires_in;
+  response.cookies.set(
+    namespacedCookie(ECHO_COOKIE.REFRESH_TOKEN, config.appId),
+    tokenData.refresh_token,
+    {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: tokenData.refresh_token_expires_in,
+      path: '/',
+    }
+  );
 
-  response.cookies.set('echo_refresh_token', tokenData.refresh_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: tokenData.refresh_token_expires_in,
-    path: '/',
-  });
-
-  response.cookies.set('echo_user_info', JSON.stringify(tokenData.user), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: tokenData.refresh_token_expires_in,
-    path: '/',
-  });
+  response.cookies.set(
+    namespacedCookie(ECHO_COOKIE.USER_INFO, config.appId),
+    JSON.stringify(tokenData.user),
+    {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: tokenData.refresh_token_expires_in,
+      path: '/',
+    }
+  );
 
   // Store refresh token expiry time for checking
   response.cookies.set(
-    'echo_refresh_token_expires',
+    namespacedCookie(ECHO_COOKIE.REFRESH_TOKEN_EXPIRES, config.appId),
     String(Math.floor(Date.now() / 1000) + tokenData.refresh_token_expires_in),
     {
       httpOnly: true,

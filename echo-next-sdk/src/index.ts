@@ -7,6 +7,7 @@ import { createEchoAnthropic } from 'providers/anthropic';
 import { createEchoGoogle } from 'providers/google';
 import { createEchoOpenAI } from 'providers/openai';
 
+import { ECHO_COOKIE, namespacedCookie } from 'auth/cookie-names';
 import { RefreshTokenResponse } from 'auth/token-manager';
 import { handleEchoClientProxy } from 'proxy';
 import {
@@ -59,7 +60,9 @@ export default function Echo(config: EchoConfig): EchoResult {
   const getUser = async () => {
     // read only access token, if expired we are fucked
     const cookieStore = await cookies();
-    const userInfo = cookieStore.get('echo_user_info')?.value;
+    const userInfo = cookieStore.get(
+      namespacedCookie(ECHO_COOKIE.USER_INFO, config.appId)
+    )?.value;
     if (!userInfo) {
       return null;
     }
@@ -70,7 +73,7 @@ export default function Echo(config: EchoConfig): EchoResult {
   const isSignedIn = async () => {
     const cookieStore = await cookies();
     const refreshTokenExpiry = cookieStore.get(
-      'echo_refresh_token_expires'
+      namespacedCookie(ECHO_COOKIE.REFRESH_TOKEN_EXPIRES, config.appId)
     )?.value;
 
     if (!refreshTokenExpiry) {

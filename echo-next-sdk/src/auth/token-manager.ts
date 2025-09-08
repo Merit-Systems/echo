@@ -5,6 +5,7 @@ import {
 } from '@merit-systems/echo-typescript-sdk';
 import { cookies as getCookies } from 'next/headers';
 import { resolveEchoBaseUrl } from '../config';
+import { ECHO_COOKIE, namespacedCookie } from './cookie-names';
 import { shouldRefreshToken } from './jwt-utils';
 
 export interface RefreshTokenResponse {
@@ -60,11 +61,15 @@ export async function performTokenRefresh(
  */
 export async function getEchoToken(config: EchoConfig): Promise<string | null> {
   const cookies = await getCookies();
-  const accessToken = cookies.get('echo_access_token')?.value;
+  const accessToken = cookies.get(
+    namespacedCookie(ECHO_COOKIE.ACCESS_TOKEN, config.appId)
+  )?.value;
 
   // Check if token needs refresh
   if (!accessToken || shouldRefreshToken(accessToken)) {
-    const refreshToken = cookies.get('echo_refresh_token')?.value;
+    const refreshToken = cookies.get(
+      namespacedCookie(ECHO_COOKIE.REFRESH_TOKEN, config.appId)
+    )?.value;
 
     if (!refreshToken) {
       console.log('No refresh token found');
@@ -75,25 +80,33 @@ export async function getEchoToken(config: EchoConfig): Promise<string | null> {
       const refreshResult = await performTokenRefresh(refreshToken, config);
 
       // Set new tokens in cookies
-      cookies.set('echo_access_token', refreshResult.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: refreshResult.expires_in,
-        path: '/',
-      });
+      cookies.set(
+        namespacedCookie(ECHO_COOKIE.ACCESS_TOKEN, config.appId),
+        refreshResult.access_token,
+        {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: refreshResult.expires_in,
+          path: '/',
+        }
+      );
 
-      cookies.set('echo_refresh_token', refreshResult.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: refreshResult.refresh_token_expires_in,
-        path: '/',
-      });
+      cookies.set(
+        namespacedCookie(ECHO_COOKIE.REFRESH_TOKEN, config.appId),
+        refreshResult.refresh_token,
+        {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: refreshResult.refresh_token_expires_in,
+          path: '/',
+        }
+      );
 
       // Store refresh token expiry time for checking
       cookies.set(
-        'echo_refresh_token_expires',
+        namespacedCookie(ECHO_COOKIE.REFRESH_TOKEN_EXPIRES, config.appId),
         String(
           Math.floor(Date.now() / 1000) + refreshResult.refresh_token_expires_in
         ),
