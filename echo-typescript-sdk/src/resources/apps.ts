@@ -1,5 +1,5 @@
 import { HttpClient } from '../http-client';
-import { EchoApp, ListEchoAppsResponse } from '../types';
+import { CreateApiKeyResponse, EchoApp, ListEchoAppsResponse } from '../types';
 import { BaseResource } from '../utils/error-handling';
 
 export class AppsResource extends BaseResource {
@@ -31,6 +31,24 @@ export class AppsResource extends BaseResource {
       () => this.http.get(`/api/v1/apps/${appId}`),
       'fetching Echo app',
       `/api/v1/apps/${appId}`
+    );
+  }
+
+  /**
+   * Create an API key for the given Echo app
+   */
+  async createApiKey(
+    appId: string,
+    name?: string
+  ): Promise<CreateApiKeyResponse> {
+    return this.handleRequest<CreateApiKeyResponse>(
+      () =>
+        this.http.post(`/api/v1/apps/${appId}/api-keys`, {
+          echoAppId: appId,
+          ...(name && { name }),
+        }),
+      'creating API key',
+      `/api/v1/apps/${appId}/api-keys`
     );
   }
 
