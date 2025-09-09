@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { appIdSchema } from '@/services/apps/lib/schemas';
 import { getApp } from '@/services/apps/get';
+import { db } from '@/lib/db';
 
 const appIdInput = z.object({ appId: appIdSchema });
 
@@ -34,8 +35,16 @@ export const appOwnerProcedure = protectedProcedure
     if (!appOwner) {
       throw new TRPCError({ code: 'NOT_FOUND' });
     }
-    if (appOwner.id !== ctx.session.user.id) {
+    
+    // Check if user is global admin or the actual owner
+    const user = await db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { admin: true },
+    });
+
+    if (!user?.admin && appOwner.id !== ctx.session.user.id) {
       throw new TRPCError({ code: 'FORBIDDEN' });
     }
+    
     return next({ ctx: { ...ctx, appOwner } });
   });
