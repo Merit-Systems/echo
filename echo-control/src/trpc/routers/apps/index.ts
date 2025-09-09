@@ -127,10 +127,9 @@ export const appsRouter = createTRPCRouter({
         return await updateApp(input.appId, ctx.session.user.id, input);
       }),
 
-    getNumTokens: protectedProcedure
-      .input(z.object({ appId: appIdSchema }))
-      .query(async ({ input }) => {
-        return await countAppTokens(input.appId);
+    getNumTokens: protectedAppProcedure
+      .query(async ({ ctx }) => {
+        return await countAppTokens(ctx.app.id);
       }),
 
     markup: {
@@ -274,24 +273,24 @@ export const appsRouter = createTRPCRouter({
     },
 
     stats: {
-      bucketed: protectedProcedure
-        .input(getBucketedAppStatsSchema)
-        .query(async ({ input }) => {
-          return await getBucketedAppStats(input);
+      bucketed: protectedAppProcedure
+        .input(getBucketedAppStatsSchema.omit({ appId: true }))
+        .query(async ({ input, ctx }) => {
+          return await getBucketedAppStats({ ...input, appId: ctx.app.id });
         }),
 
-      overall: protectedProcedure
-        .input(getOverallAppStatsSchema)
-        .query(async ({ input }) => {
-          return await getOverallAppStats(input);
+      overall: protectedAppProcedure
+        .input(getOverallAppStatsSchema.omit({ appId: true }))
+        .query(async ({ input, ctx }) => {
+          return await getOverallAppStats({ ...input, appId: ctx.app.id });
         }),
     },
 
     earnings: {
-      get: protectedProcedure
-        .input(appEarningsSchema)
-        .query(async ({ input }) => {
-          return await getAppEarnings(input);
+      get: protectedAppProcedure
+        .input(appEarningsSchema.omit({ appId: true }))
+        .query(async ({ input, ctx }) => {
+          return await getAppEarnings({ ...input, appId: ctx.app.id });
         }),
     },
 
@@ -321,8 +320,8 @@ export const appsRouter = createTRPCRouter({
         return await getAppMembership(ctx.session.user.id, ctx.app.id);
       }),
 
-      count: protectedProcedure.input(appIdSchema).query(async ({ input }) => {
-        return await countAppMemberships(input);
+      count: protectedAppProcedure.query(async ({ ctx }) => {
+        return await countAppMemberships(ctx.app.id);
       }),
 
       list: paginatedProcedure

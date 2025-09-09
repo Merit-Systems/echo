@@ -36,6 +36,27 @@ export class PermissionService {
   };
 
   static async getUserAppRole(userId: string, appId: string): Promise<AppRole> {
+    // Check if user is a global admin first
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { admin: true },
+    });
+
+    if (user?.admin) {
+      logger.emit({
+        severityText: 'DEBUG',
+        body: 'Global admin granted owner role',
+        attributes: {
+          userId,
+          appId,
+          role: AppRole.OWNER,
+          isGlobalAdmin: true,
+          function: 'getUserAppRole',
+        },
+      });
+      return AppRole.OWNER;
+    }
+
     // Check app membership
     const membership = await db.appMembership.findFirst({
       where: {
@@ -68,6 +89,28 @@ export class PermissionService {
     appId: string,
     permission: Permission
   ): Promise<boolean> {
+    // Check if user is a global admin first
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { admin: true },
+    });
+
+    if (user?.admin) {
+      logger.emit({
+        severityText: 'INFO',
+        body: 'Permission granted - global admin access',
+        attributes: {
+          userId,
+          appId,
+          permission,
+          isGlobalAdmin: true,
+          hasAccess: true,
+          function: 'hasPermission',
+        },
+      });
+      return true;
+    }
+
     const role = await this.getUserAppRole(userId, appId);
     if (!role) {
       logger.emit({

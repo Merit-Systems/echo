@@ -12,6 +12,7 @@ import { timeBasedPaginationSchema } from '@/services/lib/pagination';
 interface Context {
   session: Session | null;
   headers: Headers;
+  isAdmin?: boolean;
 }
 
 /**
@@ -82,25 +83,30 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
 
 /**
  * Protected procedure that requires authentication
+ * Admins are always allowed to invoke these procedures
  */
 export const protectedProcedure = publicProcedure.use(async ({ ctx, next }) => {
   if (!ctx.session?.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
+  // Check if user is a global admin - admins are always allowed
+  const user = await db.user.findUnique({
+    where: { id: ctx.session.user.id },
+    select: { admin: true },
+  });
+
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
+      isAdmin: user?.admin ?? false,
     },
   });
 });
 
 export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const user = await db.user.findUnique({
-    where: { id: ctx.session.user.id },
-  });
-
-  if (!user?.admin) {
+  // Admin status is already checked in protectedProcedure
+  if (!ctx.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
