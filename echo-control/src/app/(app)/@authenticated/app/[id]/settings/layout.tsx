@@ -20,11 +20,13 @@ export default async function AppSettingsLayout({
 
   const owner = await api.apps.app.getOwner(id);
 
+  const isAdmin = await api.admin.isAdmin();
+
   if (!owner) {
     return notFound();
   }
 
-  if (session?.user.id !== owner.id) {
+  if (session?.user.id !== owner.id && !isAdmin) {
     return unauthorized();
   }
 

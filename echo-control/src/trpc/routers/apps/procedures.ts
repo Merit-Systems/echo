@@ -37,12 +37,7 @@ export const appOwnerProcedure = protectedProcedure
     }
     
     // Check if user is global admin or the actual owner
-    const user = await db.user.findUnique({
-      where: { id: ctx.session.user.id },
-      select: { admin: true },
-    });
-
-    if (!user?.admin && appOwner.id !== ctx.session.user.id) {
+    if (!ctx.isAdmin && appOwner.id !== ctx.session.user.id) {
       throw new TRPCError({ code: 'FORBIDDEN' });
     }
     

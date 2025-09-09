@@ -26,6 +26,10 @@ export default async function AuthenticatedAppLayout({
 
   const isOwner = await api.apps.app.isOwner(id);
 
+  const isAdmin = await api.admin.isAdmin();
+
+  const hasAccess = isOwner || isAdmin;
+
   return (
     <div>
       <Nav
@@ -34,7 +38,7 @@ export default async function AuthenticatedAppLayout({
             label: 'Overview',
             href: `/app/${id}`,
           },
-          ...(isOwner
+          ...(hasAccess
             ? [
                 {
                   label: 'Free Tier',
@@ -58,7 +62,7 @@ export default async function AuthenticatedAppLayout({
             label: 'Transactions',
             href: `/app/${id}/transactions`,
           },
-          ...(isOwner
+          ...(hasAccess
             ? [
                 {
                   label: 'Settings',
