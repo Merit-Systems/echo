@@ -25,7 +25,7 @@ export async function getOwnerStatistics(
   ownerId: string,
   tx?: Prisma.TransactionClient
 ): Promise<OwnerStatistics> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Get customer statistics first (includes both global and personal stats)
   const customerStats = await getCustomerStatistics(echoAppId, ownerId, client);
@@ -94,7 +94,7 @@ export async function getOwnerStatisticsBatch(
   ownerId: string,
   tx?: Prisma.TransactionClient
 ): Promise<Map<string, OwnerStatistics>> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Step 1: Get customer statistics for all apps (includes both global and personal stats)
   const customerStatsMap = await getCustomerStatisticsBatch(
@@ -167,9 +167,9 @@ export async function getOwnerStatisticsBatch(
 
   for (const appId of echoAppIds) {
     const customerStats = customerStatsMap.get(appId);
-    const globalApiKeys = globalApiKeysByApp.get(appId) || [];
+    const globalApiKeys = globalApiKeysByApp.get(appId) ?? [];
     const recentGlobalTransactions =
-      recentGlobalTransactionsByApp.get(appId) || [];
+      recentGlobalTransactionsByApp.get(appId) ?? [];
 
     if (!customerStats) {
       console.error(`Missing customer stats for app ${appId}`);
@@ -181,7 +181,7 @@ export async function getOwnerStatisticsBatch(
       globalApiKeys,
       recentGlobalTransactions: serializeTransactions(recentGlobalTransactions),
       globalUserSpendStatistics:
-        personalUserSpendStatisticsMap.get(appId)?.userSpendInfo || [],
+        personalUserSpendStatisticsMap.get(appId)?.userSpendInfo ?? [],
     });
   }
 

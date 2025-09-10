@@ -27,7 +27,7 @@ export async function getCustomerStatistics(
   userId: string,
   tx?: Prisma.TransactionClient
 ): Promise<CustomerStatistics> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Get global statistics first
   const globalStats = await getGlobalStatistics(echoAppId, client);
@@ -95,16 +95,16 @@ export async function getCustomerStatistics(
       AND t."isArchived" = false
   `;
 
-  personalTotalRevenue = Number(personalAggregatedResult?.totalRevenue || 0);
-  personalTotalTokens = Number(personalAggregatedResult?.totalTokens || 0);
+  personalTotalRevenue = Number(personalAggregatedResult?.totalRevenue ?? 0);
+  personalTotalTokens = Number(personalAggregatedResult?.totalTokens ?? 0);
   personalTotalInputTokens = Number(
-    personalAggregatedResult?.totalInputTokens || 0
+    personalAggregatedResult?.totalInputTokens ?? 0
   );
   personalTotalOutputTokens = Number(
-    personalAggregatedResult?.totalOutputTokens || 0
+    personalAggregatedResult?.totalOutputTokens ?? 0
   );
   personalTotalTransactions = Number(
-    personalAggregatedResult?.totalTransactions || 0
+    personalAggregatedResult?.totalTransactions ?? 0
   );
   // Get personal activity data (last 7 days)
   const personalActivityData = await getAppActivity(
@@ -153,7 +153,7 @@ export async function getCustomerStatisticsBatch(
   userId: string,
   tx?: Prisma.TransactionClient
 ): Promise<Map<string, CustomerStatistics>> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Step 1: Get global statistics for all apps
   const globalStatsMap = await getGlobalStatisticsBatch(echoAppIds, client);
@@ -273,13 +273,13 @@ export async function getCustomerStatisticsBatch(
   for (const appId of echoAppIds) {
     const globalStats = globalStatsMap.get(appId);
     const personalAggregated = personalAggregatedMap.get(appId);
-    const personalApiKeys = apiKeysByApp.get(appId) || [];
-    const personalActivityData = personalActivityMap.get(appId) || [];
-    const personalModelUsage = personalModelUsageMap.get(appId) || [];
-    const recentTransactions = recentTransactionsMap.get(appId) || [];
+    const personalApiKeys = apiKeysByApp.get(appId) ?? [];
+    const personalActivityData = personalActivityMap.get(appId) ?? [];
+    const personalModelUsage = personalModelUsageMap.get(appId) ?? [];
+    const recentTransactions = recentTransactionsMap.get(appId) ?? [];
     const personalUserSpendStatistics = personalUserSpendStatisticsMap.get(
       appId
-    )?.userSpendInfo || {
+    )?.userSpendInfo ?? {
       userId,
       echoAppId: appId,
       spendPoolId: null,
@@ -297,20 +297,20 @@ export async function getCustomerStatisticsBatch(
       // Spread global statistics
       ...globalStats,
       // Add personal statistics from aggregated results
-      personalTotalRevenue: Number(personalAggregated?.totalRevenue || 0),
-      personalTotalTokens: Number(personalAggregated?.totalTokens || 0),
+      personalTotalRevenue: Number(personalAggregated?.totalRevenue ?? 0),
+      personalTotalTokens: Number(personalAggregated?.totalTokens ?? 0),
       personalTotalInputTokens: Number(
-        personalAggregated?.totalInputTokens || 0
+        personalAggregated?.totalInputTokens ?? 0
       ),
       personalTotalOutputTokens: Number(
-        personalAggregated?.totalOutputTokens || 0
+        personalAggregated?.totalOutputTokens ?? 0
       ),
       personalRecentTransactions: serializeTransactions(recentTransactions),
       personalModelUsage,
       personalActivityData,
       personalApiKeys,
       personalTotalTransactions: Number(
-        personalAggregated?.totalTransactions || 0
+        personalAggregated?.totalTransactions ?? 0
       ),
       personalUserSpendStatistics,
     });

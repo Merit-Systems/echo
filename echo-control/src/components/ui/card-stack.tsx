@@ -19,12 +19,10 @@ interface CardStackProps {
 
 export const CardStack: React.FC<CardStackProps> = ({
   items,
-  offset,
-  scaleFactor,
+  offset = 10,
+  scaleFactor = 0.06,
   className,
 }) => {
-  const CARD_OFFSET = offset || 10;
-  const SCALE_FACTOR = scaleFactor || 0.06;
   const [cards, setCards] = useState<
     {
       key: string;
@@ -62,8 +60,8 @@ export const CardStack: React.FC<CardStackProps> = ({
               transformOrigin: 'top center',
             }}
             animate={{
-              top: index * -CARD_OFFSET,
-              scale: 1 - index * SCALE_FACTOR, // decrease scale for cards that are behind
+              top: index * -offset,
+              scale: 1 - index * scaleFactor, // decrease scale for cards that are behind
               zIndex: cards.length - index, //  decrease z-index for the cards that are behind
             }}
           >

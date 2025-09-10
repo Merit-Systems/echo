@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import type { Transition} from 'motion/react';
+import type { Transition } from 'motion/react';
 import { AnimatePresence, motion } from 'motion/react';
 
 import { cn } from '@/lib/utils';
@@ -385,7 +385,7 @@ function MotionHighlightItem({
   const childValue =
     id ?? value ?? element.props?.['data-value'] ?? element.props?.id ?? itemId;
   const isActive = activeValue === childValue;
-  const isDisabled = disabled === undefined ? contextDisabled : disabled;
+  const isDisabled = disabled ?? contextDisabled;
   const itemTransition = transition ?? contextTransition;
 
   const localRef = React.useRef<HTMLDivElement>(null);

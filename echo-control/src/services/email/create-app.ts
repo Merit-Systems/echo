@@ -58,7 +58,7 @@ export async function scheduleCreateAppFollowUpEmail(
       severityText: 'ERROR',
       body: 'Error sending create app follow up email',
       attributes: {
-        error: error instanceof Error ? error.message : String(error),
+        error: error.message,
         function: 'scheduleCreateAppFollowUpEmail',
         userId,
       },

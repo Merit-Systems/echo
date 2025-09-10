@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/trpc/client';
-import type { User, EchoApp} from '@/generated/prisma';
+import type { User, EchoApp } from '@/generated/prisma';
 import { EnumPaymentSource } from '@/generated/prisma';
 import { DollarSign, Coins, AlertCircle, CheckCircle2 } from 'lucide-react';
 
@@ -73,20 +73,20 @@ export function CreditMinter({ user, selectedApp }: CreditMinterProps) {
       let parsedMetadata: Record<string, string> = {};
 
       if (metadata.trim()) {
-        parsedMetadata = JSON.parse(metadata);
+        parsedMetadata = JSON.parse(metadata) as Record<string, string>;
       }
 
       const result = await mintCreditsMutation.mutateAsync({
         userId: user.id,
         amountInDollars,
         options: {
-          description: description.trim() || undefined,
+          description: description.trim() ?? undefined,
           isFreeTier,
           echoAppId: isFreeTier ? selectedApp?.id : undefined,
           metadata:
             Object.keys(parsedMetadata).length > 0 ? parsedMetadata : undefined,
           poolName: poolName.trim() || undefined,
-          defaultSpendLimit: defaultSpendLimit || undefined,
+          defaultSpendLimit: defaultSpendLimit ?? undefined,
           source: EnumPaymentSource.admin,
         },
       });
@@ -125,7 +125,7 @@ export function CreditMinter({ user, selectedApp }: CreditMinterProps) {
         </div>
         <div>
           <div className="font-medium">
-            Minting credits for {user.name || user.email}
+            Minting credits for {user.name ?? user.email}
           </div>
           <div className="text-sm text-muted-foreground">
             {isFreeTier && selectedApp
@@ -257,10 +257,10 @@ export function CreditMinter({ user, selectedApp }: CreditMinterProps) {
                       step="0.01"
                       min="0"
                       placeholder="10.00"
-                      value={defaultSpendLimit || ''}
+                      value={defaultSpendLimit ?? ''}
                       onChange={e =>
                         setDefaultSpendLimit(
-                          parseFloat(e.target.value) || undefined
+                          parseFloat(e.target.value) ?? undefined
                         )
                       }
                     />

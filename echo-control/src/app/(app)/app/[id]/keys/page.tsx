@@ -22,7 +22,7 @@ export default async function AppKeysPage(props: PageProps<'/app/[id]/keys'>) {
 
   const { generate } = await props.searchParams;
 
-  api.user.apiKeys.list.prefetchInfinite({ appId: id });
+  void api.user.apiKeys.list.prefetchInfinite({ appId: id });
 
   return (
     <HydrateClient>

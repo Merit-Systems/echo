@@ -6,7 +6,7 @@ import { logger } from '@/logger';
 export const formatAmountFromQueryParams = (
   req: NextRequest
 ): number | null => {
-  const formattedAmount = req.nextUrl.searchParams.get('amount') || '1';
+  const formattedAmount = req.nextUrl.searchParams.get('amount') ?? '1';
 
   const amount = parseFloat(formattedAmount);
 

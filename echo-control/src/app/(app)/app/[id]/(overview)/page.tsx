@@ -18,12 +18,12 @@ export default async function AppPage(props: PageProps<'/app/[id]'>) {
   await userOrRedirect(`/app/${id}` as const, props);
   await checkAppExists(id);
 
-  api.apps.app.get.prefetch({ appId: id });
-  api.apps.app.githubLink.get.prefetch(id);
-  api.apps.app.transactions.count.prefetch({ appId: id });
-  api.apps.app.getNumTokens.prefetch({ appId: id });
-  api.apps.app.isOwner.prefetch(id);
-  api.user.apiKeys.count.prefetch({ appId: id });
+  void api.apps.app.get.prefetch({ appId: id });
+  void api.apps.app.githubLink.get.prefetch(id);
+  void api.apps.app.transactions.count.prefetch({ appId: id });
+  void api.apps.app.getNumTokens.prefetch({ appId: id });
+  void api.apps.app.isOwner.prefetch(id);
+  void api.user.apiKeys.count.prefetch({ appId: id });
 
   return (
     <HydrateClient>

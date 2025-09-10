@@ -7,7 +7,7 @@ import { PaymentStatus } from '@/lib/payment-processing';
 import { logger } from '@/logger';
 
 const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY || 'test_secret_stripe_key',
+  process.env.STRIPE_SECRET_KEY ?? 'test_secret_stripe_key',
   {
     apiVersion: '2025-05-28.basil',
   }
@@ -92,7 +92,7 @@ export async function createPaymentLink(
       type: 'redirect',
       redirect: {
         url:
-          successUrl ||
+          successUrl ??
           `${process.env.ECHO_CONTROL_APP_BASE_URL}/credits?payment=success`,
       },
     },
@@ -203,7 +203,7 @@ export async function createFreeTierPaymentLink(
   const afterCompletion: Stripe.PaymentLinkCreateParams.AfterCompletion = {
     type: 'redirect',
     redirect: {
-      url: successUrl || defaultSuccessUrl,
+      url: successUrl ?? defaultSuccessUrl,
     },
   };
 
@@ -221,9 +221,9 @@ export async function createFreeTierPaymentLink(
       description,
       type: 'free-tier-credits',
       poolName:
-        poolName ||
+        poolName ??
         `Free Tier Credits - ${new Date().toISOString().split('T')[0]}`,
-      defaultSpendLimit: defaultSpendLimit?.toString() || '100',
+      defaultSpendLimit: defaultSpendLimit?.toString() ?? '100',
     },
     after_completion: afterCompletion,
   };

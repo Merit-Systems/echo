@@ -273,7 +273,7 @@ export const getCustomerSpendInfoForAppBatch = async (
           spendPoolId: spendPool.id,
           amountSpent: 0,
           spendLimit,
-          amountLeft: spendLimit ? spendLimit : spendPoolBalance,
+          amountLeft: spendLimit ?? spendPoolBalance,
         },
       });
     }

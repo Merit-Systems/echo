@@ -30,13 +30,13 @@ export default async function FreeTierPage(
   await checkAppExists(id);
   await checkIsAppOwner(id);
 
-  api.apps.app.freeTier.payments.list.prefetchInfinite({
+  void api.apps.app.freeTier.payments.list.prefetchInfinite({
     appId: id,
   });
-  api.apps.app.freeTier.get.prefetch({
+  void api.apps.app.freeTier.get.prefetch({
     appId: id,
   });
-  api.apps.app.freeTier.users.list.prefetchInfinite({
+  void api.apps.app.freeTier.users.list.prefetchInfinite({
     appId: id,
   });
 

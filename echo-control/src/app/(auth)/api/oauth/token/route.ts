@@ -2,7 +2,7 @@ import {
   handleInitialTokenIssuance,
   handleRefreshToken,
 } from '@/lib/jwt-tokens';
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/logger';
 
@@ -10,14 +10,14 @@ export async function POST(req: NextRequest) {
   try {
     /* 1️⃣ Parse the token request - handle both JSON and form-encoded */
     let body: Record<string, string>;
-    const contentType = req.headers.get('content-type') || '';
+    const contentType = req.headers.get('content-type') ?? '';
 
     if (contentType.includes('application/x-www-form-urlencoded')) {
       const text = await req.text();
       body = Object.fromEntries(new URLSearchParams(text));
     } else {
       // Default to JSON
-      body = await req.json();
+      body = (await req.json()) as Record<string, string>;
     }
 
     const { grant_type, code, redirect_uri, code_verifier } = body;
@@ -25,18 +25,18 @@ export async function POST(req: NextRequest) {
     // Capture metadata from forwarded headers if present, fallback to standard
     const deviceName = undefined; // derive later from userAgent if desired
     const forwardedUserAgent =
-      req.headers.get('x-client-user-agent') ||
-      req.headers.get('user-agent') ||
+      req.headers.get('x-client-user-agent') ??
+      req.headers.get('user-agent') ??
       undefined;
     const forwardedIp =
-      req.headers.get('x-client-ip') ||
-      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      req.headers.get('x-real-ip') ||
-      req.headers.get('cf-connecting-ip') ||
+      req.headers.get('x-client-ip') ??
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+      req.headers.get('x-real-ip') ??
+      req.headers.get('cf-connecting-ip') ??
       undefined;
 
     const client_id =
-      body.client_id || req.nextUrl.searchParams.get('client_id');
+      body.client_id ?? req.nextUrl.searchParams.get('client_id');
 
     // Validate required parameters
     if (grant_type !== 'authorization_code' && grant_type !== 'refresh_token') {

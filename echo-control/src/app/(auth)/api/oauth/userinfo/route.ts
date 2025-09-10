@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { authenticateEchoAccessJwtToken } from '@/lib/jwt-tokens';
 import { db } from '@/lib/db';
@@ -81,10 +81,10 @@ export async function GET(request: NextRequest) {
       sub: user.id, // Subject - unique user identifier
       email: user.email,
       email_verified: user.emailVerified,
-      name: user.name || user.email,
-      preferred_username: user.name || user.email,
-      given_name: user.name?.split(' ')[0] || '',
-      family_name: user.name?.split(' ').slice(1).join(' ') || '',
+      name: user.name ?? user.email,
+      preferred_username: user.name ?? user.email,
+      given_name: user.name?.split(' ')[0] ?? '',
+      family_name: user.name?.split(' ').slice(1).join(' ') ?? '',
       updated_at: Math.floor(user.updatedAt.getTime() / 1000), // Unix timestamp
     };
 

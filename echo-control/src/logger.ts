@@ -6,12 +6,10 @@ import {
   context,
   trace,
 } from '@opentelemetry/api';
-import type {
-  LogRecord,
-  LogRecordProcessor} from '@opentelemetry/sdk-logs';
+import type { LogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   LoggerProvider,
-  BatchLogRecordProcessor
+  BatchLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import { Resource } from '@opentelemetry/resources';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
@@ -21,9 +19,9 @@ diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
 
 const SIGNOZ_INGESTION_KEY = process.env.SIGNOZ_INGESTION_KEY;
 const OTEL_EXPORTER_OTLP_ENDPOINT =
-  process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'https://ingest.signoz.io';
-const SIGNOZ_SERVICE_NAME = process.env.SIGNOZ_SERVICE_NAME || 'echo-control';
-const NODE_ENV = process.env.NODE_ENV || 'development';
+  process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'https://ingest.signoz.io';
+const SIGNOZ_SERVICE_NAME = process.env.SIGNOZ_SERVICE_NAME ?? 'echo-control';
+const NODE_ENV = process.env.NODE_ENV ?? 'development';
 
 // --- Custom processor to inject trace/span IDs ---
 class TraceContextLogProcessor implements LogRecordProcessor {
@@ -69,7 +67,7 @@ class ConsoleLogProcessor implements LogRecordProcessor {
     }
 
     const timestamp = new Date(timestampMs).toISOString();
-    const severity = logRecord.severityText || 'INFO';
+    const severity = logRecord.severityText ?? 'INFO';
     const body = logRecord.body;
 
     // Extract attributes for context

@@ -22,7 +22,7 @@ export const ReferralBonus: React.FC<Props> = ({
   description,
   children,
 }) => {
-  api.apps.app.referralReward.get.prefetch(appId);
+  void api.apps.app.referralReward.get.prefetch(appId);
 
   return (
     <HydrateClient>

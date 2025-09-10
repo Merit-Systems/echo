@@ -13,13 +13,13 @@ import { logger } from '@/logger';
 
 // JWT secret for API tokens (different from OAuth codes)
 const API_ECHO_ACCESS_JWT_SECRET = new TextEncoder().encode(
-  process.env.API_ECHO_ACCESS_JWT_SECRET ||
+  process.env.API_ECHO_ACCESS_JWT_SECRET ??
     'api-jwt-secret-change-in-production'
 );
 
 // JWT secret for verifying authorization codes (must match authorize endpoint)
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.OAUTH_CODE_SIGNING_JWT_SECRET ||
+  process.env.OAUTH_CODE_SIGNING_JWT_SECRET ??
     'your-secret-key-change-in-production'
 );
 
@@ -312,12 +312,12 @@ export async function handleRefreshToken(
     user: {
       id: echoRefreshTokenRecord.user.id,
       email: echoRefreshTokenRecord.user.email,
-      name: echoRefreshTokenRecord.user.name || '',
+      name: echoRefreshTokenRecord.user.name ?? '',
     },
     echo_app: {
       id: echoRefreshTokenRecord.echoApp.id,
       name: echoRefreshTokenRecord.echoApp.name,
-      description: echoRefreshTokenRecord.echoApp.description || '',
+      description: echoRefreshTokenRecord.echoApp.description ?? '',
     },
   };
 }
@@ -573,12 +573,12 @@ export async function handleInitialTokenIssuance(
     user: {
       id: user.id,
       email: user.email,
-      name: user.name || '',
+      name: user.name ?? '',
     },
     echo_app: {
       id: echoApp.id,
       name: echoApp.name,
-      description: echoApp.description || '',
+      description: echoApp.description ?? '',
     },
   };
 }

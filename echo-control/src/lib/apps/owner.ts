@@ -16,7 +16,7 @@ export async function getOwnerDetails(
   echoAppId: string,
   tx?: Prisma.TransactionClient
 ): Promise<Owner | null> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Find the owner through AppMembership with role 'owner'
   const ownerMembership = await client.appMembership.findFirst({
@@ -59,7 +59,7 @@ async function getOwnerDetailsBatch(
   echoAppIds: string[],
   tx?: Prisma.TransactionClient
 ): Promise<Map<string, Owner>> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Fetch all owner memberships in a single query
   const ownerMemberships = await client.appMembership.findMany({

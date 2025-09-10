@@ -57,7 +57,7 @@ export const UpdateReferralBonusDialog: React.FC<Props> = ({ appId }) => {
     isSuccess,
   } = api.apps.app.referralReward.set.useMutation({
     onSuccess: () => {
-      utils.apps.app.referralReward.get.invalidate(appId);
+      void utils.apps.app.referralReward.get.invalidate(appId);
       setIsOpen(false);
     },
   });

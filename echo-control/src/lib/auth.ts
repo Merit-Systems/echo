@@ -31,9 +31,9 @@ export async function getCurrentUser(): Promise<User> {
   if (!user) {
     user = await db.user.create({
       data: {
-        email: session.user.email || '',
-        name: session.user.name || null,
-        image: session.user.image || null,
+        email: session.user.email ?? '',
+        name: session.user.name ?? null,
+        image: session.user.image ?? null,
       },
     });
 
@@ -51,7 +51,7 @@ export async function getCurrentUser(): Promise<User> {
       user = await db.user.update({
         where: { id: user.id },
         data: {
-          image: session.user.image || null,
+          image: session.user.image ?? null,
         },
       });
 
@@ -96,7 +96,7 @@ async function getCurrentUserByApiKeyOrEchoJwt(request: NextRequest): Promise<{
       body: 'Invalid authorization header in API authentication',
       attributes: {
         hasAuthHeader: !!authHeader,
-        authHeaderPrefix: authHeader?.substring(0, 10) || null,
+        authHeaderPrefix: authHeader?.substring(0, 10) ?? null,
         function: 'getCurrentUserByApiKeyOrEchoJwt',
       },
     });
@@ -215,10 +215,10 @@ async function updateApiKeyUsage(apiKeyId: string, request: NextRequest) {
   try {
     const metadata = {
       lastIp:
-        request.headers.get('x-forwarded-for') ||
-        request.headers.get('x-real-ip') ||
+        request.headers.get('x-forwarded-for') ??
+        request.headers.get('x-real-ip') ??
         'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown',
+      userAgent: request.headers.get('user-agent') ?? 'unknown',
       timestamp: new Date().toISOString(),
     };
 
@@ -239,7 +239,7 @@ async function updateApiKeyUsage(apiKeyId: string, request: NextRequest) {
 export async function getAuthenticatedUser(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (authHeader?.startsWith('Bearer ')) {
     const authResult = await getCurrentUserByApiKeyOrEchoJwt(request);
 
     return {

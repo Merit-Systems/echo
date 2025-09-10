@@ -73,7 +73,7 @@ export const MarkupInput = ({ markup, onMarkupChange }: Props) => {
             className="flex-1 flex-col gap-0 h-full p-2 justify-start"
           >
             <span className="text-sm font-bold">{label}</span>
-            {label === 'Custom' ? (
+            {label === MarkupOption.Custom ? (
               <span className="text-xs opacity-60">Enter a Value</span>
             ) : (
               <span className="text-xs opacity-80">{(value - 1) * 100}%</span>
@@ -82,7 +82,7 @@ export const MarkupInput = ({ markup, onMarkupChange }: Props) => {
         ))}
       </div>
       <AnimatePresence>
-        {selectedMarkupLabel === 'Custom' && (
+        {selectedMarkupLabel === MarkupOption.Custom && (
           <motion.div
             initial={{ opacity: 0, height: 0, marginTop: 0 }}
             animate={{

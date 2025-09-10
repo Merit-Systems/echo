@@ -51,7 +51,7 @@ export const RecipientDetails: React.FC<Props> = ({ githubLink, appId }) => {
     isSuccess,
   } = api.apps.app.githubLink.update.useMutation({
     onSuccess: () => {
-      utils.apps.app.githubLink.get.invalidate(appId);
+      void utils.apps.app.githubLink.get.invalidate(appId);
       toast.success('Github link updated');
     },
   });

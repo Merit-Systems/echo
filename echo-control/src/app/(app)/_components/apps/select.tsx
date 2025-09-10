@@ -64,7 +64,7 @@ export const AppSelect: React.FC<Props> = ({
                   target.scrollHeight - 10 &&
                 hasNextPage
               ) {
-                fetchNextPage();
+                void fetchNextPage();
               }
             }}
           >

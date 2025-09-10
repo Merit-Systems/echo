@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
   },
   metadataBase: new URL(
-    process.env.ECHO_CONTROL_APP_BASE_URL || 'http://localhost:3000'
+    process.env.ECHO_CONTROL_APP_BASE_URL ?? 'http://localhost:3000'
   ),
 };
 

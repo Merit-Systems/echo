@@ -41,7 +41,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   const roundedClass = roundedMap[rounded];
 
   // Get the first character of the name, fallback to '?'
-  const initial = (name || '').charAt(0).toUpperCase() || '?';
+  const initial = (name ?? '').charAt(0).toUpperCase() ?? '?';
 
   // If we have a valid src and no error, show the image
   if (src) {
@@ -51,7 +51,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
           src={src}
           width={112}
           height={112}
-          alt={alt || `${name} profile`}
+          alt={alt ?? `${name} profile`}
           className={cn(
             sizeClasses.container,
             roundedClass,

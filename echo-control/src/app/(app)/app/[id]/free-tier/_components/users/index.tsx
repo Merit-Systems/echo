@@ -59,7 +59,7 @@ export const FreeTierUsersTable: React.FC<Props> = ({ appId }) => {
         hasNextPage
           ? {
               hasNext: hasNextPage,
-              fetchNextPage,
+              fetchNextPage: () => void fetchNextPage(),
               isFetchingNextPage,
             }
           : undefined

@@ -21,14 +21,14 @@ interface FiltersContextType {
 
 const FiltersContext = createContext<FiltersContextType>({
   appId: undefined,
-  setAppId: () => {},
+  setAppId: () => void 0,
   startDate: new Date(),
   endDate: new Date(),
-  setDateRange: () => {},
+  setDateRange: () => void 0,
   timeframe: ActivityTimeframe.AllTime,
-  setTimeframe: () => {},
+  setTimeframe: () => void 0,
   eventType: undefined,
-  setEventType: () => {},
+  setEventType: () => void 0,
 });
 
 export const FiltersContextProvider = ({

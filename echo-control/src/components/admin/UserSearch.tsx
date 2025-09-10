@@ -28,8 +28,8 @@ export function UserSearch({ selectedUser, onUserSelect }: UserSearchProps) {
     const term = searchTerm.toLowerCase();
     return users.filter(
       user =>
-        user.email?.toLowerCase().includes(term) ||
-        user.name?.toLowerCase().includes(term) ||
+        user.email?.toLowerCase().includes(term) ??
+        user.name?.toLowerCase().includes(term) ??
         user.id.includes(term)
     );
   }, [users, searchTerm]);
@@ -78,7 +78,7 @@ export function UserSearch({ selectedUser, onUserSelect }: UserSearchProps) {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
-                      {selectedUser.name || 'No name'}
+                      {selectedUser.name ?? 'No name'}
                     </span>
                     {selectedUser.admin && (
                       <Badge variant="secondary" className="text-xs">
@@ -113,7 +113,7 @@ export function UserSearch({ selectedUser, onUserSelect }: UserSearchProps) {
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {isLoading ? (
             <div className="space-y-2">
-              {[...Array(3)].map((_, i) => (
+              {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 p-3">
                   <Skeleton className="h-8 w-8 rounded-full" />
                   <div className="space-y-1">
@@ -137,7 +137,7 @@ export function UserSearch({ selectedUser, onUserSelect }: UserSearchProps) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">
-                        {user.name || 'No name'}
+                        {user.name ?? 'No name'}
                       </span>
                       {user.admin && (
                         <Badge variant="secondary" className="text-xs">

@@ -121,7 +121,7 @@ export async function downloadUsersCsv(
     ['ID', 'Name', 'Email', 'Created At'],
     ...users.map(user => [
       user.id,
-      user.name || '',
+      user.name ?? '',
       user.email,
       user.createdAt.toISOString(),
     ]),
@@ -130,7 +130,7 @@ export async function downloadUsersCsv(
   const csvString = csvData
     .map(row => row.map(field => `"${field}"`).join(','))
     .join('\n');
-  
+
   return {
     csvString,
     filename: `users-created-after-${input.createdAfter.toISOString().split('T')[0]}.csv`,

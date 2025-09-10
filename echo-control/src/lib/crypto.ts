@@ -5,7 +5,7 @@ import { createHmac, randomBytes, randomUUID } from 'crypto';
  * In production, this should be a strong random value from environment variables
  */
 const API_KEY_HASH_SECRET =
-  process.env.API_KEY_HASH_SECRET ||
+  process.env.API_KEY_HASH_SECRET ??
   'change-this-in-production-very-secret-key';
 
 /**
@@ -25,7 +25,7 @@ export function hashApiKey(apiKey: string): string {
 
 // Generate a secure API key using UUID v4 and additional entropy
 export function generateApiKey(): string {
-  const prefix = process.env.API_KEY_PREFIX || 'echo_';
+  const prefix = process.env.API_KEY_PREFIX ?? 'echo_';
 
   // Use UUID v4 for structured randomness
   const uuidPart = randomUUID().replace(/-/g, '');

@@ -18,8 +18,8 @@ const ActivityContext = createContext<ActivityContextType>({
   startDate: new Date(),
   endDate: new Date(),
   timeframe: ActivityTimeframe.SevenDays,
-  setTimeframe: () => {},
-  setDateRange: () => {},
+  setTimeframe: () => void 0,
+  setDateRange: () => void 0,
 });
 
 interface Props {

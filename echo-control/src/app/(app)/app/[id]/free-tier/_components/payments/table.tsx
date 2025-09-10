@@ -34,7 +34,7 @@ export const PaymentsTable = ({ appId }: Props) => {
       }))}
       pagination={{
         hasNext: pages[pages.length - 1].has_next,
-        fetchNextPage,
+        fetchNextPage: () => void fetchNextPage(),
         isFetchingNextPage,
       }}
     />

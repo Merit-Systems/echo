@@ -31,15 +31,14 @@ export function AppSearch({
 
   // Filter apps based on search term
   const filteredApps = useMemo(() => {
-    if (!apps || !searchTerm.trim()) return apps || [];
+    if (!apps || !searchTerm.trim()) return apps ?? [];
 
     const term = searchTerm.toLowerCase();
     return apps.filter(
       app =>
-        app.name.toLowerCase().includes(term) ||
-        app.description?.toLowerCase().includes(term) ||
-        app.id.includes(term) ||
-        app.homepageUrl?.toLowerCase().includes(term)
+        (app.name.toLowerCase().includes(term) ||
+          app.description?.toLowerCase().includes(term)) ??
+        (app.id.includes(term) || app.homepageUrl?.toLowerCase().includes(term))
     );
   }, [apps, searchTerm]);
 
@@ -71,7 +70,7 @@ export function AppSearch({
       <div className="space-y-4">
         <Skeleton className="h-10 w-full" />
         <div className="space-y-2">
-          {[...Array(2)].map((_, i) => (
+          {Array.from({ length: 2 }).map((_, i) => (
             <Card key={i}>
               <CardContent className="pt-4">
                 <div className="flex items-center gap-3">

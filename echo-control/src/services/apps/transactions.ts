@@ -25,7 +25,7 @@ export const listAppTransactions = async (
       where: {
         echoAppId: appId,
         isArchived: false,
-        ...((startDate || endDate) && {
+        ...((startDate !== undefined || endDate !== undefined) && {
           createdAt: {
             gte: startDate,
             lte: endDate,
@@ -37,7 +37,7 @@ export const listAppTransactions = async (
       where: {
         echoAppId: appId,
         isArchived: false,
-        ...((startDate || endDate) && {
+        ...((startDate !== undefined || endDate !== undefined) && {
           createdAt: {
             gte: startDate,
             lte: endDate,
@@ -129,7 +129,7 @@ export const countAppTransactions = async ({
     where: {
       echoAppId: appId,
       isArchived: false,
-      ...((startDate || endDate) && {
+      ...((startDate !== undefined || endDate !== undefined) && {
         createdAt: {
           gte: startDate,
           lte: endDate,

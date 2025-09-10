@@ -16,7 +16,7 @@ export async function getAppActivity(
   userId?: string,
   tx?: Prisma.TransactionClient
 ): Promise<AppActivity[]> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Generate array of the last N days
   const days = Array.from({ length: lookbackDays }, (_, i) => {
@@ -110,7 +110,7 @@ export async function getAppActivityBatch(
   userId?: string,
   tx?: Prisma.TransactionClient
 ): Promise<Map<string, AppActivity[]>> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Generate array of the last N days
   const days = Array.from({ length: lookbackDays }, (_, i) => {

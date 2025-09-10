@@ -55,8 +55,8 @@ export const UsersTable: React.FC<Props> = ({ appId }) => {
       headers.join(','),
       ...rows.map(row =>
         [
-          `"${row.name || ''}"`,
-          `"${row.email || ''}"`,
+          `"${row.name ?? ''}"`,
+          `"${row.email ?? ''}"`,
           row.usage.totalTransactions,
           row.usage.rawCost,
           row.usage.markupProfit,
@@ -103,7 +103,7 @@ export const UsersTable: React.FC<Props> = ({ appId }) => {
           hasNextPage
             ? {
                 hasNext: hasNextPage,
-                fetchNextPage,
+                fetchNextPage: () => void fetchNextPage(),
                 isFetchingNextPage,
               }
             : undefined
@@ -193,7 +193,7 @@ const UserRow = ({ user, showEmail }: { user: User; showEmail: boolean }) => {
       {showEmail && (
         <TableCell className="text-left">
           <p className="text-sm text-muted-foreground">
-            {user.email || 'No email'}
+            {user.email ?? 'No email'}
           </p>
         </TableCell>
       )}

@@ -20,7 +20,7 @@ export function PendingPayoutsTable({ pageSize = 10 }: Props) {
   const pollCheckout = api.admin.payouts.pollMeritCheckout.useMutation({
     onSuccess: res => {
       if (res?.completed) {
-        refetch();
+        void refetch();
       }
     },
   });

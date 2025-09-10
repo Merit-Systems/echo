@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default async function MyAppsPage(props: PageProps<'/my-apps'>) {
   await userOrRedirect('/my-apps', props);
 
-  api.apps.list.owner.prefetchInfinite({
+  void api.apps.list.owner.prefetchInfinite({
     page_size: 10,
   });
 

@@ -14,7 +14,7 @@ export async function getModelUsage(
   userId?: string,
   tx?: Prisma.TransactionClient
 ): Promise<ModelUsage[]> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Get all transactions for this app
   const transactions = await client.transaction.findMany({
@@ -36,11 +36,11 @@ export async function getModelUsage(
   for (const transaction of transactions) {
     const metadata = transaction.transactionMetadata;
 
-    if (metadata && metadata.model) {
+    if (metadata?.model) {
       const model = String(metadata.model);
 
       // Get existing usage or initialize
-      const existing = modelUsageMap.get(model) || {
+      const existing = modelUsageMap.get(model) ?? {
         totalTokens: 0,
         totalModelCost: 0,
       };
@@ -89,7 +89,7 @@ export async function getModelUsageBatch(
   userId?: string,
   tx?: Prisma.TransactionClient
 ): Promise<Map<string, ModelUsage[]>> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Get all transactions for all apps in a single query
   const allTransactions = await client.transaction.findMany({
@@ -122,11 +122,11 @@ export async function getModelUsageBatch(
     for (const transaction of appTransactions) {
       const metadata = transaction.transactionMetadata;
 
-      if (metadata && metadata.model) {
+      if (metadata?.model) {
         const model = String(metadata.model);
 
         // Get existing usage or initialize
-        const existing = modelUsageMap.get(model) || {
+        const existing = modelUsageMap.get(model) ?? {
           totalTokens: 0,
           totalModelCost: 0,
         };

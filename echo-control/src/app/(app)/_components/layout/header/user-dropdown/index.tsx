@@ -54,8 +54,9 @@ const UserDropdownComponent = async () => {
           <UserAvatar
             src={user.image}
             fallback={
-              user.name?.charAt(0).toUpperCase() ||
-              user.email?.charAt(0).toUpperCase()
+              user.name?.charAt(0).toUpperCase() ??
+              user.email?.charAt(0).toUpperCase() ??
+              '?'
             }
             className="size-full rounded-md cursor-pointer border-none bg-transparent"
           />
@@ -67,8 +68,9 @@ const UserDropdownComponent = async () => {
             <UserAvatar
               src={user.image}
               fallback={
-                user.name?.charAt(0).toUpperCase() ||
-                user.email?.charAt(0).toUpperCase()
+                user.name?.charAt(0).toUpperCase() ??
+                user.email?.charAt(0).toUpperCase() ??
+                '?'
               }
               className="size-9 rounded-lg"
             />

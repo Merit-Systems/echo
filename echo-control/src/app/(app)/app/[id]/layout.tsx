@@ -18,7 +18,7 @@ export async function generateMetadata({
         default: app.name,
         template: `${app.name} | %s | Echo`,
       },
-      description: app.description || undefined,
+      description: app.description ?? undefined,
     };
   } catch {
     return {

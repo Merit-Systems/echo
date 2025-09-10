@@ -11,7 +11,9 @@
     "husky",
     "tw-animate-css",
     "@merit-systems/echo-typescript-sdk",
-    "ts-morph"
+    "ts-morph",
+    "@next/eslint-plugin-next",
+    "eslint-plugin-react-hooks"
   ],
   "ignore": [
     "/scripts/**",

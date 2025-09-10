@@ -202,9 +202,9 @@ export async function getAppTransactionAggregates(
     markUpProfit: Number(result.markUpProfit),
     referralProfit: Number(result.referralProfit),
     rawTransactionCost: Number(result.rawTransactionCost),
-    totalInputTokens: Number(result.totalInputTokens || 0),
-    totalOutputTokens: Number(result.totalOutputTokens || 0),
-    totalTokens: Number(result.totalTokens || 0),
+    totalInputTokens: Number(result.totalInputTokens ?? 0),
+    totalOutputTokens: Number(result.totalOutputTokens ?? 0),
+    totalTokens: Number(result.totalTokens ?? 0),
     totalToolCost: Number(result.totalToolCost),
   };
 }

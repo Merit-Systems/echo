@@ -84,8 +84,8 @@ const ClaimAllButton = () => {
         toast.success(
           `Created ${res.payouts.length} referral payout${res.payouts.length === 1 ? '' : 's'}.`
         );
-        utils.user.payout.referral.get.invalidate();
-        utils.user.payout.referral.pending.invalidate();
+        void utils.user.payout.referral.get.invalidate();
+        void utils.user.payout.referral.pending.invalidate();
       },
       onError: err => {
         toast.error(err.message || 'Failed to claim referral rewards');
@@ -117,8 +117,8 @@ const ClaimAppButton = ({
       toast.success(
         `Created referral payout for app. Remaining: ${formatCurrency(res.remaining)}`
       );
-      utils.user.payout.referral.get.invalidate();
-      utils.user.payout.referral.pending.invalidate();
+      void utils.user.payout.referral.get.invalidate();
+      void utils.user.payout.referral.pending.invalidate();
     },
     onError: err => {
       toast.error(err.message || 'Failed to claim referral reward');
@@ -129,7 +129,7 @@ const ClaimAppButton = ({
     <Button
       variant="outline"
       size="sm"
-      disabled={disabled || claim.isPending}
+      disabled={disabled ?? claim.isPending}
       onClick={() => claim.mutate({ appId })}
     >
       {claim.isPending ? 'Claiming…' : 'Claim'}

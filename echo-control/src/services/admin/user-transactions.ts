@@ -216,8 +216,8 @@ export async function getUserTransactionsPaginated(
       rawTransactionCost: Number(transaction.rawTransactionCost),
       status: transaction.status,
       createdAt: transaction.createdAt,
-      runningTotalSpent: Number(runningTotalSpent._sum.totalCost || 0),
-      runningTotalPaid: Number(runningTotalPaid._sum.amount || 0),
+      runningTotalSpent: Number(runningTotalSpent._sum.totalCost ?? 0),
+      runningTotalPaid: Number(runningTotalPaid._sum.amount ?? 0),
       echoApp: transaction.echoApp,
       apiKey: transaction.apiKey,
       metadata: transaction.transactionMetadata
@@ -275,10 +275,10 @@ export async function getUserTransactionsPaginated(
   `;
 
   const runningTotals = {
-    totalCost: Number(runningTotalsQuery._sum.totalCost || 0),
+    totalCost: Number(runningTotalsQuery._sum.totalCost ?? 0),
     totalTransactions: runningTotalsQuery._count.id,
-    totalTokens: Number(tokenTotals[0]?.totalTokens || 0),
-    totalToolCost: Number(tokenTotals[0]?.totalToolCost || 0),
+    totalTokens: Number(tokenTotals[0]?.totalTokens ?? 0),
+    totalToolCost: Number(tokenTotals[0]?.totalToolCost ?? 0),
   };
 
   const totalPages = Math.ceil(totalCount / validPageSize);
@@ -361,9 +361,9 @@ export async function getUserTransactionTotals(
     totalMarkUpProfit: Number(aggregates.markUpProfit),
     totalReferralProfit: Number(aggregates.referralProfit),
     totalRawTransactionCost: Number(aggregates.rawTransactionCost),
-    totalInputTokens: Number(aggregates.totalInputTokens || 0),
-    totalOutputTokens: Number(aggregates.totalOutputTokens || 0),
-    totalTokens: Number(aggregates.totalTokens || 0),
+    totalInputTokens: Number(aggregates.totalInputTokens ?? 0),
+    totalOutputTokens: Number(aggregates.totalOutputTokens ?? 0),
+    totalTokens: Number(aggregates.totalTokens ?? 0),
     totalToolCost: Number(aggregates.totalToolCost),
     totalPaid: Number(user.totalPaid), // This comes from the totalPaid field in the User model
     uniqueApps: Number(aggregates.uniqueApps),

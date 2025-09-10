@@ -54,7 +54,7 @@ export const AppIcon: React.FC<Props> = ({ appId, profilePictureUrl }) => {
   } = api.apps.app.update.useMutation({
     onSuccess: () => {
       toast.success('App details updated');
-      utils.apps.app.get.invalidate({ appId });
+      void utils.apps.app.get.invalidate({ appId });
     },
   });
   const { mutate: uploadImage, isPending: isUploading } =

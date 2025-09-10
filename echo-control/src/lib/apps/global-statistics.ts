@@ -18,7 +18,7 @@ export async function getGlobalStatistics(
   echoAppId: string,
   tx?: Prisma.TransactionClient
 ): Promise<GlobalStatistics> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // Use raw SQL to get all aggregated data in a single query
   const [aggregatedResult] = await client.$queryRaw<
@@ -51,11 +51,11 @@ export async function getGlobalStatistics(
     ]);
 
   return {
-    globalTotalTransactions: Number(aggregatedResult?.totalTransactions || 0),
-    globalTotalRevenue: Number(aggregatedResult?.totalRevenue || 0),
-    globalTotalTokens: Number(aggregatedResult?.totalTokens || 0),
-    globalTotalInputTokens: Number(aggregatedResult?.totalInputTokens || 0),
-    globalTotalOutputTokens: Number(aggregatedResult?.totalOutputTokens || 0),
+    globalTotalTransactions: Number(aggregatedResult?.totalTransactions ?? 0),
+    globalTotalRevenue: Number(aggregatedResult?.totalRevenue ?? 0),
+    globalTotalTokens: Number(aggregatedResult?.totalTokens ?? 0),
+    globalTotalInputTokens: Number(aggregatedResult?.totalInputTokens ?? 0),
+    globalTotalOutputTokens: Number(aggregatedResult?.totalOutputTokens ?? 0),
     globalActivityData,
     globalModelUsage,
     globalFreetierSpendPoolPerUserLimit:
@@ -75,7 +75,7 @@ export async function getGlobalStatisticsBatch(
   echoAppIds: string[],
   tx?: Prisma.TransactionClient
 ): Promise<Map<string, GlobalStatistics>> {
-  const client = tx || db;
+  const client = tx ?? db;
 
   // If no app IDs provided, return empty map
   if (echoAppIds.length === 0) {
@@ -128,21 +128,21 @@ export async function getGlobalStatisticsBatch(
   // Process each app ID and build the statistics
   for (const appId of echoAppIds) {
     const aggregated = aggregatedMap.get(appId);
-    const globalActivityData = activityDataMap.get(appId) || [];
-    const globalModelUsage = modelUsageMap.get(appId) || [];
+    const globalActivityData = activityDataMap.get(appId) ?? [];
+    const globalModelUsage = modelUsageMap.get(appId) ?? [];
 
     resultMap.set(appId, {
-      globalTotalTransactions: Number(aggregated?.totalTransactions || 0),
-      globalTotalRevenue: Number(aggregated?.totalRevenue || 0),
-      globalTotalTokens: Number(aggregated?.totalTokens || 0),
-      globalTotalInputTokens: Number(aggregated?.totalInputTokens || 0),
-      globalTotalOutputTokens: Number(aggregated?.totalOutputTokens || 0),
+      globalTotalTransactions: Number(aggregated?.totalTransactions ?? 0),
+      globalTotalRevenue: Number(aggregated?.totalRevenue ?? 0),
+      globalTotalTokens: Number(aggregated?.totalTokens ?? 0),
+      globalTotalInputTokens: Number(aggregated?.totalInputTokens ?? 0),
+      globalTotalOutputTokens: Number(aggregated?.totalOutputTokens ?? 0),
       globalActivityData,
       globalModelUsage,
       globalFreetierSpendPoolPerUserLimit:
-        userSpendStatisticsMap.get(appId)?.perUserSpendLimit || null,
+        userSpendStatisticsMap.get(appId)?.perUserSpendLimit ?? null,
       globalFreeTierSpendPoolBalance:
-        userSpendStatisticsMap.get(appId)?.spendPoolBalance || 0,
+        userSpendStatisticsMap.get(appId)?.spendPoolBalance ?? 0,
     });
   }
 

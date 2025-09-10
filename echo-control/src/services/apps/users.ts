@@ -21,7 +21,7 @@ export const listAppUsers = async (
   const where: Prisma.TransactionWhereInput = {
     echoAppId: appId,
     isArchived: false,
-    ...((startDate || endDate) && {
+    ...((startDate !== undefined || endDate !== undefined) && {
       createdAt: {
         gte: startDate,
         lte: endDate,
@@ -111,7 +111,7 @@ export const countAppUsers = async ({
   return await countAppUsersInternal({
     echoAppId: appId,
     isArchived: false,
-    ...((startDate || endDate) && {
+    ...((startDate !== undefined || endDate !== undefined) && {
       createdAt: {
         gte: startDate,
         lte: endDate,
