@@ -1,33 +1,20 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { FlatCompat } from '@eslint/eslintrc';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import tseslint from 'typescript-eslint';
 
 const compat = new FlatCompat({
-  baseDirectory: __dirname,
+  baseDirectory: import.meta.dirname,
 });
 
-const config = [
+export default tseslint.config(
   {
+    name: 'echo-control/ignores',
     ignores: [
       'node_modules/**',
       '.next/**',
       'out/**',
       'build/**',
-      'next-env.d.ts',
-    ],
-  },
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
-  {
-    name: 'echo-control/ignores',
-    ignores: [
-      'node_modules/',
-      'dist/',
-      'build/',
-      '.next/',
-      'coverage/',
+      'dist/**',
+      'coverage/**',
       'public/**',
       'src/generated/**',
       'prisma/generated/**',
@@ -35,6 +22,47 @@ const config = [
       '.source/**',
     ],
   },
-];
-
-export default config;
+  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    extends: [
+      ...tseslint.configs.recommended,
+      ...tseslint.configs.recommendedTypeChecked,
+      ...tseslint.configs.stylisticTypeChecked,
+    ],
+    rules: {
+      '@typescript-eslint/array-type': 'off',
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/consistent-type-imports': [
+        'warn',
+        { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
+      ],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { attributes: false } },
+      ],
+    },
+  },
+  {
+    files: ['src/components/ui/**/*.ts', 'src/components/ui/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      'react/no-unescaped-entities': 'off',
+    },
+  },
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: true,
+    },
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+      },
+    },
+  }
+);
