@@ -30,8 +30,9 @@ export const Hero = () => {
           </h1>
         </div>
         <p className={cn('text-center max-w-sm', dashedBorder)}>
-          Charge usage-based billing for your product to{' '}
-          <strong>start generating revenue risk-free</strong>.{' '}
+          <p>
+            Route & meter AI calls, <b>monetize</b>, and authenticate users with ~5 lines.
+          </p>
           <br className="my-1" /> You set the markup, we handle the rest.
         </p>
         <div className={cn('flex justify-center gap-2')}>
