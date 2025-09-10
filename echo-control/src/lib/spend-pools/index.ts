@@ -94,9 +94,6 @@ async function getOrCreateFreeTierSpendPoolInternal(
   let spendPool = await tx.spendPool.findFirst({
     where: {
       echoAppId: appId,
-      name: {
-        contains: 'Free Tier',
-      },
       isArchived: false,
     },
   });
