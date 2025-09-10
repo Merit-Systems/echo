@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/trpc/client';
-import { EchoApp } from '@/generated/prisma';
+import type { EchoApp } from '@/generated/prisma';
 import { Search, Globe, Calendar, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 

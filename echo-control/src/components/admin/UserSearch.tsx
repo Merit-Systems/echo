@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/trpc/client';
-import { User } from '@/generated/prisma';
+import type { User } from '@/generated/prisma';
 import { Search, Mail, User as UserIcon, Calendar } from 'lucide-react';
 
 interface UserSearchProps {

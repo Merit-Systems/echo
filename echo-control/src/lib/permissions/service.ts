@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
-import { AppRole, MembershipStatus, Permission, UserAppAccess } from './types';
-import { EchoApp, AppMembership } from '@/generated/prisma';
+import type { UserAppAccess } from './types';
+import { AppRole, MembershipStatus, Permission } from './types';
+import type { EchoApp, AppMembership } from '@/generated/prisma';
 import { logger } from '@/logger';
 
 export class PermissionService {

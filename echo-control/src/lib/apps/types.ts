@@ -1,6 +1,6 @@
-import { EchoApp, ApiKey, GithubLink } from '@/generated/prisma';
-import { SerializedTransaction } from '@/lib/utils/serialization';
-import { UserSpendInfo } from '@/lib/spend-pools';
+import type { EchoApp, ApiKey, GithubLink } from '@/generated/prisma';
+import type { SerializedTransaction } from '@/lib/utils/serialization';
+import type { UserSpendInfo } from '@/lib/spend-pools';
 
 export type Owner = {
   id: string;
@@ -120,7 +120,7 @@ export type PublicEchoApp = Omit<
   | 'usageProducts'
   | 'isArchived'
   | 'archivedAt'
-  | 'appMemberships'
+   
   | 'authorizedCallbackUrls'
 > & {
   // Owner information (limited for privacy)

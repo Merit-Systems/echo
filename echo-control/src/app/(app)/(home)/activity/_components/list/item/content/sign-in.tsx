@@ -1,4 +1,4 @@
-import { SignInEventData } from '@/services/feed/types';
+import type { SignInEventData } from '@/services/feed/types';
 import { User, Users } from 'lucide-react';
 
 interface Props {

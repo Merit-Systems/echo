@@ -4,7 +4,7 @@ import remarkMdx from 'remark-mdx';
 
 import { remarkInclude } from 'fumadocs-mdx/config';
 
-import { source } from '../../../../docs/source';
+import type { source } from '../../../../docs/source';
 
 import type { InferPageType } from 'fumadocs-core/source';
 

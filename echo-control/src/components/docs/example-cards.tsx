@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
-import { Route } from 'next';
+import type { Route } from 'next';
 
 interface ExampleCard<T extends string> {
   title: string;

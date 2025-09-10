@@ -1,6 +1,6 @@
-import z from 'zod';
+import type z from 'zod';
 
-import {
+import type {
   HandlerFunction,
   HandlerServerErrorFn,
   MiddlewareFunction,
@@ -73,7 +73,7 @@ export class RouteHandlerBuilder<
     this.config = config;
     this.middlewares = middlewares;
     this.handleServerError = handleServerError;
-    this.contextType = contextType as TContext;
+    this.contextType = contextType;
     this.metadataValue = metadataValue;
   }
 
@@ -289,7 +289,7 @@ export class RouteHandlerBuilder<
                 query: query as z.infer<TQuery>,
                 body: body as z.infer<TBody>,
                 ctx: middlewareContext,
-                metadata: metadata as z.infer<TMetadata>,
+                metadata: metadata!,
               });
 
               if (result instanceof NextResponse) return result;
@@ -372,7 +372,7 @@ const handleError = (
   });
 
   if (handleServerError) {
-    return handleServerError(error as Error);
+    return handleServerError(error);
   }
 
   return NextResponse.json(

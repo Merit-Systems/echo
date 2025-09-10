@@ -99,8 +99,8 @@ interface AppTransactionTotals {
  */
 export async function getAppTransactionsPaginated(
   appId: string,
-  page: number = 1,
-  pageSize: number = 50
+  page = 1,
+  pageSize = 50
 ): Promise<AppTransactionsPaginated> {
   // Validate pagination parameters
   const validPage = Math.max(1, page);

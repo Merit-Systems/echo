@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 
 import { Check, Loader2 } from 'lucide-react';
 
-import z from 'zod';
+import type z from 'zod';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,7 +25,7 @@ import { MinimalGithubAvatar } from '@/components/ui/github-avatar';
 
 import { updateGithubLinkSchema } from '@/services/apps/github-link';
 
-import { GithubType } from '@/generated/prisma';
+import type { GithubType } from '@/generated/prisma';
 
 import { api } from '@/trpc/client';
 

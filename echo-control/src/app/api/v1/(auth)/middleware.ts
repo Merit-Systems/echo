@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { MiddlewareFunction } from '../../_utils/types';
+import type { MiddlewareFunction } from '../../_utils/types';
 import { authenticateEchoAccessJwtToken } from '@/lib/jwt-tokens';
 import { hashApiKey } from '@/lib/crypto';
 import { db } from '@/lib/db';

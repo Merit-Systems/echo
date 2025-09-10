@@ -5,7 +5,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { Card } from '@/components/ui/card';
 
 import { AppRows, LoadingAppRows } from './rows';
-import { RouterOutputs } from '@/trpc/client';
+import type { RouterOutputs } from '@/trpc/client';
 import { SubSection } from '../../utils';
 import { NewAppButton } from './new-app';
 

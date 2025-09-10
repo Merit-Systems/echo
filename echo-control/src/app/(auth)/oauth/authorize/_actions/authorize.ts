@@ -1,11 +1,12 @@
 'use server';
 
+import type {
+  AuthorizeParams} from '@/app/(auth)/_lib/authorize';
 import {
-  AuthorizeParams,
   getAuthorizationRedirect,
 } from '@/app/(auth)/_lib/authorize';
 import { api } from '@/trpc/server';
-import { Route } from 'next';
+import type { Route } from 'next';
 import { redirect } from 'next/navigation';
 
 export const authorize = async (params: AuthorizeParams) => {

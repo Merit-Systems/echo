@@ -1,16 +1,18 @@
+import type {
+  BarProps} from 'recharts';
 import {
   BarChart,
   XAxis,
   YAxis,
   Bar,
   Tooltip,
-  ResponsiveContainer,
-  BarProps,
+  ResponsiveContainer
 } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { format, subDays } from 'date-fns';
 import { useMemo } from 'react';
-import { TooltipContent, TooltipRowProps } from './tooltip';
+import type { TooltipRowProps } from './tooltip';
+import { TooltipContent } from './tooltip';
 
 export type ChartData<T extends Record<string, number>> = {
   timestamp: string;
@@ -81,7 +83,7 @@ export const BaseChart = <T extends Omit<Record<string, number>, 'timestamp'>>({
         {tooltipRows && (
           <Tooltip
             content={({ payload }) => {
-              if (payload && payload.length) {
+              if (payload?.length) {
                 return (
                   <Card className="p-2">
                     <TooltipContent

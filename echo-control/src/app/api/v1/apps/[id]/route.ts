@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { EchoApp, User } from '@/generated/prisma';
+import type { EchoApp, User } from '@/generated/prisma';
 import { getApp } from '@/lib/apps/get-app';
 import { logger } from '@/logger';
 

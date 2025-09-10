@@ -5,7 +5,7 @@ import {
   type PaginationParams,
   toPaginatedReponse,
 } from '@/services/lib/pagination';
-import { Prisma } from '@/generated/prisma';
+import type { Prisma } from '@/generated/prisma';
 
 export const appUsersSchema = z.object({
   appId: z.uuid(),

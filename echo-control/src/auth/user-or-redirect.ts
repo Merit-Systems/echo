@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '.';
-import { Route } from 'next';
-import { AppRoutes } from '../../.next/types/routes';
+import type { Route } from 'next';
+import type { AppRoutes } from '../../.next/types/routes';
 
 export const userOrRedirect = async <T extends string>(
   route: Route<T>,

@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
-import { PayoutStatus, PayoutType } from '@/services/payouts/referrals';
+import type { PayoutType } from '@/services/payouts/referrals';
+import { PayoutStatus } from '@/services/payouts/referrals';
 import {
   type PaginationParams,
   toPaginatedReponse,

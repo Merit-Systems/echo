@@ -267,8 +267,8 @@ export async function getAllUsersSpendingAggregates(): Promise<GlobalSpendingAgg
  * Get paginated spending aggregates for all users across all apps
  */
 export async function getAllUsersSpendingAggregatesPaginated(
-  page: number = 0,
-  pageSize: number = 10
+  page = 0,
+  pageSize = 10
 ): Promise<
   GlobalSpendingAggregates & {
     pagination: {

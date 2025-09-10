@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { setUserReferrerForAppIfExists } from '@/lib/referral-codes/user-referral';
 import { z } from 'zod';

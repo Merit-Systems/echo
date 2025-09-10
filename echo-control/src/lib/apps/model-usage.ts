@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
-import { ModelUsage } from './types';
-import { Prisma } from '@/generated/prisma';
+import type { ModelUsage } from './types';
+import type { Prisma } from '@/generated/prisma';
 
 /**
  * Get model usage statistics for an echo app

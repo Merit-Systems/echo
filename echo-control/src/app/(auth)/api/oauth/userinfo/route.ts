@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { authenticateEchoAccessJwtToken } from '@/lib/jwt-tokens';
 import { db } from '@/lib/db';
 import { logger } from '@/logger';
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
     // Extract Bearer token from Authorization header
     const authHeader = request.headers.get('authorization');
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
         {
           error: 'invalid_request',

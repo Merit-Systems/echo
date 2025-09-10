@@ -1,6 +1,6 @@
 'use client';
 
-import z from 'zod';
+import type z from 'zod';
 
 import { toast } from 'sonner';
 

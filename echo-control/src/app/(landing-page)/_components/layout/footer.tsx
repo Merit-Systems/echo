@@ -2,7 +2,7 @@ import React from 'react';
 
 import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
-import { Route } from 'next';
+import type { Route } from 'next';
 import { SiDiscord, SiGithub } from '@icons-pack/react-simple-icons';
 
 type Link = {

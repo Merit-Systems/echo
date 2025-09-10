@@ -1,7 +1,7 @@
 'use client';
 
 import { WelcomeCoupon } from '@/app/(auth)/_components/welcome-coupon';
-import { AuthorizeParams } from '@/app/(auth)/_lib/authorize';
+import type { AuthorizeParams } from '@/app/(auth)/_lib/authorize';
 import { authorize } from '../../_actions/authorize';
 
 interface Props {

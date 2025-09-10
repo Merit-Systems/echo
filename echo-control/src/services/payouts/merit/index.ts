@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
-import { MeritSDK, OutgoingPayment } from '@merit-systems/sdk';
+import type { OutgoingPayment } from '@merit-systems/sdk';
+import { MeritSDK } from '@merit-systems/sdk';
 import { PayoutStatus } from '../referrals';
 
 const sdk = new MeritSDK({

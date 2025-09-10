@@ -7,7 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/trpc/client';
-import { User, EchoApp, EnumPaymentSource } from '@/generated/prisma';
+import type { User, EchoApp} from '@/generated/prisma';
+import { EnumPaymentSource } from '@/generated/prisma';
 import { DollarSign, Coins, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface CreditMinterProps {

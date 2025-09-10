@@ -1,7 +1,8 @@
 import { getAuthenticatedUser } from '@/lib/auth';
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { getAllOwnerEchoApps } from '@/lib/apps/owner';
-import { User } from '@/generated/prisma';
+import type { User } from '@/generated/prisma';
 import { logger } from '@/logger';
 
 // GET /api/v1/apps - List all Echo apps for the authenticated user

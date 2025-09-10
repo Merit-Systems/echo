@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Route } from 'next';
+import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
 
 interface Props<T extends string> {

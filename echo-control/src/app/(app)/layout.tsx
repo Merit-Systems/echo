@@ -9,7 +9,7 @@ import { BalanceButton } from './_components/layout/header/balance';
 import { UserDropdown } from './_components/layout/header/user-dropdown';
 import { LogoContainer } from './_components/layout/logo';
 
-import { Route } from 'next';
+import type { Route } from 'next';
 import TermsAgreement from '@/app/(app)/_components/terms';
 
 export const dynamic = 'force-dynamic';

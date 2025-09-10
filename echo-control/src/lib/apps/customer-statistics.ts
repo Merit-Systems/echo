@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
-import { CustomerStatistics, CustomerApiKey } from './types';
-import { Prisma, Transaction } from '@/generated/prisma';
+import type { CustomerStatistics, CustomerApiKey } from './types';
+import type { Prisma, Transaction } from '@/generated/prisma';
 import {
   getGlobalStatistics,
   getGlobalStatisticsBatch,
@@ -186,7 +186,7 @@ export async function getCustomerStatisticsBatch(
   for (const apiKey of allApiKeys) {
     const appKeys = apiKeysByApp.get(apiKey.echoAppId);
     if (appKeys) {
-      appKeys.push(apiKey as CustomerApiKey);
+      appKeys.push(apiKey);
     }
   }
 

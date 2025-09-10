@@ -2,7 +2,7 @@
 
 import { format, subDays } from 'date-fns';
 import { Charts, LoadingCharts } from '@/app/(app)/_components/charts';
-import { ChartData } from '@/app/(app)/_components/charts/base-chart';
+import type { ChartData } from '@/app/(app)/_components/charts/base-chart';
 
 import { api } from '@/trpc/client';
 import { useActivityContext } from '../../../../../../_components/time-range-selector/context';

@@ -6,11 +6,12 @@ import {
   context,
   trace,
 } from '@opentelemetry/api';
+import type {
+  LogRecord,
+  LogRecordProcessor} from '@opentelemetry/sdk-logs';
 import {
   LoggerProvider,
-  BatchLogRecordProcessor,
-  LogRecord,
-  LogRecordProcessor,
+  BatchLogRecordProcessor
 } from '@opentelemetry/sdk-logs';
 import { Resource } from '@opentelemetry/resources';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
@@ -73,8 +74,8 @@ class ConsoleLogProcessor implements LogRecordProcessor {
 
     // Extract attributes for context
     const attributes = logRecord.attributes;
-    const traceId = attributes?.['trace_id'];
-    const spanId = attributes?.['span_id'];
+    const traceId = attributes?.trace_id;
+    const spanId = attributes?.span_id;
 
     // Format the log message
     let message = `[${timestamp}] ${severity}: ${body}`;

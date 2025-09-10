@@ -6,7 +6,7 @@ import { EnumPaymentSource } from '@/generated/prisma';
 export async function redeemCreditReferralCode(
   userId: string,
   code: string,
-  freeTier: boolean = false,
+  freeTier = false,
   echoAppId?: string
 ): Promise<{
   userId: string;

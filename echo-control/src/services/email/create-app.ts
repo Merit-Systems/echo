@@ -7,7 +7,7 @@ export async function scheduleCreateAppFollowUpEmail(
   userId: string,
   appName: string
 ) {
-  const resend = new Resend(process.env.AUTH_RESEND_KEY!);
+  const resend = new Resend(process.env.AUTH_RESEND_KEY);
   const fromEmail = process.env.AUTH_RESEND_FROM_EMAIL!;
   const user = await db.user.findUnique({
     where: { id: userId },
