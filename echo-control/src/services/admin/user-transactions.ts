@@ -101,8 +101,8 @@ interface UserTransactionTotals {
  */
 export async function getUserTransactionsPaginated(
   userId: string,
-  page: number = 1,
-  pageSize: number = 50
+  page = 1,
+  pageSize = 50
 ): Promise<UserTransactionsPaginated> {
   // Validate pagination parameters
   const validPage = Math.max(1, page);

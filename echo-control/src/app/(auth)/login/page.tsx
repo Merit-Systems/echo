@@ -12,7 +12,7 @@ import { auth, signIn } from '@/auth';
 import { oauthProviders } from '@/auth/providers';
 
 import { cn } from '@/lib/utils';
-import { Route } from 'next';
+import type { Route } from 'next';
 
 export default async function SignInPage({
   searchParams,

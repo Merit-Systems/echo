@@ -86,7 +86,7 @@ export const GithubAvatar = memo(function GithubAvatar({
       {owner ? (
         <AvatarImage
           src={
-            (user?.avatar_url as string | undefined) ??
+            (user?.avatar_url) ??
             `https://github.com/${owner}.png`
           }
           alt={user?.name ?? owner}

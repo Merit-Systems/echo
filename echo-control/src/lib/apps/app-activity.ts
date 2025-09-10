@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { AppActivity } from './types';
+import type { AppActivity } from './types';
 import { Prisma } from '@/generated/prisma';
 
 /**
@@ -12,7 +12,7 @@ import { Prisma } from '@/generated/prisma';
  */
 export async function getAppActivity(
   echoAppId: string,
-  lookbackDays: number = 7,
+  lookbackDays = 7,
   userId?: string,
   tx?: Prisma.TransactionClient
 ): Promise<AppActivity[]> {
@@ -106,7 +106,7 @@ export async function getAppActivity(
  */
 export async function getAppActivityBatch(
   echoAppIds: string[],
-  lookbackDays: number = 7,
+  lookbackDays = 7,
   userId?: string,
   tx?: Prisma.TransactionClient
 ): Promise<Map<string, AppActivity[]>> {

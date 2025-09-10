@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
-import { Owner, OwnerEchoApp } from './types';
-import { Prisma } from '@/generated/prisma';
+import type { Owner, OwnerEchoApp } from './types';
+import type { Prisma } from '@/generated/prisma';
 import {
   getOwnerStatistics,
   getOwnerStatisticsBatch,

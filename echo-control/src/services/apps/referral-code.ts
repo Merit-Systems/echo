@@ -3,7 +3,7 @@ import z from 'zod';
 import { db } from '@/lib/db';
 
 import { appIdSchema } from './lib/schemas';
-import { UserId } from '@/services/lib/schemas';
+import type { UserId } from '@/services/lib/schemas';
 
 import { ReferralCodeType } from '@/lib/referral-codes/types';
 

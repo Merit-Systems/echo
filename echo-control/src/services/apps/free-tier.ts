@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { AppId } from './lib/schemas';
+import type { AppId } from './lib/schemas';
 import { AppRole } from '@/lib/permissions';
 import z from 'zod';
 

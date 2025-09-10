@@ -1,6 +1,6 @@
-import { Prisma } from '@/generated/prisma';
+import type { Prisma } from '@/generated/prisma';
 import { db } from '../db';
-import { UserSpendInfo } from './types';
+import type { UserSpendInfo } from './types';
 
 export async function getGlobalFreeTierSpendPoolInfo(
   echoAppId: string,

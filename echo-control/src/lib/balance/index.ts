@@ -1,6 +1,6 @@
 import { db } from '../db';
 import type { PrismaClient } from '@/generated/prisma';
-import { Balance, AppBalance } from './types';
+import type { Balance, AppBalance } from './types';
 
 export const getUserGlobalBalance = async (
   userId: string

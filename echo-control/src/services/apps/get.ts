@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 
 import { appSelect } from './lib/select';
-import { AppId } from './lib/schemas';
+import type { AppId } from './lib/schemas';
 
 import { AppRole } from '@/lib/permissions';
 

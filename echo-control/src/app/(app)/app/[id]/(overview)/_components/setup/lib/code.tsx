@@ -1,6 +1,6 @@
 import { Code as CodeComponent } from '@/components/ui/code';
 
-import { BundledLanguage } from '@/components/ui/code/shiki.bundle';
+import type { BundledLanguage } from '@/components/ui/code/shiki.bundle';
 import { useHighlighter } from './highlighter-context';
 
 export const Code: React.FC<{

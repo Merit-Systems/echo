@@ -27,7 +27,7 @@ import { ColorModeToggle } from './color-mode-toggle';
 
 import { auth, signOut } from '@/auth';
 import { Button } from '@/components/ui/button';
-import { Route } from 'next';
+import type { Route } from 'next';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export const UserDropdown = async () => {

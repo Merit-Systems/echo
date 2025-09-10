@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/lib/utils';
-import { TransactionEventData } from '@/services/feed/types';
+import type { TransactionEventData } from '@/services/feed/types';
 
 interface Props {
   numUsers: number;

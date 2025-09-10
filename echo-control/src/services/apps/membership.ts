@@ -2,10 +2,11 @@ import { db } from '@/lib/db';
 import { appSelect } from './lib/select';
 import { AppRole, MembershipStatus } from '@/lib/permissions';
 
-import { AppId } from './lib/schemas';
+import type { AppId } from './lib/schemas';
 import { z } from 'zod';
-import { PaginationParams, toPaginatedReponse } from '../lib/pagination';
-import { Prisma } from '@/generated/prisma';
+import type { PaginationParams} from '../lib/pagination';
+import { toPaginatedReponse } from '../lib/pagination';
+import type { Prisma } from '@/generated/prisma';
 
 export const getAppMembership = async (userId: string, appId: AppId) => {
   return await db.appMembership.findUnique({

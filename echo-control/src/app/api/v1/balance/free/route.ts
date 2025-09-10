@@ -1,7 +1,8 @@
 import { getCustomerSpendInfoForApp } from '@/lib/spend-pools/fetch-user-spend';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { NextRequest, NextResponse } from 'next/server';
-import { User } from '@/generated/prisma';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
+import type { User } from '@/generated/prisma';
 
 // POST /api/v1/balance/free - Get authenticated user's free tier spend info for a specific app
 export async function POST(request: NextRequest) {

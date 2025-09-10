@@ -6,7 +6,7 @@ import {
   type FormProviderProps,
 } from '../../../_components/form/context';
 import { toast } from 'sonner';
-import z from 'zod';
+import type z from 'zod';
 
 type Props = Omit<
   FormProviderProps<z.infer<typeof updateMarkupSchema>>,

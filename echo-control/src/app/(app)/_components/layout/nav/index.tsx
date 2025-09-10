@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { MotionTab } from './motion-tab';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react';
-import { Route } from 'next';
+import type { Route } from 'next';
 import { ExternalLink } from 'lucide-react';
 
 interface Tab<T extends string> {
@@ -59,7 +59,7 @@ export const Nav = <T extends string>({ tabs }: Props<T>) => {
                 onMouseLeave={() => setHoveredTabIndex(null)}
                 ref={el => {
                   if (el) {
-                    buttonRefs[index] = el as HTMLAnchorElement;
+                    buttonRefs[index] = el;
                   }
                 }}
               >

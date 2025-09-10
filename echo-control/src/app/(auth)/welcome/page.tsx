@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/trpc/server';
-import { Metadata, Route } from 'next';
+import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { WelcomePageCoupon } from './_components/coupon';

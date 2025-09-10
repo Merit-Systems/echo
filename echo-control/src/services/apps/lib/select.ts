@@ -1,4 +1,4 @@
-import { Prisma } from '@/generated/prisma';
+import type { Prisma } from '@/generated/prisma';
 
 export const appSelect = {
   id: true,

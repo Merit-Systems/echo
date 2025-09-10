@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
-import { GlobalStatistics } from './types';
-import { Prisma } from '@/generated/prisma';
+import type { GlobalStatistics } from './types';
+import type { Prisma } from '@/generated/prisma';
 import { getAppActivity, getAppActivityBatch } from './app-activity';
 import { getModelUsage, getModelUsageBatch } from './model-usage';
 import {

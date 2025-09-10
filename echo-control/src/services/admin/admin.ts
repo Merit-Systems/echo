@@ -1,6 +1,7 @@
 import z from 'zod';
 
-import { mintCreditsToUser, mintCreditsToUserSchema } from '../credits';
+import type { mintCreditsToUserSchema } from '../credits';
+import { mintCreditsToUser } from '../credits';
 
 import { db } from '@/lib/db';
 

@@ -1,5 +1,5 @@
 import { RouteHandlerBuilder } from './handler-builder';
-import { HandlerServerErrorFn } from './types';
+import type { HandlerServerErrorFn } from './types';
 
 export function createZodRoute(params?: {
   handleServerError?: HandlerServerErrorFn;

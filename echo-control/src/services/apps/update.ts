@@ -1,6 +1,6 @@
 import z from 'zod';
 
-import { AppId } from './lib/schemas';
+import type { AppId } from './lib/schemas';
 
 import { db } from '@/lib/db';
 

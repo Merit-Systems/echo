@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
-import { OwnerStatistics, CustomerApiKey } from './types';
-import { Prisma, Transaction } from '@/generated/prisma';
+import type { OwnerStatistics, CustomerApiKey } from './types';
+import type { Prisma, Transaction } from '@/generated/prisma';
 import {
   getCustomerStatistics,
   getCustomerStatisticsBatch,

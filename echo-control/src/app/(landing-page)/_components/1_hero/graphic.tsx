@@ -45,7 +45,7 @@ export const HeroGraphic = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const getIncrease = (max: number, decimals: number = 0) =>
+  const getIncrease = (max: number, decimals = 0) =>
     Math.ceil(Math.random() * max * 10 ** decimals) / 10 ** decimals;
 
   useEffect(() => {

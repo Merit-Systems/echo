@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { db } from '../db';
 import { processPaymentUpdate, PaymentStatus } from '../payment-processing';
 import { logger } from '@/logger';

@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 
 import { type PaginationParams, toPaginatedReponse } from './lib/pagination';
-import { Prisma } from '@/generated/prisma';
+import type { Prisma } from '@/generated/prisma';
 
 export async function listCreditPayments(
   userId: string,

@@ -4,7 +4,7 @@ import Credentials from 'next-auth/providers/credentials';
 import Resend from 'next-auth/providers/resend';
 
 import type { OAuthProvider } from './types';
-import { EmailConfig, Provider } from 'next-auth/providers';
+import type { EmailConfig, Provider } from 'next-auth/providers';
 import { db } from '@/lib/db';
 
 export const oauthProviders: OAuthProvider[] = [

@@ -1,6 +1,6 @@
 'use client';
 
-import { RouterOutputs } from '@/trpc/client';
+import type { RouterOutputs } from '@/trpc/client';
 import { FeedItem, LoadingFeedItem } from './item';
 import { Info } from 'lucide-react';
 import { use } from 'react';

@@ -2,11 +2,11 @@ import React from 'react';
 
 import Link from 'next/link';
 
-import { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 import { UserAvatar } from '@/components/utils/user-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Route } from 'next';
+import type { Route } from 'next';
 import { cn } from '@/lib/utils';
 
 interface Props<T extends string> {

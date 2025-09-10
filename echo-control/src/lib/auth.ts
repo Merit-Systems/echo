@@ -1,6 +1,6 @@
 import { db } from './db';
-import { User, EchoApp } from '@/generated/prisma';
-import { NextRequest } from 'next/server';
+import type { User, EchoApp } from '@/generated/prisma';
+import type { NextRequest } from 'next/server';
 import { hashApiKey } from './crypto';
 import { authenticateEchoAccessJwtToken } from './jwt-tokens';
 import { auth } from '@/auth';
@@ -90,7 +90,7 @@ async function getCurrentUserByApiKeyOrEchoJwt(request: NextRequest): Promise<{
 }> {
   const authHeader = request.headers.get('authorization');
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     logger.emit({
       severityText: 'WARN',
       body: 'Invalid authorization header in API authentication',

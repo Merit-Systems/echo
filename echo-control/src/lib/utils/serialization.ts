@@ -1,4 +1,4 @@
-import { Transaction as PrismaTransaction } from '@/generated/prisma';
+import type { Transaction as PrismaTransaction } from '@/generated/prisma';
 
 /**
  * Serialized version of Transaction with Decimal values converted to numbers
