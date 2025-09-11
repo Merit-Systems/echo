@@ -64,7 +64,7 @@ export const Setup: React.FC<Props> = ({ appId }) => {
     [numTransactions]
   );
 
-  const steps = [...appDetailsSteps, ...connectionSteps, ...generateTextSteps];
+  const steps = [...connectionSteps, ...generateTextSteps, ...appDetailsSteps];
 
   const completedSteps = steps.filter(Boolean).length;
   const allStepsCompleted = completedSteps === steps.length;
@@ -72,12 +72,12 @@ export const Setup: React.FC<Props> = ({ appId }) => {
   const [isComplete, setIsComplete] = useState(allStepsCompleted);
 
   const [accordionValue, setAccordionValue] = useState<string>(
-    !appDetailsSteps.every(Boolean)
-      ? 'app-details'
-      : !connectionSteps.every(Boolean)
-        ? 'connection'
-        : !generateTextSteps.every(Boolean)
-          ? 'generate-text'
+    !connectionSteps.every(Boolean)
+      ? 'connection'
+      : !generateTextSteps.every(Boolean)
+        ? 'generate-text'
+        : !appDetailsSteps.every(Boolean)
+          ? 'app-details'
           : ''
   );
 
@@ -89,12 +89,12 @@ export const Setup: React.FC<Props> = ({ appId }) => {
 
     let nextAccordionValue = '';
 
-    if (!appDetailsCompleted) {
-      nextAccordionValue = 'app-details';
-    } else if (!connectionCompleted) {
+    if (!connectionCompleted) {
       nextAccordionValue = 'connection';
     } else if (!generateTextCompleted) {
       nextAccordionValue = 'generate-text';
+    } else if (!appDetailsCompleted) {
+      nextAccordionValue = 'app-details';
     }
 
     if (nextAccordionValue !== '') {
@@ -154,9 +154,9 @@ export const Setup: React.FC<Props> = ({ appId }) => {
               value={accordionValue}
               onValueChange={setAccordionValue}
             >
-              <AppDetails appId={appId} />
               <Connection appId={appId} />
               <GenerateText appId={appId} />
+              <AppDetails appId={appId} />
             </Accordion>
             <motion.div
               initial={{ opacity: 0, marginBottom: 0, height: 32 }}
