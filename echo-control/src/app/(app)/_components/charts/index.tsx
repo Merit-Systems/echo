@@ -1,12 +1,14 @@
 'use client';
 
-import { BaseChart, ChartData, ChartProps, LoadingChart } from './base-chart';
+import type { ChartData, ChartProps} from './base-chart';
+import { BaseChart, LoadingChart } from './base-chart';
+import type {
+  TabsTriggerProps} from './tabs';
 import {
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContent,
-  TabsTriggerProps,
+  TabsContent
 } from './tabs';
 
 interface TabProps<T extends Record<string, number>> {

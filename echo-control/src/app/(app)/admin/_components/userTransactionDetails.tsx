@@ -80,17 +80,17 @@ export function UserTransactionDetails({
   const pagination = transactionData?.pagination;
 
   const filteredTransactions = useMemo(() => {
-    const transactions = transactionData?.transactions || [];
+    const transactions = transactionData?.transactions ?? [];
     if (!searchTerm.trim()) return transactions;
     const term = searchTerm.toLowerCase();
     return transactions.filter(
       transaction =>
         transaction.echoApp.name.toLowerCase().includes(term) ||
         transaction.id.includes(term) ||
-        transaction.metadata?.provider.toLowerCase().includes(term) ||
-        transaction.metadata?.model.toLowerCase().includes(term) ||
-        transaction.apiKey?.name?.toLowerCase().includes(term) ||
-        transaction.spendPool?.name.toLowerCase().includes(term)
+        (transaction.metadata?.provider ?? '').toLowerCase().includes(term) ||
+        (transaction.metadata?.model ?? '').toLowerCase().includes(term) ||
+        (transaction.apiKey?.name ?? '').toLowerCase().includes(term) ||
+        (transaction.spendPool?.name ?? '').toLowerCase().includes(term)
     );
   }, [transactionData?.transactions, searchTerm]);
 
@@ -144,7 +144,7 @@ export function UserTransactionDetails({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
+              {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="space-y-2">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-8 w-20" />
@@ -157,7 +157,7 @@ export function UserTransactionDetails({
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              {[...Array(10)].map((_, i) => (
+              {[Array.from({ length: 10 })].map((_, i) => (
                 <div key={i} className="flex items-center gap-4">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-4 w-48" />
@@ -203,13 +203,13 @@ export function UserTransactionDetails({
         <div>
           <h1 className="text-2xl font-bold">Transaction Details</h1>
           <p className="text-muted-foreground">
-            {userName || totals?.userName || 'User'}
+            {userName ?? totals?.userName ?? 'User'}
             {totals?.userEmail
               ? ` • ${totals.userEmail}`
               : userEmail
                 ? ` • ${userEmail}`
                 : ''}{' '}
-            • {totals?.totalTransactions || 0} total transactions
+            • {totals?.totalTransactions ?? 0} total transactions
           </p>
         </div>
       </div>
@@ -223,7 +223,7 @@ export function UserTransactionDetails({
             </CardTitle>
             <CardDescription>
               Complete transaction summary for{' '}
-              {totals.userName || totals.userEmail}
+              {totals.userName ?? totals.userEmail}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -326,7 +326,7 @@ export function UserTransactionDetails({
               </CardTitle>
               <CardDescription>
                 Showing {filteredTransactions.length} of{' '}
-                {pagination?.total || 0} transactions
+                {pagination?.total ?? 0} transactions
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -501,7 +501,7 @@ export function UserTransactionDetails({
                         }
                         className="text-xs"
                       >
-                        {transaction.status || PaymentStatus.COMPLETED}
+                        {transaction.status ?? PaymentStatus.COMPLETED}
                       </Badge>
                     </TableCell>
                   </TableRow>

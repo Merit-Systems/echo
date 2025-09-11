@@ -2,7 +2,8 @@
 
 import { Check, Copy, Loader2 } from 'lucide-react';
 
-import { Button, ButtonProps } from './button';
+import type { ButtonProps } from './button';
+import { Button } from './button';
 import { toast } from 'sonner';
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import { cn } from '@/lib/utils';

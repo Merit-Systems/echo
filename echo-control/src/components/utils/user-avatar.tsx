@@ -21,7 +21,7 @@ export const UserAvatar: React.FC<Props> = ({ src, fallback, className }) => {
           className
         )}
       >
-        {fallback || <User className="size-4" />}
+        {fallback ?? <User className="size-4" />}
       </AvatarFallback>
     </Avatar>
   );

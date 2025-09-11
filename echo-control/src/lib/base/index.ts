@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { db } from '../db';
 import { processPaymentUpdate, PaymentStatus } from '../payment-processing';
 import { logger } from '@/logger';
@@ -6,7 +6,7 @@ import { logger } from '@/logger';
 export const formatAmountFromQueryParams = (
   req: NextRequest
 ): number | null => {
-  const formattedAmount = req.nextUrl.searchParams.get('amount') || '1';
+  const formattedAmount = req.nextUrl.searchParams.get('amount') ?? '1';
 
   const amount = parseFloat(formattedAmount);
 

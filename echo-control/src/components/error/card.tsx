@@ -27,19 +27,18 @@ export const ErrorCard: React.FC<ErrorComponentProps> = ({
         <CardDescription className="text-base">{description}</CardDescription>
       </CardHeader>
       <CardFooter>
-        {actions ? (
-          actions
-        ) : errorProps ? (
-          <Button onClick={errorProps.reset} className="w-full">
-            Reset
-          </Button>
-        ) : (
-          <Link href="/dashboard" className="flex-1">
-            <Button variant="outline" className="w-full">
-              Back to Home
+        {actions ??
+          (errorProps ? (
+            <Button onClick={errorProps.reset} className="w-full">
+              Reset
             </Button>
-          </Link>
-        )}
+          ) : (
+            <Link href="/dashboard" className="flex-1">
+              <Button variant="outline" className="w-full">
+                Back to Home
+              </Button>
+            </Link>
+          ))}
       </CardFooter>
     </Card>
   );

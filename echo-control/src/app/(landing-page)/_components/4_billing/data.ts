@@ -1,4 +1,4 @@
-import { ChartData } from '@/app/(app)/_components/charts/base-chart';
+import type { ChartData } from '@/app/(app)/_components/charts/base-chart';
 
 export const chartData: ChartData<{
   totalCost: number;

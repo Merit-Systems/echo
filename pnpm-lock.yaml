@@ -319,9 +319,6 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
-      shiki:
-        specifier: ^3.11.0
-        version: 3.12.2
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -356,6 +353,9 @@ importers:
       '@faker-js/faker':
         specifier: ^9.9.0
         version: 9.9.0
+      '@next/eslint-plugin-next':
+        specifier: 15.5.0
+        version: 15.5.0
       '@types/node':
         specifier: ^20
         version: 20.19.1
@@ -371,6 +371,9 @@ importers:
       eslint-config-next:
         specifier: 15.5.0
         version: 15.5.0(eslint@9.29.0(jiti@2.4.2))(typescript@5.8.3)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.29.0(jiti@2.4.2))
       husky:
         specifier: ^9.0.0
         version: 9.1.7
@@ -386,6 +389,9 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.8.3
+      typescript-eslint:
+        specifier: ^8.34.1
+        version: 8.34.1(eslint@9.29.0(jiti@2.4.2))(typescript@5.8.3)
 
   echo-next-sdk:
     dependencies:

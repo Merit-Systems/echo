@@ -22,7 +22,7 @@ export const KeysTable = () => {
       keys={keys}
       pagination={{
         hasNext: pages[pages.length - 1].has_next,
-        fetchNextPage,
+        fetchNextPage: () => void fetchNextPage(),
         isFetchingNextPage,
       }}
     />

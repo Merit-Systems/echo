@@ -26,7 +26,7 @@ export default async function UsersPage(props: PageProps<'/app/[id]/users'>) {
 
   await checkAppExists(id);
 
-  api.apps.app.users.list.prefetchInfinite({ appId: id });
+  void api.apps.app.users.list.prefetchInfinite({ appId: id });
 
   return (
     <HydrateClient>

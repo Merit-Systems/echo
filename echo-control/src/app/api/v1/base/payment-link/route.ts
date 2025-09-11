@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getAuthenticatedUser, getCurrentUser } from '@/lib/auth';
-import { User } from '@/generated/prisma';
+import type { User } from '@/generated/prisma';
 import {
   handlePaymentSuccessFromx402,
   formatAmountFromQueryParams,
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     const normalizedCentsAmount = amount * 100;
 
-    handlePaymentSuccessFromx402({
+    void handlePaymentSuccessFromx402({
       userId: user.id,
       amount: normalizedCentsAmount,
       currency: 'usd',

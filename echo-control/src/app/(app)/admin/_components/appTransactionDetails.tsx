@@ -81,19 +81,19 @@ export function AppTransactionDetails({
 
   // Filter transactions based on search
   const filteredTransactions = useMemo(() => {
-    const transactions = transactionData?.transactions || [];
+    const transactions = transactionData?.transactions ?? [];
     if (!searchTerm.trim()) return transactions;
 
     const term = searchTerm.toLowerCase();
     return transactions.filter(
       transaction =>
         transaction.user.email.toLowerCase().includes(term) ||
-        transaction.user.name?.toLowerCase().includes(term) ||
+        (transaction.user.name ?? '').toLowerCase().includes(term) ||
         transaction.id.includes(term) ||
-        transaction.metadata?.provider.toLowerCase().includes(term) ||
-        transaction.metadata?.model.toLowerCase().includes(term) ||
-        transaction.apiKey?.name?.toLowerCase().includes(term) ||
-        transaction.spendPool?.name.toLowerCase().includes(term)
+        (transaction.metadata?.provider ?? '').toLowerCase().includes(term) ||
+        (transaction.metadata?.model ?? '').toLowerCase().includes(term) ||
+        (transaction.apiKey?.name ?? '').toLowerCase().includes(term) ||
+        (transaction.spendPool?.name ?? '').toLowerCase().includes(term)
     );
   }, [transactionData?.transactions, searchTerm]);
 
@@ -148,7 +148,7 @@ export function AppTransactionDetails({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
+              {[Array.from({ length: 4 })].map((_, i) => (
                 <div key={i} className="space-y-2">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-8 w-20" />
@@ -161,7 +161,7 @@ export function AppTransactionDetails({
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              {[...Array(10)].map((_, i) => (
+              {[Array.from({ length: 10 })].map((_, i) => (
                 <div key={i} className="flex items-center gap-4">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-4 w-48" />
@@ -208,8 +208,8 @@ export function AppTransactionDetails({
         <div>
           <h1 className="text-2xl font-bold">Transaction Details</h1>
           <p className="text-muted-foreground">
-            {appName || totals?.appName || 'App'} •{' '}
-            {totals?.totalTransactions || 0} total transactions
+            {appName ?? totals?.appName ?? 'App'} •{' '}
+            {totals?.totalTransactions ?? 0} total transactions
           </p>
         </div>
       </div>
@@ -319,7 +319,7 @@ export function AppTransactionDetails({
               </CardTitle>
               <CardDescription>
                 Showing {filteredTransactions.length} of{' '}
-                {pagination?.total || 0} transactions
+                {pagination?.total ?? 0} transactions
               </CardDescription>
             </div>
 
@@ -385,7 +385,7 @@ export function AppTransactionDetails({
                     <TableCell>
                       <div className="space-y-1">
                         <div className="font-medium text-sm">
-                          {transaction.user.name || 'No name'}
+                          {transaction.user.name ?? 'No name'}
                         </div>
                         <div className="text-xs text-muted-foreground truncate max-w-32">
                           {transaction.user.email}
@@ -490,7 +490,7 @@ export function AppTransactionDetails({
                         }
                         className="text-xs"
                       >
-                        {transaction.status || PaymentStatus.COMPLETED}
+                        {transaction.status ?? PaymentStatus.COMPLETED}
                       </Badge>
                     </TableCell>
                   </TableRow>

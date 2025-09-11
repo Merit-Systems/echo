@@ -32,7 +32,7 @@ export default async function TransactionsPage(
 
   await userOrRedirect(`/app/${id}/transactions`, props);
 
-  api.apps.app.transactions.list.prefetchInfinite({
+  void api.apps.app.transactions.list.prefetchInfinite({
     appId: id,
     page_size: 200,
   });

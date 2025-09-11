@@ -1,6 +1,6 @@
-import z from 'zod';
+import type z from 'zod';
 
-import {
+import type {
   HandlerFunction,
   HandlerServerErrorFn,
   MiddlewareFunction,
@@ -73,7 +73,7 @@ export class RouteHandlerBuilder<
     this.config = config;
     this.middlewares = middlewares;
     this.handleServerError = handleServerError;
-    this.contextType = contextType as TContext;
+    this.contextType = contextType;
     this.metadataValue = metadataValue;
   }
 
@@ -190,15 +190,16 @@ export class RouteHandlerBuilder<
   ): OriginalRouteHandler {
     return async (request, context): Promise<NextResponse> => {
       try {
-        let params = context?.params
-          ? await context.params
-          : ({} as z.infer<TParams>);
+        let params =
+          context?.params !== undefined
+            ? await context.params
+            : ({} as z.infer<TParams>);
 
         const searchParams = request.nextUrl.searchParams;
-        let query = Object.fromEntries(
+        const initialQuery = Object.fromEntries(
           [...searchParams.keys()].map(key => {
             const values = searchParams.getAll(key);
-            return values.length === 1 ? [key, values[0]] : [key, values];
+            return [key, values.length === 1 ? values[0] : values] as const;
           })
         );
         let metadata = this.metadataValue;
@@ -207,7 +208,7 @@ export class RouteHandlerBuilder<
         let body: unknown = {};
         if (request.method !== 'GET' && request.method !== 'DELETE') {
           try {
-            const contentType = request.headers.get('content-type') || '';
+            const contentType = request.headers.get('content-type') ?? '';
             if (
               contentType.includes('multipart/form-data') ||
               contentType.includes('application/x-www-form-urlencoded')
@@ -241,8 +242,9 @@ export class RouteHandlerBuilder<
         }
 
         // Validate the query against the provided schema
+        let query: z.infer<TQuery>;
         if (this.config.querySchema) {
-          const queryResult = this.config.querySchema.safeParse(query);
+          const queryResult = this.config.querySchema.safeParse(initialQuery);
           if (!queryResult.success) {
             throw new InternalRouteHandlerError({
               message: 'Invalid query',
@@ -286,10 +288,10 @@ export class RouteHandlerBuilder<
             try {
               const result = await handler(request, {
                 params: params as z.infer<TParams>,
-                query: query as z.infer<TQuery>,
+                query: query,
                 body: body as z.infer<TBody>,
                 ctx: middlewareContext,
-                metadata: metadata as z.infer<TMetadata>,
+                metadata: metadata!,
               });
 
               if (result instanceof NextResponse) return result;
@@ -372,7 +374,7 @@ const handleError = (
   });
 
   if (handleServerError) {
-    return handleServerError(error as Error);
+    return handleServerError(error);
   }
 
   return NextResponse.json(

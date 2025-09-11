@@ -1,6 +1,7 @@
 'use client';
 
-import { ControllerRenderProps, useFormContext } from 'react-hook-form';
+import type { ControllerRenderProps} from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 
 import {
   FormControl,
@@ -8,7 +9,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form';
-import { updateAppSchema } from '@/services/apps/update';
+import type { updateAppSchema } from '@/services/apps/update';
 
 interface Props {
   name: keyof typeof updateAppSchema.shape;

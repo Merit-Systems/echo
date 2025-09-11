@@ -29,7 +29,7 @@ export const Referrals: React.FC<Props> = async ({
   description,
   hideReferrer,
 }) => {
-  api.apps.app.memberships.list.prefetchInfinite({
+  void api.apps.app.memberships.list.prefetchInfinite({
     appId,
     referrerUserId,
   });

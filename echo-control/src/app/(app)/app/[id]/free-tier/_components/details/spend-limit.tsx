@@ -77,7 +77,7 @@ const SpendLimitDialog: React.FC<SpendLimitDialogProps> = ({
   } = api.apps.app.freeTier.update.useMutation({
     onSuccess: () => {
       toast.success('Per user spend limit updated');
-      utils.apps.app.freeTier.get.invalidate();
+      void utils.apps.app.freeTier.get.invalidate();
       setIsOpen(false);
     },
     onError: () => {

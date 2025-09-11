@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Route } from 'next';
+import type { Route } from 'next';
 import { ChevronRight } from 'lucide-react';
 import { Suspense } from 'react';
 

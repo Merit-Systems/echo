@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { GithubAvatar } from '@/components/ui/github-avatar';
+import { MinimalGithubAvatar } from '@/components/ui/github-avatar';
 import { ProfileAvatar } from '@/components/ui/profile-avatar';
 
 import { api } from '@/trpc/client';
@@ -39,9 +39,9 @@ export const ClaimablePayouts = () => {
               {Object.entries(earnings.byApp).map(([appId, amount]) => {
                 const meta = earnings.appMeta?.[appId];
                 const appName = meta?.name || 'Unnamed App';
-                const avatarUrl = meta?.profilePictureUrl || null;
-                const githubLink = meta?.githubLink || null;
-                const githubUrl = githubLink?.githubUrl || null;
+                const avatarUrl = meta?.profilePictureUrl ?? null;
+                const githubLink = meta?.githubLink ?? null;
+                const githubUrl = githubLink?.githubUrl ?? null;
 
                 return (
                   <div
@@ -57,8 +57,14 @@ export const ClaimablePayouts = () => {
                         </span>
                       </div>
                       <div className="ml-3 mb-2 flex items-center justify-center">
-                        <GithubAvatar
-                          pageUrl={githubUrl || undefined}
+                        <MinimalGithubAvatar
+                          login={
+                            githubUrl
+                              ? githubUrl
+                                  .replace(/^https?:\/\/github\.com\//, '')
+                                  .split('/')[0]
+                              : undefined
+                          }
                           className="size-6"
                         />
                       </div>
@@ -89,8 +95,8 @@ const ClaimAllButton = () => {
         toast.success(
           `Created ${res.payouts.length} markup payout${res.payouts.length === 1 ? '' : 's'}.`
         );
-        utils.user.payout.markup.get.invalidate();
-        utils.user.payout.markup.pending.invalidate();
+        void utils.user.payout.markup.get.invalidate();
+        void utils.user.payout.markup.pending.invalidate();
       },
       onError: err => {
         toast.error(err.message || 'Failed to claim markup rewards');
@@ -122,8 +128,8 @@ const ClaimAppButton = ({
       toast.success(
         `Created markup payout for app. Remaining: ${formatCurrency(res.remaining)}`
       );
-      utils.user.payout.markup.get.invalidate();
-      utils.user.payout.markup.pending.invalidate();
+      void utils.user.payout.markup.get.invalidate();
+      void utils.user.payout.markup.pending.invalidate();
     },
     onError: err => {
       toast.error(err.message || 'Failed to claim markup reward');
@@ -134,7 +140,7 @@ const ClaimAppButton = ({
     <Button
       variant="outline"
       size="sm"
-      disabled={disabled || claim.isPending}
+      disabled={disabled ?? claim.isPending}
       onClick={() => claim.mutate({ appId })}
     >
       {claim.isPending ? 'Claiming…' : 'Claim'}

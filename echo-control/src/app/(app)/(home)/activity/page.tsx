@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 export default async function ActivityPage(props: PageProps<'/activity'>) {
   await userOrRedirect('/activity', props);
 
-  api.apps.list.owner.prefetchInfinite({});
-  api.user.feed.list.prefetchInfinite({
+  void api.apps.list.owner.prefetchInfinite({});
+  void api.user.feed.list.prefetchInfinite({
     limit: 10,
     numHours: 4,
   });

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import z from 'zod';
+import type z from 'zod';
 
 import { revalidatePath } from 'next/cache';
 
@@ -13,7 +13,7 @@ import { AppDescription } from './description';
 import { AppProfilePicture } from './profile-picture';
 import { AppHomepage } from './homepage';
 
-import { updateAppSchema } from '@/services/apps/update';
+import type { updateAppSchema } from '@/services/apps/update';
 
 import { api } from '@/trpc/server';
 import { CopyButton } from '@/components/ui/copy-button';

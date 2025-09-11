@@ -1,5 +1,6 @@
 import { authenticateEchoAccessJwtToken } from '@/lib/jwt-tokens';
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { logger } from '@/logger';
 
 // POST /api/validate-jwt-token - Fast JWT validation without DB lookup
@@ -9,7 +10,7 @@ export async function POST(request: NextRequest) {
     const echoTokenHeader = request.headers.get('x-echo-token');
     const authHeader = request.headers.get('authorization');
 
-    const tokenToValidate = echoTokenHeader || authHeader;
+    const tokenToValidate = echoTokenHeader ?? authHeader;
 
     if (!tokenToValidate) {
       logger.emit({

@@ -3,7 +3,7 @@ import { AppRole } from '@/lib/permissions/types';
 import { getOwnerEchoApp } from './owner';
 import { getCustomerEchoApp } from './customer';
 import { getPublicEchoApp } from './public';
-import { OwnerEchoApp, CustomerEchoApp, PublicEchoApp } from './types';
+import type { OwnerEchoApp, CustomerEchoApp, PublicEchoApp } from './types';
 
 /**
  * Get an app with the appropriate level of detail based on user permissions.

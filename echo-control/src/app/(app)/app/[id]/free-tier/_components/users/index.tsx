@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { UserAvatar } from '@/components/utils/user-avatar';
 import { formatCurrency } from '@/lib/balance';
 import { api } from '@/trpc/client';
-import { InfinitePaginationProps } from '@/types/infinite-pagination';
+import type { InfinitePaginationProps } from '@/types/infinite-pagination';
 import {
   Card,
   CardDescription,
@@ -59,7 +59,7 @@ export const FreeTierUsersTable: React.FC<Props> = ({ appId }) => {
         hasNextPage
           ? {
               hasNext: hasNextPage,
-              fetchNextPage,
+              fetchNextPage: () => void fetchNextPage(),
               isFetchingNextPage,
             }
           : undefined

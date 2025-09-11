@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { GithubAvatar } from '@/components/ui/github-avatar';
+import { MinimalGithubAvatar } from '@/components/ui/github-avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { api } from '@/trpc/client';
@@ -19,7 +19,7 @@ export const UserPayoutRecipient = () => {
     api.user.githubLink.update.useMutation({
       onSuccess: () => {
         toast.success('Recipient GitHub updated');
-        utils.user.githubLink.get.invalidate();
+        void utils.user.githubLink.get.invalidate();
       },
     });
 
@@ -29,8 +29,14 @@ export const UserPayoutRecipient = () => {
         <div className="flex items-center gap-3">
           <CardTitle>Payout Recipient</CardTitle>
           <div className="mb-3 flex items-center justify-center">
-            <GithubAvatar
-              pageUrl={recipient?.githubUrl || undefined}
+            <MinimalGithubAvatar
+              login={
+                recipient?.githubUrl
+                  ? (recipient.githubUrl
+                      .replace(/^https?:\/\/github\.com\//, '')
+                      .split('/')[0] ?? undefined)
+                  : undefined
+              }
               className="size-6"
             />
           </div>

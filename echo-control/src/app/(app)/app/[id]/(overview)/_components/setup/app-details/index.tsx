@@ -1,21 +1,23 @@
 'use client';
 
+import type {
+  LucideIcon} from 'lucide-react';
 import {
   AppWindow,
   Check,
   DollarSign,
   Image,
-  LucideIcon,
   Pen,
 } from 'lucide-react';
 
+import type {
+  CarouselApi} from '@/components/ui/carousel';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselPrevious,
-  CarouselNext,
-  CarouselApi,
+  CarouselNext
 } from '@/components/ui/carousel';
 import {
   Card,

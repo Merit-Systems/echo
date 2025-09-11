@@ -2,7 +2,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
-import { ChartData } from './base-chart';
+import type { ChartData } from './base-chart';
 
 export interface TooltipRowProps<
   T extends Record<string, number>,

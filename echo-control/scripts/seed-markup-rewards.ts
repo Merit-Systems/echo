@@ -187,7 +187,7 @@ async function ensureMarkUp(appId: string, quiet?: boolean) {
   if (existing) {
     if (!quiet)
       console.log(
-        `🏷️ Using existing MarkUp ${existing.id} amount ${existing.amount}`
+        `🏷️ Using existing MarkUp ${existing.id} amount ${Number(existing.amount)}`
       );
     return existing.id;
   }

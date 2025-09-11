@@ -228,9 +228,9 @@ export async function getAppSpendingAggregates(appId: string): Promise<{
     appName: app.name,
     transactionCount: Number(result.transactionCount),
     totalSpent,
-    totalInputTokens: Number(result.totalInputTokens || 0),
-    totalOutputTokens: Number(result.totalOutputTokens || 0),
-    totalTokens: Number(result.totalTokens || 0),
+    totalInputTokens: Number(result.totalInputTokens ?? 0),
+    totalOutputTokens: Number(result.totalOutputTokens ?? 0),
+    totalTokens: Number(result.totalTokens ?? 0),
     totalToolCost: Number(result.totalToolCost),
     spendPoolUsage,
     directSpending,
@@ -267,8 +267,8 @@ export async function getAllUsersSpendingAggregates(): Promise<GlobalSpendingAgg
  * Get paginated spending aggregates for all users across all apps
  */
 export async function getAllUsersSpendingAggregatesPaginated(
-  page: number = 0,
-  pageSize: number = 10
+  page = 0,
+  pageSize = 10
 ): Promise<
   GlobalSpendingAggregates & {
     pagination: {
@@ -487,9 +487,9 @@ async function getAppSpendingForUser(
     appName: app.name,
     transactionCount: Number(result.transactionCount),
     totalSpent,
-    totalInputTokens: Number(result.totalInputTokens || 0),
-    totalOutputTokens: Number(result.totalOutputTokens || 0),
-    totalTokens: Number(result.totalTokens || 0),
+    totalInputTokens: Number(result.totalInputTokens ?? 0),
+    totalOutputTokens: Number(result.totalOutputTokens ?? 0),
+    totalTokens: Number(result.totalTokens ?? 0),
     totalToolCost: Number(result.totalToolCost),
     spendPoolUsage,
     directSpending,

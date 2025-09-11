@@ -27,7 +27,7 @@ export const RedeemCredits = () => {
       setCode('');
       setFreeTier(false);
       setEchoAppId('');
-      utils.user.balance.get.invalidate();
+      void utils.user.balance.get.invalidate();
     },
   });
 

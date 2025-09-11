@@ -43,8 +43,10 @@ const nextConfig: NextConfig = {
   transpilePackages: ['x402-next'],
   webpack: (config, { isServer }) => {
     if (isServer) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       config.plugins = [...config.plugins, new PrismaPlugin()];
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return config;
   },
   async headers() {

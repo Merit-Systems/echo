@@ -10,7 +10,7 @@ const AUTH_CODE_TTL = 300; // 5 minutes
 
 // JWT secret for signing authorization codes (use a proper secret in production)
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.OAUTH_CODE_SIGNING_JWT_SECRET ||
+  process.env.OAUTH_CODE_SIGNING_JWT_SECRET ??
     'your-secret-key-change-in-production'
 );
 

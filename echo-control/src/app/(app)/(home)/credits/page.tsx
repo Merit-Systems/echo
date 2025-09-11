@@ -16,11 +16,11 @@ export const metadata: Metadata = {
 export default async function CreditsPage(props: PageProps<'/credits'>) {
   await userOrRedirect('/credits', props);
 
-  api.user.payments.list.prefetchInfinite({
+  void api.user.payments.list.prefetchInfinite({
     cursor: 0,
   });
 
-  api.user.balance.get.prefetch();
+  void api.user.balance.get.prefetch();
 
   return (
     <HydrateClient>

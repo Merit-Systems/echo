@@ -1,5 +1,5 @@
 import { SiNextdotjs, SiReact } from '@icons-pack/react-simple-icons';
-import { Route } from 'next';
+import type { Route } from 'next';
 
 interface Integration {
   name: string;

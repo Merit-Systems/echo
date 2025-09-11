@@ -1,4 +1,4 @@
-import { OAuth2Config, OIDCConfig } from 'next-auth/providers';
+import type { OAuth2Config, OIDCConfig } from 'next-auth/providers';
 
 // the type parameter of the provider doesnt matter to us, so I am ignoring it.
 // the alternative is to enumerate each provider's profile type.

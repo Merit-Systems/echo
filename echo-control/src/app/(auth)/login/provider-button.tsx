@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { OAuthProvider } from '@/auth/types';
+import type { OAuthProvider } from '@/auth/types';
 
 import { SiGoogle, SiGithub } from '@icons-pack/react-simple-icons';
 

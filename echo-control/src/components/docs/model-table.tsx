@@ -1,4 +1,4 @@
-import { SupportedModel } from '../../../../echo-typescript-sdk/src/supported-models/types';
+import type { SupportedModel } from '../../../../echo-typescript-sdk/src/supported-models/types';
 import { AnthropicModels } from '../../../../echo-typescript-sdk/src/supported-models/chat/anthropic';
 import { OpenAIModels } from '../../../../echo-typescript-sdk/src/supported-models/chat/openai';
 import { GeminiModels } from '../../../../echo-typescript-sdk/src/supported-models/chat/gemini';

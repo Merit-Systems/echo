@@ -24,7 +24,7 @@ export const Earnings: React.FC<Props> = async ({ numAppsPromise }) => {
   const defaultStartDate = subDays(new Date(), 7);
   const defaultEndDate = endOfDay(new Date());
 
-  api.activity.creator.getCurrent.prefetch({
+  void api.activity.creator.getCurrent.prefetch({
     startDate: defaultStartDate,
     endDate: defaultEndDate,
   });

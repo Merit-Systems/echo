@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { User } from '@/generated/prisma';
+import type { User } from '@/generated/prisma';
 
 export const acceptLatestTermsAndServices = async (
   userId: string

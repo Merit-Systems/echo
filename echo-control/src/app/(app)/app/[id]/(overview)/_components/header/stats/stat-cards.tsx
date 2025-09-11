@@ -1,6 +1,7 @@
 'use client';
 
-import { BanknoteArrowUp, Brain, Hash, LucideIcon, Users } from 'lucide-react';
+import type { LucideIcon} from 'lucide-react';
+import { BanknoteArrowUp, Brain, Hash, Users } from 'lucide-react';
 
 import { api } from '@/trpc/client';
 

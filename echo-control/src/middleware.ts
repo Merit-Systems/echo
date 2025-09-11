@@ -1,9 +1,11 @@
 import { createPathMatcher } from 'next-path-matcher';
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
-import { Address } from 'viem';
-import { paymentMiddleware, Network } from 'x402-next';
+import type { Address } from 'viem';
+import type { Network } from 'x402-next';
+import { paymentMiddleware } from 'x402-next';
 import { facilitator } from '@coinbase/x402';
 
 import { middleware } from '@/auth/middleware';

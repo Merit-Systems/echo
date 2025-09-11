@@ -33,7 +33,7 @@ export const mintCreditsToUser = async (
   input: z.infer<typeof mintCreditsToUserSchema>,
   tx?: Prisma.TransactionClient
 ) => {
-  tx = tx || db;
+  tx = tx ?? db;
 
   const result = mintCreditsToUserSchema.safeParse(input);
 

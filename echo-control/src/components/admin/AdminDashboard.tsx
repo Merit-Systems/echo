@@ -17,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { User, EchoApp } from '@/generated/prisma';
+import type { User, EchoApp } from '@/generated/prisma';
 
 export function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);

@@ -11,13 +11,14 @@ export const uploadRouter = createTRPCRouter({
 
       // Convert ReadableStream to Uint8Array
       const chunks: Uint8Array[] = [];
-      const reader = input.getReader();
+      const reader =
+        input.getReader() as ReadableStreamDefaultReader<Uint8Array>;
 
       try {
         while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
+          const result = await reader.read();
+          if (result.done) break;
+          chunks.push(result.value);
         }
       } finally {
         reader.releaseLock();

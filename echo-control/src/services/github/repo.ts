@@ -6,11 +6,13 @@ export const getRepo = async (owner: string, repo: string) => {
       owner,
       repo,
     })
-    .then(res => res.data)
-    .catch(error => {
-      if (error.status === 404) {
+    .then(res => {
+      if (!res.data) {
         return null;
       }
-      throw error;
+      return res.data;
+    })
+    .catch(() => {
+      return null;
     });
 };

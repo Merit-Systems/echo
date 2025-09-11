@@ -26,7 +26,7 @@ export const VisibilityButton: React.FC<Props> = ({ appId }) => {
           isPublic: !prev.isPublic,
         };
       });
-      utils.apps.app.isOwner.invalidate(appId);
+      void utils.apps.app.isOwner.invalidate(appId);
       toast.success('App visibility updated');
     },
   });

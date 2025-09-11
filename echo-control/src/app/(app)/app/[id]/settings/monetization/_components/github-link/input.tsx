@@ -83,7 +83,10 @@ export const GithubLinkInput = () => {
                 <Input
                   placeholder="richardhendricks"
                   {...field}
-                  value={field.value.replace('https://github.com/', '')}
+                  value={(field.value as string).replace(
+                    'https://github.com/',
+                    ''
+                  )}
                   onChange={e => {
                     field.onChange(`https://github.com/${e.target.value}`);
                   }}
@@ -108,7 +111,10 @@ export const GithubLinkInput = () => {
                 <Input
                   placeholder="facebook/react"
                   {...field}
-                  value={field.value.replace('https://github.com/', '')}
+                  value={(field.value as string).replace(
+                    'https://github.com/',
+                    ''
+                  )}
                   onChange={e => {
                     field.onChange(`https://github.com/${e.target.value}`);
                   }}

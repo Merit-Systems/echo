@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { CustomerEchoApp } from './types';
+import type { CustomerEchoApp } from './types';
 import { getOwnerDetails } from './owner';
 import { getCustomerStatistics } from './customer-statistics';
 

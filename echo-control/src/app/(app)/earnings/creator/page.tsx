@@ -10,8 +10,8 @@ export default async function CreatorEarningsPage(
 ) {
   await userOrRedirect('/earnings/creator', props);
 
-  api.user.payout.markup.get.prefetch();
-  api.user.payout.markup.pending.prefetch();
+  void api.user.payout.markup.get.prefetch();
+  void api.user.payout.markup.pending.prefetch();
 
   return (
     <HydrateClient>

@@ -5,7 +5,7 @@ import {
   type PaginationParams,
   toPaginatedReponse,
 } from '@/services/lib/pagination';
-import { Prisma } from '@/generated/prisma';
+import type { Prisma } from '@/generated/prisma';
 
 export const appUsersSchema = z.object({
   appId: z.uuid(),
@@ -21,7 +21,7 @@ export const listAppUsers = async (
   const where: Prisma.TransactionWhereInput = {
     echoAppId: appId,
     isArchived: false,
-    ...((startDate || endDate) && {
+    ...((startDate !== undefined || endDate !== undefined) && {
       createdAt: {
         gte: startDate,
         lte: endDate,
@@ -111,7 +111,7 @@ export const countAppUsers = async ({
   return await countAppUsersInternal({
     echoAppId: appId,
     isArchived: false,
-    ...((startDate || endDate) && {
+    ...((startDate !== undefined || endDate !== undefined) && {
       createdAt: {
         gte: startDate,
         lte: endDate,

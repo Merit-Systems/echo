@@ -8,7 +8,7 @@ export async function scheduleCreateAppFollowUpEmail(
   appName: string,
   appId: string
 ) {
-  const resend = new Resend(process.env.AUTH_RESEND_KEY!);
+  const resend = new Resend(process.env.AUTH_RESEND_KEY);
   const fromEmail = process.env.AUTH_RESEND_FROM_EMAIL!;
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -59,7 +59,7 @@ export async function scheduleCreateAppFollowUpEmail(
       severityText: 'ERROR',
       body: 'Error sending create app follow up email',
       attributes: {
-        error: error instanceof Error ? error.message : String(error),
+        error: error.message,
         function: 'scheduleCreateAppFollowUpEmail',
         userId,
       },

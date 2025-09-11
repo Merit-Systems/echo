@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/shadcn-io/tabs';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 import { Code } from '../../code';
-import { BundledLanguage } from '../../code/shiki.bundle';
+import type { BundledLanguage } from '../../code/shiki.bundle';
 
 type CodeTabsProps = {
   codes: Record<string, string>;

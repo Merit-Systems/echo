@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { getUserGlobalBalance, getUserAppBalance } from '@/lib/balance';
-import { User } from '@/generated/prisma';
+import type { User } from '@/generated/prisma';
 import { logger } from '@/logger';
 
 // GET /api/v1/balance - Get authenticated user balance (optionally for a specific app)

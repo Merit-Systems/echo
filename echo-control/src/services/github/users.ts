@@ -5,11 +5,10 @@ export const getUser = async (username: string) => {
     .getByUsername({
       username,
     })
-    .then(res => res.data)
-    .catch(error => {
-      if (error.status === 404) {
+    .then(res => {
+      if (!res.data) {
         return null;
       }
-      throw error;
+      return res.data;
     });
 };

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { PublicEchoApp } from './types';
+import type { PublicEchoApp } from './types';
 import { getOwnerDetails } from './owner';
 import { getGlobalStatistics } from './global-statistics';
 

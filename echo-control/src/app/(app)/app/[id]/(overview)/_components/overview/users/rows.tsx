@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/utils/user-avatar';
 
 import { EmptyTableRow } from '../lib/table';
 
-import { api } from '@/trpc/server';
+import type { api } from '@/trpc/server';
 
 import { formatCurrency } from '@/lib/utils';
 

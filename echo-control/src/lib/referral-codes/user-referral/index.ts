@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { Prisma } from '@/generated/prisma';
+import type { Prisma } from '@/generated/prisma';
 import { ReferralCodeType } from '../types';
 
 export async function setUserReferrerForAppIfExists(

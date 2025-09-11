@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { subDays } from 'date-fns';
 
 import { ActivityTimeframe } from '@/types/timeframes';
-import { FeedActivityType } from '@/services/feed/types';
+import type { FeedActivityType } from '@/services/feed/types';
 
 interface FiltersContextType {
   appId: string | undefined;
@@ -21,14 +21,14 @@ interface FiltersContextType {
 
 const FiltersContext = createContext<FiltersContextType>({
   appId: undefined,
-  setAppId: () => {},
+  setAppId: () => void 0,
   startDate: new Date(),
   endDate: new Date(),
-  setDateRange: () => {},
+  setDateRange: () => void 0,
   timeframe: ActivityTimeframe.AllTime,
-  setTimeframe: () => {},
+  setTimeframe: () => void 0,
   eventType: undefined,
-  setEventType: () => {},
+  setEventType: () => void 0,
 });
 
 export const FiltersContextProvider = ({

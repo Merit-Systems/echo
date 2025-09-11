@@ -68,7 +68,7 @@ export const ProfitChart: React.FC<Props> = ({ markup }) => {
           <YAxis
             domain={['0', 'dataMax']}
             orientation="right"
-            tickFormatter={value =>
+            tickFormatter={(value: number) =>
               `$${value.toLocaleString(undefined, {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
@@ -142,7 +142,7 @@ export const LoadingProfitChart = () => {
           <YAxis
             domain={['0', 'dataMax']}
             orientation="right"
-            tickFormatter={value =>
+            tickFormatter={(value: number) =>
               `$${value.toLocaleString(undefined, {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,

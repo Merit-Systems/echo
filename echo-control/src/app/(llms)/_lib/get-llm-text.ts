@@ -4,7 +4,7 @@ import remarkMdx from 'remark-mdx';
 
 import { remarkInclude } from 'fumadocs-mdx/config';
 
-import { source } from '../../../../docs/source';
+import type { source } from '../../../../docs/source';
 
 import type { InferPageType } from 'fumadocs-core/source';
 
@@ -24,5 +24,5 @@ export async function getLLMText(page: InferPageType<typeof source>) {
   return `# ${page.data.title}
 URL: ${page.url}
 
-${processed.value}`;
+${processed.value as string}`;
 }

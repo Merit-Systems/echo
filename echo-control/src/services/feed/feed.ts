@@ -1,9 +1,11 @@
 import { db } from '@/lib/db';
-import { UserId } from '../lib/schemas';
-import { FeedActivity, FeedActivityType } from './types';
+import type { UserId } from '../lib/schemas';
+import type { FeedActivity} from './types';
+import { FeedActivityType } from './types';
 import z from 'zod';
+import type {
+  TimeBasedPaginationParams} from '../lib/pagination';
 import {
-  TimeBasedPaginationParams,
   toTimeBasedPaginatedReponse,
 } from '../lib/pagination';
 import { appIdSchema } from '../apps/lib/schemas';

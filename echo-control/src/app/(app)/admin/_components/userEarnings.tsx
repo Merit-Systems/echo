@@ -94,7 +94,7 @@ export function UserEarningsTable() {
 
   // Filter and sort users
   const filteredAndSortedUsers = useMemo(() => {
-    const users = paginatedData?.userBreakdowns || [];
+    const users = paginatedData?.userBreakdowns ?? [];
     let filtered = users;
 
     // Apply search filter
@@ -102,7 +102,7 @@ export function UserEarningsTable() {
       const term = searchTerm.toLowerCase();
       filtered = users.filter(
         user =>
-          user.userName?.toLowerCase().includes(term) ||
+          (user.userName ?? '').toLowerCase().includes(term) ||
           user.userEmail.toLowerCase().includes(term) ||
           user.userId.includes(term) ||
           user.appBreakdowns.some(app =>
@@ -118,8 +118,8 @@ export function UserEarningsTable() {
 
       switch (sortField) {
         case 'userName':
-          aValue = a.userName || a.userEmail;
-          bValue = b.userName || b.userEmail;
+          aValue = a.userName ?? a.userEmail;
+          bValue = b.userName ?? b.userEmail;
           break;
         case 'totalCost':
           aValue = a.totalCost;
@@ -216,7 +216,7 @@ export function UserEarningsTable() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
+            {[Array.from({ length: 5 })].map((_, i) => (
               <div key={i} className="flex items-center gap-4">
                 <Skeleton className="h-4 w-4" />
                 <Skeleton className="h-4 w-48" />
@@ -426,9 +426,9 @@ export function UserEarningsTable() {
                             <Link
                               href={`/admin/users/${user.userId}`}
                               className="hover:underline"
-                              title={user.userName || 'No name'}
+                              title={user.userName ?? 'No name'}
                             >
-                              {user.userName || 'No name'}
+                              {user.userName ?? 'No name'}
                             </Link>
                           </div>
                           <div className="text-sm text-muted-foreground truncate">

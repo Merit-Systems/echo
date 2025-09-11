@@ -249,7 +249,7 @@ export async function claimAllMarkupRewards(
 
   return created.map(p => ({
     id: p.id,
-    echoAppId: p.echoAppId as string,
+    echoAppId: p.echoAppId!,
     amount: Number(p.amount),
   }));
 }

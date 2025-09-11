@@ -1,7 +1,7 @@
 'use client';
 
 import { Coupon } from '@/components/coupon';
-import { STATES } from '@/components/coupon/multi-state-button';
+import type { STATES } from '@/components/coupon/multi-state-button';
 import { api } from '@/trpc/client';
 import { toast } from 'sonner';
 
@@ -26,7 +26,7 @@ export const WelcomeCoupon: React.FC<Props> = ({
     isSuccess: isClaimedCoupon,
   } = api.user.initialFreeTier.issue.useMutation({
     onSuccess: () => {
-      utils.user.initialFreeTier.hasClaimed.invalidate();
+      void utils.user.initialFreeTier.hasClaimed.invalidate();
       setTimeout(() => {
         toast.success('Credits Claimed!');
         onSuccess();
@@ -43,7 +43,7 @@ export const WelcomeCoupon: React.FC<Props> = ({
     isSuccess: isSignedPrivacy,
   } = api.user.termsAgreement.accept.privacy.useMutation({
     onSuccess: () => {
-      utils.user.termsAgreement.needs.privacy.invalidate();
+      void utils.user.termsAgreement.needs.privacy.invalidate();
     },
     onError: () => {
       toast.error('Failed to accept privacy policy');
@@ -56,7 +56,7 @@ export const WelcomeCoupon: React.FC<Props> = ({
     isSuccess: isSignedTerms,
   } = api.user.termsAgreement.accept.terms.useMutation({
     onSuccess: () => {
-      utils.user.termsAgreement.needs.terms.invalidate();
+      void utils.user.termsAgreement.needs.terms.invalidate();
     },
     onError: () => {
       toast.error('Failed to accept terms');

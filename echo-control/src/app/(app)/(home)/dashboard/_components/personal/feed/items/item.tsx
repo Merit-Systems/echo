@@ -3,7 +3,7 @@ import {
   AvatarCirclesSkeleton,
 } from '@/components/ui/avatar-circles';
 import { UserAvatar } from '@/components/utils/user-avatar';
-import { FeedActivity } from '@/services/feed/types';
+import type { FeedActivity } from '@/services/feed/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Code } from 'lucide-react';
 import { ItemContent } from './content';

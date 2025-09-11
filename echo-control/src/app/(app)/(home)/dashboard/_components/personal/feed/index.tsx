@@ -2,7 +2,7 @@ import { HydrateClient } from '@/trpc/server';
 import { FeedItems, LoadingFeedItems } from './items';
 import { Suspense } from 'react';
 import { Card } from '@/components/ui/card';
-import { RouterOutputs } from '@/trpc/client';
+import type { RouterOutputs } from '@/trpc/client';
 import { SubSection } from '../../utils';
 
 interface Props {

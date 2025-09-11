@@ -1,6 +1,7 @@
 import z from 'zod';
 
-import { mintCreditsToUser, mintCreditsToUserSchema } from '../credits';
+import type { mintCreditsToUserSchema } from '../credits';
+import { mintCreditsToUser } from '../credits';
 
 import { db } from '@/lib/db';
 
@@ -120,7 +121,7 @@ export async function downloadUsersCsv(
     ['ID', 'Name', 'Email', 'Created At'],
     ...users.map(user => [
       user.id,
-      user.name || '',
+      user.name ?? '',
       user.email,
       user.createdAt.toISOString(),
     ]),

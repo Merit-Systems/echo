@@ -2,7 +2,7 @@
 
 import { Check, Loader2 } from 'lucide-react';
 
-import { z } from 'zod';
+import type { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useForm } from 'react-hook-form';
@@ -74,7 +74,7 @@ export const CreateAppForm = () => {
           description="You will earn this markup as revenue for every LLM credit spent on your app."
           render={field => (
             <MarkupInput
-              markup={field.value}
+              markup={field.value as number}
               onMarkupChange={value => {
                 field.onChange(value);
               }}

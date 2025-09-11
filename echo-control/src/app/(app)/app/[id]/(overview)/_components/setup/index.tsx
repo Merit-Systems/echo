@@ -14,9 +14,10 @@ import { Connection } from './connection';
 import { Accordion } from '@/components/ui/accordion';
 import { GenerateText } from './generate-text';
 import { cn } from '@/lib/utils';
+import type {
+  Highlighter} from '@/components/ui/code/shiki.bundle';
 import {
-  getSingletonHighlighter,
-  Highlighter,
+  getSingletonHighlighter
 } from '@/components/ui/code/shiki.bundle';
 import { createJavaScriptRegexEngine } from '@shikijs/engine-javascript';
 import { HighlighterProvider } from './lib/highlighter-context';

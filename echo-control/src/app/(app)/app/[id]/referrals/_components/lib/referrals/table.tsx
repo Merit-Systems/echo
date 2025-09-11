@@ -71,7 +71,7 @@ export const ReferralsTable: React.FC<Props> = ({
         hasNextPage
           ? {
               hasNext: hasNextPage,
-              fetchNextPage,
+              fetchNextPage: () => void fetchNextPage(),
               isFetchingNextPage,
             }
           : undefined

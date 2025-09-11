@@ -3,7 +3,8 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Gift } from 'lucide-react';
-import { MultiStateCouponButton, STATES } from './multi-state-button';
+import type { STATES } from './multi-state-button';
+import { MultiStateCouponButton } from './multi-state-button';
 
 interface CouponProps {
   value: number;

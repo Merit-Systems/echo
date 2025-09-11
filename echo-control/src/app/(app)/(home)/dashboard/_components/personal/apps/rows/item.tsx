@@ -2,7 +2,7 @@ import { UserAvatar } from '@/components/utils/user-avatar';
 
 import { Code } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RouterOutputs } from '@/trpc/client';
+import type { RouterOutputs } from '@/trpc/client';
 import { Earnings, LoadingEarningsAmount } from './earnings';
 import Link from 'next/link';
 import { LoadingUsers, Users } from './users';

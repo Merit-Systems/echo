@@ -2,7 +2,7 @@
 
 import React, { useActionState } from 'react';
 
-import { AuthorizeParams } from '@/app/(auth)/_lib/authorize';
+import type { AuthorizeParams } from '@/app/(auth)/_lib/authorize';
 
 import { authorize } from '../../_actions/authorize';
 import { Button } from '@/components/ui/button';

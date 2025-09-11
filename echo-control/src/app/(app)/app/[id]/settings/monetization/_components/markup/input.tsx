@@ -16,7 +16,7 @@ export const MarkupInput = () => {
       render={({ field }) => (
         <FormItem>
           <MarkupInputComponent
-            markup={field.value}
+            markup={field.value as number}
             onMarkupChange={value => {
               field.onChange(value);
             }}

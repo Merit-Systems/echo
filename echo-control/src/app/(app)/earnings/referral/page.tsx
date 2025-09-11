@@ -11,9 +11,9 @@ export default async function ReferralEarningsPage(
 ) {
   await userOrRedirect('/earnings/referral', props);
 
-  api.user.payout.referral.get.prefetch();
-  api.user.payout.referral.pending.prefetch();
-  api.user.githubLink.get.prefetch();
+  void api.user.payout.referral.get.prefetch();
+  void api.user.payout.referral.pending.prefetch();
+  void api.user.githubLink.get.prefetch();
 
   return (
     <HydrateClient>

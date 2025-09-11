@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { Check, Loader2, Pencil } from 'lucide-react';
 
-import z from 'zod';
+import type z from 'zod';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -57,7 +57,7 @@ export const UpdateReferralBonusDialog: React.FC<Props> = ({ appId }) => {
     isSuccess,
   } = api.apps.app.referralReward.set.useMutation({
     onSuccess: () => {
-      utils.apps.app.referralReward.get.invalidate(appId);
+      void utils.apps.app.referralReward.get.invalidate(appId);
       setIsOpen(false);
     },
   });

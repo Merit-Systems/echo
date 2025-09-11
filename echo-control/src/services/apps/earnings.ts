@@ -16,7 +16,7 @@ export const getAppEarnings = async ({
     where: {
       echoAppId: appId,
       isArchived: false,
-      ...((startDate || endDate) && {
+      ...((startDate !== undefined || endDate !== undefined) && {
         createdAt: {
           gte: startDate,
           lte: endDate,
