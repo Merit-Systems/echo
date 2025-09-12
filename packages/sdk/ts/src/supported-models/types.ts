@@ -77,3 +77,11 @@ export interface SupportedTool {
     | 'per_call'
     | 'per_gb_per_day';
 }
+
+export interface SupportedAudioModel {
+  model_id: string;
+  cost_per_minute: number;
+  provider: string;
+}
+
+export type SupportedAudioModelType = 'transcription' | 'translation';

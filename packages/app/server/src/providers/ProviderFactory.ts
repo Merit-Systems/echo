@@ -10,7 +10,9 @@ import { GeminiGPTProvider } from './GeminiGPTProvider';
 import { OpenAIResponsesProvider } from './OpenAIResponsesProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { OpenAIImageProvider } from './OpenAIImageProvider';
+import { OpenAIAudioProvider } from './OpenAIAudioProvider';
 import {
+  ALL_SUPPORTED_AUDIO_MODELS,
   ALL_SUPPORTED_IMAGE_MODELS,
   ALL_SUPPORTED_MODELS,
 } from '../services/AccountingService';
@@ -60,6 +62,16 @@ const createImageModelToProviderMapping = (): Record<string, ProviderType> => {
   return mapping;
 };
 
+// Create mapping for audio models
+const createAudioModelToProviderMapping = (): Record<string, ProviderType> => {
+  const mapping: Record<string, ProviderType> = {};
+
+  // Hard-code whisper-1 for now until we update AccountingService
+  mapping['whisper-1'] = ProviderType.OPENAI_AUDIO;
+  
+  return mapping;
+};
+
 /**
  * Model-to-provider mapping loaded from model_prices_and_context_window.json
  * This replaces the previous hardcoded mapping and automatically includes all
@@ -70,6 +82,9 @@ export const MODEL_TO_PROVIDER: Record<string, ProviderType> =
 
 export const IMAGE_MODEL_TO_PROVIDER: Record<string, ProviderType> =
   createImageModelToProviderMapping();
+  
+export const AUDIO_MODEL_TO_PROVIDER: Record<string, ProviderType> =
+  createAudioModelToProviderMapping();
 
 export const getProvider = (
   model: string,
@@ -84,6 +99,11 @@ export const getProvider = (
   if (imageType) {
     type = imageType;
   }
+  
+  const audioType = AUDIO_MODEL_TO_PROVIDER[model];
+  if (audioType) {
+    type = audioType;
+  }
 
   // If the model is not in the model to provider mapping, throw an error
   if (type === undefined) {
@@ -97,6 +117,11 @@ export const getProvider = (
 
   if (completionPath.includes('images/generations')) {
     type = ProviderType.OPENAI_IMAGES;
+  }
+  
+  // Check if this is an audio transcription or translation endpoint
+  if (completionPath.includes('audio/transcriptions') || completionPath.includes('audio/translations')) {
+    type = ProviderType.OPENAI_AUDIO;
   }
 
   // We select for Anthropic Native if the completionPath includes "messages"
@@ -130,6 +155,8 @@ export const getProvider = (
       return new OpenRouterProvider(echoControlService, stream, model);
     case ProviderType.OPENAI_IMAGES:
       return new OpenAIImageProvider(echoControlService, stream, model);
+    case ProviderType.OPENAI_AUDIO:
+      return new OpenAIAudioProvider(echoControlService, stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }
