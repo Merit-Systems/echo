@@ -21,13 +21,11 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 
-import { ReactStep1, ReactStep2, ReactStep3 } from './frameworks/react';
-import { NextStep1, NextStep2, NextStep3 } from './frameworks/next';
-
 import { api } from '@/trpc/client';
 import { Check, ChevronsLeftRightEllipsis } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CopyButton } from '@/components/ui/copy-button';
+import { ReactTemplateSelector, NextTemplateSelector } from './template-select';
 
 interface Props {
   appId: string;
@@ -99,9 +97,7 @@ export const Connection: React.FC<Props> = ({ appId }) => {
           <TabsContents className="max-h-[70vh] md:h-[354px] overflow-y-auto no-scrollbar">
             <TabsContent value="next" className="gap-2 flex flex-col">
               <Card className="flex flex-col md:flex-row overflow-hidden divide-y md:divide-y-0 md:divide-x">
-                <NextStep1 />
-                <NextStep2 appId={appId} />
-                <NextStep3 />
+                <NextTemplateSelector appId={appId} />
               </Card>
               <p className="text-sm text-muted-foreground">
                 For more detailed instructions, see our{' '}
@@ -116,9 +112,7 @@ export const Connection: React.FC<Props> = ({ appId }) => {
             </TabsContent>
             <TabsContent value="react" className="gap-2 flex flex-col">
               <Card className="flex flex-col md:flex-row overflow-hidden divide-y md:divide-y-0 md:divide-x">
-                <ReactStep1 />
-                <ReactStep2 appId={appId} />
-                <ReactStep3 />
+                <ReactTemplateSelector appId={appId} />
               </Card>
               <p className="text-sm text-muted-foreground">
                 For more detailed instructions, see our{' '}
