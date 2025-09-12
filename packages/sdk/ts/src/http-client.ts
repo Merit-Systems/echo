@@ -87,7 +87,14 @@ export class HttpClient {
   /**
    * Convenience methods for common HTTP verbs
    */
-  async get(url: string, options?: RequestOptions): Promise<Response> {
+  async get(
+    url: string,
+    params?: Record<string, string | number | boolean | null | undefined> | any,
+    options?: RequestOptions
+  ): Promise<Response> {
+    if (Object.keys(params).length > 0) {
+      url = `${url}?${new URLSearchParams(Object.entries(params).map(([key, value]) => [key, String(value)])).toString()}`;
+    }
     return this.request(url, { ...options, method: 'GET' });
   }
 

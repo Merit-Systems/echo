@@ -1,6 +1,14 @@
 import { Prisma } from '@/generated/prisma';
 import { db } from '../db';
-import { UserSpendInfo } from './types';
+
+interface UserSpendInfo {
+  userId: string;
+  echoAppId: string;
+  spendPoolId: string | null;
+  amountSpent: number;
+  spendLimit: number | null;
+  amountLeft: number;
+}
 
 export async function getGlobalFreeTierSpendPoolInfo(
   echoAppId: string,
@@ -87,10 +95,7 @@ export const getCustomerSpendInfoForApp = async (
   userId: string,
   appId: string,
   tx?: Prisma.TransactionClient
-): Promise<{
-  spendPoolBalance: number;
-  userSpendInfo: UserSpendInfo; // A user will only have one spend pool Info for an app
-}> => {
+) => {
   const client = tx ?? db;
 
   const spendPool = await client.spendPool.findFirst({
@@ -114,7 +119,7 @@ export const getCustomerSpendInfoForApp = async (
       userSpendInfo: {
         userId,
         echoAppId: appId,
-        spendPoolId: null,
+        spendPoolId: null as string | null,
         amountSpent: 0,
         spendLimit: null,
         amountLeft: 0,
@@ -143,7 +148,7 @@ export const getCustomerSpendInfoForApp = async (
       userSpendInfo: {
         userId,
         echoAppId: appId,
-        spendPoolId: spendPool.id,
+        spendPoolId: spendPool.id as string | null,
         amountSpent: 0,
         spendLimit: spendLimit,
         amountLeft: userSpendPoolBalance,
@@ -154,7 +159,7 @@ export const getCustomerSpendInfoForApp = async (
   const userSpendInfo = {
     userId,
     echoAppId: appId,
-    spendPoolId: spendPool.id,
+    spendPoolId: spendPool.id as string | null,
     amountSpent: Number(userSpendInfoRow.totalSpent) || 0,
     spendLimit,
     amountLeft: spendLimit
@@ -172,15 +177,7 @@ export const getCustomerSpendInfoForAppBatch = async (
   userId: string,
   appIds: string[],
   tx?: Prisma.TransactionClient
-): Promise<
-  Map<
-    string,
-    {
-      spendPoolBalance: number;
-      userSpendInfo: UserSpendInfo;
-    }
-  >
-> => {
+) => {
   const client = tx ?? db;
 
   // If no app IDs provided, return empty map
@@ -285,10 +282,7 @@ export const getCustomerSpendInfoForAppBatch = async (
 export async function getGlobalUserSpendInfoForApp(
   echoAppId: string,
   tx?: Prisma.TransactionClient
-): Promise<{
-  spendPoolBalance: number;
-  userSpendInfo: UserSpendInfo[];
-}> {
+) {
   const client = tx ?? db;
 
   // Find the single spend pool for the app with user usage records

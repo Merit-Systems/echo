@@ -24,5 +24,3 @@ export const GET = authRoute.query(querySchema).handler(async (_, context) => {
     { status: 201 }
   );
 });
-
-export const POST = GET;

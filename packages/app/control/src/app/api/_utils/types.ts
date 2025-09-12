@@ -75,7 +75,12 @@ export type MiddlewareResult<TContext> = NextResponse<MiddlewareErrorBody> & {
  * Original Next.js route handler type for reference
  * This is the type that Next.js uses internally before our library wraps it
  */
-export type OriginalRouteHandler<TResponseBody> = (
+export type OriginalRouteHandler<
+  TParams extends z.Schema,
+  TQuery extends z.Schema,
+  TBody extends z.Schema,
+  TResponseBody,
+> = (
   request: NextRequest,
   context: { params: Promise<Record<string, unknown>> }
 ) => Promise<NextResponse<TResponseBody | ServerErrorBody>>;

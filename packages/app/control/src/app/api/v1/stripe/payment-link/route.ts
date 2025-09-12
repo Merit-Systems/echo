@@ -2,15 +2,12 @@ import Stripe from 'stripe';
 
 import { NextResponse } from 'next/server';
 
-import {
-  createFreeTierPaymentLinkSchema,
-  createPaymentLink,
-} from '@/services/stripe';
+import { createPaymentLink, createPaymentLinkSchema } from '@/services/stripe';
 
 import { authRoute } from '../../_lib/auth-route';
 
 export const POST = authRoute
-  .body(createFreeTierPaymentLinkSchema)
+  .body(createPaymentLinkSchema)
   .handler(async (_, context) => {
     try {
       const result = await createPaymentLink(context.ctx.userId, context.body);

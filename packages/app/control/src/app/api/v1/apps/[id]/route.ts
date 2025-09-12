@@ -4,7 +4,6 @@ import { authRoute } from '../../_lib/auth-route';
 import { z } from 'zod';
 import { appIdSchema } from '@/services/apps/lib/schemas';
 import { getApp } from '@/services/apps/get';
-import { OriginalRouteHandler } from '@/app/api/_utils/types';
 
 const paramsSchema = z.object({
   id: appIdSchema,
@@ -37,5 +36,3 @@ export const GET = authRoute
     const response = NextResponse.json(app);
     return response;
   });
-
-export type Body = typeof GET extends OriginalRouteHandler<infer T> ? T : never;

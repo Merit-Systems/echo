@@ -185,7 +185,7 @@ export class RouteHandlerBuilder<
       z.infer<TMetadata>,
       TResponseBody
     >
-  ): OriginalRouteHandler<TResponseBody> {
+  ): OriginalRouteHandler<TParams, TQuery, TBody, TResponseBody> {
     return async (request, context) => {
       try {
         let params = context?.params

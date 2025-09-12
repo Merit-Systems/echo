@@ -1,10 +1,7 @@
 import { db } from '../db';
 import type { PrismaClient } from '@/generated/prisma';
-import { Balance, AppBalance } from './types';
 
-export const getUserGlobalBalance = async (
-  userId: string
-): Promise<Balance> => {
+export const getUserGlobalBalance = async (userId: string) => {
   const user = await db.user.findUnique({
     where: {
       id: userId,
@@ -26,10 +23,7 @@ export const getUserGlobalBalance = async (
   };
 };
 
-export const getUserAppBalance = async (
-  userId: string,
-  echoAppId: string
-): Promise<AppBalance> => {
+export const getUserAppBalance = async (userId: string, echoAppId: string) => {
   const appMembership = await db.appMembership.findUnique({
     where: {
       userId_echoAppId: {

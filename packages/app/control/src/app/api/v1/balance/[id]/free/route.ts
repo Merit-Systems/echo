@@ -1,17 +1,17 @@
 import { getCustomerSpendInfoForApp } from '@/lib/spend-pools/fetch-user-spend';
 import { NextResponse } from 'next/server';
-import { authRoute } from '../../_lib/auth-route';
+import { authRoute } from '../../../_lib/auth-route';
 import { appIdSchema } from '@/services/apps/lib/schemas';
 import { z } from 'zod';
 
-const getFreeBalanceSchema = z.object({
+const getFreeBalanceParamsSchema = z.object({
   echoAppId: appIdSchema,
 });
 
-export const POST = authRoute
-  .body(getFreeBalanceSchema)
+export const GET = authRoute
+  .params(getFreeBalanceParamsSchema)
   .handler(async (_, context) => {
-    const { echoAppId } = context.body;
+    const { echoAppId } = context.params;
 
     const spendPoolInfo = await getCustomerSpendInfoForApp(
       context.ctx.userId,

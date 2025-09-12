@@ -1,5 +1,5 @@
 import { HttpClient } from '../http-client';
-import { EchoApp, ListEchoAppsResponse } from '../types';
+import { ApiRoutes } from '../api-types';
 import { BaseResource } from '../utils/error-handling';
 
 export class AppsResource extends BaseResource {
@@ -13,21 +13,25 @@ export class AppsResource extends BaseResource {
   /**
    * List all Echo apps for the authenticated user
    */
-  async listEchoApps(): Promise<EchoApp[]> {
-    const response = await this.handleRequest<ListEchoAppsResponse>(
-      () => this.http.get('/api/v1/apps'),
+  async listEchoApps(query?: ApiRoutes['GET /apps']['query']) {
+    const response = await this.handleRequest<
+      ApiRoutes['GET /apps']['response']
+    >(
+      () => this.http.get('/api/v1/apps', query),
       'listing Echo apps',
       '/api/v1/apps'
     );
-    return response.apps;
+    return response;
   }
 
   /**
    * Get a specific Echo app by ID
    * @param appId The Echo app ID
    */
-  async getEchoApp(appId: string): Promise<EchoApp> {
-    return this.handleRequest<EchoApp>(
+  async getEchoApp(
+    appId: string
+  ): Promise<ApiRoutes['GET /apps/{id}']['response']> {
+    return this.handleRequest<ApiRoutes['GET /apps/{id}']['response']>(
       () => this.http.get(`/api/v1/apps/${appId}`),
       'fetching Echo app',
       `/api/v1/apps/${appId}`
@@ -39,6 +43,6 @@ export class AppsResource extends BaseResource {
    * @param appId The Echo app ID
    */
   getAppUrl(appId: string): string {
-    return `${this.baseUrl}/apps/${appId}`;
+    return `${this.baseUrl}/app/${appId}`;
   }
 }
