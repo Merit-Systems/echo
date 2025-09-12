@@ -1,0 +1,103 @@
+---
+title: Introduction
+icon: Presentation
+---
+
+# Echo
+
+Echo is billing infrastructure for AI applications that turns your OpenAI imports into revenue-generating user accounts across React, Next.js, Node.js, and CLI tools.
+
+## Why use Echo?
+
+Building AI apps means handling payments, user auth, usage tracking, and API key management. Each user needs their own balance, every LLM call needs metering, and you're stuck building Stripe flows instead of features.
+
+Echo standardizes AI billing like Clerk standardized auth. Drop in our SDK, set your markup percentage, and your existing OpenAI code instantly gets user accounts with usage-based billing. No payment processing, no surprise bills, no exposed API keys.
+
+Result: Your users get one universal balance that works across all Echo-powered apps, creating network effects that grow your user base while you focus on building.
+
+For example, here's how you can add complete user management and LLM billing to your app:
+
+```tsx
+import { EchoProvider, EchoTokens, useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { generateText } from 'ai';
+
+function App() {
+  return (
+    <EchoProvider config={{ appId: 'your-app-id' }}>
+      {/* Complete user management - handles auth, billing, sign-out */}
+      <EchoTokens showAvatar={true} />
+      
+      <ChatComponent />
+    </EchoProvider>
+  );
+}
+
+function ChatComponent() {
+  const { openai } = useEchoModelProviders();
+  
+  const handleGenerate = async () => {
+    const { text } = await generateText({
+      model: openai('gpt-5'),
+      prompt: 'Hello world'
+    });
+    return text;
+  };
+  
+  return <button onClick={handleGenerate}>Ask AI</button>;
+}
+
+export default App
+
+```
+
+**Three integration patterns:**
+- [**React SDK**](/docs/react-sdk) — OAuth2 + PKCE for secure client-side LLM calls
+- [**Next.js SDK**](/docs/next-sdk) — Server-side auth with automatic token management  
+- [**TypeScript SDK**](/docs/typescript-sdk) — API keys for backends and CLI tools
+
+The React and Next.js SDKs are opinionated wrappers around the TypeScript SDK, providing framework-specific patterns while the TypeScript SDK offers direct API access for maximum flexibility.
+
+<ExampleCards 
+  cards={[
+    {
+      title: 'React',
+      icon: (
+        <img 
+          src="/icons/react.svg" 
+          alt="React" 
+          width={48}
+          height={48}
+          className="w-12 h-12"
+        />
+      ),
+      docsLink: '/docs/getting-started/react',
+      liveExampleLink: 'https://example.com/react-demo',
+      githubLink: 'https://github.com/Merit-Systems/echo-react-example',
+    },
+    {
+      title: 'Next.js',
+      icon: (
+        <img 
+          src="/icons/nextjs.svg" 
+          alt="Next.js" 
+          width={48}
+          height={48}
+          className="w-12 h-12"
+        />
+      ),
+      docsLink: '/docs/getting-started/next-js',
+      liveExampleLink: 'https://example.com/nextjs-demo',
+      githubLink: 'https://github.com/Merit-Systems/echo-nextjs-example',
+    },
+    {
+      title: 'CLI',
+      icon: (
+        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+          <span className="text-white font-bold text-xl">{'>'}</span>
+        </div>
+      ),
+      docsLink: '/docs/getting-started/cli',
+      githubLink: 'https://github.com/Merit-Systems/echo/tree/master/echo-typescript-cli-example',
+    },
+  ]}
+/>

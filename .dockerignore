@@ -61,8 +61,8 @@ Thumbs.db
 Dockerfile
 
 # Generated files
-echo-server/src/generated
-echo-control/src/generated
+packages/app/server/src/generated
+packages/app/control/src/generated
 
 # Cache
 .npm

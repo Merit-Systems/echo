@@ -1,0 +1,5 @@
+{
+  "title": "TypeScript SDK",
+  "pages": ["index", "client", "authentication", "resources"],
+  "icon": "TypeScript"
+}

@@ -76,29 +76,29 @@ COPY package.json ./
 COPY tsconfig.base.json ./
 
 # Copy all project files first
-COPY echo-control/ ./echo-control/
-COPY echo-server/ ./echo-server/
-COPY echo-typescript-sdk/ ./echo-typescript-sdk/
-COPY echo-next-sdk/ ./echo-next-sdk/
-COPY echo-react-sdk/ ./echo-react-sdk/
+COPY packages/app/control/ ./packages/app/control/
+COPY packages/app/server/ ./packages/app/server/
+COPY packages/sdk/ts/ ./packages/sdk/ts/
+COPY packages/sdk/next/ ./packages/sdk/next/
+COPY packages/sdk/react/ ./packages/sdk/react/
 
 # Install dependencies for both projects (including dev dependencies for build)
-WORKDIR /app/echo-control
+WORKDIR /app/packages/app/control
 RUN pnpm install
 
-WORKDIR /app/echo-server
+WORKDIR /app/packages/app/server
 RUN pnpm install
 
 # Step 1: Build echo-control and generate Prisma client
-WORKDIR /app/echo-control
+WORKDIR /app/packages/app/control
 RUN pnpm run prisma:generate
 RUN pnpm run build
 
-WORKDIR /app/echo-typescript-sdk
+WORKDIR /app/packages/sdk/ts
 RUN pnpm install
 RUN pnpm run build
 
-WORKDIR /app/echo-server
+WORKDIR /app/packages/app/server
 RUN pnpm run copy-prisma
 
 # Step 3: Build echo-server

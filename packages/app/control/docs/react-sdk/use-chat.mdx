@@ -1,0 +1,112 @@
+---
+title: useChat Hook
+description: Build chat interfaces with Echo's useChat hook and streaming AI responses
+---
+
+# useChat Hook
+
+Echo provides a `useChat` hook which is a wrapper around the [Vercel AI SDK](https://ai-sdk.dev/docs/reference/ai-sdk-core/use-chat) `useChat` hook and provides niceties for
+creating an Echo-powered chat experience.
+
+```tsx title="App.tsx"
+import {
+  EchoChatProvider,
+  EchoSignIn,
+  useEcho,
+  useEchoModelProviders,
+} from '@merit-systems/echo-react-sdk';
+import { type ModelMessage, streamText } from 'ai';
+import { z } from 'zod';
+import { ChatInterface } from './ChatInterface.tsx';
+
+function App() {
+  const { isAuthenticated } = useEcho();
+  const { openai } = useEchoModelProviders();
+
+  const chatFn = async ({
+    modelMessages,
+    abortSignal,
+  }: {
+    modelMessages: ModelMessage[];
+    abortSignal: AbortSignal | undefined;
+  }) => {
+    const result = streamText({
+      model: openai('gpt-4o'),
+      messages: modelMessages,
+      abortSignal,
+      tools: {
+        getWeather: {
+          description: 'Get current weather for a location',
+          inputSchema: z.object({ location: z.string() }),
+          execute: async ({ location }: { location: string }) =>
+            `Weather in ${location}: 72°F and sunny`,
+        },
+      },
+    });
+
+    return result.toUIMessageStream();
+  };
+
+  if (!isAuthenticated) return <EchoSignIn />;
+
+  return (
+    <EchoChatProvider chatFn={chatFn}>
+      <ChatInterface />
+    </EchoChatProvider>
+  );
+}
+
+export default App;
+```
+
+```tsx title="ChatInterface.tsx"
+import { useChat } from '@merit-systems/echo-react-sdk';
+import { useState } from 'react';
+
+export function ChatInterface() {
+  const { messages, sendMessage, status } = useChat();
+  const [input, setInput] = useState('');
+
+  return (
+    <div>
+      <div className="messages">
+        {messages.map(message => (
+          <div key={message.id}>
+            {message.role === 'user' ? 'User: ' : 'AI: '}
+            {message.parts.map((part, index) =>
+              part.type === 'text' ? <span key={index}>{part.text}</span> : null
+            )}
+          </div>
+        ))}
+      </div>
+
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          if (input.trim()) {
+            sendMessage({ text: input });
+            setInput('');
+          }
+        }}
+      >
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          disabled={status !== 'ready'}
+          placeholder="Say something..."
+        />
+        <button type="submit" disabled={status !== 'ready'}>
+          Submit
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+## `useChat` Props
+
+<AutoTypeTable
+  path="../../sdk/react/src/components/EchoChatProvider.tsx"
+  name="EchoChatBuildContext"
+/>

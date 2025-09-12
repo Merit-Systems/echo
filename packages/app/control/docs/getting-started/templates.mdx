@@ -1,0 +1,148 @@
+---
+title: Templates
+description: Get started quickly with Echo using pre-built templates
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+The easiest way to get started with Echo is to use one of our pre-built templates.
+
+## React
+
+The React template is a simple application that uses Vite and `echo-react-sdk`. Uniquely Echo does not require
+a server to make API calls because it handles Oauth directly in the browser.
+
+<Steps>
+    <Step>
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Create a React app using Vite
+        Run the following commands to create a new React app using Vite.
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template vite --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template vite --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template vite --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template vite --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>
+
+## Next.js
+
+The Next.js template is a full-stack application that uses the Next.js framework with the `echo-next-sdk`.
+
+<Steps>
+    <Step>
+        ### Create an Echo app
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Create a Next.js app
+        Run the following commands to create a new Next.js app.
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template next --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template next --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template next --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template next --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>
+
+## Assistant UI
+
+A full-featured chat UI powered by `@assistant-ui/react` integrated with Echo and the Vercel AI SDK v5.
+
+<Steps>
+    <Step>
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Scaffold the Assistant UI template
+        Use `degit` to copy the example into a new directory.
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx degit Merit-Systems/echo/examples/assistant-ui my-assistant-ui
+                cd my-assistant-ui
+                npm install
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx degit Merit-Systems/echo/examples/assistant-ui my-assistant-ui
+                cd my-assistant-ui
+                yarn install
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx degit Merit-Systems/echo/examples/assistant-ui my-assistant-ui
+                cd my-assistant-ui
+                pnpm install
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx degit Merit-Systems/echo/examples/assistant-ui my-assistant-ui
+                cd my-assistant-ui
+                bun install
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+
+    <Step>
+        ### Configure environment
+        Create a `.env.local` file and set your Echo App ID:
+        ```sh lineNumbers
+        NEXT_PUBLIC_ECHO_APP_ID=YOUR_ECHO_APP_ID
+        ```
+    </Step>
+
+    <Step>
+        ### Run the app
+        ```sh lineNumbers
+        pnpm dev
+        ```
+    </Step>
+</Steps>

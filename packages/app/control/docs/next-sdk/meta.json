@@ -1,0 +1,5 @@
+{
+  "title": "Next.js SDK",
+  "pages": ["index", "server", "client"],
+  "icon": "Nextdotjs"
+}

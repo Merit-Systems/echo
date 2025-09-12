@@ -35,23 +35,23 @@ Consider giving a star on GitHub!
 
 ## Core
 
-- [Echo Control](./echo-control): Next.js app for [echo.merit.systems](https://echo.merit.systems). Hosted site and api routes.
-- [Echo Server](./echo-server): Express server for router.echo.merit.systems. Proxy for routing and metering LLM requests from clients.
+- [Echo Control](./packages/app/control): Next.js app for [echo.merit.systems](https://echo.merit.systems). Hosted site and api routes.
+- [Echo Server](./packages/app/server): Express server for router.echo.merit.systems. Proxy for routing and metering LLM requests from clients.
 
 ## SDKs
 
-- [Echo TS SDK](./echo-typescript-sdk) Typescript SDK that all the framework specific SDKs are built on top of.
-- [Echo Next.js SDK](./echo-next-sdk) SDK for simple Next.js 15+ App Router integration.
-- [Echo React SDK](./echo-react-sdk) SDK for simple React client side SPA integration.
+- [Echo TS SDK](./packages/sdk/ts) Typescript SDK that all the framework specific SDKs are built on top of.
+- [Echo Next.js SDK](./packages/sdk/next) SDK for simple Next.js 15+ App Router integration.
+- [Echo React SDK](./packages/sdk/react) SDK for simple React client side SPA integration.
 
 ## Examples
 
-- [Echo Next.js Example](./examples/next-sdk-example)
-- [Echo React SDK](./examples/vite)
+- [Echo Next.js Example](./packages/sdk/examples/next)
+- [Echo React SDK](./packages/sdk/examples/vite)
 
 # Development
 
-Fill out `echo-control/.env` and `echo-server/.env`. Then...
+Fill out `packages/app/control/.env` and `packages/app/server/.env`. Then...
 
 - `pnpm i`
 - `pnpm dev`

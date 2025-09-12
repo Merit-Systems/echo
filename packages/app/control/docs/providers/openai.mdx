@@ -1,0 +1,44 @@
+---
+title: OpenAI Provider
+description: GPT models with Echo billing integration
+---
+
+# OpenAI Provider
+
+The OpenAI provider gives you access to GPT models through the Vercel AI SDK with automatic Echo billing integration.
+
+## Supported Models
+
+All OpenAI models are supported via the `OpenAIModel` type:
+
+<ModelTable path="../sdk/ts/src/supported-models/chat/openai.ts" />
+
+## Additional Features
+
+### Responses API Support
+
+The OpenAI Responses API is fully supported through Echo's OpenAI provider.
+
+```typescript
+const result = streamText({
+  model: openai.responses('gpt-4o'),
+  messages: convertToModelMessages(messages),
+});
+```
+
+### Image Generation with GPT-image-1
+
+Echo also supports OpenAI's image generation capabilities through the GPT-image-1 model:
+
+```typescript
+const result = await generateImage({
+  model: openai.image('gpt-image-1'),
+  prompt,
+});
+```
+
+To instantiate `openai.responses` in these examples, see the following guides:
+
+For React applications, see [React SDK LLM Integration](/docs/react-sdk/llm-integration)
+
+For server-side usage, see [Next.js SDK LLM Integration](/docs/next-sdk/llm-integration)

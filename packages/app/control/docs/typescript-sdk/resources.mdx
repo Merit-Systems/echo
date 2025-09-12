@@ -1,0 +1,231 @@
+---
+title: Resources
+description: Platform operations - apps, balance, payments, users, models
+---
+
+# Resources
+
+The EchoClient provides access to platform resources through dedicated modules. Each resource handles a specific domain of Echo platform operations.
+
+## Apps Resource
+
+Manage your Echo applications and retrieve app information.
+
+```typescript
+const apps = await echo.apps.listEchoApps();
+const app = await echo.apps.getEchoApp('app-id');
+const appUrl = echo.apps.getAppUrl('app-id');
+```
+
+### Methods
+
+- **`listEchoApps()`** - List all your Echo applications
+- **`getEchoApp(appId)`** - Get specific application details
+- **`getAppUrl(appId)`** - Generate application URL
+
+### Types
+
+```typescript
+import type { EchoApp } from '@merit-systems/echo-typescript-sdk';
+```
+
+#### EchoApp
+
+<AutoTypeTable path="../../sdk/ts/src/types.ts" name="EchoApp" />
+
+## Balance Resource
+
+Check account balance and free tier usage across applications.
+
+```typescript
+const balance = await echo.balance.getBalance();
+const freeBalance = await echo.balance.getFreeBalance('app-id');
+```
+
+### Methods
+
+- **`getBalance()`** - Get total account balance across all apps
+- **`getFreeBalance(echoAppId)`** - Get free tier balance for specific app
+
+### Types
+
+```typescript
+import type {
+  Balance,
+  FreeBalance,
+  UserSpendInfo,
+} from '@merit-systems/echo-typescript-sdk';
+```
+
+#### Balance
+
+<AutoTypeTable path="../../sdk/ts/src/types.ts" name="Balance" />
+
+#### FreeBalance
+
+<AutoTypeTable path="../../sdk/ts/src/types.ts" name="FreeBalance" />
+
+#### UserSpendInfo
+
+<AutoTypeTable path="../../sdk/ts/src/types.ts" name="UserSpendInfo" />
+
+## Payments Resource
+
+Handle payment links and credit purchases through Stripe integration.
+
+```typescript
+const paymentLink = await echo.payments.createPaymentLink({
+  amount: 25,
+  description: 'Echo Credits',
+});
+
+const paymentUrl = await echo.payments.getPaymentUrl(10, 'Quick Top-up');
+```
+
+### Methods
+
+- **`createPaymentLink(request)`** - Create detailed payment link with options
+- **`getPaymentUrl(amount, description?, successUrl?)`** - Quick payment URL generation
+
+### Types
+
+```typescript
+import type {
+  CreatePaymentLinkRequest,
+  CreatePaymentLinkResponse,
+} from '@merit-systems/echo-typescript-sdk';
+```
+
+#### CreatePaymentLinkRequest
+
+<AutoTypeTable
+  path="../../sdk/ts/src/types.ts"
+  name="CreatePaymentLinkRequest"
+/>
+
+#### CreatePaymentLinkResponse
+
+<AutoTypeTable
+  path="../../sdk/ts/src/types.ts"
+  name="CreatePaymentLinkResponse"
+/>
+
+## Models Resource
+
+Get information about supported LLM models, pricing, and capabilities.
+
+```typescript
+const chatModels = await echo.models.listSupportedChatModels();
+const imageModels = await echo.models.listSupportedImageModels();
+```
+
+### Methods
+
+- **`listSupportedChatModels()`** - Get all supported chat models with pricing and metadata
+- **`listSupportedImageModels()`** - Get all supported image models with pricing and metadata
+
+### Types
+
+```typescript
+import type {
+  SupportedModel,
+  SupportedImageModel,
+} from '@merit-systems/echo-typescript-sdk';
+```
+
+#### SupportedModel
+
+<AutoTypeTable
+  path="../../sdk/ts/src/supported-models/types.ts"
+  name="SupportedModel"
+/>
+
+#### SupportedImageModel
+
+<AutoTypeTable
+  path="../../sdk/ts/src/supported-models/types.ts"
+  name="SupportedImageModel"
+/>
+
+## Users Resource
+
+Manage user information and referral code registration.
+
+```typescript
+const user = await echo.users.getUserInfo();
+const referralResult = await echo.users.registerReferralCode(
+  'app-id',
+  'REFERRAL123'
+);
+```
+
+### Methods
+
+- **`getUserInfo()`** - Get current user information and spending data
+- **`registerReferralCode(echoAppId, code)`** - Register referral code for benefits
+
+### Types
+
+```typescript
+import type {
+  User,
+  RegisterReferralCodeRequest,
+  RegisterReferralCodeResponse,
+} from '@merit-systems/echo-typescript-sdk';
+```
+
+#### User
+
+<AutoTypeTable path="../../sdk/ts/src/types.ts" name="User" />
+
+#### RegisterReferralCodeRequest
+
+<AutoTypeTable
+  path="../../sdk/ts/src/types.ts"
+  name="RegisterReferralCodeRequest"
+/>
+
+#### RegisterReferralCodeResponse
+
+<AutoTypeTable
+  path="../../sdk/ts/src/types.ts"
+  name="RegisterReferralCodeResponse"
+/>
+
+## Example Usage
+
+### Complete Platform Operations
+
+```typescript
+import { EchoClient } from '@merit-systems/echo-typescript-sdk';
+
+const echo = new EchoClient({ apiKey: process.env.ECHO_API_KEY });
+
+async function platformDemo() {
+  // Check user and balance
+  const user = await echo.users.getUserInfo();
+  const balance = await echo.balance.getBalance();
+
+  console.log(`User: ${user.email}, Balance: $${balance.balance}`);
+
+  // Create payment link if balance is low
+  if (balance.balance < 5) {
+    const payment = await echo.payments.createPaymentLink({
+      amount: 20,
+      description: 'Account Top-up',
+    });
+
+    console.log(`Payment link: ${payment.url}`);
+  }
+
+  // List available models
+  const chatModels = await echo.models.listSupportedChatModels();
+  const imageModels = await echo.models.listSupportedImageModels();
+  console.log(`Available chat models: ${chatModels.length}`);
+  console.log(`Available image models: ${imageModels.length}`);
+
+  // Get app information
+  const apps = await echo.apps.listEchoApps();
+  console.log(`Your apps: ${apps.length}`);
+}
+```

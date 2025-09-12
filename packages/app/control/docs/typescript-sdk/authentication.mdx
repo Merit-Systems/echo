@@ -1,0 +1,114 @@
+---
+title: Authentication
+description: API keys, token providers, and OAuth integration patterns
+---
+
+# Authentication
+
+Echo supports multiple authentication methods to fit different use cases, from simple API keys to OAuth2 flows.
+
+## API Key Authentication
+
+### Direct API Key
+
+Simplest method for server-side applications:
+
+```typescript
+import { EchoClient } from '@merit-systems/echo-typescript-sdk';
+
+const echo = new EchoClient({
+  apiKey: 'your-api-key'
+});
+```
+
+### ApiKeyTokenProvider
+
+For more control over token management:
+
+```typescript
+import { EchoClient, ApiKeyTokenProvider } from '@merit-systems/echo-typescript-sdk';
+
+const tokenProvider = new ApiKeyTokenProvider('your-api-key');
+
+const echo = new EchoClient({
+  tokenProvider
+});
+```
+
+## OAuth Token Provider
+
+For dynamic token management (used by React/Next.js SDKs):
+
+```typescript
+import { EchoClient, OAuthTokenProvider } from '@merit-systems/echo-typescript-sdk';
+
+const tokenProvider = new OAuthTokenProvider({
+  getTokenFn: async () => {
+    // Return current access token
+    return getCurrentAccessToken();
+  },
+  refreshTokenFn: async () => {
+    // Refresh and return new token
+    return await refreshAccessToken();
+  }
+});
+
+const echo = new EchoClient({ tokenProvider });
+```
+
+## Token Provider Interface
+
+All token providers implement the `TokenProvider` interface:
+
+```typescript
+import type { TokenProvider } from '@merit-systems/echo-typescript-sdk';
+```
+
+### TokenProvider
+
+The `TokenProvider` interface defines the contract for providing access tokens:
+
+```typescript
+interface TokenProvider {
+  /**
+   * Get the current access token
+   * @returns Promise that resolves to the access token or null if not available
+   */
+  getAccessToken(): Promise<string | null>;
+
+  /**
+   * Refresh the access token when it expires or becomes invalid
+   * @returns Promise that resolves when the token is refreshed
+   */
+  refreshToken(): Promise<string | void>;
+
+  /**
+   * Optional callback to be called when a token refresh fails
+   * @param error The error that occurred during refresh
+   */
+  onRefreshError?(error: Error): void;
+}
+```
+
+## Creating Custom Token Providers
+
+```typescript
+import type { TokenProvider } from '@merit-systems/echo-typescript-sdk';
+
+class CustomTokenProvider implements TokenProvider {
+  async getToken(): Promise<string | null> {
+    // Your custom token retrieval logic
+    return await getTokenFromCustomSource();
+  }
+
+  async refreshToken(): Promise<string | null> {
+    // Your custom token refresh logic
+    return await refreshTokenFromCustomSource();
+  }
+}
+
+const echo = new EchoClient({
+  tokenProvider: new CustomTokenProvider()
+});
+```
+

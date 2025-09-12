@@ -1,0 +1,39 @@
+---
+title: Provider
+description: EchoProvider setup and configuration
+---
+
+# Provider
+
+## EchoProvider Setup
+
+The `EchoProvider` component wraps your application and manages OAuth2 + PKCE authentication flow state.
+
+```tsx
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <EchoProvider
+      config={{
+        appId: 'your-echo-app-id',
+      }}
+    >
+      <YourApp />
+    </EchoProvider>
+  );
+}
+```
+
+### EchoAuthConfig
+
+```typescript
+import type { EchoAuthConfig } from '@merit-systems/echo-react-sdk';
+```
+
+#### EchoAuthConfig
+
+<AutoTypeTable
+  path="../../sdk/react/src/types/index.ts"
+  name="EchoAuthConfig"
+/>

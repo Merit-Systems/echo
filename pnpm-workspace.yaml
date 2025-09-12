@@ -1,14 +1,8 @@
 packages:
-  - echo-start
-  - echo-control
-  - echo-server
-  - echo-typescript-sdk
-  - echo-next-sdk
-  - echo-react-sdk
-  - echo-authjs-provider
-  - integration-tests
-  - examples/*
-  - smoke/**
+  - packages/app/*
+  - packages/sdk/*
+  - packages/sdk/examples/*
+  - packages/tests/*
 allowBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'

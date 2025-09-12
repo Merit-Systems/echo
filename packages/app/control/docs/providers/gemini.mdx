@@ -1,0 +1,39 @@
+---
+title: Gemini Provider
+description: Google Gemini models with Echo billing integration
+---
+
+# Gemini Provider
+
+The Gemini provider gives you access to Google's Gemini models through the Vercel AI SDK with automatic Echo billing integration.
+
+## Supported Models
+
+All Gemini models are supported via the `GeminiModel` type:
+
+<ModelTable path="../sdk/ts/src/supported-models/chat/gemini.ts" />
+
+## ⚠️ Gemini Limitations
+
+**Important:** Gemini is currently only supported via the `/chat/completions` endpoint. This means:
+
+- Direct Gemini API streaming may not work as expected
+- For the most reliable streaming experience, ensure your implementation uses the chat completions interface
+- To enable this, you should use the OpenAI Provider, which will hit Gemini's supported chat/completions endpoint.
+- For more information, see Google's documentation [here](https://cloud.google.com/vertex-ai/generative-ai/docs/samples/generativeaionvertexai-gemini-chat-completions-non-streaming).
+- Streaming will be supported through the Vercel interface for Gemini as soon as possible.
+
+```typescript
+const result = streamText({
+  model: openai.chat('gemini-2.0-flash'),
+  messages: convertToModelMessages(messages),
+});
+
+return result.toUIMessageStreamResponse();
+```
+
+To instantiate `openai.chat` in this example, see the following guides:
+
+For React applications, see [React SDK LLM Integration](/docs/react-sdk/llm-integration)
+
+For server-side usage, see [Next.js SDK LLM Integration](/docs/next-sdk/llm-integration)

@@ -1,0 +1,56 @@
+# Use Node.js 20 as the base image
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Install system dependencies
+RUN apk add --no-cache \
+    bash \
+    git \
+    openssh-client 
+
+# Copy pnpm workspace and lock files for dependency installation
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY tsconfig.base.json ./
+
+# Copy all project files first
+COPY packages/app/control/ ./packages/app/control/
+COPY packages/app/server/ ./packages/app/server/
+COPY packages/sdk/ts/ ./packages/sdk/ts/
+
+# Install dependencies for both projects (including dev dependencies for build)
+WORKDIR /app/echo-control
+RUN pnpm install
+
+WORKDIR /app/echo-server
+RUN pnpm install
+
+# Step 1: Build echo-control and generate Prisma client
+WORKDIR /app/echo-control
+RUN pnpm run prisma:generate
+RUN pnpm run build
+
+WORKDIR /app/echo-typescript-sdk
+RUN pnpm install
+RUN pnpm run build
+
+# Step 2: Set up Prisma in echo-server using the new script
+WORKDIR /app/echo-server
+RUN pnpm run setup-prisma
+
+ENV PORT=3069
+
+# Step 3: Build echo-server
+RUN pnpm run build
+
+# Expose the port that echo-server runs on
+EXPOSE 3069
+
+# Step 4: Start the server
+CMD ["pnpm", "start"]
