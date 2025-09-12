@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UsersCsvDownload } from '@/components/admin/UsersCsvDownload';
+import { UsersCsvDownload } from '@/app/(app)/admin/_components/admin/UsersCsvDownload';
 import {
   Select,
   SelectContent,

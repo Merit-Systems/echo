@@ -1,15 +1,19 @@
-import { UserTransactionDetails } from '@/app/(app)/admin/_components';
 import { userOrRedirect } from '@/auth/user-or-redirect';
+import { UserBreakdownDashboard } from '@/app/(app)/admin/_components/UserBreakdownDashboard';
 
-export default async function AdminUserTransactionsPage(
-  props: PageProps<'/admin/users/[userId]'>
-) {
-  const { userId } = await props.params;
-  await userOrRedirect(`/admin/users/${userId}`, props);
+interface UserBreakdownPageProps {
+  params: Promise<{
+    userId: string;
+  }>;
+}
+
+export default async function UserBreakdownPage({ params }: UserBreakdownPageProps) {
+  const { userId } = await params;
+  await userOrRedirect('/admin', { params: Promise.resolve({}), searchParams: Promise.resolve({}) } as any);
 
   return (
     <div className="container mx-auto py-8">
-      <UserTransactionDetails userId={userId} />
+      <UserBreakdownDashboard userId={userId} />
     </div>
   );
 }

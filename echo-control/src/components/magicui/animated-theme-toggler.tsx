@@ -13,16 +13,21 @@ type props = {
 
 export const AnimatedThemeToggler = ({ className }: props) => {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
-  const { setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const changeTheme = async () => {
     if (!buttonRef.current) return;
 
-    await document.startViewTransition(() => {
-      flushSync(() => {
-        const dark = document.documentElement.classList.toggle('dark');
-        setTheme(dark ? 'dark' : 'light');
-      });
-    }).ready;
+    const next = resolvedTheme === 'dark' ? 'light' : 'dark';
+
+    if (!('startViewTransition' in document)) {
+      setTheme(next);
+    } else {
+      await (document as any).startViewTransition(() => {
+        flushSync(() => {
+          setTheme(next);
+        });
+      }).ready;
+    }
 
     const { top, left, width, height } =
       buttonRef.current.getBoundingClientRect();

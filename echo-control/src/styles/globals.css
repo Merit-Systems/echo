@@ -210,6 +210,22 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Derived opacity variants for theme colors */
+  --color-muted-10: color-mix(in oklch, var(--color-muted) 10%, transparent);
+  --color-muted-20: color-mix(in oklch, var(--color-muted) 20%, transparent);
+  --color-muted-30: color-mix(in oklch, var(--color-muted) 30%, transparent);
+  --color-accent-30: color-mix(in oklch, var(--color-accent) 30%, transparent);
+  --color-accent-50: color-mix(in oklch, var(--color-accent) 50%, transparent);
+  --color-primary-10: color-mix(in oklch, var(--color-primary) 10%, transparent);
+  --color-background-80: color-mix(in oklch, var(--color-background) 80%, transparent);
+  --color-muted-foreground-30: color-mix(in oklch, var(--color-muted-foreground) 30%, transparent);
+  --color-muted-foreground-50: color-mix(in oklch, var(--color-muted-foreground) 50%, transparent);
+
+  /* Scrollbar tokens */
+  --color-scrollbar-track: color-mix(in oklch, var(--color-muted) 45%, transparent);
+  --color-scrollbar-thumb: color-mix(in oklch, var(--color-primary) 65%, transparent);
+  --color-scrollbar-thumb-hover: color-mix(in oklch, var(--color-primary) 85%, transparent);
+
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
@@ -297,6 +313,155 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* AG Grid Custom Theme Integration */
+@layer components {
+  .ag-theme-echo {
+    /* Base colors */
+    --ag-background-color: var(--color-background);
+    --ag-foreground-color: var(--color-foreground);
+    --ag-border-color: var(--color-border);
+    
+    /* Header styles */
+    --ag-header-background-color: var(--color-card);
+    --ag-header-foreground-color: var(--color-foreground);
+    --ag-header-cell-hover-background-color: var(--color-accent);
+    --ag-header-cell-moving-background-color: var(--color-accent);
+    
+    /* Row styles */
+    --ag-row-background-color: var(--color-background);
+    --ag-odd-row-background-color: var(--color-muted-20);
+    --ag-row-hover-color: var(--color-accent-50);
+    --ag-selected-row-background-color: var(--color-accent);
+    
+    /* Cell styles */
+    --ag-cell-horizontal-border: var(--color-border);
+    --ag-cell-vertical-border: var(--color-border);
+    
+    /* Input styles */
+    --ag-input-background-color: var(--color-input);
+    --ag-input-border-color: var(--color-border);
+    --ag-input-focus-border-color: var(--color-ring);
+    
+    /* Checkbox styles */
+    --ag-checkbox-background-color: var(--color-background);
+    --ag-checkbox-border-color: var(--color-border);
+    --ag-checkbox-checked-color: var(--color-primary);
+    
+    /* Scrollbar styles */
+    --ag-scrollbar-thumb-color: var(--color-border);
+    --ag-scrollbar-track-color: var(--color-muted);
+    
+    /* Popup and dropdown styles */
+    --ag-popup-background-color: var(--color-popover);
+    --ag-popup-border-color: var(--color-border);
+    --ag-popup-shadow: var(--shadow-lg);
+    
+    /* Menu styles */
+    --ag-menu-background-color: var(--color-popover);
+    --ag-menu-border-color: var(--color-border);
+    --ag-menu-option-hover-color: var(--color-accent);
+    
+    /* Filter styles */
+    --ag-filter-background-color: var(--color-popover);
+    --ag-filter-border-color: var(--color-border);
+    
+    /* Panel styles */
+    --ag-panel-background-color: var(--color-card);
+    --ag-panel-border-color: var(--color-border);
+    
+    /* Additional customization */
+    --ag-font-family: var(--font-sans);
+    --ag-font-size: 14px;
+    --ag-row-height: 48px;
+    --ag-header-height: 48px;
+    --ag-border-radius: var(--radius-md);
+  }
+  
+  /* Custom column header styling for better visibility */
+  .ag-theme-echo .ag-header-cell-label {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .ag-theme-echo .ag-header-cell {
+    border-right: 1px solid var(--color-border);
+  }
+  
+  .ag-theme-echo .ag-header-cell:last-child {
+    border-right: none;
+  }
+  
+  /* Improve row striping visibility */
+  .ag-theme-echo .ag-row-odd {
+    background-color: var(--color-muted-10);
+  }
+  
+  /* Enhanced hover states */
+  .ag-theme-echo .ag-row:hover {
+    background-color: var(--color-accent-30) !important;
+  }
+  
+  /* Better selection styling */
+  .ag-theme-echo .ag-row-selected {
+    background-color: var(--color-primary-10) !important;
+    border-left: 3px solid var(--color-primary);
+  }
+  
+  /* Checkbox styling improvements */
+  .ag-theme-echo .ag-checkbox-input-wrapper {
+    border-radius: var(--radius-sm);
+  }
+  
+  .ag-theme-echo .ag-checkbox-input-wrapper.ag-checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  
+  /* Filter panel improvements */
+  .ag-theme-echo .ag-filter-panel {
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  /* Menu improvements */
+  .ag-theme-echo .ag-menu {
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .ag-theme-echo .ag-menu-option:hover {
+    background-color: var(--color-accent);
+    border-radius: var(--radius-sm);
+  }
+  
+  /* Loading overlay */
+  .ag-theme-echo .ag-overlay-loading-wrapper {
+    background-color: var(--color-background-80);
+    backdrop-filter: blur(2px);
+  }
+  
+  /* Scrollbar styling */
+  .ag-theme-echo ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .ag-theme-echo ::-webkit-scrollbar-track {
+    background: var(--color-scrollbar-track);
+  }
+  
+  .ag-theme-echo ::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar-thumb);
+    border-radius: var(--radius-sm);
+  }
+  
+  .ag-theme-echo ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-scrollbar-thumb-hover);
   }
 }
 
@@ -389,4 +554,71 @@
 ::view-transition-old(root), ::view-transition-new(root) {
     animation: none;
     mix-blend-mode: normal;
+}
+
+/* Enhanced AdminDataGrid Styling */
+.ag-theme-echo .ag-cell {
+  line-height: 1.5 !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+.ag-theme-echo .cell-wrap-text {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
+}
+
+.ag-theme-echo .ag-row {
+  border-bottom: 1px solid hsl(var(--border)) !important;
+}
+
+.ag-theme-echo .ag-header-cell {
+  padding: 12px 16px !important;
+  font-weight: 600 !important;
+  background: hsl(var(--muted)) !important;
+  border-bottom: 2px solid hsl(var(--border)) !important;
+}
+
+.ag-theme-echo .ag-cell-wrapper {
+  height: 100% !important;
+  align-items: flex-start !important;
+  padding-top: 2px !important;
+}
+
+/* Improved cell content spacing for multi-line content */
+.ag-theme-echo .ag-cell-value {
+  width: 100% !important;
+  min-height: 20px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  word-break: break-word !important;
+}
+
+/* Better checkbox alignment in taller rows */
+.ag-theme-echo .ag-selection-checkbox {
+  margin-top: 2px !important;
+}
+
+.ag-theme-echo .ag-cell[col-id="ag-Grid-AutoColumn"] {
+  justify-content: center !important;
+}
+
+/* Improved filter styling */
+.ag-theme-echo .ag-floating-filter-input {
+  padding: 8px 12px !important;
+}
+
+/* Enhanced hover and selection states */
+.ag-theme-echo .ag-row-hover {
+  background-color: hsl(var(--muted) / 0.5) !important;
+}
+
+.ag-theme-echo .ag-row-selected {
+  background-color: hsl(var(--accent) / 0.1) !important;
+  border-left: 3px solid hsl(var(--primary)) !important;
 }

@@ -1,15 +1,19 @@
-import { AppTransactionDetails } from '@/app/(app)/admin/_components';
 import { userOrRedirect } from '@/auth/user-or-redirect';
+import { AppBreakdownDashboard } from '@/app/(app)/admin/_components/AppBreakdownDashboard';
 
-export default async function AdminAppTransactionsPage(
-  props: PageProps<'/admin/apps/[appId]'>
-) {
-  const { appId } = await props.params;
-  await userOrRedirect(`/admin/apps/${appId}`, props);
+interface AppBreakdownPageProps {
+  params: Promise<{
+    appId: string;
+  }>;
+}
+
+export default async function AppBreakdownPage({ params }: AppBreakdownPageProps) {
+  const { appId } = await params;
+  await userOrRedirect('/admin', { params: Promise.resolve({}), searchParams: Promise.resolve({}) } as any);
 
   return (
     <div className="container mx-auto py-8">
-      <AppTransactionDetails appId={appId} />
+      <AppBreakdownDashboard appId={appId} />
     </div>
   );
 }

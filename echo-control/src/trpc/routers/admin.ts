@@ -31,6 +31,18 @@ import {
   getUserTransactionTotals,
   isAdmin,
 } from '@/services/admin/admin';
+import {
+  getUsersEarningsWithCampaignsPaginated,
+  getUserEarningsWithCampaigns,
+} from '@/services/admin/user-earnings-with-campaigns';
+import {
+  getUsersSpendingEnhancedPaginated,
+  getUserSpendingEnhanced,
+} from '@/services/admin/user-spending-enhanced';
+import {
+  getGlobalPaymentsAndSpending,
+  getGlobalPaymentsAndSpendingPaginated,
+} from '@/services/admin/payments-global';
 import { mintCreditsToUserSchema } from '@/services/credits';
 import { adminListPendingPayouts } from '@/services/admin/pending-payouts';
 import { adminListCompletedPayouts } from '@/services/admin/completed-payouts';
@@ -152,6 +164,38 @@ export const adminRouter = createTRPCRouter({
       .query(async ({ input }) => {
         return await getAppEarningsAcrossAllUsers(input.appId);
       }),
+
+    /**
+     * Get user earnings with email campaigns information - paginated
+     */
+    getUsersEarningsWithCampaignsPaginated: adminProcedure
+      .input(
+        z.object({
+          page: z.number().min(0).default(0),
+          pageSize: z.number().min(1).max(100).default(25),
+          searchTerm: z.string().optional(),
+          sortField: z.string().optional(),
+          sortDirection: z.enum(['asc', 'desc']).optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        return await getUsersEarningsWithCampaignsPaginated(
+          input.page,
+          input.pageSize,
+          input.searchTerm,
+          input.sortField,
+          input.sortDirection
+        );
+      }),
+
+    /**
+     * Get single user earnings with email campaigns information
+     */
+    getUserEarningsWithCampaigns: adminProcedure
+      .input(z.object({ userId: z.string() }))
+      .query(async ({ input }) => {
+        return await getUserEarningsWithCampaigns(input.userId);
+      }),
   },
 
   spending: {
@@ -199,6 +243,38 @@ export const adminRouter = createTRPCRouter({
       .input(z.object({ appId: z.string() }))
       .query(async ({ input }) => {
         return await getAppSpendingAcrossAllUsers(input.appId);
+      }),
+
+    /**
+     * Get enhanced user spending information with free tier and payment breakdown - paginated
+     */
+    getUsersSpendingEnhancedPaginated: adminProcedure
+      .input(
+        z.object({
+          page: z.number().min(0).default(0),
+          pageSize: z.number().min(1).max(100).default(25),
+          searchTerm: z.string().optional(),
+          sortField: z.string().optional(),
+          sortDirection: z.enum(['asc', 'desc']).optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        return await getUsersSpendingEnhancedPaginated(
+          input.page,
+          input.pageSize,
+          input.searchTerm,
+          input.sortField,
+          input.sortDirection
+        );
+      }),
+
+    /**
+     * Get single user enhanced spending information
+     */
+    getUserSpendingEnhanced: adminProcedure
+      .input(z.object({ userId: z.string() }))
+      .query(async ({ input }) => {
+        return await getUserSpendingEnhanced(input.userId);
       }),
   },
 
@@ -257,6 +333,38 @@ export const adminRouter = createTRPCRouter({
       .input(z.object({ userId: z.string() }))
       .query(async ({ input }) => {
         return await getUserTransactionTotals(input.userId);
+      }),
+  },
+
+  paymentsGlobal: {
+    /**
+     * Get global payments and spending summary
+     */
+    getSummary: adminProcedure.query(async () => {
+      return await getGlobalPaymentsAndSpending();
+    }),
+
+    /**
+     * Get global payments and spending with paginated payment details
+     */
+    getPaginated: adminProcedure
+      .input(
+        z.object({
+          page: z.number().min(0).default(0),
+          pageSize: z.number().min(1).max(100).default(25),
+          searchTerm: z.string().optional(),
+          sortField: z.string().optional(),
+          sortDirection: z.enum(['asc', 'desc']).optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        return await getGlobalPaymentsAndSpendingPaginated(
+          input.page,
+          input.pageSize,
+          input.searchTerm,
+          input.sortField,
+          input.sortDirection
+        );
       }),
   },
 
