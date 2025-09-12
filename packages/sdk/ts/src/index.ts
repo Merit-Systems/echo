@@ -16,6 +16,7 @@ export type {
   SupportedModel,
   SupportedImageModel,
   ImageGenerationQuality,
+  SupportedVideoModel,
   ImageDimensions,
   WebSearchModel,
   SupportedTool,
@@ -43,3 +44,5 @@ export { OpenRouterModels } from './supported-models/chat/openrouter';
 export type { OpenRouterModel } from './supported-models/chat/openrouter';
 export { OpenAIImageModels } from './supported-models/image/openai';
 export type { OpenAIImageModel } from './supported-models/image/openai';
+export { GeminiVideoModels } from './supported-models/video/gemini';
+export type { GeminiVideoModel } from './supported-models/video/gemini';

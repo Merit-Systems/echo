@@ -7,12 +7,14 @@ import {
   SupportedOpenAIResponseToolPricing,
   SupportedModel,
   SupportedImageModel,
+  SupportedVideoModel,
 } from '@merit-systems/echo-typescript-sdk';
 
 import { Decimal } from '@prisma/client/runtime/library';
 import { UnknownModelError } from '../errors/http';
 import { Tool } from 'openai/resources/responses/responses';
 import { logMetric } from '../logger';
+import { GeminiVideoModels } from '@merit-systems/echo-typescript-sdk';
 
 // Combine all supported chat models from the TypeScript SDK
 export const ALL_SUPPORTED_MODELS: SupportedModel[] = [
@@ -26,6 +28,9 @@ export const ALL_SUPPORTED_MODELS: SupportedModel[] = [
 export const ALL_SUPPORTED_IMAGE_MODELS: SupportedImageModel[] =
   OpenAIImageModels;
 
+export const ALL_SUPPORTED_VIDEO_MODELS: SupportedVideoModel[] =
+  GeminiVideoModels;
+
 // Create a lookup map for O(1) model price retrieval
 const MODEL_PRICE_MAP = new Map<string, SupportedModel>();
 ALL_SUPPORTED_MODELS.forEach(model => {
@@ -36,6 +41,12 @@ ALL_SUPPORTED_MODELS.forEach(model => {
 const IMAGE_MODEL_MAP = new Map();
 ALL_SUPPORTED_IMAGE_MODELS.forEach(model => {
   IMAGE_MODEL_MAP.set(model.model_id, model);
+});
+
+// Create a separate map for video models since they have different pricing structure
+const VIDEO_MODEL_MAP = new Map();
+ALL_SUPPORTED_VIDEO_MODELS.forEach(model => {
+  VIDEO_MODEL_MAP.set(model.model_id, model);
 });
 
 const getModelPrice = (model: string) => {
@@ -69,12 +80,30 @@ const getImageModelPrice = (model: string) => {
   return null;
 };
 
+const getVideoModelPrice = (model: string) => {
+  const videoModel = VIDEO_MODEL_MAP.get(model);
+
+  if (videoModel) {
+    return {
+      input_cost_per_token: videoModel.input_cost_per_token,
+      output_cost_per_token: videoModel.output_cost_per_token,
+      provider: videoModel.provider,
+      model: videoModel.model_id,
+    };
+  }
+  return null;
+};
+
 export const isValidModel = (model: string) => {
   return MODEL_PRICE_MAP.has(model);
 };
 
 export const isValidImageModel = (model: string) => {
   return IMAGE_MODEL_MAP.has(model);
+};
+
+export const isValidVideoModel = (model: string) => {
+  return VIDEO_MODEL_MAP.has(model);
 };
 
 export const getCostPerToken = (
