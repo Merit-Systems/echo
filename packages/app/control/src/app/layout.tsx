@@ -13,6 +13,8 @@ import { Toaster } from '@/components/ui/sonner';
 import type { Metadata } from 'next';
 import type { Viewport } from 'next';
 
+import { env } from '@/env';
+
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -25,9 +27,7 @@ export const metadata: Metadata = {
     title: 'Echo',
     statusBarStyle: 'black-translucent',
   },
-  metadataBase: new URL(
-    process.env.ECHO_CONTROL_APP_BASE_URL || 'http://localhost:3000'
-  ),
+  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
 };
 
 export const viewport: Viewport = {

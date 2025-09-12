@@ -1,9 +1,11 @@
 import z from 'zod';
 
-export type PaginationParams = {
-  page: number;
-  page_size: number;
-};
+export const paginationSchema = z.object({
+  page: z.number().optional().default(1),
+  page_size: z.number().optional().default(10),
+});
+
+export type PaginationParams = z.infer<typeof paginationSchema>;
 
 interface ToPaginatedResponseParams<T> {
   items: T[];

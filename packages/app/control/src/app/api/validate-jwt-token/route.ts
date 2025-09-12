@@ -1,6 +1,6 @@
-import { authenticateEchoAccessJwtToken } from '@/lib/jwt-tokens';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/logger';
+import { authenticateEchoAccessJwt } from '@/lib/auth/jwt';
 
 // POST /api/validate-jwt-token - Fast JWT validation without DB lookup
 export async function POST(request: NextRequest) {
@@ -32,22 +32,22 @@ export async function POST(request: NextRequest) {
     // Fast JWT validation (no database lookup)
     try {
       const validationResult =
-        await authenticateEchoAccessJwtToken(tokenRemovedBearer);
+        await authenticateEchoAccessJwt(tokenRemovedBearer);
 
       logger.emit({
         severityText: 'INFO',
         body: 'JWT token validation successful',
         attributes: {
-          userId: validationResult.userId,
-          appId: validationResult.appId,
+          userId: validationResult.user_id,
+          appId: validationResult.app_id,
           scope: validationResult.scope,
         },
       });
 
       return NextResponse.json({
         valid: true,
-        userId: validationResult.userId,
-        appId: validationResult.appId,
+        userId: validationResult.user_id,
+        appId: validationResult.app_id,
         scope: validationResult.scope,
       });
     } catch (error) {

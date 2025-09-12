@@ -3,6 +3,7 @@ import { oauthProviders, testProviders } from './providers';
 import type { DefaultSession, NextAuthConfig } from 'next-auth';
 import type { DefaultJWT } from 'next-auth/jwt';
 import { skipCSRFCheck } from '@auth/core';
+import { env } from '@/env';
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -24,7 +25,7 @@ declare module 'next-auth/jwt' {
   }
 }
 
-const IS_TEST_MODE = process.env.INTEGRATION_TEST_MODE === 'true';
+const IS_TEST_MODE = env.INTEGRATION_TEST_MODE;
 
 export const authConfig = {
   providers: IS_TEST_MODE ? testProviders : oauthProviders,

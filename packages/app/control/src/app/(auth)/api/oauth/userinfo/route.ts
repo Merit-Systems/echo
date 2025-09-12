@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateEchoAccessJwtToken } from '@/lib/jwt-tokens';
+import { authenticateEchoAccessJwt } from '@/lib/auth/jwt';
 import { db } from '@/lib/db';
 import { logger } from '@/logger';
 
@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
     // Authenticate using the OAuth access token (JWT)
     let userId: string;
     try {
-      const authResult = await authenticateEchoAccessJwtToken(accessToken);
-      userId = authResult.userId;
+      const authResult = await authenticateEchoAccessJwt(accessToken);
+      userId = authResult.user_id;
     } catch (_error) {
       logger.emit({
         severityText: 'WARN',

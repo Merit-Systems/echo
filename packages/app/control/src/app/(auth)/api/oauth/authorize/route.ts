@@ -5,6 +5,7 @@ import {
 } from '@/app/(auth)/_lib/authorize';
 import { createZodRoute } from '@/app/api/_utils/create-route';
 import { auth } from '@/auth';
+import { env } from '@/env';
 import { getApp } from '@/services/apps/get';
 import { NextResponse } from 'next/server';
 import z from 'zod';
@@ -34,7 +35,7 @@ export const GET = createZodRoute()
     }
 
     if (query.prompt === 'none') {
-      if (process.env.INTEGRATION_TEST_MODE !== 'true') {
+      if (!env.INTEGRATION_TEST_MODE) {
         return NextResponse.json(
           {
             error: 'invalid_request',

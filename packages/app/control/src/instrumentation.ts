@@ -1,11 +1,11 @@
 // instrumentation.ts
 import { registerOTel, OTLPHttpJsonTraceExporter } from '@vercel/otel';
 import { setupLoggerProvider } from './logger';
+import { env } from './env';
 
-const SIGNOZ_INGESTION_KEY = process.env.SIGNOZ_INGESTION_KEY;
-const OTEL_EXPORTER_OTLP_ENDPOINT =
-  process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'https://ingest.signoz.io';
-const SIGNOZ_SERVICE_NAME = process.env.SIGNOZ_SERVICE_NAME || 'echo-control';
+const SIGNOZ_INGESTION_KEY = env.SIGNOZ_INGESTION_KEY;
+const OTEL_EXPORTER_OTLP_ENDPOINT = env.OTEL_EXPORTER_OTLP_ENDPOINT;
+const SIGNOZ_SERVICE_NAME = env.SIGNOZ_SERVICE_NAME;
 
 export function register() {
   // --- Traces ---

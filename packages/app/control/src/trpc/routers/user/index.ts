@@ -15,7 +15,7 @@ import { userInitialFreeTierRouter } from './inital-free-tier';
 import { userTermsAgreementRouter } from './terms-agreement';
 
 import { getUserFeed, userFeedSchema } from '@/services/feed/feed';
-import { getUser } from '@/services/user';
+import { getPublicUser } from '@/services/user';
 
 export const userRouter = createTRPCRouter({
   balance: userBalanceRouter,
@@ -30,7 +30,7 @@ export const userRouter = createTRPCRouter({
 
   current: {
     get: protectedProcedure.query(async ({ ctx }) => {
-      return getUser(ctx.session.user.id);
+      return getPublicUser(ctx.session.user.id);
     }),
   },
 

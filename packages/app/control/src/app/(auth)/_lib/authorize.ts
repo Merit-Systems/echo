@@ -4,15 +4,13 @@ import { nanoid } from 'nanoid';
 
 import { auth } from '@/auth';
 import { SignJWT } from 'jose';
+import { env } from '@/env';
 
 // TTL for the one-time authorization code (seconds)
 const AUTH_CODE_TTL = 300; // 5 minutes
 
 // JWT secret for signing authorization codes (use a proper secret in production)
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.OAUTH_CODE_SIGNING_JWT_SECRET ||
-    'your-secret-key-change-in-production'
-);
+const JWT_SECRET = new TextEncoder().encode(env.OAUTH_CODE_SIGNING_JWT_SECRET);
 
 export const authorizeParamsSchema = z.object({
   client_id: z.uuid('client_id must be a valid UUID'),

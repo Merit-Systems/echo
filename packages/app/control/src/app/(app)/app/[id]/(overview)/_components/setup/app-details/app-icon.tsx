@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 
 import { api } from '@/trpc/client';
 
-import { updateAppSchema } from '@/services/apps/update';
+import { updateAppSchema } from '@/services/apps/lib/schemas';
 
 const profilePictureSchema = z.object({
   profilePictureUrl: z.url(),

@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { getAppTransactionAggregates } from './user-earnings';
 
-export type AppEarningsRow = {
+type AppEarningsRow = {
   appId: string;
   appName: string;
   transactionCount: number;

@@ -4,17 +4,7 @@ import { db } from '@/lib/db';
 import { AppRole, MembershipStatus } from '@/lib/permissions';
 import { logger } from '@/logger';
 import { scheduleCreateAppFollowUpEmail } from '../email/create-app';
-
-export const createAppSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'App name is required')
-    .max(100, 'App name must be 100 characters or less'),
-  markup: z
-    .number()
-    .min(1, 'Markup must be greater than 0')
-    .max(100, 'Markup must be less than 100'),
-});
+import { createAppSchema } from './lib/schemas';
 
 export const createApp = async (
   userId: string,

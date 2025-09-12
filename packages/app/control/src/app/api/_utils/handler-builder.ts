@@ -3,18 +3,15 @@ import z from 'zod';
 import {
   HandlerFunction,
   HandlerServerErrorFn,
+  InternalErrorBody,
   MiddlewareFunction,
   MiddlewareResult,
   NextFunction,
   OriginalRouteHandler,
+  ServerErrorBody,
 } from './types';
 import { NextResponse } from 'next/server';
 import { logger } from '@/logger';
-
-type InternalErrorBody = {
-  message: string;
-  errors?: z.core.$ZodIssue[];
-};
 
 class InternalRouteHandlerError extends Error {
   readonly body: InternalErrorBody;
@@ -179,16 +176,17 @@ export class RouteHandlerBuilder<
    * @param handler - The handler function that will be called when the route is hit
    * @returns The original route handler that Next.js expects with the validation logic
    */
-  handler(
+  handler<TResponseBody>(
     handler: HandlerFunction<
       z.infer<TParams>,
       z.infer<TQuery>,
       z.infer<TBody>,
       TContext,
-      z.infer<TMetadata>
+      z.infer<TMetadata>,
+      TResponseBody
     >
-  ): OriginalRouteHandler {
-    return async (request, context): Promise<NextResponse> => {
+  ): OriginalRouteHandler<TResponseBody> {
+    return async (request, context) => {
       try {
         let params = context?.params
           ? await context.params
@@ -281,7 +279,7 @@ export class RouteHandlerBuilder<
 
         const executeMiddlewareChain = async (
           index: number
-        ): Promise<NextResponse> => {
+        ): Promise<NextResponse<TResponseBody | ServerErrorBody>> => {
           if (index >= this.middlewares.length) {
             try {
               const result = await handler(request, {
@@ -292,12 +290,7 @@ export class RouteHandlerBuilder<
                 metadata: metadata as z.infer<TMetadata>,
               });
 
-              if (result instanceof NextResponse) return result;
-
-              return NextResponse.json(result, {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' },
-              });
+              return result;
             } catch (error) {
               return handleError(error as Error, this.handleServerError);
             }
@@ -346,7 +339,7 @@ export class RouteHandlerBuilder<
 const handleError = (
   error: Error,
   handleServerError?: HandlerServerErrorFn
-): NextResponse => {
+): NextResponse<InternalErrorBody | ServerErrorBody> => {
   if (error instanceof InternalRouteHandlerError) {
     logger.emit({
       severityText: 'WARN',

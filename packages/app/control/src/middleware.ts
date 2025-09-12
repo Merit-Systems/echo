@@ -11,6 +11,7 @@ import {
   formatAmountFromQueryParams,
   formatPriceForMiddleware,
 } from '@/lib/base';
+import { env } from './env';
 
 export const config = {
   matcher: [
@@ -31,11 +32,11 @@ export const x402MiddlewareGenerator = (req: NextRequest) => {
   const paymentAmount = formatPriceForMiddleware(amount);
 
   return paymentMiddleware(
-    process.env.RESOURCE_WALLET_ADDRESS as Address,
+    env.RESOURCE_WALLET_ADDRESS as Address,
     {
       '/api/v1/base/payment-link': {
         price: paymentAmount,
-        network: process.env.NETWORK as Network,
+        network: env.NETWORK as Network,
         config: {
           description: 'Access to protected content',
         },

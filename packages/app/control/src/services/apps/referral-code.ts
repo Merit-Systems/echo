@@ -6,6 +6,7 @@ import { appIdSchema } from './lib/schemas';
 import { UserId } from '@/services/lib/schemas';
 
 import { ReferralCodeType } from '@/lib/referral-codes/types';
+import { env } from '@/env';
 
 export const getAppReferralCodeSchema = appIdSchema;
 
@@ -111,5 +112,5 @@ const getReferralLinkUrl = ({
   echoAppId: string;
   code: string;
 }) => {
-  return `${homePage || `${process.env.ECHO_CONTROL_APP_BASE_URL}/app/${echoAppId}`}?referral_code=${code}`;
+  return `${homePage || `${env.NEXT_PUBLIC_APP_URL}/app/${echoAppId}`}?referral_code=${code}`;
 };

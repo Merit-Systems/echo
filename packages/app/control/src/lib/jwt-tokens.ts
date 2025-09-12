@@ -2,7 +2,6 @@ import { db } from '@/lib/db';
 import {
   createEchoAccessTokenExpiry,
   createEchoRefreshTokenExpiry,
-  getArchivedRefreshTokenGraceMs,
 } from '@/lib/oauth-config';
 import { PermissionService } from '@/lib/permissions/service';
 import { AppRole, MembershipStatus } from '@/lib/permissions/types';
@@ -10,32 +9,17 @@ import { createHash } from 'crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
 import { logger } from '@/logger';
+import { env } from '@/env';
 
 // JWT secret for API tokens (different from OAuth codes)
 const API_ECHO_ACCESS_JWT_SECRET = new TextEncoder().encode(
-  process.env.API_ECHO_ACCESS_JWT_SECRET ||
-    'api-jwt-secret-change-in-production'
+  env.API_ECHO_ACCESS_JWT_SECRET || 'api-jwt-secret-change-in-production'
 );
 
 // JWT secret for verifying authorization codes (must match authorize endpoint)
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.OAUTH_CODE_SIGNING_JWT_SECRET ||
-    'your-secret-key-change-in-production'
+  env.OAUTH_CODE_SIGNING_JWT_SECRET || 'your-secret-key-change-in-production'
 );
-
-interface ApiTokenPayload {
-  user_id: string;
-  app_id: string;
-  scope: string;
-  key_version: number;
-  sid?: string;
-  // Standard JWT claims
-  sub: string; // user_id
-  aud: string; // app_id
-  exp: number;
-  iat: number;
-  jti: string; // unique token ID
-}
 
 interface AuthCodePayload {
   clientId: string;
@@ -82,58 +66,6 @@ async function createEchoAccessJwtToken(params: {
     .sign(API_ECHO_ACCESS_JWT_SECRET);
 
   return token;
-}
-
-/**
- * Verify and decode JWT API token (fast path - no DB lookup)
- *
- * This should not include a Bearer prefix
- */
-async function verifyEchoAccessJwtToken(
-  token: string
-): Promise<ApiTokenPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, API_ECHO_ACCESS_JWT_SECRET, {
-      clockTolerance: 5, // 5 seconds clock skew tolerance
-    });
-
-    // Type assertion with validation
-    const apiPayload = payload as unknown as ApiTokenPayload;
-
-    // Validate required fields
-    if (!apiPayload.user_id || !apiPayload.app_id || !apiPayload.scope) {
-      return null;
-    }
-
-    return apiPayload;
-  } catch (error) {
-    console.error('JWT verification failed:', error);
-    return null;
-  }
-}
-
-export async function authenticateEchoAccessJwtToken(
-  jwtToken: string
-): Promise<{
-  userId: string;
-  appId: string;
-  scope: string;
-}> {
-  const jwtPayload = await verifyEchoAccessJwtToken(jwtToken);
-
-  if (!jwtPayload) {
-    throw new Error('Invalid or expired JWT token');
-  }
-
-  if (jwtPayload.exp < Math.floor(Date.now() / 1000)) {
-    throw new Error('JWT token has expired');
-  }
-
-  return {
-    userId: jwtPayload.user_id,
-    appId: jwtPayload.app_id,
-    scope: jwtPayload.scope,
-  };
 }
 
 /**
@@ -194,7 +126,7 @@ export async function handleRefreshToken(
   });
 
   // Grace period for archived tokens
-  const archivedGraceMs = getArchivedRefreshTokenGraceMs();
+  const archivedGraceMs = env.OAUTH_REFRESH_TOKEN_ARCHIVE_GRACE_MS;
   if (
     !echoRefreshTokenRecord ||
     (echoRefreshTokenRecord.archivedAt &&

@@ -1,41 +1,22 @@
 import { getCustomerSpendInfoForApp } from '@/lib/spend-pools/fetch-user-spend';
-import { getAuthenticatedUser } from '@/lib/auth';
-import { NextRequest, NextResponse } from 'next/server';
-import { User } from '@/generated/prisma';
+import { NextResponse } from 'next/server';
+import { authRoute } from '../../_lib/auth-route';
+import { appIdSchema } from '@/services/apps/lib/schemas';
+import { z } from 'zod';
 
-// POST /api/v1/balance/free - Get authenticated user's free tier spend info for a specific app
-export async function POST(request: NextRequest) {
-  try {
-    let user: User;
-    try {
-      const { user: userResult } = await getAuthenticatedUser(request);
-      user = userResult;
-    } catch (error) {
-      console.error('Error authenticating user:', error);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+const getFreeBalanceSchema = z.object({
+  echoAppId: appIdSchema,
+});
 
-    const { echoAppId } = await request.json();
+export const POST = authRoute
+  .body(getFreeBalanceSchema)
+  .handler(async (_, context) => {
+    const { echoAppId } = context.body;
 
-    if (!echoAppId) {
-      return NextResponse.json(
-        { error: 'echoAppId is required' },
-        { status: 400 }
-      );
-    }
-
-    const { spendPoolBalance, userSpendInfo } =
-      await getCustomerSpendInfoForApp(user.id, echoAppId);
-
-    return NextResponse.json({
-      spendPoolBalance,
-      userSpendInfo,
-    });
-  } catch (error) {
-    console.error('Error fetching customer spend info:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    const spendPoolInfo = await getCustomerSpendInfoForApp(
+      context.ctx.userId,
+      echoAppId
     );
-  }
-}
+
+    return NextResponse.json(spendPoolInfo);
+  });

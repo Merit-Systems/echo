@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { logger } from '@/logger';
 import { db } from '@/lib/db';
+import { env } from '@/env';
 
 // When user performs action, schedule email for 1 hour later
 export async function scheduleLimboAppReminderEmail(
@@ -8,8 +9,8 @@ export async function scheduleLimboAppReminderEmail(
   appName: string,
   appId: string
 ) {
-  const resend = new Resend(process.env.AUTH_RESEND_KEY!);
-  const fromEmail = process.env.AUTH_RESEND_FROM_EMAIL!;
+  const resend = new Resend(env.AUTH_RESEND_KEY);
+  const fromEmail = env.AUTH_RESEND_FROM_EMAIL;
   const user = await db.user.findUnique({
     where: { id: userId },
   });

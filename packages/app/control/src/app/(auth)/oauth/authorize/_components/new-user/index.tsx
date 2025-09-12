@@ -2,6 +2,7 @@ import type { AuthorizeParams } from '@/app/(auth)/_lib/authorize';
 import Link from 'next/link';
 import { WelcomePageCoupon } from './welcome-coupon';
 import { ConnectionBeam } from '../connection-beam';
+import { env } from '@/env';
 
 interface Props {
   name: string;
@@ -16,17 +17,8 @@ export const NewUserAuthorize: React.FC<Props> = async ({
   authParams,
   userImage,
 }) => {
-  const couponAmount = Number.parseFloat(
-    process.env.LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT ?? '0'
-  );
-  if (!Number.isFinite(couponAmount) || couponAmount <= 0) {
-    throw new Error('LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT is not set');
-  }
+  const couponAmount = env.LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT;
 
-  const couponVersion = process.env.LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION;
-  if (!couponVersion) {
-    throw new Error('LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION is not set');
-  }
   return (
     <div className="flex flex-col items-center justify-center gap-8 w-full">
       <div className="flex flex-col items-center gap-4 text-center">

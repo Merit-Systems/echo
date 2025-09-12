@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/form';
 import { MinimalGithubAvatar } from '@/components/ui/github-avatar';
 
-import { updateGithubLinkSchema } from '@/services/apps/github-link';
+import { githubLinkSchema } from '@/services/github/schema';
 
 import { GithubType } from '@/generated/prisma';
 
@@ -58,15 +58,15 @@ export const RecipientDetails: React.FC<Props> = ({ githubLink, appId }) => {
 
   const [avatarLogin, setAvatarLogin] = useState<string | null>(null);
 
-  const form = useForm<z.infer<typeof updateGithubLinkSchema>>({
-    resolver: zodResolver(updateGithubLinkSchema),
+  const form = useForm<z.infer<typeof githubLinkSchema>>({
+    resolver: zodResolver(githubLinkSchema),
     defaultValues: {
       type: githubLink?.type ?? 'user',
       url: githubLink?.githubUrl ?? '',
     },
   });
 
-  const onSubmit = (data: z.infer<typeof updateGithubLinkSchema>) => {
+  const onSubmit = (data: z.infer<typeof githubLinkSchema>) => {
     updateGithubLink({
       appId,
       ...data,

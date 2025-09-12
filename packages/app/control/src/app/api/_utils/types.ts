@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import z from 'zod';
 
 /**
  * Function that is called when the route handler is executed and all the middleware has been executed
@@ -12,6 +13,7 @@ export type HandlerFunction<
   TBody,
   TContext,
   TMetadata = unknown,
+  TResponseBody = unknown,
 > = (
   request: NextRequest,
   context: {
@@ -21,7 +23,9 @@ export type HandlerFunction<
     ctx: TContext;
     metadata?: TMetadata;
   }
-) => NextResponse | Promise<NextResponse>;
+) =>
+  | NextResponse<TResponseBody | ServerErrorBody>
+  | Promise<NextResponse<TResponseBody | ServerErrorBody>>;
 
 /**
  * Function signature for the next() function in middleware
@@ -64,19 +68,36 @@ export type MiddlewareFunction<
 // Middleware should return a Response
 // But in order to infer the context, we extends the response with the context
 // This context is not really used and not really needed
-export type MiddlewareResult<TContext> = NextResponse & { ctx?: TContext };
+export type MiddlewareResult<TContext> = NextResponse<MiddlewareErrorBody> & {
+  ctx?: TContext;
+};
 /**
  * Original Next.js route handler type for reference
  * This is the type that Next.js uses internally before our library wraps it
  */
-export type OriginalRouteHandler = (
+export type OriginalRouteHandler<TResponseBody> = (
   request: NextRequest,
   context: { params: Promise<Record<string, unknown>> }
-) => Promise<NextResponse>;
+) => Promise<NextResponse<TResponseBody | ServerErrorBody>>;
 
 /**
  * Function that handles server errors in route handlers
  * @param error - The error that was thrown
  * @returns Response object with appropriate error details and status code
  */
-export type HandlerServerErrorFn = (error: Error) => NextResponse;
+export type HandlerServerErrorFn = (
+  error: Error
+) => NextResponse<ServerErrorBody>;
+
+export type ServerErrorBody = {
+  message: string;
+};
+
+export type InternalErrorBody = {
+  message: string;
+  errors?: z.core.$ZodIssue[];
+};
+
+export type MiddlewareErrorBody = {
+  message: string;
+};

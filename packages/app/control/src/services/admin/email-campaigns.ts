@@ -2,13 +2,13 @@ import { db } from '@/lib/db';
 import { scheduleCreateAppFollowUpEmail } from '@/services/email/create-app';
 import { scheduleLimboAppReminderEmail } from '@/services/email/limbo-app-reminder';
 
-export type EmailCampaign = {
+type EmailCampaign = {
   key: string;
   label: string;
   description?: string;
 };
 
-export const AVAILABLE_EMAIL_CAMPAIGNS: EmailCampaign[] = [
+const AVAILABLE_EMAIL_CAMPAIGNS: EmailCampaign[] = [
   { key: 'limbo-app-reminder', label: 'Limbo App Reminder' },
   { key: 'create-app-follow-up', label: 'Create App Follow-Up' },
 ];

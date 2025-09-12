@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { WelcomePageCoupon } from './_components/coupon';
 import { formatCurrency } from '@/lib/utils';
+import { env } from '@/env';
 
 export const metadata: Metadata = {
   title: 'Welcome',
@@ -42,17 +43,7 @@ export default async function WelcomePage(props: PageProps<'/welcome'>) {
     return redirect('/dashboard');
   }
 
-  const couponAmount = Number.parseFloat(
-    process.env.LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT ?? '0'
-  );
-  if (!Number.isFinite(couponAmount) || couponAmount <= 0) {
-    throw new Error('LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT is not set');
-  }
-
-  const couponVersion = process.env.LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION;
-  if (!couponVersion) {
-    throw new Error('LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION is not set');
-  }
+  const couponAmount = env.LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT;
 
   return (
     <div className="flex flex-col items-center justify-center gap-8 w-full">

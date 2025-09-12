@@ -16,10 +16,9 @@ import { Button } from '@/components/ui/button';
 import { FormFieldWithCard } from '@/components/ui/card-form';
 import { Separator } from '@/components/ui/separator';
 
-import { createAppSchema } from '@/services/apps/create';
-
 import { api } from '@/trpc/client';
 import { MarkupInput } from '../../../_components/markup/input';
+import { createAppSchema } from '@/services/apps/lib/schemas';
 
 export const CreateAppForm = () => {
   const form = useForm<z.infer<typeof createAppSchema>>({

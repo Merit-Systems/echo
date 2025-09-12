@@ -1,75 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser, getCurrentUser } from '@/lib/auth';
-import { User } from '@/generated/prisma';
-import {
-  handlePaymentSuccessFromx402,
-  formatAmountFromQueryParams,
-} from '@/lib/base';
+import { NextResponse } from 'next/server';
+import { handlePaymentSuccessFromx402 } from '@/lib/base';
+import z from 'zod';
+import { authRoute } from '../../_lib/auth-route';
 
-// GET /api/v1/base/payment-link - Create base payment link
-export async function GET(request: NextRequest) {
-  try {
-    // Authenticate user
-    let user: User;
-    try {
-      const { user: userResult } = await getAuthenticatedUser(request);
-      user = userResult;
-    } catch (error) {
-      console.error('Error authenticating user:', error);
-      try {
-        const userResult = await getCurrentUser();
-        user = userResult;
-      } catch (error) {
-        console.log('Error getting current user:', error);
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
+const querySchema = z.object({
+  amount: z.number().positive(),
+});
 
-    const amount = formatAmountFromQueryParams(request);
+export const GET = authRoute.query(querySchema).handler(async (_, context) => {
+  const { amount } = context.query;
 
-    if (!amount) {
-      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
-    }
+  const normalizedCentsAmount = amount * 100;
 
-    const normalizedCentsAmount = amount * 100;
+  handlePaymentSuccessFromx402({
+    userId: context.ctx.userId,
+    amount: normalizedCentsAmount,
+    currency: 'usd',
+    metadata: {},
+  });
 
-    handlePaymentSuccessFromx402({
-      userId: user.id,
-      amount: normalizedCentsAmount,
-      currency: 'usd',
-      metadata: {},
-    });
-
-    return NextResponse.json(
-      { message: 'Payment created successfully' },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('Error creating payment link:', error);
-
-    // Handle authentication errors
-    if (error instanceof Error && error.message === 'Not authenticated') {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // TODO: Add specific error handling for your use case
-    // Example:
-    // if (error instanceof SpecificError) {
-    //   return NextResponse.json(
-    //     { error: error.message },
-    //     { status: 400 }
-    //   );
-    // }
-
-    // Generic server error fallback
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json(
+    { message: 'Payment created successfully' },
+    { status: 201 }
+  );
+});
 
 export const POST = GET;

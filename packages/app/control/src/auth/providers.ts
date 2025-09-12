@@ -6,11 +6,12 @@ import Resend from 'next-auth/providers/resend';
 import type { OAuthProvider } from './types';
 import { EmailConfig, Provider } from 'next-auth/providers';
 import { db } from '@/lib/db';
+import { env } from '@/env';
 
 export const oauthProviders: OAuthProvider[] = [
   GoogleProvider({
-    clientId: process.env.AUTH_GOOGLE_ID,
-    clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    clientId: env.AUTH_GOOGLE_ID,
+    clientSecret: env.AUTH_GOOGLE_SECRET,
     allowDangerousEmailAccountLinking: true,
     profile: profile => ({
       id: profile.sub,
@@ -20,15 +21,15 @@ export const oauthProviders: OAuthProvider[] = [
     }),
   }),
   GithubProvider({
-    clientId: process.env.AUTH_GITHUB_ID,
-    clientSecret: process.env.AUTH_GITHUB_SECRET,
+    clientId: env.AUTH_GITHUB_ID,
+    clientSecret: env.AUTH_GITHUB_SECRET,
     allowDangerousEmailAccountLinking: true,
   }),
 ];
 
 export const emailProviders: EmailConfig[] = [
   Resend({
-    apiKey: process.env.AUTH_RESEND_KEY,
+    apiKey: env.AUTH_RESEND_KEY,
     from: 'no-reply@merit.systems',
   }),
 ];

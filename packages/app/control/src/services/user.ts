@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 
-export const getUser = async (userId: string) => {
-  const user = await db.user.findUnique({
+export const getPublicUser = async (userId: string) => {
+  return await db.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -10,5 +10,21 @@ export const getUser = async (userId: string) => {
       createdAt: true,
     },
   });
-  return user;
+};
+
+export const getFullUser = async (userId: string) => {
+  return await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      createdAt: true,
+      totalPaid: true,
+      totalSpent: true,
+      email: true,
+      emailVerified: true,
+      updatedAt: true,
+    },
+  });
 };

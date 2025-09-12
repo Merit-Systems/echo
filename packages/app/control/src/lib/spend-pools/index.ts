@@ -1,9 +1,5 @@
 import type { SpendPool, Payment } from '@/generated/prisma';
 import type { PrismaClient } from '@/generated/prisma';
-import { UserSpendInfo } from './types';
-
-// Export types
-export type { UserSpendInfo };
 
 // Export functions from fetch-user-spend.ts
 export { getCustomerSpendInfoForApp } from './fetch-user-spend';

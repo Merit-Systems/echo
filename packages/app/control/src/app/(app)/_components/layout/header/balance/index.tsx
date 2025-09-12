@@ -13,27 +13,20 @@ export const BalanceButton = async () => {
   const session = await auth();
 
   if (!session?.user) {
-    return <BalanceSkeleton />;
+    return null;
   }
 
-  return <BalanceButtonContent />;
-};
-
-const BalanceButtonContent = () => {
   void api.user.balance.get.prefetch();
+
   return (
     <HydrateClient>
-      <Button variant="outline" asChild>
-        <Link href="/credits">
-          <Suspense fallback={<BalanceSkeleton />}>
+      <Link href="/credits">
+        <Button variant="outline">
+          <Suspense fallback={<Skeleton className="h-5 w-10" />}>
             <Balance />
           </Suspense>
-        </Link>
-      </Button>
+        </Button>
+      </Link>
     </HydrateClient>
   );
-};
-
-const BalanceSkeleton = () => {
-  return <Skeleton className="h-5 w-10" />;
 };
