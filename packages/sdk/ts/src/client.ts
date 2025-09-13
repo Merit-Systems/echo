@@ -3,6 +3,7 @@ import { EchoClientConfig, getConfig } from './config';
 import { HttpClient } from './http-client';
 import {
   AppsResource,
+  AudioResource,
   BalanceResource,
   ModelsResource,
   PaymentsResource,
@@ -19,6 +20,7 @@ export class EchoClient {
   private tokenProvider: TokenProvider;
 
   // Resource instances
+  public readonly audio: AudioResource;
   public readonly balance: BalanceResource;
   public readonly payments: PaymentsResource;
   public readonly apps: AppsResource;
@@ -44,6 +46,7 @@ export class EchoClient {
     this.http = new HttpClient(this.config.baseUrl, this.tokenProvider);
 
     // Initialize resource instances
+    this.audio = new AudioResource(this.http);
     this.balance = new BalanceResource(this.http);
     this.payments = new PaymentsResource(this.http);
     this.apps = new AppsResource(this.http, this.config.baseUrl);

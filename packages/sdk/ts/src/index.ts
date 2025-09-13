@@ -15,6 +15,7 @@ export type {
   SupportedToolType,
   SupportedModel,
   SupportedImageModel,
+  SupportedAudioModel,
   ImageGenerationQuality,
   ImageDimensions,
   WebSearchModel,
@@ -43,3 +44,5 @@ export { OpenRouterModels } from './supported-models/chat/openrouter';
 export type { OpenRouterModel } from './supported-models/chat/openrouter';
 export { OpenAIImageModels } from './supported-models/image/openai';
 export type { OpenAIImageModel } from './supported-models/image/openai';
+export { OpenAIAudioModels } from './supported-models/audio/openai';
+export type { OpenAIAudioModel } from './supported-models/audio/openai';

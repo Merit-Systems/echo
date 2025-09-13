@@ -6,8 +6,10 @@ import {
   GeminiModels,
   OpenRouterModels,
   OpenAIImageModels,
+  OpenAIAudioModels,
   SupportedModel,
   SupportedImageModel,
+  SupportedAudioModel,
 } from '../supported-models';
 
 export class ModelsResource extends BaseResource {
@@ -31,5 +33,9 @@ export class ModelsResource extends BaseResource {
 
   async listSupportedImageModels(): Promise<SupportedImageModel[]> {
     return OpenAIImageModels;
+  }
+
+  async listSupportedAudioModels(): Promise<SupportedAudioModel[]> {
+    return OpenAIAudioModels;
   }
 }

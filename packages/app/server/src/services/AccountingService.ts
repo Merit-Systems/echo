@@ -4,11 +4,9 @@ import {
   GeminiModels,
   OpenRouterModels,
   OpenAIImageModels,
-  OpenAIAudioModels,
   SupportedOpenAIResponseToolPricing,
   SupportedModel,
   SupportedImageModel,
-  SupportedAudioModel,
 } from '@merit-systems/echo-typescript-sdk';
 
 import { Decimal } from '@prisma/client/runtime/library';
@@ -29,13 +27,13 @@ export const ALL_SUPPORTED_IMAGE_MODELS: SupportedImageModel[] =
   OpenAIImageModels;
   
 // Handle audio models separately since they use per-minute pricing
-export const ALL_SUPPORTED_AUDIO_MODELS: SupportedAudioModel[] = [
-  {
-    model_id: 'whisper-1',
-    cost_per_minute: 0.006,
-    provider: 'OpenAI',
-  },
-];
+// TODO: Uncomment when SupportedAudioModel is exported from SDK
+/* 
+export const ALL_SUPPORTED_AUDIO_MODELS: SupportedAudioModel[] = 
+  OpenAIAudioModels;
+*/
+// Placeholder for type checking
+export const ALL_SUPPORTED_AUDIO_MODELS: any[] = [];
 
 // Create a lookup map for O(1) model price retrieval
 const MODEL_PRICE_MAP = new Map<string, SupportedModel>();

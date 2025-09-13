@@ -3,8 +3,26 @@ import { ProviderType } from './ProviderType';
 import { LlmTransactionMetadata } from '../types';
 import logger from '../logger';
 import { Decimal } from '@prisma/client/runtime/library';
+import { OpenAIAudioClient, TranscriptionOptions, TranscriptionResponse } from '../clients/openai-audio-client';
+import { HttpError } from '../errors/http';
+import { EchoControlService } from '../services/EchoControlService';
 
 export class OpenAIAudioProvider extends BaseProvider {
+  private audioClient: OpenAIAudioClient;
+
+  constructor(
+    echoControlService: EchoControlService,
+    stream: boolean,
+    model: string
+  ) {
+    super(echoControlService, stream, model);
+    const apiKey = this.getApiKey();
+    if (!apiKey) {
+      throw new Error('OpenAI API key is required for audio transcription');
+    }
+    this.audioClient = new OpenAIAudioClient(apiKey, this.OPENAI_BASE_URL);
+  }
+
   getType(): ProviderType {
     return ProviderType.OPENAI_AUDIO;
   }
@@ -30,6 +48,46 @@ export class OpenAIAudioProvider extends BaseProvider {
   ): Record<string, unknown> {
     // Audio transcription doesn't use streaming
     return reqBody;
+  }
+  
+  /**
+   * Transcribe audio using the OpenAI Whisper API
+   * 
+   * @param audioBuffer - The audio buffer to transcribe
+   * @param options - Transcription options
+   * @returns The transcription result
+   */
+  async transcribeAudio(audioBuffer: Buffer, options: TranscriptionOptions): Promise<TranscriptionResponse> {
+    try {
+      logger.info(`Transcribing audio with model: ${options.model}`);
+      return await this.audioClient.transcribe(audioBuffer, options);
+    } catch (error) {
+      logger.error('OpenAI Audio transcription error:', error);
+      if (error instanceof HttpError) {
+        throw error;
+      }
+      throw new HttpError(500, `Failed to transcribe audio: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Translate audio directly to English using the OpenAI Whisper API
+   * 
+   * @param audioBuffer - The audio buffer to translate
+   * @param options - Translation options
+   * @returns The translation result
+   */
+  async translateAudio(audioBuffer: Buffer, options: Omit<TranscriptionOptions, 'language'>): Promise<TranscriptionResponse> {
+    try {
+      logger.info(`Translating audio with model: ${options.model}`);
+      return await this.audioClient.translate(audioBuffer, options);
+    } catch (error) {
+      logger.error('OpenAI Audio translation error:', error);
+      if (error instanceof HttpError) {
+        throw error;
+      }
+      throw new HttpError(500, `Failed to translate audio: ${(error as Error).message}`);
+    }
   }
 
   async handleBody(data: string): Promise<{
