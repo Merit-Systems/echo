@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import Chat from './chat';
 import ImageGenerator from './image';
+import AudioTranscription from './audio';
 
 export default function TabsContainer() {
-  const [activeTab, setActiveTab] = useState<'chat' | 'image'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'image' | 'audio'>('chat');
 
   return (
     <div className="w-full">
@@ -31,6 +32,16 @@ export default function TabsContainer() {
         >
           🎨 Image Generation
         </button>
+        <button
+          onClick={() => setActiveTab('audio')}
+          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+            activeTab === 'audio'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          🔊 Audio Transcription
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -49,6 +60,14 @@ export default function TabsContainer() {
               AI Image Generation
             </h2>
             <ImageGenerator />
+          </div>
+        )}
+        {activeTab === 'audio' && (
+          <div>
+            <h2 className="text-lg font-semibold mb-4 text-foreground">
+              AI Audio Transcription
+            </h2>
+            <AudioTranscription />
           </div>
         )}
       </div>
