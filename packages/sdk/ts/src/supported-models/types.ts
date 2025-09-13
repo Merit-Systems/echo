@@ -13,6 +13,13 @@ export interface SupportedImageModel {
   provider: string;
 }
 
+export interface SupportedVideoModel {
+  model_id: string;
+  input_cost_per_token: number;
+  output_cost_per_token: number;
+  provider: string;
+}
+
 // Tool pricing types
 export interface ImageGenerationQualityPricing {
   '1024x1024': number;

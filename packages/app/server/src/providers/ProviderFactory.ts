@@ -13,7 +13,9 @@ import { OpenAIImageProvider } from './OpenAIImageProvider';
 import {
   ALL_SUPPORTED_IMAGE_MODELS,
   ALL_SUPPORTED_MODELS,
+  ALL_SUPPORTED_VIDEO_MODELS,
 } from '../services/AccountingService';
+import { GeminiVeoProvider } from './GeminiVeoProvider';
 
 /**
  * Creates model-to-provider mapping from the model_prices_and_context_window.json file.
@@ -60,6 +62,17 @@ const createImageModelToProviderMapping = (): Record<string, ProviderType> => {
   return mapping;
 };
 
+const createVideoModelToProviderMapping = (): Record<string, ProviderType> => {
+  const mapping: Record<string, ProviderType> = {};
+
+  for (const modelConfig of ALL_SUPPORTED_VIDEO_MODELS) {
+    if (modelConfig.provider === 'Gemini') {
+      mapping[modelConfig.model_id] = ProviderType.GEMINI_VEO;
+    }
+  }
+  return mapping;
+};
+
 /**
  * Model-to-provider mapping loaded from model_prices_and_context_window.json
  * This replaces the previous hardcoded mapping and automatically includes all
@@ -70,6 +83,9 @@ export const MODEL_TO_PROVIDER: Record<string, ProviderType> =
 
 export const IMAGE_MODEL_TO_PROVIDER: Record<string, ProviderType> =
   createImageModelToProviderMapping();
+
+export const VIDEO_MODEL_TO_PROVIDER: Record<string, ProviderType> =
+  createVideoModelToProviderMapping();
 
 export const getProvider = (
   model: string,
@@ -83,6 +99,11 @@ export const getProvider = (
   const imageType = IMAGE_MODEL_TO_PROVIDER[model];
   if (imageType) {
     type = imageType;
+  }
+
+  const videoType = VIDEO_MODEL_TO_PROVIDER[model];
+  if (videoType) {
+    type = videoType;
   }
 
   // If the model is not in the model to provider mapping, throw an error
@@ -130,6 +151,8 @@ export const getProvider = (
       return new OpenRouterProvider(echoControlService, stream, model);
     case ProviderType.OPENAI_IMAGES:
       return new OpenAIImageProvider(echoControlService, stream, model);
+    case ProviderType.GEMINI_VEO:
+      return new GeminiVeoProvider(echoControlService, stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }

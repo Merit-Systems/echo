@@ -3,11 +3,22 @@ import { HttpError, UnknownModelError } from '../errors/http';
 import logger from '../logger';
 import { getProvider } from '../providers/ProviderFactory';
 import { Transaction } from '../types';
-import { isValidImageModel, isValidModel } from './AccountingService';
+import {
+  isValidImageModel,
+  isValidModel,
+  isValidVideoModel,
+} from './AccountingService';
 import { EchoControlService } from './EchoControlService';
 import { handleNonStreamingService } from './HandleNonStreamingService';
 import { handleStreamService } from './HandleStreamService';
-import { extractIsStream, extractModelName } from './RequestDataService';
+import {
+  extractIsStream,
+  extractModelName,
+  formatUpstreamUrl,
+} from './RequestDataService';
+import { Decimal } from 'generated/prisma/runtime/library';
+import { pipeline, Readable } from 'stream';
+import { checkProxyVideoDownload } from './videoProxyService';
 
 export class ModelRequestService {
   /**
@@ -24,10 +35,30 @@ export class ModelRequestService {
     res: Response,
     processedHeaders: Record<string, string>,
     echoControlService: EchoControlService
-  ): Promise<{ transaction: Transaction; isStream: boolean; data: unknown }> {
+  ): Promise<{
+    transaction: Transaction;
+    isStream: boolean;
+    data: unknown;
+    requiresResolution: boolean;
+  }> {
+    const isVideoProxy = await checkProxyVideoDownload(
+      req,
+      res,
+      echoControlService,
+      processedHeaders,
+      this.formatRequestBody
+    );
+    if (isVideoProxy) {
+      return { ...isVideoProxy, requiresResolution: false };
+    }
     const model = extractModelName(req);
 
-    if (!model || (!isValidModel(model) && !isValidImageModel(model))) {
+    if (
+      !model ||
+      (!isValidModel(model) &&
+        !isValidImageModel(model) &&
+        !isValidVideoModel(model))
+    ) {
       logger.error(`Invalid model: ${model}`);
       res.status(422).json({
         error: `Invalid model: ${model} Echo does not yet support this model.`,
@@ -58,9 +89,8 @@ export class ModelRequestService {
     );
 
     // this rewrites the base url to the provider's base url and retains the rest
-    const upstreamUrl = `${provider.getBaseUrl(req.path)}${req.path}${
-      req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''
-    }`;
+    const upstreamUrl = formatUpstreamUrl(provider, req);
+
     // Forward the request to the provider's API
     const response = await fetch(upstreamUrl, {
       method: req.method,
@@ -88,7 +118,12 @@ export class ModelRequestService {
         provider,
         res
       );
-      return { transaction, isStream: true, data: null };
+      return {
+        transaction,
+        isStream: true,
+        data: null,
+        requiresResolution: true,
+      };
     } else {
       const { transaction, data } =
         await handleNonStreamingService.handleNonStreaming(
@@ -96,11 +131,19 @@ export class ModelRequestService {
           provider,
           res
         );
-      return { transaction, isStream: false, data };
+      return { transaction, isStream: false, data, requiresResolution: true };
     }
   }
 
-  handleResolveResponse(res: Response, isStream: boolean, data: unknown): void {
+  handleResolveResponse(
+    res: Response,
+    isStream: boolean,
+    data: unknown,
+    requiresResolution: boolean
+  ): void {
+    if (!requiresResolution) {
+      return;
+    }
     if (isStream) {
       res.end();
     } else {

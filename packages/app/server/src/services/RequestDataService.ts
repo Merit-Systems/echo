@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { BaseProvider } from '../providers/BaseProvider';
 
 export function extractGeminiModelName(req: Request): string | undefined {
   const path = req.path;
@@ -6,7 +7,11 @@ export function extractGeminiModelName(req: Request): string | undefined {
   // Expected format: /v1beta/models/{model-name}:streamGenerateContent or /v1beta/models/{model-name}:generateContent
   // OR: /models/{model-name}:streamGenerateContent or /models/{model-name}:generateContent
   const expectedPrefixes = ['/v1beta/models/', '/models/'];
-  const expectedSuffixes = [':streamGenerateContent', ':generateContent'];
+  const expectedSuffixes = [
+    ':streamGenerateContent',
+    ':generateContent',
+    ':predictLongRunning',
+  ];
 
   // Check if path matches any of the expected prefixes
   const matchingPrefix = expectedPrefixes.find(prefix =>
@@ -18,6 +23,14 @@ export function extractGeminiModelName(req: Request): string | undefined {
 
   // Find which suffix matches
   const matchingSuffix = expectedSuffixes.find(suffix => path.endsWith(suffix));
+
+  // Handle /operations/* pattern: /v1beta/models/{model-name}/operations/{operation-id}
+  if (!matchingSuffix && path.includes('/operations/')) {
+    const operationsIndex = path.indexOf('/operations/');
+    const modelName = path.slice(matchingPrefix.length, operationsIndex);
+    return modelName || undefined;
+  }
+
   if (!matchingSuffix) {
     return undefined;
   }
@@ -68,4 +81,15 @@ export function extractIsStream(req: Request): boolean {
   }
 
   return false;
+}
+
+export function formatUpstreamUrl(
+  provider: BaseProvider,
+  req: Request
+): string {
+  // this rewrites the base url to the provider's base url and retains the rest
+  const upstreamUrl = `${provider.getBaseUrl(req.path)}${req.path}${
+    req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''
+  }`;
+  return upstreamUrl;
 }

@@ -87,7 +87,7 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
     await transactionEscrowMiddleware.handleInFlightRequestIncrement(req, res);
 
     // Step 3: Execute business logic
-    const { transaction, isStream, data } =
+    const { transaction, isStream, data, requiresResolution } =
       await modelRequestService.executeModelRequest(
         req,
         res,
@@ -96,7 +96,12 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
       );
 
     await echoControlService.createTransaction(transaction);
-    modelRequestService.handleResolveResponse(res, isStream, data);
+    modelRequestService.handleResolveResponse(
+      res,
+      isStream,
+      data,
+      requiresResolution
+    );
   } catch (error) {
     return next(error);
   }
