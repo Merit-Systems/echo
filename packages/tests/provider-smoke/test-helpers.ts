@@ -24,12 +24,12 @@ export function getApiErrorDetails(err: unknown): string {
 }
 
 export function getOpenAITools(
-  openai: OpenAIProvider, // TODO: fix this,
+  openai: OpenAIProvider,
   modelId: string
 ): Record<string, unknown> | undefined {
   return modelId.includes('deep-research')
     ? {
-        webSearchPreview: openai.tools.webSearchPreview({
+        webSearchPreview: openai.tools.webSearch({
           searchContextSize: 'medium',
         }),
       }
