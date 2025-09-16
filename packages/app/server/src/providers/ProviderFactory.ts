@@ -66,7 +66,7 @@ const createImageModelToProviderMapping = (): Record<string, ProviderType> => {
 const createAudioModelToProviderMapping = (): Record<string, ProviderType> => {
   const mapping: Record<string, ProviderType> = {};
 
-  // Hard-code whisper-1 for now until we update AccountingService
+  // Hard-code whisper-1 for now until AccountingService is updated to include audio models
   mapping['whisper-1'] = ProviderType.OPENAI_AUDIO;
   
   return mapping;

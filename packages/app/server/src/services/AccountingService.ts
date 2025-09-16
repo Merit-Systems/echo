@@ -4,9 +4,11 @@ import {
   GeminiModels,
   OpenRouterModels,
   OpenAIImageModels,
+  // OpenAIAudioModels, // TODO: Uncomment when audio models are published in SDK
   SupportedOpenAIResponseToolPricing,
   SupportedModel,
   SupportedImageModel,
+  // SupportedAudioModel, // TODO: Uncomment when audio models are published in SDK
 } from '@merit-systems/echo-typescript-sdk';
 
 import { Decimal } from '@prisma/client/runtime/library';
@@ -27,13 +29,10 @@ export const ALL_SUPPORTED_IMAGE_MODELS: SupportedImageModel[] =
   OpenAIImageModels;
   
 // Handle audio models separately since they use per-minute pricing
-// TODO: Uncomment when SupportedAudioModel is exported from SDK
-/* 
-export const ALL_SUPPORTED_AUDIO_MODELS: SupportedAudioModel[] = 
-  OpenAIAudioModels;
-*/
-// Placeholder for type checking
-export const ALL_SUPPORTED_AUDIO_MODELS: any[] = [];
+// TODO: Uncomment when audio models are published in SDK
+// export const ALL_SUPPORTED_AUDIO_MODELS: SupportedAudioModel[] = 
+//   OpenAIAudioModels;
+export const ALL_SUPPORTED_AUDIO_MODELS: any[] = []; // Placeholder
 
 // Create a lookup map for O(1) model price retrieval
 const MODEL_PRICE_MAP = new Map<string, SupportedModel>();
