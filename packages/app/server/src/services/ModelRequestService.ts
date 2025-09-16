@@ -49,7 +49,7 @@ export class ModelRequestService {
     );
 
     // Ensure stream usage is set correctly (OpenAI Format)
-    req.body = provider.ensureStreamUsage(req.body, req.path);
+    req.body = provider.ensureStreamUsage(req.body);
 
     // Format request body and headers based on content type
     const { requestBody, headers: formattedHeaders } = this.formatRequestBody(
@@ -123,7 +123,7 @@ export class ModelRequestService {
     headers: Record<string, string>;
   } {
     let requestBody: string | FormData | undefined;
-    let finalHeaders = { ...authenticatedHeaders };
+    const finalHeaders = { ...authenticatedHeaders };
 
     if (req.method !== 'GET') {
       // Check if this is a form data request

@@ -1,6 +1,5 @@
 import { EchoClient, parseEchoError } from '@merit-systems/echo-typescript-sdk';
 import useSWR from 'swr';
-import { EchoUser } from '../types';
 
 export function useEchoUser(echoClient: EchoClient | null) {
   const {

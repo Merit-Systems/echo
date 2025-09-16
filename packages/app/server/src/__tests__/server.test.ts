@@ -54,7 +54,7 @@ const setupMockEchoControlService = (balance: number = 100) => {
 
 describe('Server Tests', () => {
   let app: express.Application;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockEchoControlService: any;
 
   beforeEach(async () => {

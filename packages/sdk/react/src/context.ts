@@ -7,6 +7,11 @@ import { User } from 'oidc-client-ts';
 import { EchoBalance, EchoUser } from './types';
 import { createContext } from 'react';
 
+type BalanceData = {
+  balance: EchoBalance | null;
+  freeTierBalance: FreeBalance | null;
+};
+
 export interface EchoContextValue {
   // Auth & User
   rawUser: User | null | undefined; // directly piped from oidc -- TODO: rm when EchoUser is sufficient.
@@ -24,7 +29,7 @@ export interface EchoContextValue {
 
   freeTierBalance: FreeBalance | null;
   balance: EchoBalance | null;
-  refreshBalance: () => Promise<any>;
+  refreshBalance: () => Promise<BalanceData | undefined>;
 
   createPaymentLink: (
     amount: number,
