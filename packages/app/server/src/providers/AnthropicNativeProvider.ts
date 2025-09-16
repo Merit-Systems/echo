@@ -25,10 +25,7 @@ export const parseSSEAnthropicFormat = (
     const line = lines[i]?.trim();
     if (!line) continue;
 
-    if (line.startsWith('event: ')) {
-      // Event type parsing - currently not used but could be useful for debugging
-      // currentEvent = line.substring(7); // Remove 'event: ' prefix
-    } else if (line.startsWith('data: ')) {
+    if (line.startsWith('data: ')) {
       currentData = line.substring(6); // Remove 'data: ' prefix
 
       try {

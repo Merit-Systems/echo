@@ -215,10 +215,10 @@ export class TransactionEscrowMiddleware {
     userId: string,
     echoAppId: string,
     requestId: string,
-    cleanupExecuted: boolean
+    cleanupState: { executed: boolean }
   ) => {
-    if (cleanupExecuted) return;
-    cleanupExecuted = true;
+    if (cleanupState.executed) return;
+    cleanupState.executed = true;
 
     // decrementInFlightRequests now handles its own errors gracefully
     await this.decrementInFlightRequests(userId, echoAppId);
@@ -236,21 +236,23 @@ export class TransactionEscrowMiddleware {
     echoAppId: string,
     requestId: string
   ) {
-    const cleanupExecuted = false;
+    // Use object to share state by reference across multiple event handlers
+    // This prevents duplicate cleanup execution when multiple events fire
+    const cleanupState = { executed: false };
 
     // Cleanup on response finish (normal case)
     res.on('finish', () =>
-      this.executeCleanup(userId, echoAppId, requestId, cleanupExecuted)
+      this.executeCleanup(userId, echoAppId, requestId, cleanupState)
     );
 
     // Cleanup on response close (client disconnect)
     res.on('close', () =>
-      this.executeCleanup(userId, echoAppId, requestId, cleanupExecuted)
+      this.executeCleanup(userId, echoAppId, requestId, cleanupState)
     );
 
     // Cleanup on error (if response errors out)
     res.on('error', () =>
-      this.executeCleanup(userId, echoAppId, requestId, cleanupExecuted)
+      this.executeCleanup(userId, echoAppId, requestId, cleanupState)
     );
   }
 
