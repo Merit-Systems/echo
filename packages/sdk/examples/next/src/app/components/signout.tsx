@@ -1,8 +1,9 @@
 'use client';
 
-import { signOut } from '@merit-systems/echo-next-sdk/client';
+import { useEcho } from '@merit-systems/echo-next-sdk/client';
 
 export default function SignOut() {
+  const { signOut } = useEcho();
   return (
     <div className="flex flex-col items-center justify-center">
       <button

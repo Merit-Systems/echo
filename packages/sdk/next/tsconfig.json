@@ -3,8 +3,11 @@
   "compilerOptions": {
     "rootDir": "./src",
     "baseUrl": "./src",
-    "types": ["node", "vitest/globals"],
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+    "types": ["node", "vitest/globals", "react", "react-dom"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "__tests__/**/*"]

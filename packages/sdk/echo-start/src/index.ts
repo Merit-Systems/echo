@@ -11,40 +11,31 @@ import prompts from 'prompts';
 const program = new Command();
 
 // Available templates - add new ones here
-const TEMPLATES = {
-  next: {
-    repo: 'Merit-Systems/echo/templates/next',
-    title: 'Next.js',
-    description: 'Full-stack Next.js application with Echo',
-    devCommand: 'pnpm dev',
-    envVarName: 'NEXT_PUBLIC_ECHO_APP_ID',
-  },
-  react: {
-    repo: 'Merit-Systems/echo/templates/react',
-    title: 'Vite',
-    description: 'Fast Vite React application with Echo',
-    devCommand: 'pnpm dev',
-    envVarName: 'VITE_ECHO_APP_ID',
-  },
-  nextjsChatbot: {
-    repo: 'Merit-Systems/echo/templates/nextjs-chatbot',
-    title: 'Next.js Chatbot',
+const DEFAULT_TEMPLATES = {
+  'next-chat': {
+    title: 'Next.js Chat',
     description:
       'Full-stack Next.js application with Echo and the Vercel AI SDK',
-    devCommand: 'pnpm dev',
-    envVarName: 'NEXT_PUBLIC_ECHO_APP_ID',
   },
-  assistantUi: {
-    repo: 'Merit-Systems/echo/templates/assistant-ui',
-    title: 'Assistant UI',
+  'react-chat': {
+    title: 'React Chat',
+    description: 'Vite React application with Echo and the Vercel AI SDK',
+  },
+
+  'next-image': {
+    repo: 'Merit-Systems/echo/templates/next-image',
+    title: 'Next.js Image Gen',
     description:
-      'Full-stack Next.js application with Echo and the Assistant UI',
-    devCommand: 'pnpm dev',
-    envVarName: 'NEXT_PUBLIC_ECHO_APP_ID',
+      'Full-stack Next.js application with Echo and the Vercel AI SDK for image generation',
+  },
+  'react-image': {
+    repo: 'Merit-Systems/echo/templates/react-image',
+    title: 'React Image Gen',
+    description: 'Vite React application with Echo and the Vercel AI SDK',
   },
 } as const;
 
-type TemplateName = keyof typeof TEMPLATES;
+type TemplateName = keyof typeof DEFAULT_TEMPLATES;
 
 interface CreateAppOptions {
   template?: TemplateName;
@@ -60,7 +51,7 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       type: 'select',
       name: 'template',
       message: 'Which template would you like to use?',
-      choices: Object.entries(TEMPLATES).map(([key, template]) => ({
+      choices: Object.entries(DEFAULT_TEMPLATES).map(([key, template]) => ({
         title: template.title,
         description: template.description,
         value: key,
@@ -99,10 +90,10 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
   }
 
   // Validate template exists
-  if (!template || !TEMPLATES[template]) {
+  if (!template) {
     console.error(chalk.red(`Template "${template}" does not exist.`));
     console.log(chalk.gray('Available templates:'));
-    Object.keys(TEMPLATES).forEach(t => {
+    Object.keys(DEFAULT_TEMPLATES).forEach(t => {
       console.log(chalk.gray(`  - ${t}`));
     });
     process.exit(1);
@@ -120,7 +111,9 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     const spinner = ora(`Downloading template: ${template}`).start();
 
     // Use degit to download the template
-    const emitter = degit(TEMPLATES[template].repo);
+    const emitter = degit(
+      `Merit-Systems/echo/templates/${template}#production`
+    );
 
     // Collect warnings to show after spinner
     const warnings: string[] = [];
@@ -159,16 +152,25 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     if (existsSync(envPath)) {
       try {
         const envContent = readFileSync(envPath, 'utf-8');
-        const envVarName = TEMPLATES[template].envVarName;
 
-        // Replace the environment variable value
+        // Replace the environment variable value - specifically targeting the *_ECHO_APP_ID placeholder
+        // Find the line with *_ECHO_APP_ID and replace the value after the = sign
         const updatedContent = envContent.replace(
-          new RegExp(`^${envVarName}=.*$`, 'm'),
-          `${envVarName}="${appId}"`
+          /^(.+ECHO_APP_ID\s*=\s*).+$/m,
+          `$1${appId!}`
         );
 
+        // Check if the replacement actually occurred
+        if (updatedContent === envContent) {
+          console.error(
+            chalk.red(
+              'Error: Could not find *ECHO_APP_ID placeholder in .env.local.'
+            )
+          );
+        }
+
         writeFileSync(envPath, updatedContent);
-        console.log(chalk.green(`✓ Updated ${envVarName} in .env.local`));
+        console.log(chalk.green(`✓ Updated *ECHO_APP_ID in .env.local`));
       } catch (envError) {
         console.log(
           chalk.yellow(`Warning: Could not update .env.local file`),
@@ -185,7 +187,7 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     console.log(chalk.cyan.bold('Next steps:'));
     console.log(chalk.gray(`▶ cd ${projectDir}`));
     console.log(chalk.gray(`▶ pnpm install`));
-    console.log(chalk.gray(`▶ ${TEMPLATES[template].devCommand}`));
+    console.log(chalk.gray(`▶ pnpm dev`));
 
     process.exit(0);
   } catch (error) {
@@ -223,7 +225,9 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     console.log();
     console.error(chalk.gray('Troubleshooting:'));
     console.error(
-      chalk.gray('- Verify the template exists in examples/ directory')
+      chalk.gray(
+        '- Verify the template exists in https://github.com/Merit-Systems/echo/tree/master/templates directory'
+      )
     );
     console.error(chalk.gray('- Check your internet connection'));
     console.error(chalk.gray('- Try again in a few moments'));
@@ -236,11 +240,11 @@ async function main() {
   program
     .name('echo-start')
     .description('Create a new Echo application')
-    .version('0.1.0')
+    .version(require('../package.json').version)
     .argument('[directory]', 'Directory to create the app in')
     .option(
       '-t, --template <template>',
-      `Template to use (${Object.keys(TEMPLATES).join(', ')})`
+      `Template to use (${Object.keys(DEFAULT_TEMPLATES).join(', ')})`
     )
     .option('-a, --app-id <appId>', 'Echo App ID to use in the project')
     .action(

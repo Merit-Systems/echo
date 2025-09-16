@@ -16,19 +16,19 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+      },
       name: 'EchoReactSDK',
-      formats: ['es', 'cjs', 'umd'],
-      fileName: format => {
+      formats: ['es', 'cjs'],
+      fileName: (format, entryName) => {
         switch (format) {
           case 'es':
-            return 'index.js';
+            return `${entryName}.js`;
           case 'cjs':
-            return 'index.cjs';
-          case 'umd':
-            return 'echo-react-sdk.umd.js';
+            return `${entryName}.cjs`;
           default:
-            return `index.${format}.js`;
+            return `${entryName}.${format}.js`;
         }
       },
     },
@@ -39,6 +39,11 @@ export default defineConfig({
         'react/jsx-runtime',
         'react/jsx-dev-runtime',
         'openai',
+        'swr',
+        '@ai-sdk/react',
+        'ai',
+        'react-oidc-context',
+        'oidc-client-ts',
         // Node.js modules that should not be bundled for browser
         'inquirer',
         'commander',
@@ -80,6 +85,7 @@ export default defineConfig({
   },
 
   optimizeDeps: {
+    include: ['use-sync-external-store/shim/index.js'],
     exclude: ['@merit-systems/echo-typescript-sdk'],
   },
 });

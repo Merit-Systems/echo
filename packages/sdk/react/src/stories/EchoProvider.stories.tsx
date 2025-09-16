@@ -22,7 +22,7 @@ type Story = StoryObj<typeof meta>;
 
 // Demo component to show provider functionality
 function ProviderDemo() {
-  const { user, isAuthenticated, isLoading, error, balance } = useEcho();
+  const { user, isLoggedIn, isLoading, error, balance } = useEcho();
 
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
@@ -34,7 +34,7 @@ function ProviderDemo() {
           <strong>Loading:</strong> {isLoading ? 'Yes' : 'No'}
         </p>
         <p>
-          <strong>Authenticated:</strong> {isAuthenticated ? 'Yes' : 'No'}
+          <strong>Authenticated:</strong> {isLoggedIn ? 'Yes' : 'No'}
         </p>
         <p>
           <strong>User:</strong> {user ? `${user.name || user.email}` : 'None'}

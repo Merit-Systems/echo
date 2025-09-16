@@ -27,10 +27,12 @@ export const Header = () => {
   useEffect(() => {
     const createPaymentLink = async () => {
       try {
-        const paymentLinkResponse = await echoClient.payments.createPaymentLink({
-          amount: 1,
-          description: 'Credits',
-        });
+        const paymentLinkResponse = await echoClient.payments.createPaymentLink(
+          {
+            amount: 1,
+            description: 'Credits',
+          }
+        );
         setPaymentLink(paymentLinkResponse.paymentLink.url);
       } catch (error) {
         console.error('Failed to create payment link:', error);
@@ -56,7 +58,6 @@ export const Header = () => {
     fetchUser();
   }, []);
 
-
   return (
     <header className="flex items-center justify-between p-4 border-b">
       <div className="flex items-center gap-3">
@@ -68,13 +69,15 @@ export const Header = () => {
         />
         <span className="font-semibold">Echo Chat</span>
       </div>
-      
+
       <div className="flex items-center gap-4">
         {/* Balance and User Info */}
         <div className="flex items-center gap-4">
           {/* Balance Display */}
           {balanceLoading ? (
-            <div className="text-sm text-muted-foreground">Balance: Loading...</div>
+            <div className="text-sm text-muted-foreground">
+              Balance: Loading...
+            </div>
           ) : balance ? (
             <div className="text-sm">
               <span className="text-muted-foreground">Balance: </span>
@@ -93,8 +96,8 @@ export const Header = () => {
           ) : null}
 
           {/* Add Credits Button - Always show, greyed out when loading */}
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             variant="outline"
             disabled={paymentLinkLoading || !paymentLink}
             onClick={() => paymentLink && window.open(paymentLink, '_blank')}
@@ -102,7 +105,7 @@ export const Header = () => {
             {paymentLinkLoading ? 'Loading...' : 'Add Credits'}
           </Button>
         </div>
-        
+
         <Button onClick={() => signOut()} size="sm">
           Sign out
         </Button>

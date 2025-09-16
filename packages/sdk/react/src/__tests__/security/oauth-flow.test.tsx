@@ -12,12 +12,12 @@ import {
 
 // Test component to access EchoProvider context
 function TestComponent() {
-  const { user, isAuthenticated, error } = useEcho();
+  const { user, isLoggedIn, error } = useEcho();
 
   return (
     <div>
       <div data-testid="authenticated">
-        {isAuthenticated ? 'Authenticated' : 'Not authenticated'}
+        {isLoggedIn ? 'Authenticated' : 'Not authenticated'}
       </div>
       <div data-testid="user">{user ? `User: ${user.name}` : 'No user'}</div>
       <div data-testid="error">{error || 'No error'}</div>

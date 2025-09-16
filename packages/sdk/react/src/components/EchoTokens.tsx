@@ -143,6 +143,8 @@ export function EchoTokens({
     user,
     balance,
     freeTierBalance,
+    isLoading,
+    isLoggedIn,
     refreshBalance,
     isInsufficientFunds,
     setIsInsufficientFunds,
@@ -227,7 +229,41 @@ export function EchoTokens({
     setPurchaseError(null);
   };
 
+  if (!user && isLoading) {
+    // Show loading skeleton while determining auth state
+    return children ? (
+      <div style={{ cursor: 'pointer' }}>{children}</div>
+    ) : (
+      <button
+        className={`echo-token-purchase-compact ${className}`}
+        disabled
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '10px 12px',
+          borderRadius: '8px',
+          backgroundColor: '#f3f4f6',
+          border: '1px solid #e5e7eb',
+          color: '#6b7280',
+          fontSize: '14px',
+          fontWeight: '800',
+          cursor: 'not-allowed',
+          backdropFilter: 'blur(8px)',
+          transition: 'all 0.2s ease',
+          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+          height: '40px',
+          fontFamily: 'HelveticaNowDisplay, sans-serif',
+        }}
+      >
+        <Logo width={20} height={20} variant="light" />
+        <span>Loading...</span>
+      </button>
+    );
+  }
+
   if (!user) {
+    // Only show sign in when not loading and no user
     return (
       <div className={`echo-token-purchase ${className}`}>
         {children ? (

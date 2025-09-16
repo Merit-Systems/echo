@@ -1,4 +1,4 @@
 {
-  "pages": ["how-echo-works", "api-reference", "callback-urls"],
+  "pages": ["how-echo-works", "api-reference", "callback-urls", "system-prompt"],
   "icon": "Brain"
 }

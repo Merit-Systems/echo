@@ -1,50 +1,42 @@
 import { EchoClient, parseEchoError } from '@merit-systems/echo-typescript-sdk';
-import { useCallback, useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { EchoUser } from '../types';
 
 export function useEchoUser(echoClient: EchoClient | null) {
-  const [user, setUser] = useState<EchoUser | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const refreshUser = useCallback(async () => {
-    if (!echoClient) {
-      throw new Error('Not authenticated');
-    }
-
-    setIsLoading(true);
-    try {
-      const userResponse = await echoClient.users.getUserInfo();
-
-      setUser(userResponse);
-      setError(null);
-    } catch (err) {
-      const echoError = parseEchoError(
-        err instanceof Error ? err : new Error(String(err)),
-        'refreshing user'
-      );
-      setError(echoError.message);
-      throw echoError;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [echoClient]);
-
-  useEffect(() => {
-    if (echoClient) {
-      refreshUser().catch(err => {
-        console.error('Error loading initial user:', err);
-      });
-    } else {
-      setUser(null);
-      setError(null);
-    }
-  }, [echoClient, refreshUser]);
-
-  return {
-    user,
+  const {
+    data: user,
     error,
     isLoading,
-    refreshUser,
+    mutate,
+  } = useSWR(
+    echoClient ? ['user'] : null,
+    async () => {
+      if (!echoClient) {
+        throw new Error('Not authenticated');
+      }
+
+      try {
+        const userResponse = await echoClient.users.getUserInfo();
+        return userResponse;
+      } catch (err) {
+        const echoError = parseEchoError(
+          err instanceof Error ? err : new Error(String(err)),
+          'refreshing user'
+        );
+        throw echoError;
+      }
+    },
+    {
+      errorRetryCount: 2,
+      revalidateOnFocus: true,
+      dedupingInterval: 60000, // 1min deduping for user data
+    }
+  );
+
+  return {
+    user: user || null,
+    error: error?.message || null,
+    isLoading,
+    refreshUser: mutate,
   };
 }

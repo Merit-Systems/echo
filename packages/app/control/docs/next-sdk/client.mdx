@@ -6,69 +6,101 @@ description: Echo's Next.js SDK client-side functionality.
 Echo maintains authentication using HTTP Cookies. The browser does not have access
 to these so login state needs to be handled by server components.
 
-# Client-Side Sign In
+# Setup Provider
 
-In your application you can use the `signIn` method to initiate server-side Echo sign-in.
+Create a `providers.tsx` file to wrap your app with the Echo provider:
 
 ```typescript
-"use client"
+"use client";
 
-import { signIn } from "@merit-systems/echo-next-sdk/client";
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
 
-export default SignInButton() {
-  return <button onClick={() => signIn()}>Sign In</button>
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: 'your-app-id' }}>
+      {children}
+    </EchoProvider>
+  );
 }
 ```
 
-# Fetching information from the Echo API
-
-The client side Echo API allows you to serve all the Echo API endpoints with the
-echo client directly through your routes. This means that all token handling is
-directly supported.
-
-## Handlers
+Then wrap your app in `layout.tsx`:
 
 ```typescript
-import handlers from '@/echo';
+import { Providers } from './providers';
 
-export { GET, POST } = handlers;
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
 ```
 
-Exporting these routes will expose the echo client proxy route:
+# Using the useEcho Hook
 
-- `api/echo/proxy/:path*`
-
-On the client side, you can use the `useEcho` hook to get the echo client.
+The `useEcho` hook provides access to user data, balance information, and authentication methods:
 
 ```typescript
 import { useEcho } from '@merit-systems/echo-next-sdk/client';
 
-const echoClient = useEcho();
+export default function MyComponent() {
+  const { user, balance, freeTierBalance, signIn, signOut, echoClient } = useEcho();
+
+  if (!user) {
+    return <button onClick={signIn}>Sign In</button>;
+  }
+
+  return (
+    <div>
+      <p>Welcome {user.name}!</p>
+      <p>Balance: ${balance?.balance || 0}</p>
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  );
+}
 ```
 
-Then you can invoke the echo client directly in a `useEffect`
-or whatever external data fetching strategy you are using.
+# Direct API Access with echoClient
+
+For more advanced use cases, you can access the `echoClient` directly to call any Echo API method:
 
 ```typescript
-import { useEffect } from 'react';
+import { useEcho } from '@merit-systems/echo-next-sdk/client';
 
-// get balance
-useEffect(() => {
-  const balance = echoClient.balance.getBalance();
-}, [echoClient]);
+export default function PaymentComponent() {
+  const { echoClient } = useEcho();
 
-// create a payment link
-useEffect(() => {
-  const paymentLink = echoClient.payments.createPaymentLink({
-    amount: 10,
-    description: 'Credits',
-  });
-}, [echoClient]);
+  const handleCreatePayment = async () => {
+    if (!echoClient) return;
 
-// get user info
-useEffect(() => {
-  const user = echoClient.users.getUserInfo();
-}, [echoClient]);
+    try {
+      // Create payment link
+      const paymentLink = await echoClient.payments.createPaymentLink({
+        amount: 10,
+        description: 'Credits',
+      });
+      
+      // Get detailed user info
+      const userInfo = await echoClient.users.getUserInfo();
+      
+      // Check balance
+      const balance = await echoClient.balance.getBalance();
+      
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  return <button onClick={handleCreatePayment}>Create Payment</button>;
+}
 ```
 
-The rest of the supported methods are documented in the [TypeScript SDK](../typescript-sdk).
+The `echoClient` provides full access to all Echo API endpoints. For a complete list of available methods, see the [TypeScript SDK](../typescript-sdk) documentation.

@@ -17,10 +17,9 @@ function TestComponent() {
   const {
     user,
     balance,
-    isAuthenticated,
+    isLoggedIn,
     isLoading,
     error,
-    token,
     signIn,
     signOut,
     refreshBalance,
@@ -70,14 +69,13 @@ function TestComponent() {
     <div>
       <div data-testid="loading">{isLoading ? 'Loading...' : 'Ready'}</div>
       <div data-testid="authenticated">
-        {isAuthenticated ? 'Authenticated' : 'Not authenticated'}
+        {isLoggedIn ? 'Authenticated' : 'Not authenticated'}
       </div>
       <div data-testid="user">{user ? `User: ${user.name}` : 'No user'}</div>
       <div data-testid="balance">
         {balance ? `Credits: ${balance.balance}` : 'No balance'}
       </div>
       <div data-testid="error">{error || 'No error'}</div>
-      <div data-testid="token">{token || 'No token'}</div>
       <div data-testid="token-from-method" id="token-from-method">
         Not called
       </div>
@@ -530,11 +528,6 @@ describe('EchoProvider', () => {
           'Authenticated'
         );
       });
-
-      // Token should be available as a property
-      const tokenElement = screen.getByTestId('token');
-      expect(tokenElement).not.toHaveTextContent('No token');
-      expect(tokenElement.textContent).toBe(mockUser.access_token);
     });
 
     // Testing react-oidc-context integration - requires auth to work
@@ -577,9 +570,6 @@ describe('EchoProvider', () => {
           'Not authenticated'
         );
       });
-
-      // Token property should be null
-      expect(screen.getByTestId('token')).toHaveTextContent('No token');
     });
 
     test('getToken method returns null when not authenticated', async () => {
@@ -622,11 +612,6 @@ describe('EchoProvider', () => {
         );
       });
 
-      // Verify token is present
-      expect(screen.getByTestId('token')).toHaveTextContent(
-        mockUser.access_token
-      );
-
       // Sign out
       await user.click(screen.getByTestId('sign-out'));
 
@@ -634,7 +619,6 @@ describe('EchoProvider', () => {
         expect(screen.getByTestId('authenticated')).toHaveTextContent(
           'Not authenticated'
         );
-        expect(screen.getByTestId('token')).toHaveTextContent('No token');
       });
     });
 
@@ -651,24 +635,12 @@ describe('EchoProvider', () => {
 
       renderWithEcho(<TestComponent />, { mockUserManager });
 
-      await waitFor(() => {
-        expect(screen.getByTestId('token')).toHaveTextContent(
-          originalUser.access_token
-        );
-      });
-
       // Simulate successful renewal with user loaded event
       const userLoadedHandler =
         mockUserManager.events.addUserLoaded.mock.calls?.[0]?.[0];
       if (userLoadedHandler) {
         await act(async () => {
           userLoadedHandler(renewedUser);
-        });
-
-        await waitFor(() => {
-          expect(screen.getByTestId('token')).toHaveTextContent(
-            renewedUser.access_token
-          );
         });
       }
     });

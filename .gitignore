@@ -19,8 +19,9 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
-# Allow .env.local in examples directory
+# Allow .env.local in examples, templates directory
 !/examples/**/.env.local
+!/templates/**/.env.local
 
 # Testing
 coverage/

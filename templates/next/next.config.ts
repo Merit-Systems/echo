@@ -1,7 +1,7 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@merit-systems/echo-next-sdk'],
+  /* config options here */
 };
 
 export default nextConfig;

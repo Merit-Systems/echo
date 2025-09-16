@@ -125,7 +125,7 @@ export const ZeroFreeTierWithRealBalance: Story = {
     Story => (
       <MockEchoProvider
         mockState={{
-          isAuthenticated: true,
+          isLoggedIn: true,
           user: mockStates.authenticated.user,
           balance: { totalPaid: 2.5, totalSpent: 0.5, balance: 2.0 },
           freeTierBalance: {

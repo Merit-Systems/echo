@@ -1,14 +1,16 @@
 'use client';
-import { useEcho } from '@merit-systems/echo-next-sdk/client';
+
 import { useEffect, useState } from 'react';
+
+import { useEcho } from '@merit-systems/echo-next-sdk/client';
 import { PaymentLink } from './payment-link';
 
 export const Balance = () => {
-  const echoClient = useEcho();
+  const { echoClient } = useEcho();
   const [balance, setBalance] = useState<number | null>(null);
 
   useEffect(() => {
-    echoClient.balance
+    echoClient?.balance
       .getBalance()
       .then(balance => setBalance(balance.balance))
       .catch(error => {

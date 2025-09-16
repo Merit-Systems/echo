@@ -1,80 +1,63 @@
-import type {
-  EchoClient,
-  EchoConfig,
-  FreeBalance,
-} from '@merit-systems/echo-typescript-sdk';
-import { User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { UserManager, WebStorageStateStore } from 'oidc-client-ts';
+import type { User } from 'oidc-client-ts';
 import {
   AuthProvider,
   AuthProviderUserManagerProps,
   useAuth,
 } from 'react-oidc-context';
+import type { EchoClient } from '@merit-systems/echo-typescript-sdk';
 import { useEchoBalance } from '../hooks/useEchoBalance';
 import { useEchoClient } from '../hooks/useEchoClient';
 import { useEchoPayments } from '../hooks/useEchoPayments';
 import { useEchoUser } from '../hooks/useEchoUser';
-import { EchoAuthConfig, EchoBalance, EchoUser } from '../types';
+import { EchoAuthConfig } from '../types';
+import { EchoContext, EchoContextValue } from '../context';
 
-export interface EchoContextValue {
-  // Auth & User
-  rawUser: User | null | undefined; // directly piped from oidc
-  user: EchoUser | null; // directly piped from oidc
-  balance: EchoBalance | null;
-  freeTierBalance: FreeBalance | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  token: string | null;
-  echoClient: EchoClient | null;
+export interface EchoProviderRawProps {
+  children: ReactNode;
+
+  config: EchoAuthConfig;
+
+  isAuthLoading: boolean;
+  authError: Error | null | undefined;
+
+  rawUser: User | null | undefined;
+  isLoggedIn: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
-  refreshBalance: () => Promise<void>;
-  createPaymentLink: (
-    amount: number,
-    description?: string,
-    successUrl?: string
-  ) => Promise<string>;
   getToken: () => Promise<string | null>;
-  clearAuth: () => Promise<void>;
-  config: EchoConfig;
-  // Insufficient funds state
-  isInsufficientFunds: boolean;
-  setIsInsufficientFunds: (value: boolean) => void;
+
+  echoClient: EchoClient | null;
 }
 
-// Separate context for refresh state to prevent unnecessary re-renders
-export interface EchoRefreshContextValue {
-  isRefreshing: boolean;
-}
+/**
+ * Raw provider that manages Echo context without built-in authentication.
+ *
+ * Design: Single internal context with useEcho() hook for both SDK and client components.
+ * Accepts auth state/methods from parent, enabling custom auth implementations (Next.js proxy, etc).
+ *
+ * @param rawUser - OIDC user object from parent auth provider
+ * @param isLoggedIn - Auth state from parent
+ * @param signIn/signOut/getToken - Auth methods from parent
+ * @param echoClient - Configured Echo API client
+ */
+export function EchoProviderRaw({
+  config,
+  children,
 
-export const EchoContext = createContext<EchoContextValue | null>(null);
-export const EchoRefreshContext = createContext<EchoRefreshContextValue | null>(
-  null
-);
+  isAuthLoading,
+  authError,
 
-interface EchoProviderProps {
-  config: EchoAuthConfig;
-  children: ReactNode;
-}
+  rawUser,
+  isLoggedIn,
 
-// Internal provider that handles everything
-function EchoProviderInternal({ config, children }: EchoProviderProps) {
-  const auth = useAuth();
+  signIn,
+  signOut,
+  getToken,
 
-  const user = auth.user;
-  const apiUrl = config.baseEchoUrl || 'https://echo.merit.systems';
-  const token = auth.user?.access_token || null;
-
-  const echoClient = useEchoClient({ apiUrl });
-
+  echoClient,
+}: EchoProviderRawProps) {
   // Insufficient funds state - shared across all components
   const [isInsufficientFunds, setIsInsufficientFunds] = useState(false);
 
@@ -98,7 +81,67 @@ function EchoProviderInternal({ config, children }: EchoProviderProps) {
     isLoading: paymentLoading,
   } = useEchoPayments(echoClient);
 
-  const clearAuth = useCallback(async () => {
+  // Combine errors from different sources
+  const combinedError =
+    authError?.message || balanceError || paymentError || userError || null;
+
+  // Only include isLoading for initial authentication, not token refresh
+  // Token refresh should be transparent to downstream components
+  const isInitialAuthLoading = isAuthLoading && !isLoggedIn;
+  const combinedLoading =
+    isInitialAuthLoading || balanceLoading || paymentLoading || userLoading;
+
+  // Main context - stable during token refresh
+  const contextValue: EchoContextValue = useMemo(
+    () => ({
+      user: echoUser,
+      rawUser,
+      balance,
+      freeTierBalance,
+      isLoggedIn,
+      isLoading: combinedLoading,
+      error: combinedError,
+      echoClient,
+      signIn: signIn,
+      signOut: signOut,
+      refreshBalance,
+      createPaymentLink,
+      getToken,
+      config,
+      isInsufficientFunds,
+      setIsInsufficientFunds,
+    }),
+    [
+      echoUser,
+      rawUser,
+      balance,
+      freeTierBalance,
+      isLoggedIn,
+      combinedLoading,
+      combinedError,
+      echoClient,
+      signIn,
+      signOut,
+      refreshBalance,
+      createPaymentLink,
+      getToken,
+      config,
+      isInsufficientFunds,
+    ]
+  );
+
+  return (
+    <EchoContext.Provider value={contextValue}>{children}</EchoContext.Provider>
+  );
+}
+
+// Intermediate provider that uses auth and creates EchoClient
+function EchoProviderWithAuth({ config, children }: EchoProviderProps) {
+  const auth = useAuth();
+  const apiUrl = config.baseEchoUrl || 'https://echo.merit.systems';
+  const echoClient = useEchoClient({ apiUrl });
+
+  const signOut = useCallback(async () => {
     try {
       await auth.removeUser();
     } catch (err) {
@@ -113,74 +156,28 @@ function EchoProviderInternal({ config, children }: EchoProviderProps) {
     return auth.user?.access_token || null;
   }, [auth.user?.access_token, auth.signinSilent]);
 
-  // Combine errors from different sources
-  const combinedError =
-    auth.error?.message || balanceError || paymentError || userError || null;
-
-  // Only include auth.isLoading for initial authentication, not token refresh
-  // Token refresh should be transparent to downstream components
-  const isInitialAuthLoading = auth.isLoading && !auth.isAuthenticated;
-  const isTokenRefreshing = auth.isLoading && auth.isAuthenticated;
-  const combinedLoading =
-    isInitialAuthLoading || balanceLoading || paymentLoading || userLoading;
-
-  // Main context - stable during token refresh
-  const contextValue: EchoContextValue = useMemo(
-    () => ({
-      user: echoUser,
-      rawUser: user,
-      balance,
-      freeTierBalance,
-      isAuthenticated: auth.isAuthenticated,
-      isLoading: combinedLoading,
-      error: combinedError,
-      token,
-      echoClient,
-      signIn: auth.signinRedirect,
-      signOut: clearAuth,
-      refreshBalance,
-      createPaymentLink,
-      getToken,
-      clearAuth,
-      config,
-      isInsufficientFunds,
-      setIsInsufficientFunds,
-    }),
-    [
-      echoUser,
-      user,
-      balance,
-      freeTierBalance,
-      auth.isAuthenticated,
-      combinedLoading,
-      combinedError,
-      token,
-      echoClient,
-      auth.signinRedirect,
-      clearAuth,
-      refreshBalance,
-      createPaymentLink,
-      getToken,
-      config,
-      isInsufficientFunds,
-    ]
-  );
-
-  // Separate refresh context - only components that need refresh state will re-render
-  const refreshContextValue: EchoRefreshContextValue = useMemo(
-    () => ({
-      isRefreshing: isTokenRefreshing,
-    }),
-    [isTokenRefreshing]
-  );
+  const isLoggedIn = !!auth.user;
 
   return (
-    <EchoContext.Provider value={contextValue}>
-      <EchoRefreshContext.Provider value={refreshContextValue}>
-        {children}
-      </EchoRefreshContext.Provider>
-    </EchoContext.Provider>
+    <EchoProviderRaw
+      config={config}
+      rawUser={auth.user}
+      isLoggedIn={isLoggedIn}
+      isAuthLoading={auth.isLoading}
+      authError={auth.error}
+      echoClient={echoClient}
+      signIn={auth.signinRedirect}
+      signOut={signOut}
+      getToken={getToken}
+    >
+      {children}
+    </EchoProviderRaw>
   );
+}
+
+interface EchoProviderProps {
+  config: EchoAuthConfig;
+  children: ReactNode;
 }
 
 // Main provider that wraps react-oidc-context
@@ -246,7 +243,7 @@ export function EchoProvider({ config, children }: EchoProviderProps) {
 
   return (
     <AuthProvider {...oidcConfig}>
-      <EchoProviderInternal config={config}>{children}</EchoProviderInternal>
+      <EchoProviderWithAuth config={config}>{children}</EchoProviderWithAuth>
     </AuthProvider>
   );
 }

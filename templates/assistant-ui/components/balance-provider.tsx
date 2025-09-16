@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from 'react';
 import { echoClient } from '@merit-systems/echo-next-sdk/client';
 
 // Define the Balance type locally since it's not exported from the Next.js SDK
@@ -50,8 +56,6 @@ export function BalanceProvider({ children }: BalanceProviderProps) {
   };
 
   return (
-    <BalanceContext.Provider value={value}>
-      {children}
-    </BalanceContext.Provider>
+    <BalanceContext.Provider value={value}>{children}</BalanceContext.Provider>
   );
 }

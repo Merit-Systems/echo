@@ -1,60 +1,11 @@
-import { EchoClient, EchoConfig } from '@merit-systems/echo-typescript-sdk';
+'use client';
 
-export interface EchoClientConfig {
-  basePath?: string;
-}
+export { EchoProvider } from './components/EchoProvider';
+export {
+  EchoSignIn,
+  EchoSignOut,
+  EchoTokens,
+  InsufficientFundsModal,
+} from '@merit-systems/echo-react-sdk';
 
-/**
- * Sign in to Echo (client-side only)
- */
-export function signIn(config?: EchoClientConfig) {
-  if (typeof window === 'undefined') {
-    console.warn('signIn() can only be called in client components');
-    return;
-  }
-
-  const basePath = config?.basePath || '/api/echo';
-  window.location.href = `${window.location.origin}${basePath}/signin`;
-}
-
-export function signOut(config?: EchoClientConfig) {
-  if (typeof window === 'undefined') {
-    console.warn('signOut() can only be called in client components');
-    return;
-  }
-  const basePath = config?.basePath || '/api/echo';
-  window.location.href = `${window.location.origin}${basePath}/signout`;
-}
-
-/**
- * Create an Echo client for client-side usage (React components, hooks)
- * Uses relative URLs that work in the browser
- */
-export function createEchoClient(config?: EchoConfig): EchoClient {
-  const proxyPath = config?.basePath
-    ? `${config.basePath}/proxy`
-    : '/api/echo/proxy';
-
-  return new EchoClient({
-    baseUrl: proxyPath,
-    // No apiKey needed - proxy handles authentication automatically
-    apiKey: 'next-sdk-proxy',
-  });
-}
-
-/**
- * Pre-configured Echo client for client-side usage
- * Ready to use in React components
- */
-export const echoClient = createEchoClient();
-
-/**
- * React hook to get the Echo client
- * Provides a consistent way to access the client in components
- */
-export function useEcho(config?: EchoConfig): EchoClient {
-  if (config) {
-    return createEchoClient(config);
-  }
-  return echoClient;
-}
+export { useEcho, EchoContext } from '@merit-systems/echo-react-sdk';

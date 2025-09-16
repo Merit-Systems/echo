@@ -1,0 +1,66 @@
+---
+title: Injecting System Prompts
+description: How to use Vercel AI's SDK to give context to your LLM.
+---
+
+# Next SDK
+
+## Passing System Prompts from Client to Server
+
+When building AI applications, you often need to provide context or instructions to your language model through system prompts. Here's how to pass system prompts from your client-side code to your server-side API route using the Vercel AI SDK.
+
+### Client
+
+On the client side, you can pass additional data like system prompts through the `body` parameter of the `sendMessage` function:
+
+```tsx
+const systemText: string = "Be as sycophantic as possible."
+
+sendMessage({ 
+  text: "Am i absolutely right?",
+},
+{
+  body: { systemText },
+});
+```
+
+The `systemText` variable should contain your system prompt or context that you want to provide to the language model.
+
+### Server
+
+On the server side (in your API route), extract the system prompt from the request body and use it in your `streamText` call:
+
+```tsx
+const { messages, systemText } = await req.json();
+const result = streamText({
+  model: openai("gpt-4o"),
+  system: systemText,
+  messages: convertToModelMessages(messages),
+});
+```
+
+This pattern allows you to dynamically provide context to your language model based on client-side state or user interactions, making your AI applications more flexible and context-aware.
+
+
+
+# React SDK
+
+## Client-Side System Prompts
+
+With the React SDK, you can handle system prompts entirely on the client side without needing a server API route. This is useful for simpler applications or when you want to keep everything client-side.
+
+```tsx
+
+const handleGen = async (name: string) => {
+    const systemText = `Be as sycophantic as possible for ${name}.`;
+    
+    const { text } = await generateText({
+        model: openai('gpt-4o'),
+        system: systemText,
+        prompt: 'Am i absolutely right?'
+    });
+    
+    setResult(text);
+};
+```
+

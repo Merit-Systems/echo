@@ -10,7 +10,7 @@ export function EchoSignIn({
   className = '',
   children,
 }: EchoSignInProps) {
-  const { signIn, isLoading, user, error } = useEcho();
+  const { signIn, isLoading, isLoggedIn, user, error } = useEcho();
   const [isHovered, setIsHovered] = useState(false);
 
   React.useEffect(() => {
@@ -61,6 +61,43 @@ export function EchoSignIn({
     );
   }
 
+  if (isLoading && !user) {
+    return (
+      <div className={`echo-signin ${className}`}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 20px',
+            backgroundColor: '#f3f4f6',
+            borderRadius: '8px',
+            width: 'fit-content',
+            minWidth: '100px',
+            height: '44px',
+          }}
+        >
+          <div
+            style={{
+              width: '16px',
+              height: '16px',
+              backgroundColor: '#e5e7eb',
+              borderRadius: '4px',
+            }}
+          />
+          <div
+            style={{
+              width: '60px',
+              height: '12px',
+              backgroundColor: '#e5e7eb',
+              borderRadius: '4px',
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`echo-signin ${className}`}>
       {children ? (
@@ -97,7 +134,7 @@ export function EchoSignIn({
           onMouseLeave={() => setIsHovered(false)}
         >
           <Logo width={16} height={16} variant="light" />
-          <span>{isLoading ? 'Signing in...' : 'Sign in'}</span>
+          <span>Sign in</span>
         </button>
       )}
     </div>

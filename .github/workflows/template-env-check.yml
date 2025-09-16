@@ -1,0 +1,40 @@
+name: Template .env.local check
+
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+
+jobs:
+  check-env-placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify each template has .env.local with *ECHO_APP_ID
+        run: |
+          set -e
+          echo "Checking templates for .env.local with *ECHO_APP_ID placeholder..."
+          failed=0
+          # Iterate over immediate subdirectories of templates/
+          for d in templates/*/; do
+            # Only check directories that look like app templates (have a package.json)
+            if [ -f "$d/package.json" ]; then
+              echo "Inspecting $d"
+              if [ ! -f "$d/.env.local" ]; then
+                echo "::error file=$d::.env.local is missing"
+                failed=1
+                continue
+              fi
+              if ! grep -q "ECHO_APP_ID" "$d/.env.local"; then
+                echo "::error file=$d::.env.local must contain the exact string ECHO_APP_ID"
+                failed=1
+              fi
+            fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "One or more templates failed the .env.local ECHO_APP_ID placeholder check"
+            exit 1
+          fi
+          echo "All templates passed the .env.local ECHO_APP_ID placeholder check"

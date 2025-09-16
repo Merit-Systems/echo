@@ -1,4 +1,5 @@
 import { EchoConfig } from '@merit-systems/echo-typescript-sdk';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveEchoBaseUrl } from '../config';
 import { ECHO_COOKIE, namespacedCookie } from './cookie-names';
@@ -261,4 +262,18 @@ export async function handleRefresh(
       { status: 500 }
     );
   }
+}
+
+export async function handleSession(req: NextRequest, config: EchoConfig) {
+  const jar = await cookies();
+  const refreshExp = jar.get(
+    namespacedCookie(ECHO_COOKIE.REFRESH_TOKEN_EXPIRES, config.appId)
+  )?.value;
+  const isAuthenticated =
+    !!refreshExp && Number(refreshExp) > Math.floor(Date.now() / 1000);
+  const userInfo = jar.get(
+    namespacedCookie(ECHO_COOKIE.USER_INFO, config.appId)
+  )?.value;
+  const user = userInfo ? JSON.parse(userInfo) : null;
+  return NextResponse.json({ isAuthenticated, user });
 }

@@ -2,7 +2,7 @@ import {
   EchoClient,
   OAuthTokenProvider,
 } from '@merit-systems/echo-typescript-sdk';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from 'react-oidc-context';
 
 interface UseEchoClientOptions {
@@ -15,13 +15,11 @@ interface UseEchoClientOptions {
  */
 export function useEchoClient({ apiUrl }: UseEchoClientOptions) {
   const auth = useAuth();
-  const [client, setClient] = useState<EchoClient | null>(null);
 
-  useEffect(() => {
+  const client = useMemo(() => {
     // Only recreate client when authentication state changes, not token refresh
     if (!auth.user) {
-      setClient(null);
-      return;
+      return null;
     }
 
     // Create client once when authenticated - token provider handles refresh internally
@@ -41,16 +39,10 @@ export function useEchoClient({ apiUrl }: UseEchoClientOptions) {
       },
     });
 
-    const newClient = new EchoClient({
+    return new EchoClient({
       baseUrl: apiUrl,
       tokenProvider,
     });
-
-    setClient(newClient);
-
-    return () => {
-      setClient(null);
-    };
   }, [
     apiUrl,
     auth.user,

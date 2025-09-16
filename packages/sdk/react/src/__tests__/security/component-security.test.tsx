@@ -24,7 +24,7 @@ import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { EchoContext } from '../../components/EchoProvider';
+import { EchoContext } from '../../context';
 import { EchoSignIn } from '../../components/EchoSignIn';
 import { EchoTokens } from '../../components/EchoTokens';
 import {

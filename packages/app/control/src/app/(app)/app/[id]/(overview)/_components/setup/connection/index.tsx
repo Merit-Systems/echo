@@ -4,30 +4,38 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import Link from 'next/link';
 
-import { SiNextdotjs, SiReact } from '@icons-pack/react-simple-icons';
+import { Check, ChevronsLeftRightEllipsis } from 'lucide-react';
 
-import {
-  Tabs,
-  TabsTrigger,
-  TabsList,
-  TabsContent,
-  TabsContents,
-} from '@/components/ui/shadcn-io/tabs';
-
-import { Card } from '@/components/ui/card';
 import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
-import { ReactStep1, ReactStep2, ReactStep3 } from './frameworks/react';
-import { NextStep1, NextStep2, NextStep3 } from './frameworks/next';
+import { TemplateGroup } from './template-group';
+
+import { TEMPLATES } from './data';
 
 import { api } from '@/trpc/client';
-import { Check, ChevronsLeftRightEllipsis } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
-import { CopyButton } from '@/components/ui/copy-button';
+import { Route } from 'next';
+import { Button } from '@/components/ui/button';
+import {
+  SiNextdotjs,
+  SiReact,
+  SiTypescript,
+} from '@icons-pack/react-simple-icons';
 
 interface Props {
   appId: string;
@@ -66,73 +74,66 @@ export const Connection: React.FC<Props> = ({ appId }) => {
           ) : (
             <ChevronsLeftRightEllipsis className="size-4" />
           )}
-          Connect to Echo
+          Create your App
         </div>
       </AccordionTrigger>
-      <AccordionContent>
-        <Tabs className="flex flex-col gap-2" defaultValue="next">
-          <div className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
-            <TabsList className="rounded-lg">
-              <TabsTrigger value="next" className="px-8 gap-2 rounded-lg">
-                <SiNextdotjs className="size-4" />
-                Next.js
-              </TabsTrigger>
-              <TabsTrigger value="react" className="px-8 gap-2 rounded-lg">
-                <SiReact className="size-4" />
-                React
-              </TabsTrigger>
-            </TabsList>
-            <div className="flex flex-col items-start md:items-end mt-2 md:mt-0">
-              <p className="text-[10px] text-muted-foreground">Your App ID</p>
-              <div className="flex items-center w-fit border border-primary rounded-md overflow-hidden pl-2 pr-1 py-1 bg-muted">
-                <p className="flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs no-scrollbar pr-2">
-                  {appId}
-                </p>
-                <CopyButton
-                  text={appId}
-                  toastMessage="Copied to clipboard"
-                  className="shadow-none p-1"
-                />
-              </div>
+      <AccordionContent className="flex flex-col gap-2 md:gap-4">
+        <Card>
+          <CardHeader className="border-b space-y-0.5">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base">Guided Setup</CardTitle>
+              <Badge variant="glass" className="rounded-full">
+                Recommended
+              </Badge>
             </div>
-          </div>
-          <TabsContents className="max-h-[70vh] md:h-[354px] overflow-y-auto no-scrollbar">
-            <TabsContent value="next" className="gap-2 flex flex-col">
-              <Card className="flex flex-col md:flex-row overflow-hidden divide-y md:divide-y-0 md:divide-x">
-                <NextStep1 />
-                <NextStep2 appId={appId} />
-                <NextStep3 />
-              </Card>
-              <p className="text-sm text-muted-foreground">
-                For more detailed instructions, see our{' '}
-                <Link
-                  href="/docs/getting-started/next-js"
-                  className="text-primary underline font-medium"
-                  target="_blank"
-                >
-                  Next.js docs
-                </Link>
-              </p>
-            </TabsContent>
-            <TabsContent value="react" className="gap-2 flex flex-col">
-              <Card className="flex flex-col md:flex-row overflow-hidden divide-y md:divide-y-0 md:divide-x">
-                <ReactStep1 />
-                <ReactStep2 appId={appId} />
-                <ReactStep3 />
-              </Card>
-              <p className="text-sm text-muted-foreground">
-                For more detailed instructions, see our{' '}
-                <Link
-                  href="/docs/getting-started/react"
-                  className="text-primary underline font-medium"
-                  target="_blank"
-                >
-                  React docs
-                </Link>
-              </p>
-            </TabsContent>
-          </TabsContents>
-        </Tabs>
+            <CardDescription>
+              Use one of our starter templates to get started with your app.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <TemplateGroup templateGroup={TEMPLATES} appId={appId} index={0} />
+          </CardContent>
+        </Card>
+        <div className="flex gap-2 items-center">
+          <Separator className="flex-1" />
+          <p className="text-muted-foreground">or</p>
+          <Separator className="flex-1" />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              Building from Scratch or Adding to an Existing App?
+            </CardTitle>
+            <CardDescription>
+              Visit our{' '}
+              <Link
+                href={'/docs' as Route}
+                target="_blank"
+                className="text-primary underline font-medium"
+              >
+                docs
+              </Link>{' '}
+              for more details on our SDKs.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="gap-2">
+            <Link href={'/docs/next-sdk'} target="_blank">
+              <Button variant="outline">
+                <SiNextdotjs className="size-4" /> Next.js SDK Docs
+              </Button>
+            </Link>
+            <Link href={'/docs/react-sdk'} target="_blank">
+              <Button variant="outline">
+                <SiReact className="size-4" /> React SDK Docs
+              </Button>
+            </Link>
+            <Link href={'/docs/typescript-sdk'} target="_blank">
+              <Button variant="outline">
+                <SiTypescript className="size-4" /> TypeScript SDK Docs
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
       </AccordionContent>
     </AccordionItem>
   );

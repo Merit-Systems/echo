@@ -1,6 +1,8 @@
 'use client';
-import { useEcho } from '@merit-systems/echo-next-sdk/client';
+
 import { useState } from 'react';
+
+import { useEcho } from '@merit-systems/echo-next-sdk/client';
 
 interface PaymentLinkProps {
   amount?: number;
@@ -11,7 +13,7 @@ export const PaymentLink = ({
   amount = 10,
   description = 'Credits',
 }: PaymentLinkProps) => {
-  const echoClient = useEcho();
+  const { echoClient } = useEcho();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +22,10 @@ export const PaymentLink = ({
     setError(null);
 
     try {
+      if (!echoClient) {
+        throw new Error('Not authenticated');
+      }
+
       const paymentResponse = await echoClient.payments.createPaymentLink({
         amount,
         description,

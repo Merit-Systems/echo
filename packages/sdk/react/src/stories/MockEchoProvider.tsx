@@ -1,7 +1,7 @@
 import { FreeBalance } from '@merit-systems/echo-typescript-sdk';
 import { User } from 'oidc-client-ts';
 import { ReactNode } from 'react';
-import { EchoContext, EchoContextValue } from '../components/EchoProvider';
+import { EchoContext, EchoContextValue } from '../context';
 import { EchoBalance, EchoUser } from '../types';
 // import { User } from 'oidc-client-ts';
 
@@ -50,9 +50,8 @@ const createMockContext = (
   rawUser: mockRawUser as User,
   balance: mockBalance,
   freeTierBalance: mockFreeTierBalance,
-  isAuthenticated: true,
+  isLoggedIn: true,
   isLoading: false,
-  token: 'mock-token',
   error: null,
   echoClient: null,
   config: {
@@ -75,9 +74,6 @@ const createMockContext = (
   getToken: async () => {
     console.log('Mock get token called');
     return 'mock-token';
-  },
-  clearAuth: async () => {
-    console.log('Mock clear auth called');
   },
 
   isInsufficientFunds: false,
@@ -106,28 +102,28 @@ export function MockEchoProvider({
 // Predefined mock states
 export const mockStates = {
   authenticated: createMockContext({
-    isAuthenticated: true,
+    isLoggedIn: true,
     user: mockUser as EchoUser,
     balance: mockBalance,
     isLoading: false,
   }),
 
   unauthenticated: createMockContext({
-    isAuthenticated: false,
+    isLoggedIn: false,
     user: null,
     balance: null,
     isLoading: false,
   }),
 
   loading: createMockContext({
-    isAuthenticated: false,
+    isLoggedIn: false,
     user: null,
     balance: null,
     isLoading: true,
   }),
 
   error: createMockContext({
-    isAuthenticated: false,
+    isLoggedIn: false,
     user: null,
     balance: null,
     isLoading: false,
@@ -135,14 +131,14 @@ export const mockStates = {
   }),
 
   lowBalance: createMockContext({
-    isAuthenticated: true,
+    isLoggedIn: true,
     user: mockUser as EchoUser,
     balance: { totalPaid: 5, totalSpent: 0, balance: 5 },
     isLoading: false,
   }),
 
   freeTierOnly: createMockContext({
-    isAuthenticated: true,
+    isLoggedIn: true,
     user: mockUser as EchoUser,
     balance: { totalPaid: 0, totalSpent: 0, balance: 0 },
     freeTierBalance: {

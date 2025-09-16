@@ -1,8 +1,10 @@
 'use client';
 
-import { signIn } from '@merit-systems/echo-next-sdk/client';
+import { useEcho } from '@merit-systems/echo-next-sdk/client';
 
 export default function SignIn() {
+  const { signIn } = useEcho();
+
   return (
     <div className="flex flex-col items-center justify-center h-screen">
       <button

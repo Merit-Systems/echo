@@ -23,7 +23,7 @@ type Story = StoryObj<typeof meta>;
 
 // Simple demo component to show auth state
 function AuthStatusDemo() {
-  const { user, isAuthenticated, isLoading, error, balance } = useEcho();
+  const { user, isLoggedIn, isLoading, error, balance } = useEcho();
 
   return (
     <div
@@ -41,7 +41,7 @@ function AuthStatusDemo() {
         style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}
       >
         <div>
-          <strong>Authenticated:</strong> {isAuthenticated ? '✅ Yes' : '❌ No'}
+          <strong>Authenticated:</strong> {isLoggedIn ? '✅ Yes' : '❌ No'}
         </div>
         <div>
           <strong>Loading:</strong> {isLoading ? '🔄 Yes' : '✅ No'}
