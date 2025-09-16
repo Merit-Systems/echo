@@ -15,21 +15,16 @@
 
   </div>
 
-From Vercel AI SDK to Revenue in 5 Lines
+From the Vercel AI SDK to revenue in 5 Lines of code
 
 Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usage billing.
 
-Consider giving a star on GitHub!
+## Start Fresh
 
-<div align="center">
-  <div style="border-radius: 16px; padding: 32px; margin: 24px 0; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
-    <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
-      <code style="font-size: 18px; font-weight: 500;">
-        npm create echo-start@latest
-      </code>
-    </div>
-  </div>
-</div>
+```bash
+npm create echo-start@latest
+```
+
 
 ## Why Echo?
 
@@ -57,34 +52,22 @@ Consider giving a star on GitHub!
 - [Echo Next.js Example](./packages/sdk/examples/next)
 - [Echo React SDK](./packages/sdk/examples/vite)
 
-## 🚀 Quick Start
+## Templates
 
+Get started quickly with `echo-start`:
 
+```bash
+npx echo-start my-app
+```
 
-### 📦 Available Templates
+Available templates:
 
-<table>
-  <tr>
-    <td><strong>🏗️ <a href="./templates/next">next</a></strong></td>
-    <td>Next.js application with Echo integration</td>
-  </tr>
-  <tr>
-    <td><strong>⚛️ <a href="./templates/react">react</a></strong></td>
-    <td>Vite React application with Echo</td>
-  </tr>
-  <tr>
-    <td><strong>💬 <a href="./templates/next-chat">next-chat</a></strong></td>
-    <td>Next.js with Echo and Vercel AI SDK</td>
-  </tr>
-  <tr>
-    <td><strong>🤖 <a href="./templates/assistant-ui">assistant-ui</a></strong></td>
-    <td>Next.js with Echo and Assistant UI</td>
-  </tr>
-</table>
+- **[next](./templates/next)** - Next.js application with Echo
+- **[react](./templates/react)** - Vite React application with Echo
+- **[nextjsChatbot](./templates/nextjs-chatbot)** - Next.js with Echo and Vercel AI SDK
+- **[assistantUi](./templates/assistant-ui)** - Next.js with Echo and Assistant UI
 
-<div align="center">
-  <em>💡 Run <code>npm create echo-start@latest my-app</code> to choose interactively</em>
-</div>
+Or run `npx echo-start my-app` to choose interactively.
 
 # Development
 
