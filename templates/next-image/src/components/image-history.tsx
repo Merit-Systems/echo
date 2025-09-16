@@ -1,19 +1,18 @@
 'use client';
 
-import React from 'react';
-import NextImage from 'next/image';
-import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Edit, Download, Copy } from 'lucide-react';
-import { ImageDetailsDialog } from './image-details-dialog';
 import {
-  handleImageDownload,
   handleImageCopy,
+  handleImageDownload,
   handleImageToFile,
   isImageActionable,
 } from '@/lib/image-actions';
 import type { GeneratedImage } from '@/lib/types';
+import { Copy, Download, Edit } from 'lucide-react';
+import NextImage from 'next/image';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ImageDetailsDialog } from './image-details-dialog';
 
 /**
  * Self-contained loading timer component
@@ -85,7 +84,7 @@ const ImageHistoryItem = React.memo(function ImageHistoryItem({
       role="button"
       tabIndex={0}
       aria-label={`Open details for image: ${image.prompt.slice(0, 50)}${image.prompt.length > 50 ? '...' : ''}`}
-      className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group cursor-pointer hover:shadow-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-100 animate-in fade-in slide-in-from-left-4 duration-500"
+      className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group cursor-pointer hover:shadow-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all animate-in fade-in slide-in-from-left-4 duration-500"
     >
       {image.isLoading ? (
         <div className="flex flex-col items-center justify-center h-full space-y-2 p-4">

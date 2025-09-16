@@ -1,7 +1,5 @@
 'use client';
 
-import NextImage from 'next/image';
-import { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,15 +8,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Edit, Download, Copy } from 'lucide-react';
 import {
-  handleImageDownload,
+  getModelDisplayName,
   handleImageCopy,
+  handleImageDownload,
   handleImageToFile,
   isImageActionable,
-  getModelDisplayName,
 } from '@/lib/image-actions';
 import type { GeneratedImage, ImageActionHandlers } from '@/lib/types';
+import { Copy, Download, Edit } from 'lucide-react';
+import NextImage from 'next/image';
+import { useCallback } from 'react';
 
 interface ImageDetailsDialogProps extends ImageActionHandlers {
   image: GeneratedImage | null;
@@ -30,10 +30,8 @@ export function ImageDetailsDialog({
   onClose,
   onAddToInput,
 }: ImageDetailsDialogProps) {
-  if (!image) return null;
-
   const handleAddToInput = useCallback(() => {
-    if (!isImageActionable(image)) return;
+    if (!image || !isImageActionable(image)) return;
 
     const file = handleImageToFile(image.imageUrl!, image.id);
     onAddToInput([file]);
@@ -41,15 +39,17 @@ export function ImageDetailsDialog({
   }, [image, onAddToInput, onClose]);
 
   const handleDownload = useCallback(() => {
-    if (!isImageActionable(image)) return;
+    if (!image || !isImageActionable(image)) return;
 
     handleImageDownload(image.imageUrl!, image.id);
   }, [image]);
 
   const handleCopy = useCallback(async () => {
-    if (!isImageActionable(image)) return;
+    if (!image || !isImageActionable(image)) return;
     await handleImageCopy(image.imageUrl!);
   }, [image]);
+
+  if (!image) return null;
 
   return (
     <Dialog open={!!image} onOpenChange={open => !open && onClose()}>
@@ -90,7 +90,7 @@ export function ImageDetailsDialog({
           {/* Details */}
           <div className="space-y-4">
             <p className="text-lg font-medium text-gray-900">
-              "{image.prompt}"
+              &quot;{image.prompt}&quot;
             </p>
             <div className="text-sm text-gray-500">
               {getModelDisplayName(image.model)} •{' '}

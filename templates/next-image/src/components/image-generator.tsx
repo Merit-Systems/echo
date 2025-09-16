@@ -1,8 +1,5 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -24,17 +21,29 @@ import {
   PromptInputTools,
   usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ImageHistory } from './image-history';
 import { fileToDataUrl } from '@/lib/image-utils';
 import type {
-  ModelOption,
-  ModelConfig,
+  EditImageRequest,
   GeneratedImage,
   GenerateImageRequest,
-  EditImageRequest,
   ImageResponse,
+  ModelConfig,
+  ModelOption,
 } from '@/lib/types';
+import { ImageHistory } from './image-history';
+
+declare global {
+  interface Window {
+    __promptInputActions?: {
+      addFiles: (files: File[] | FileList) => void;
+      clear: () => void;
+    };
+  }
+}
 
 /**
  * Available AI models for image generation
@@ -99,7 +108,7 @@ export default function ImageGenerator() {
 
   // Handle adding files to the input from external triggers (like from image history)
   const handleAddToInput = useCallback((files: File[]) => {
-    const actions = (window as any).__promptInputActions;
+    const actions = window.__promptInputActions;
     if (actions) {
       actions.addFiles(files);
     }
@@ -107,7 +116,7 @@ export default function ImageGenerator() {
 
   const clearForm = useCallback(() => {
     promptInputRef.current?.reset();
-    const actions = (window as any).__promptInputActions;
+    const actions = window.__promptInputActions;
     if (actions) {
       actions.clear();
     }
@@ -119,13 +128,13 @@ export default function ImageGenerator() {
 
     // Store reference to attachment actions for external use
     useEffect(() => {
-      (window as any).__promptInputActions = {
+      window.__promptInputActions = {
         addFiles: attachments.add,
         clear: attachments.clear,
       };
 
       return () => {
-        delete (window as any).__promptInputActions;
+        delete window.__promptInputActions;
       };
     }, [attachments]);
 

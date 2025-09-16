@@ -75,7 +75,7 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       message: 'What is your Echo App ID?',
       validate: (value: string) => {
         if (!value.trim()) {
-          return 'Please enter an App ID';
+          return 'Please enter an App ID or create one at https://echo.merit.systems/new';
         }
         return true;
       },
@@ -145,6 +145,16 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       throw new Error(
         `Template download failed - no files found in ${absoluteProjectPath}`
       );
+    }
+
+    // Update package.json with the name of the project
+    const packageJsonPath = path.join(absoluteProjectPath, 'package.json');
+    // Technically this is checked above, but good practice to check again
+    if (existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      packageJson.name = toSafePackageName(projectDir);
+      writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+      console.log(chalk.green(`✓ Updated package.json with project name`));
     }
 
     // Update .env.local with the provided app ID
@@ -282,6 +292,15 @@ async function main() {
     );
 
   await program.parseAsync();
+}
+
+function toSafePackageName(dirname: string) {
+  return dirname
+    .toLowerCase()
+    .replace(/[^a-z0-9-_.]/g, '-') // replace unsafe chars with dashes
+    .replace(/^-+/, '') // remove leading dashes
+    .replace(/^_+/, '') // remove leading underscores
+    .replace(/\.+$/, ''); // remove trailing dots
 }
 
 main().catch(error => {
