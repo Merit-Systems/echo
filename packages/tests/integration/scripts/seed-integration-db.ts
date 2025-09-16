@@ -136,7 +136,7 @@ export async function seedIntegrationDatabase() {
     console.log('💰 Created spend pool:', spendPool.name);
 
     // Create user spend pool usage for the third user
-    const userSpendPoolUsage = await prisma.userSpendPoolUsage.create({
+    await prisma.userSpendPoolUsage.create({
       data: TEST_DATA.userSpendPoolUsage.tertiaryUserPrimaryPool,
     });
 

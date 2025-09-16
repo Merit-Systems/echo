@@ -48,7 +48,7 @@ export class HandleStreamService {
 
     // Wait for both streams to complete before ending response
     try {
-      const [_, transaction] = await Promise.all([
+      const [, transaction] = await Promise.all([
         streamToClientPromise,
         transactionPromise,
       ]);

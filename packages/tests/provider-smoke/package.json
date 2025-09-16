@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "scripts": {
     "test": "vitest run",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint .",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
