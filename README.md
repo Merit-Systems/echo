@@ -15,9 +15,11 @@
 
   </div>
 
-From the Vercel AI SDK to revenue in 5 Lines of code
+Start generating revenue from your AI apps in 5 lines of code.
 
 Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usage billing.
+
+Directly integrates with the Vercel AI SDK, but is fully configurable.
 
 ## Start Fresh
 
@@ -27,8 +29,6 @@ npm create echo-start@latest
 
 
 ## Why Echo?
-
-![Echo Code Diff](./imgs/code_diff.png)
 
 **Skip the complexity** - No API keys to manage, no auth flows to build, no payment processing to set up. Go live in minutes.
 
