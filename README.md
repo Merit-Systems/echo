@@ -28,6 +28,8 @@ npm create echo-start@latest
 
 ## Why Echo?
 
+![Echo Code Diff](./imgs/code_diff.png)
+
 **Skip the complexity** - No API keys to manage, no auth flows to build, no payment processing to set up. Go live in minutes.
 
 **OAuth magic** - Users sign in once, get a universal balance that works across all Echo apps.
