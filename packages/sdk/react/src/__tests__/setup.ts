@@ -19,7 +19,7 @@ afterAll(() => {
 
 // Ensure global is available (Node.js compatibility)
 if (typeof global === 'undefined') {
-  (globalThis as any).global = globalThis;
+  (globalThis as { global?: typeof globalThis }).global = globalThis;
 }
 
 // Mock window.crypto for PKCE testing
@@ -73,19 +73,22 @@ Object.defineProperty(window, 'open', {
 
 // Polyfill for URL constructor if not available
 if (typeof URL === 'undefined') {
-  (globalThis as any).URL = class URL {
-    constructor(url: string, base?: string) {
-      // Simple URL implementation for testing
-      this.href = base ? new URL(url, base).href : url;
-    }
+  class URLPolyfill {
     href: string = '';
     searchParams: URLSearchParams = new URLSearchParams();
-  };
+
+    constructor(url: string, base?: string) {
+      // Simple URL implementation for testing
+      this.href = base ? new URLPolyfill(url, base).href : url;
+    }
+  }
+
+  (globalThis as { URL?: typeof URLPolyfill }).URL = URLPolyfill;
 }
 
 // Polyfill for URLSearchParams if not available
 if (typeof URLSearchParams === 'undefined') {
-  (globalThis as any).URLSearchParams = class URLSearchParams {
+  class URLSearchParamsPolyfill {
     private params = new Map<string, string>();
 
     constructor(init?: string | Record<string, string>) {
@@ -118,5 +121,9 @@ if (typeof URLSearchParams === 'undefined') {
         )
         .join('&');
     }
-  };
+  }
+
+  (
+    globalThis as { URLSearchParams?: typeof URLSearchParamsPolyfill }
+  ).URLSearchParams = URLSearchParamsPolyfill;
 }
