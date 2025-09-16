@@ -235,7 +235,7 @@ export class TransactionEscrowMiddleware {
     echoAppId: string,
     requestId: string
   ) {
-    let cleanupExecuted = false;
+    const cleanupExecuted = false;
 
     // Cleanup on response finish (normal case)
     res.on('finish', () =>
