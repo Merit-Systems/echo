@@ -64,6 +64,9 @@ export default [
         TextDecoder: 'readonly',
       },
     },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   },
   {
     name: 'echo-server/ignores',

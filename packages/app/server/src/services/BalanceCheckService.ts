@@ -1,4 +1,3 @@
-import { SpendPool } from '../generated/prisma';
 import { PaymentRequiredError, UnauthorizedError } from '../errors/http';
 import { EchoControlService } from './EchoControlService';
 

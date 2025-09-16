@@ -1,7 +1,6 @@
 import {
   Response,
   ResponseStreamEvent,
-  Tool,
 } from 'openai/resources/responses/responses';
 import {
   getCostPerToken,

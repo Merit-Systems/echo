@@ -59,7 +59,7 @@ export abstract class BaseProvider {
   // This is specific to OpenAI Format, Anthropic Native and others will need to override this
   ensureStreamUsage(
     reqBody: Record<string, unknown>,
-    reqPath: string
+    _reqPath: string
   ): Record<string, unknown> {
     if (this.isStream) {
       reqBody.stream_options = {
