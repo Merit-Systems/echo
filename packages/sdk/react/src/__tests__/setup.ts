@@ -19,7 +19,7 @@ afterAll(() => {
 
 // Ensure global is available (Node.js compatibility)
 if (typeof global === 'undefined') {
-  (globalThis as { global?: typeof globalThis }).global = globalThis;
+  (globalThis as { global?: typeof globalThis }).global = globalThis; // Typescript mannnn
 }
 
 // Mock window.crypto for PKCE testing
@@ -89,32 +89,32 @@ if (typeof URL === 'undefined') {
 // Polyfill for URLSearchParams if not available
 if (typeof URLSearchParams === 'undefined') {
   class URLSearchParamsPolyfill {
-    private params = new Map<string, string>();
+    private _params = new Map<string, string>();
 
     constructor(init?: string | Record<string, string>) {
       if (typeof init === 'string') {
         // Parse query string
         init.split('&').forEach(pair => {
           const [key, value] = pair.split('=').map(decodeURIComponent);
-          if (key) this.params.set(key, value || '');
+          if (key) this._params.set(key, value || '');
         });
       } else if (init) {
         Object.entries(init).forEach(([key, value]) => {
-          this.params.set(key, value);
+          this._params.set(key, value);
         });
       }
     }
 
     set(name: string, value: string) {
-      this.params.set(name, value);
+      this._params.set(name, value);
     }
 
     get(name: string) {
-      return this.params.get(name);
+      return this._params.get(name);
     }
 
     toString() {
-      return Array.from(this.params.entries())
+      return Array.from(this._params.entries())
         .map(
           ([key, value]) =>
             `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
@@ -123,7 +123,9 @@ if (typeof URLSearchParams === 'undefined') {
     }
   }
 
+  // Type-safe assignment with unknown intermediate step
+  // Typescript mannnn
   (
-    globalThis as { URLSearchParams?: typeof URLSearchParamsPolyfill }
+    globalThis as unknown as { URLSearchParams: typeof URLSearchParamsPolyfill }
   ).URLSearchParams = URLSearchParamsPolyfill;
 }

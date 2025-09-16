@@ -32,7 +32,7 @@
     "build-storybook": "storybook build",
     "publish:test": "npm publish --access public --dry-run",
     "publish:real": "npm publish --access public",
-    "prepare": "sh -c 'if [ \"$CI\" = true ]; then echo \"Skipping prepare in CI\"; else tsup; fi'",
+    "prepare": "sh -c 'if [ \"$CI\" = true ]; then echo \"Skipping prepare in CI\"; else tsup src/index.ts --dts --format esm,cjs --out-dir dist; fi'",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
