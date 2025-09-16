@@ -163,10 +163,10 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       try {
         const envContent = readFileSync(envPath, 'utf-8');
 
-        // Replace the environment variable value - specifically targeting the *_ECHO_APP_ID placeholder
-        // Find the line with *_ECHO_APP_ID and replace the value after the = sign
+        // Replace the environment variable value - specifically targeting the *EHO_APP_ID placeholder
+        // Find the line with *ECHO_APP_ID and replace the value after the = sign
         const updatedContent = envContent.replace(
-          /^(.+ECHO_APP_ID\s*=\s*).+$/m,
+          /^(.*ECHO_APP_ID\s*=\s*).+$/m,
           `$1${appId!}`
         );
 
