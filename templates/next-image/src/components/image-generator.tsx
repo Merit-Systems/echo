@@ -99,7 +99,7 @@ export default function ImageGenerator() {
 
   // Handle adding files to the input from external triggers (like from image history)
   const handleAddToInput = useCallback((files: File[]) => {
-    const actions = (window as any).__promptInputActions;
+    const actions = (window as { __promptInputActions?: { addFiles: (files: File[]) => void } }).__promptInputActions;
     if (actions) {
       actions.addFiles(files);
     }
@@ -107,7 +107,7 @@ export default function ImageGenerator() {
 
   const clearForm = useCallback(() => {
     promptInputRef.current?.reset();
-    const actions = (window as any).__promptInputActions;
+    const actions = (window as { __promptInputActions?: { clear: () => void } }).__promptInputActions;
     if (actions) {
       actions.clear();
     }
@@ -119,13 +119,13 @@ export default function ImageGenerator() {
 
     // Store reference to attachment actions for external use
     useEffect(() => {
-      (window as any).__promptInputActions = {
+      (window as unknown as { __promptInputActions?: { addFiles: (files: File[]) => void; clear: () => void } }).__promptInputActions = {
         addFiles: attachments.add,
         clear: attachments.clear,
       };
 
       return () => {
-        delete (window as any).__promptInputActions;
+        delete (window as unknown as { __promptInputActions?: unknown }).__promptInputActions;
       };
     }, [attachments]);
 
