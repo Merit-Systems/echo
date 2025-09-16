@@ -4,14 +4,10 @@ import {
   EchoTokens,
   useEcho,
 } from '@merit-systems/echo-react-sdk';
-import { useState } from 'react';
 import { ImageGeneration } from './components/ImageGeneration';
-
-type Tab = 'chat' | 'images' | 'use-chat';
 
 function Dashboard() {
   const { user, balance, error, isLoading } = useEcho();
-  const [activeTab, setActiveTab] = useState<Tab>('chat');
 
   // Show loading state
   if (!user && isLoading) {

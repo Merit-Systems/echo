@@ -9,15 +9,9 @@ import { Loader } from '@/components/ai-elements/loader';
 import { Message, MessageContent } from '@/components/ai-elements/message';
 import {
   PromptInput,
-  PromptInputModelSelect,
-  PromptInputModelSelectContent,
-  PromptInputModelSelectItem,
-  PromptInputModelSelectTrigger,
-  PromptInputModelSelectValue,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputToolbar,
-  PromptInputTools,
 } from '@/components/ai-elements/prompt-input';
 import {
   Reasoning,
@@ -135,7 +129,7 @@ const ChatBotDemo = () => {
                             isStreaming={
                               status === 'streaming' &&
                               i === message.parts.length - 1 &&
-                              message.id === messages.at(-1)?.id
+                              message.id === messages[messages.length - 1].id
                             }
                           >
                             <ReasoningTrigger />
