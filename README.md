@@ -19,9 +19,7 @@ Start generating revenue from your AI apps in 5 lines of code.
 
 Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usage-based billing.
 
-Directly integrates with the Vercel AI SDK, but is fully configurable.
-
-## Start Fresh
+Directly integrates with the Vercel AI SDK, or can be called directly.
 
 ```bash
 npm create echo-start@latest
