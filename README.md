@@ -17,7 +17,7 @@
 
 Start generating revenue from your AI apps in 5 lines of code.
 
-Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usage billing.
+Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usage-based billing.
 
 Directly integrates with the Vercel AI SDK, but is fully configurable.
 
