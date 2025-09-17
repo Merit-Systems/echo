@@ -17,7 +17,6 @@ export default function AdminPayoutsBreadcrumb() {
         image={null}
         name="Dashboard"
         Fallback={LayoutDashboard}
-        disabled
       />
     </>
   );
