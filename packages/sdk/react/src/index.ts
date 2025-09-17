@@ -1,3 +1,5 @@
+import './styles/index.css';
+
 export { EchoProvider } from './components/EchoProvider';
 export { EchoSignIn } from './components/EchoSignIn';
 export { EchoSignOut } from './components/EchoSignOut';
@@ -32,3 +34,5 @@ export type { EchoContextValue } from './context';
 
 export { EchoProviderRaw } from './components/EchoProvider';
 export type { EchoProviderRawProps } from './components/EchoProvider';
+
+export { EchoButton } from './components/EchoButton';

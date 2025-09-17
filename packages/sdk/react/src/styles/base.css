@@ -1,0 +1,16 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+button {
+  background: none;
+  border: 0;
+}
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}

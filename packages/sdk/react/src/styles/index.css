@@ -1,0 +1,13 @@
+@import './tokens.css';
+@import './base.css';
+
+/* no @tailwind base; preflight is off */
+@tailwind components;
+@tailwind utilities;
+
+/* optional: shadcn-esque helpers you rely on */
+@layer components {
+  .ui-card {
+    @apply bg-card text-card-foreground rounded-lg border border-border;
+  }
+}

@@ -1,5 +1,5 @@
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import path, { resolve } from 'path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 
@@ -73,6 +73,7 @@ export default defineConfig({
           'react/jsx-dev-runtime': 'jsxDevRuntime',
           openai: 'OpenAI',
         },
+        assetFileNames: 'style.css',
       },
     },
     sourcemap: true,
@@ -87,5 +88,10 @@ export default defineConfig({
   optimizeDeps: {
     include: ['use-sync-external-store/shim/index.js'],
     exclude: ['@merit-systems/echo-typescript-sdk'],
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
   },
 });
