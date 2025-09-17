@@ -32,3 +32,35 @@ const paymentResponse = await client.createPaymentLink({
 });
 console.log('Payment URL:', paymentResponse.paymentLink.url);
 ```
+
+## Monetize Vercel AI SDK Calls
+
+Use the `monetized` helper to wrap any Vercel AI SDK model so requests flow
+through the Echo router and accrue usage to your Echo app. The wrapper currently
+supports OpenAI, Anthropic, Google Generative AI, and OpenRouter providers.
+
+```ts
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { monetized } from '@merit-systems/echo-typescript-sdk';
+
+const fetchEchoAccessToken = async () => {
+  // Replace with your token retrieval logic (e.g. useEcho().getToken()).
+  return await echoAuthClient.getToken();
+};
+
+const model = monetized(openai('gpt-4o-mini'), {
+  appId: 'your-echo-app-id',
+  getAccessToken: fetchEchoAccessToken,
+  // baseRouterUrl and onInsufficientFunds are optional overrides
+});
+
+const { text } = await generateText({
+  model,
+  prompt: 'What is love?',
+});
+```
+
+Supply a `getAccessToken` resolver that returns the short-lived Echo access
+token for the current user. When using the React SDK, `useMonetizedModel`
+exposes this wiring for you.

@@ -58,6 +58,36 @@ const {
 } = useEcho();
 ```
 
+## Monetize Vercel AI SDK Models
+
+Wrap Vercel AI SDK providers with `useMonetizedModel` to route usage through
+Echo automatically (supports OpenAI, Anthropic, Google Generative AI, and
+OpenRouter models).
+
+```tsx
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { useMonetizedModel } from '@merit-systems/echo-react-sdk';
+
+function Example() {
+  const monetize = useMonetizedModel();
+
+  const ask = async () => {
+    const { text } = await generateText({
+      model: monetize(openai('gpt-4o-mini')),
+      prompt: 'What is love?',
+    });
+
+    console.log(text);
+  };
+
+  return <button onClick={ask}>Ask Echo</button>;
+}
+```
+
+Pass `useMonetizedModel({ baseRouterUrl: 'https://my-proxy.example.com' })`
+to point SDK traffic at a self-hosted Echo router.
+
 ## Config
 
 ```tsx
