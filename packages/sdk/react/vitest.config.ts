@@ -1,10 +1,17 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()] as any,
   define: {
     global: 'globalThis',
+  },
+  resolve: {
+    alias: {
+      '@merit-systems/echo-typescript-sdk': resolve(__dirname, '../ts/src'),
+      'config': resolve(__dirname, '../ts/src/config'),
+    },
   },
   test: {
     environment: 'jsdom',

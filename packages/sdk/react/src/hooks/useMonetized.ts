@@ -6,7 +6,7 @@ import {
 } from '@merit-systems/echo-typescript-sdk';
 import { useEcho } from './useEcho';
 
-export interface UseMonetizedModelOptions {
+export interface UseMonetizedOptions {
   /** Override the Echo router URL (defaults to hosted router). */
   baseRouterUrl?: string;
 }
@@ -14,7 +14,7 @@ export interface UseMonetizedModelOptions {
 /**
  * Returns a helper that wraps Vercel AI SDK models so calls are metered through Echo.
  */
-export function useMonetizedModel(options?: UseMonetizedModelOptions) {
+export function useMonetized(options?: UseMonetizedOptions) {
   const { config, getToken, setIsInsufficientFunds } = useEcho();
   const overrideRouterUrl = options?.baseRouterUrl;
 
@@ -22,7 +22,7 @@ export function useMonetizedModel(options?: UseMonetizedModelOptions) {
     (model: LanguageModel) => {
       const appId = config.appId;
       if (!appId) {
-        throw new Error('Echo appId is required to monetize AI models.');
+        throw new Error('Echo appId is required to monetize AI models. Create one at https://echo.merit.systems/');
       }
 
       return createMonetizedModel(model, {

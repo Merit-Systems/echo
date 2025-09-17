@@ -15,7 +15,11 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
+    "paths": {
+      "@merit-systems/echo-typescript-sdk": ["../ts/src"],
+      "config": ["../ts/src/config"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

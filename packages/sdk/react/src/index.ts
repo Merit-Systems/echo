@@ -11,7 +11,7 @@ export { useEchoClient } from './hooks/useEchoClient';
 export { useEchoOpenAI } from './hooks/useEchoOpenAI';
 // Echo provider hooks
 export { useEchoModelProviders } from './hooks/useEchoModelProviders';
-export { useMonetizedModel } from './hooks/useMonetizedModel';
+export { useMonetized } from './hooks/useMonetized';
 // AI SDK integration hooks
 export {
   EchoChatProvider,
