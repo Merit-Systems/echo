@@ -8,7 +8,7 @@
     "css": "src/styles/index.css",
     "baseColor": "neutral",
     "cssVariables": true,
-    "prefix": ""
+    "prefix": "echo"
   },
   "iconLibrary": "lucide",
   "aliases": {
