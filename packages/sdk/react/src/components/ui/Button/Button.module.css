@@ -1,0 +1,22 @@
+@reference tailwind.entry;
+
+.button {
+  @apply echo-inline-flex echo-items-center echo-justify-center echo-rounded-md echo-px-4 echo-py-2 echo-text-sm echo-font-medium;
+  @apply echo-bg-blue-600 echo-text-white hover:echo-bg-blue-700;
+  @apply dark:echo-bg-blue-500 dark:hover:echo-bg-blue-600;
+}
+
+.ghost {
+  @apply echo-bg-transparent echo-text-blue-600 hover:echo-bg-blue-50;
+  @apply dark:echo-text-blue-400 dark:hover:echo-bg-blue-900/30;
+}
+
+.primary {
+  @apply echo-bg-primary echo-text-white hover:echo-bg-primary/90;
+  @apply dark:echo-bg-primary dark:hover:echo-bg-primary/90;
+}
+
+.destructive {
+  @apply echo-bg-destructive echo-text-white hover:echo-bg-destructive/90;
+  @apply dark:echo-bg-red-500 dark:hover:echo-bg-red-600;
+}
