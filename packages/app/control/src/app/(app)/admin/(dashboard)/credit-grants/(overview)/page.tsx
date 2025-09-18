@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import { userOrRedirect } from '@/auth/user-or-redirect';
 import { api, HydrateClient } from '@/trpc/server';
-import { Body, Heading } from '../../../_components/layout/page-utils';
+import { Body, Heading } from '../../../../_components/layout/page-utils';
 import {
   CreditGrantsTable,
   LoadingCreditGrantTable,

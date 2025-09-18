@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 import { useRouter } from 'next/navigation';
 
-import { CreditGrantForm } from '../../_components/form';
+import { CreditGrantForm } from '../../(overview)/_components/form';
 
 import { api } from '@/trpc/client';
 

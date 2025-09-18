@@ -26,7 +26,7 @@ export function UserLink({
     return (
       <div className="flex flex-col">
         <Link
-          href={`/admin/dashboard/user/user-apps/${userId}`}
+          href={`/admin/user/user-apps/${userId}`}
           className={className}
           title={
             title ||
@@ -42,7 +42,7 @@ export function UserLink({
 
   return (
     <Link
-      href={`/admin/dashboard/user/user-apps/${userId}`}
+      href={`/admin/user/user-apps/${userId}`}
       className={className}
       title={
         title ||
