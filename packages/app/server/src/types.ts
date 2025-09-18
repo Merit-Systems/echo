@@ -55,6 +55,11 @@ export interface LlmTransactionMetadata {
   prompt?: string;
   response?: string;
   toolCost?: Decimal;
+  audioData?: {
+    durationSeconds: number;
+    responseFormat: string;
+    characterCount: number;
+  };
 }
 
 export interface Transaction {

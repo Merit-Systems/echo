@@ -4,9 +4,11 @@ import {
   GeminiModels,
   OpenRouterModels,
   OpenAIImageModels,
+  // OpenAIAudioModels, // TODO: Uncomment when audio models are published in SDK
   SupportedOpenAIResponseToolPricing,
   SupportedModel,
   SupportedImageModel,
+  // SupportedAudioModel, // TODO: Uncomment when audio models are published in SDK
 } from '@merit-systems/echo-typescript-sdk';
 
 import { Decimal } from '@prisma/client/runtime/library';
@@ -25,6 +27,12 @@ export const ALL_SUPPORTED_MODELS: SupportedModel[] = [
 // Handle image models separately since they have different pricing structure
 export const ALL_SUPPORTED_IMAGE_MODELS: SupportedImageModel[] =
   OpenAIImageModels;
+  
+// Handle audio models separately since they use per-minute pricing
+// TODO: Uncomment when audio models are published in SDK
+// export const ALL_SUPPORTED_AUDIO_MODELS: SupportedAudioModel[] = 
+//   OpenAIAudioModels;
+export const ALL_SUPPORTED_AUDIO_MODELS: any[] = []; // Placeholder
 
 // Create a lookup map for O(1) model price retrieval
 const MODEL_PRICE_MAP = new Map<string, SupportedModel>();
@@ -36,6 +44,12 @@ ALL_SUPPORTED_MODELS.forEach(model => {
 const IMAGE_MODEL_MAP = new Map();
 ALL_SUPPORTED_IMAGE_MODELS.forEach(model => {
   IMAGE_MODEL_MAP.set(model.model_id, model);
+});
+
+// Create a separate map for audio models
+const AUDIO_MODEL_MAP = new Map();
+ALL_SUPPORTED_AUDIO_MODELS.forEach(model => {
+  AUDIO_MODEL_MAP.set(model.model_id, model);
 });
 
 const getModelPrice = (model: string) => {
@@ -75,6 +89,10 @@ export const isValidModel = (model: string) => {
 
 export const isValidImageModel = (model: string) => {
   return IMAGE_MODEL_MAP.has(model);
+};
+
+export const isValidAudioModel = (model: string) => {
+  return AUDIO_MODEL_MAP.has(model);
 };
 
 export const getCostPerToken = (
@@ -123,6 +141,22 @@ export const getImageModelCost = (
   ).mul(imageOutputTokens);
 
   return textCost.plus(imageInputCost).plus(imageOutputCost);
+};
+
+export const getAudioModelCost = (
+  model: string,
+  durationMinutes: number
+) => {
+  if (!isValidAudioModel(model)) {
+    throw new Error(`Invalid audio model: ${model}`);
+  }
+
+  const audioModel = AUDIO_MODEL_MAP.get(model);
+  if (!audioModel) {
+    throw new Error(`Pricing information not found for audio model: ${model}`);
+  }
+
+  return new Decimal(audioModel.cost_per_minute).mul(durationMinutes);
 };
 
 export const calculateToolCost = (tool: Tool): Decimal => {

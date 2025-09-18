@@ -8,8 +8,9 @@ import { useState } from 'react';
 import { ChatInterface } from './components/ChatInterface';
 import { ImageGeneration } from './components/ImageGeneration';
 import UseChatInterface from './components/UseChatInterface';
+import { AudioTranscription } from './components/AudioTranscription';
 
-type Tab = 'chat' | 'images' | 'use-chat';
+type Tab = 'chat' | 'images' | 'use-chat' | 'audio';
 
 function Dashboard() {
   const { user, balance, error, isLoading } = useEcho();
@@ -138,6 +139,16 @@ function Dashboard() {
             >
               📤 useChat()
             </button>
+            <button
+              onClick={() => setActiveTab('audio')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'audio'
+                  ? 'border-amber-500 text-amber-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              🎙️ Audio Transcription
+            </button>
           </nav>
         </div>
 
@@ -146,6 +157,7 @@ function Dashboard() {
           {activeTab === 'chat' && <ChatInterface />}
           {activeTab === 'images' && <ImageGeneration />}
           {activeTab === 'use-chat' && <UseChatInterface />}
+          {activeTab === 'audio' && <AudioTranscription />}
         </div>
 
         {/* Low balance warning */}
