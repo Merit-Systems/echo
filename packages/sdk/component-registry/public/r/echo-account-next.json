@@ -4,11 +4,7 @@
   "type": "registry:component",
   "title": "Echo Account (Next)",
   "description": "Next.js variant of Echo Account",
-  "registryDependencies": [
-    "popover",
-    "skeleton",
-    "avatar"
-  ],
+  "registryDependencies": ["popover", "skeleton", "avatar"],
   "files": [
     {
       "path": "registry/echo/blocks/echo-account-button/echo-account-next.tsx",

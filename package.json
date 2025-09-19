@@ -6,7 +6,8 @@
   "packageManager": "pnpm@10.11.0",
   "scripts": {
     "dev": "turbo run dev --filter=echo-control --filter=echo-server",
-    "build": "pnpm run --recursive build",
+    "build": "turbo run build",
+    "prepare": "turbo run build",
     "test:unit": "pnpm -C packages/sdk/ts run build && pnpm -r --filter=!packages/app/server run test:unit",
     "test:integration": "pnpm -C packages/tests/integration test",
     "test:all": "pnpm run test:unit && pnpm run test:integration",
@@ -14,7 +15,10 @@
     "lint:fix": "pnpm run --recursive lint:fix",
     "type-check": "pnpm run --recursive type-check",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "publish:test": "pnpm -r publish --dry-run --no-git-checks",
+    "publish:sdks": "pnpm --filter @merit-systems/echo-typescript-sdk publish --no-git-checks && pnpm --filter @merit-systems/echo-react-sdk publish --no-git-checks && pnpm --filter @merit-systems/echo-next-sdk publish --no-git-checks && pnpm --filter echo-start publish --no-git-checks",
+    "publish:sdks:test": "pnpm --filter @merit-systems/echo-typescript-sdk publish --dry-run --no-git-checks && pnpm --filter @merit-systems/echo-react-sdk publish --dry-run --no-git-checks && pnpm --filter @merit-systems/echo-next-sdk publish --dry-run --no-git-checks && pnpm --filter echo-start publish --dry-run --no-git-checks"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

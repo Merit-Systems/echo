@@ -28,7 +28,9 @@
     "update-models:gemini": "tsx scripts/update-gemini-models.ts",
     "update-models:openrouter": "tsx scripts/update-openrouter-models.ts",
     "update-all-models": "pnpm run update-models:openai && pnpm run update-models:anthropic && pnpm run update-models:gemini && pnpm run update-models:openrouter",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "publish:test": "pnpm publish --access public --dry-run",
+    "publish:real": "pnpm publish --access public"
   },
   "keywords": [
     "echo",

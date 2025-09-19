@@ -80,7 +80,7 @@ jobs:
             if [ "$FORCE_PUBLISH" = "true" ]; then
               echo "⚠️  Version $PACKAGE_VERSION of $PACKAGE_NAME already exists on npm, but force_publish is enabled"
               echo "🚀 Publishing $PACKAGE_NAME to npm..."
-              npm publish --access public
+              pnpm publish --access public --no-git-checks
               echo "published=true" >> $GITHUB_OUTPUT
               echo "✅ Successfully published $PACKAGE_NAME"
             else
@@ -126,7 +126,7 @@ jobs:
             if [ "$FORCE_PUBLISH" = "true" ]; then
               echo "⚠️  Version $PACKAGE_VERSION of $PACKAGE_NAME already exists on npm, but force_publish is enabled"
               echo "🚀 Publishing $PACKAGE_NAME to npm..."
-              npm publish --access public
+              pnpm publish --access public --no-git-checks
               echo "published=true" >> $GITHUB_OUTPUT
               echo "✅ Successfully published $PACKAGE_NAME"
             else
@@ -170,7 +170,7 @@ jobs:
             if [ "$FORCE_PUBLISH" = "true" ]; then
               echo "⚠️  Version $PACKAGE_VERSION of $PACKAGE_NAME already exists on npm, but force_publish is enabled"
               echo "🚀 Publishing $PACKAGE_NAME to npm..."
-              npm publish --access public
+              pnpm publish --access public --no-git-checks
               echo "published=true" >> $GITHUB_OUTPUT
               echo "✅ Successfully published $PACKAGE_NAME"
             else
@@ -214,7 +214,7 @@ jobs:
             if [ "$FORCE_PUBLISH" = "true" ]; then
               echo "⚠️  Version $PACKAGE_VERSION of $PACKAGE_NAME already exists on npm, but force_publish is enabled"
               echo "🚀 Publishing $PACKAGE_NAME to npm..."
-              npm publish --access public
+              pnpm publish --access public --no-git-checks
               echo "published=true" >> $GITHUB_OUTPUT
               echo "✅ Successfully published $PACKAGE_NAME"
             else

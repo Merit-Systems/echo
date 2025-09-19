@@ -26,7 +26,9 @@
     "test:unit": "echo 'no tests'",
     "test:watch": "echo 'no tests'",
     "prepublishOnly": "pnpm run build",
-    "prepare": "tsup src/index.ts src/client.ts --dts --format esm --out-dir dist"
+    "prepare": "tsup src/index.ts src/client.ts --dts --format esm --out-dir dist",
+    "publish:test": "pnpm publish --access public --dry-run",
+    "publish:real": "pnpm publish --access public"
   },
   "keywords": [
     "echo",
@@ -37,8 +39,8 @@
   "author": "Merit Systems",
   "license": "MIT",
   "dependencies": {
-    "@merit-systems/echo-typescript-sdk": "1.0.14",
-    "@merit-systems/echo-react-sdk": "1.0.29",
+    "@merit-systems/echo-typescript-sdk": "workspace:*",
+    "@merit-systems/echo-react-sdk": "workspace:*",
     "ai": "^5.0.17",
     "jwt-decode": "^4.0.0",
     "swr": "^2.3.1"

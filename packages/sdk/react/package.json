@@ -30,8 +30,8 @@
     "test:coverage": "vitest run --coverage",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "publish:test": "npm publish --access public --dry-run",
-    "publish:real": "npm publish --access public",
+    "publish:test": "pnpm publish --access public --dry-run",
+    "publish:real": "pnpm publish --access public",
     "prepare": "sh -c 'if [ \"$CI\" = true ]; then echo \"Skipping prepare in CI\"; else tsup src/index.ts --dts --format esm,cjs --out-dir dist; fi'",
     "prepublishOnly": "pnpm run build"
   },
@@ -59,7 +59,7 @@
     }
   },
   "dependencies": {
-    "@merit-systems/echo-typescript-sdk": "1.0.14",
+    "@merit-systems/echo-typescript-sdk": "workspace:*",
     "@ai-sdk/react": "^2.0.17",
     "ai": "^5.0.19",
     "dompurify": "^3.2.6",

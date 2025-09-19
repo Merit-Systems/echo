@@ -144,7 +144,9 @@ export class ModelRequestService {
         // Add files from req.files
         if (req.files && Array.isArray(req.files)) {
           req.files.forEach(file => {
-            const blob = new Blob([file.buffer], { type: file.mimetype });
+            const blob = new Blob([new Uint8Array(file.buffer)], {
+              type: file.mimetype,
+            });
             formData.append(file.fieldname, blob, file.originalname);
           });
         }

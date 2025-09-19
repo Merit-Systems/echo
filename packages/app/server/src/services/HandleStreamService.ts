@@ -44,7 +44,10 @@ export class HandleStreamService {
 
     // Promise for processing data and creating transaction
     const reader2 = accountingStream.getReader();
-    const transactionPromise = this.processStreamData(reader2, provider);
+    const transactionPromise = this.processStreamData(
+      reader2 as ReadableStreamDefaultReader<Uint8Array>,
+      provider
+    );
 
     // Wait for both streams to complete before ending response
     try {
