@@ -258,7 +258,7 @@ export async function openPaymentFlow(
     onError?: (error: Error) => void;
   } = {}
 ): Promise<void> {
-  const { onComplete, onError } = options;
+  const { onError } = options;
 
   // Sanitize the payment URL to prevent injection
   const safeUrl = sanitizeUrl(paymentUrl);

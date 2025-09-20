@@ -5,8 +5,9 @@ import { getRequestId } from '../utils/trace';
 import { EchoControlService } from '../services/EchoControlService';
 
 const MAX_IN_FLIGHT_REQUESTS = Number(process.env.MAX_IN_FLIGHT_REQUESTS) || 10;
-const ESTIMATED_COST_PER_TRANSACTION =
-  Number(process.env.ESTIMATED_COST_PER_TRANSACTION) || 0.01;
+// Note: ESTIMATED_COST_PER_TRANSACTION is currently unused but kept for future balance checking
+// const ESTIMATED_COST_PER_TRANSACTION =
+//   Number(process.env.ESTIMATED_COST_PER_TRANSACTION) || 0.01;
 const CLEANUP_INTERVAL_MS = Number(process.env.CLEANUP_INTERVAL_MS) || 300000;
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 300000;
 
@@ -81,7 +82,7 @@ export class TransactionEscrowMiddleware {
   private async incrementInFlightRequestsOrReject(
     userId: string,
     echoAppId: string,
-    effectiveBalance: number
+    effectiveBalance: number // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<void> {
     await this.db.$transaction(async tx => {
       // Get current in-flight request count
@@ -214,10 +215,10 @@ export class TransactionEscrowMiddleware {
     userId: string,
     echoAppId: string,
     requestId: string,
-    cleanupExecuted: boolean
+    cleanupState: { executed: boolean }
   ) => {
-    if (cleanupExecuted) return;
-    cleanupExecuted = true;
+    if (cleanupState.executed) return;
+    cleanupState.executed = true;
 
     // decrementInFlightRequests now handles its own errors gracefully
     await this.decrementInFlightRequests(userId, echoAppId);
@@ -235,21 +236,23 @@ export class TransactionEscrowMiddleware {
     echoAppId: string,
     requestId: string
   ) {
-    let cleanupExecuted = false;
+    // Use object to share state by reference across multiple event handlers
+    // This prevents duplicate cleanup execution when multiple events fire
+    const cleanupState = { executed: false };
 
     // Cleanup on response finish (normal case)
     res.on('finish', () =>
-      this.executeCleanup(userId, echoAppId, requestId, cleanupExecuted)
+      this.executeCleanup(userId, echoAppId, requestId, cleanupState)
     );
 
     // Cleanup on response close (client disconnect)
     res.on('close', () =>
-      this.executeCleanup(userId, echoAppId, requestId, cleanupExecuted)
+      this.executeCleanup(userId, echoAppId, requestId, cleanupState)
     );
 
     // Cleanup on error (if response errors out)
     res.on('error', () =>
-      this.executeCleanup(userId, echoAppId, requestId, cleanupExecuted)
+      this.executeCleanup(userId, echoAppId, requestId, cleanupState)
     );
   }
 

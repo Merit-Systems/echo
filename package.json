@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Echo platform monorepo",
   "private": true,
-  "packageManager": "pnpm@10.11.0",
+  "packageManager": "pnpm@10.16.1",
   "scripts": {
     "dev": "turbo run dev --filter=echo-control --filter=echo-server",
     "build": "pnpm run --recursive build",

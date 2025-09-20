@@ -222,7 +222,7 @@ const setupMockEchoControlService = (balance: number = 1000) => {
 
 describe('Endpoint Tests', () => {
   let app: express.Application;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockEchoControlService: any;
 
   beforeEach(async () => {

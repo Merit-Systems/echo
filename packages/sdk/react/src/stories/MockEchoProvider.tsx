@@ -66,6 +66,10 @@ const createMockContext = (
   },
   refreshBalance: async () => {
     console.log('Mock refresh balance called');
+    return {
+      balance: mockBalance,
+      freeTierBalance: mockFreeTierBalance,
+    };
   },
   createPaymentLink: async (amount: number) => {
     console.log(`Mock payment link created for ${amount} tokens`);

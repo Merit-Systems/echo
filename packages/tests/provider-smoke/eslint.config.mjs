@@ -3,7 +3,7 @@ import tsParser from '@typescript-eslint/parser';
 
 export default [
   {
-    name: 'echo-server/ts-base',
+    name: 'provider-smoke/ts-base',
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
@@ -42,11 +42,10 @@ export default [
     },
   },
   {
-    name: 'echo-server/tests',
-    files: ['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    name: 'provider-smoke/tests',
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     languageOptions: {
       globals: {
-        jest: 'readonly',
         describe: 'readonly',
         it: 'readonly',
         test: 'readonly',
@@ -55,13 +54,8 @@ export default [
         afterAll: 'readonly',
         beforeEach: 'readonly',
         afterEach: 'readonly',
-        console: 'readonly',
-        process: 'readonly',
-        global: 'readonly',
-        require: 'readonly',
-        setTimeout: 'readonly',
-        TextEncoder: 'readonly',
-        TextDecoder: 'readonly',
+        vi: 'readonly',
+        vitest: 'readonly',
       },
     },
     rules: {
@@ -69,7 +63,7 @@ export default [
     },
   },
   {
-    name: 'echo-server/ignores',
+    name: 'provider-smoke/ignores',
     ignores: [
       'node_modules/',
       'dist/',
@@ -78,4 +72,4 @@ export default [
       '**/*.d.ts',
     ],
   },
-]; 
+];

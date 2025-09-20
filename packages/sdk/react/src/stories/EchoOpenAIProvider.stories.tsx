@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import React, { useState } from 'react';
 import { useEchoOpenAI } from '../hooks/useEchoOpenAI';
 import { MockEchoProvider, mockStates } from './MockEchoProvider';
+import { EchoContextValue } from '../context';
 
 // Create a wrapper component for the hook stories
 function UseEchoOpenAIDemo() {
@@ -106,13 +107,18 @@ function OpenAIDemo() {
         // Real streaming implementation
         const stream = await openai.chat.completions.create({
           model: 'gpt-3.5-turbo',
-          messages: messages as any, // Type assertion for demo
+          messages: messages as Array<{
+            role: 'user' | 'assistant' | 'system';
+            content: string;
+          }>,
           stream: true,
           max_tokens: 150,
         });
 
         let fullResponse = '';
-        for await (const chunk of stream as any) {
+        for await (const chunk of stream as AsyncIterable<{
+          choices: Array<{ delta?: { content?: string } }>;
+        }>) {
           const content = chunk.choices[0]?.delta?.content || '';
           fullResponse += content;
           setResponse(fullResponse);
@@ -126,7 +132,10 @@ function OpenAIDemo() {
         // Real non-streaming implementation
         const completion = await openai.chat.completions.create({
           model: 'gpt-3.5-turbo',
-          messages: messages as any, // Type assertion for demo
+          messages: messages as Array<{
+            role: 'user' | 'assistant' | 'system';
+            content: string;
+          }>,
           max_tokens: 150,
         });
 
@@ -375,9 +384,9 @@ const generateResponse = async () => {
 }
 
 // Template component that wraps the demo with only the Echo provider
-function Template({ mockState }: { mockState?: any }) {
+function Template({ mockState }: { mockState?: Partial<EchoContextValue> }) {
   return (
-    <MockEchoProvider mockState={mockState}>
+    <MockEchoProvider mockState={mockState || {}}>
       <OpenAIDemo />
     </MockEchoProvider>
   );

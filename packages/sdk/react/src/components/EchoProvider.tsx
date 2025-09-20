@@ -198,7 +198,8 @@ export function EchoProvider({ config, children }: EchoProviderProps) {
 
   const oidcConfig: AuthProviderUserManagerProps = {
     userManager:
-      (typeof window !== 'undefined' && (window as any).__echoUserManager) ||
+      (typeof window !== 'undefined' &&
+        (window as { __echoUserManager?: UserManager }).__echoUserManager) ||
       new UserManager({
         authority: apiUrl,
         client_id: config.appId,

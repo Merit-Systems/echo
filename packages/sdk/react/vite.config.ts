@@ -64,6 +64,7 @@ export default defineConfig({
         /^node:/,
         // CLI helper functions from echo-typescript-sdk
         /@merit-systems\/echo-typescript-sdk.*cli/,
+        'jsdom',
       ],
       output: {
         globals: {

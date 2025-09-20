@@ -1,7 +1,6 @@
 import {
   Response,
   ResponseStreamEvent,
-  Tool,
 } from 'openai/resources/responses/responses';
 import {
   getCostPerToken,
@@ -144,8 +143,7 @@ export class OpenAIResponsesProvider extends BaseProvider {
 
   // Override ensureStreamUsage since Responses API doesn't use stream_options
   override ensureStreamUsage(
-    reqBody: Record<string, unknown>,
-    _reqPath: string
+    reqBody: Record<string, unknown>
   ): Record<string, unknown> {
     // Responses API handles usage tracking differently - no need to modify the request
     return reqBody;
