@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+
+@import './tokens.css';
+
+/* no @tailwind base; preflight is off */
+/* @tailwind components;
+@tailwind utilities; */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+/* optional: shadcn-esque helpers you rely on */
+@layer components {
+  .echo-card {
+    @apply bg-card text-card-foreground rounded-lg border border-border;
+  }
+}

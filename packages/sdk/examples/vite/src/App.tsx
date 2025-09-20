@@ -5,6 +5,7 @@ import {
   useEcho,
 } from '@merit-systems/echo-react-sdk';
 import { useState } from 'react';
+import { ButtonTest } from './components/ButtonTest';
 import { ChatInterface } from './components/ChatInterface';
 import { ImageGeneration } from './components/ImageGeneration';
 import UseChatInterface from './components/UseChatInterface';
@@ -102,6 +103,7 @@ function Dashboard() {
           </div>
         </div>
       </header>
+      <ButtonTest />
 
       {/* Main content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
