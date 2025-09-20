@@ -16,7 +16,7 @@ import {
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserAvatar } from '@/components/utils/user-avatar';
-import { formatCurrency } from '@/lib/balance';
+import { formatCurrency } from '@/lib/utils';
 import { api } from '@/trpc/client';
 import { InfinitePaginationProps } from '@/types/infinite-pagination';
 import { useState } from 'react';

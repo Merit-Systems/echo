@@ -24,7 +24,7 @@ describe('JWT Token Lifecycle Tests', () => {
           code_verifier:
             'test-verifier-for-jwt-validation-that-meets-minimum-43-character-requirement-for-pkce',
         })
-      ).rejects.toThrow(/invalid.*grant|authorization.*code/i);
+      ).rejects.toThrow(/invalid authorization code/i);
     });
   });
 

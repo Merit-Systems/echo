@@ -1,27 +1,13 @@
 import { db } from '@/lib/db';
 import { mintCreditsToUser } from '@/services/credits/mint';
 import { EnumPaymentSource, User } from '@/generated/prisma';
+import { env } from '@/env';
 
 export const issueInitialFreeTierCredits = async (
   userId: string
 ): Promise<{ minted: boolean; amountInDollars: number; user: User }> => {
-  const version = process.env.LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION;
-  const amountStr = process.env.LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT;
-
-  if (!version) {
-    throw new Error('LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION is not set');
-  }
-
-  if (!amountStr) {
-    throw new Error('LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT is not set');
-  }
-
-  const amount = Number.parseFloat(amountStr);
-  if (!Number.isFinite(amount) || amount <= 0) {
-    throw new Error(
-      'LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT must be a positive number'
-    );
-  }
+  const version = env.LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION;
+  const amount = env.LATEST_FREE_TIER_CREDITS_ISSUANCE_AMOUNT;
 
   return await db.$transaction(async tx => {
     const existing = await tx.user.findUnique({
@@ -32,12 +18,8 @@ export const issueInitialFreeTierCredits = async (
       throw new Error('User not found');
     }
 
-    const currentVersion = existing.latestFreeCreditsVersion
-      ? existing.latestFreeCreditsVersion.toString()
-      : null;
-
     // If already issued for this version, no-op
-    if (currentVersion === version) {
+    if (existing.latestFreeCreditsVersion?.toNumber() === version) {
       return {
         minted: false,
         amountInDollars: amount,
@@ -53,7 +35,7 @@ export const issueInitialFreeTierCredits = async (
           // Issue to personal balance (not tied to an app-level free tier pool)
           isFreeTier: false,
           metadata: {
-            issuanceVersion: version,
+            issuanceVersion: version.toString(),
             issuanceSource: 'initial-free-tier',
           },
           description: 'Welcome to Echo!',
@@ -80,10 +62,8 @@ export const hasClaimedInitialFreeTierCredits = async (
   userId: string
 ): Promise<boolean> => {
   const existing = await db.user.findUnique({ where: { id: userId } });
-  return Boolean(
-    process.env.LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION &&
-      existing?.latestFreeCreditsVersion &&
-      existing.latestFreeCreditsVersion.toString() ===
-        process.env.LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION
+  return (
+    existing?.latestFreeCreditsVersion?.toNumber() ===
+    env.LATEST_FREE_TIER_CREDITS_ISSUANCE_VERSION
   );
 };

@@ -3,7 +3,7 @@
 import { Card } from '@/components/ui/card';
 import { CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/balance';
+import { formatCurrency } from '@/lib/utils';
 import { api } from '@/trpc/client';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

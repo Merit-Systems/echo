@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 import { appIdSchema } from './lib/schemas';
 import { UserId } from '@/services/lib/schemas';
 
+import { env } from '@/env';
+
 export const getAppReferralCodeSchema = appIdSchema;
 
 export const getUserAppReferralCode = async (
@@ -42,7 +44,7 @@ export const getUserAppReferralCode = async (
   };
 };
 
-export const getReferralCodeByCodeSchema = z.uuid();
+export const getReferralCodeByCodeSchema = z.string();
 
 export const getReferralCodeByCode = async (
   code: z.infer<typeof getReferralCodeByCodeSchema>
@@ -108,5 +110,5 @@ const getReferralLinkUrl = ({
   echoAppId: string;
   code: string;
 }) => {
-  return `${homePage || `${process.env.ECHO_CONTROL_APP_BASE_URL}/app/${echoAppId}`}?referral_code=${code}`;
+  return `${homePage || `${env.NEXT_PUBLIC_APP_URL}/app/${echoAppId}`}?referral_code=${code}`;
 };

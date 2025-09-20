@@ -1,7 +1,7 @@
 import type {
   EchoClient,
   EchoConfig,
-  FreeBalance,
+  GetBalanceByIdFreeResponse,
 } from '@merit-systems/echo-typescript-sdk';
 import { User } from 'oidc-client-ts';
 import { EchoBalance, EchoUser } from './types';
@@ -22,7 +22,7 @@ export interface EchoContextValue {
 
   user: EchoUser | null; // directly piped from oidc
 
-  freeTierBalance: FreeBalance | null;
+  freeTierBalance: GetBalanceByIdFreeResponse | null;
   balance: EchoBalance | null;
   refreshBalance: () => Promise<any>;
 

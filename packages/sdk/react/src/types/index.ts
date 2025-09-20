@@ -1,4 +1,7 @@
-import { Balance } from '@merit-systems/echo-typescript-sdk';
+import {
+  GetBalanceResponse,
+  GetUserResponse,
+} from '@merit-systems/echo-typescript-sdk';
 
 import { EchoConfig } from '@merit-systems/echo-typescript-sdk';
 
@@ -7,18 +10,9 @@ export interface EchoAuthConfig extends EchoConfig {
   scope?: string;
 }
 
-export interface EchoUser {
-  id: string;
-  email: string;
-  name?: string;
-  picture?: string;
-  totalPaid?: number;
-  totalSpent?: number;
-  createdAt: string;
-  updatedAt: string;
-}
+export type EchoUser = GetUserResponse;
 
-export type EchoBalance = Balance;
+export type EchoBalance = GetBalanceResponse;
 
 export interface EchoSignInProps {
   onSuccess?: (user: EchoUser) => void;

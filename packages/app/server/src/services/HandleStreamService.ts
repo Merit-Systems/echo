@@ -48,6 +48,7 @@ export class HandleStreamService {
       reader2 as ReadableStreamDefaultReader<Uint8Array>,
       provider
     );
+
     // Wait for both streams to complete before ending response
     try {
       const [_, transaction] = await Promise.all([

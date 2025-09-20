@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "npm run generate-api-types && tsup",
     "dev": "tsup --watch",
     "lint": "pnpx eslint src/**/*.ts",
     "lint:fix": "pnpx eslint src/**/*.ts --fix",
@@ -23,12 +23,15 @@
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:watch": "vitest --watch",
+    "generate-api-types": "tsx scripts/generate-api-types.ts && pnpm format",
     "update-models:openai": "tsx scripts/update-openai-models.ts",
     "update-models:anthropic": "tsx scripts/update-anthropic-models.ts",
     "update-models:gemini": "tsx scripts/update-gemini-models.ts",
     "update-models:openrouter": "tsx scripts/update-openrouter-models.ts",
     "update-all-models": "pnpm run update-models:openai && pnpm run update-models:anthropic && pnpm run update-models:gemini && pnpm run update-models:openrouter",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "publish:test": "pnpm publish --access public --dry-run",
+    "publish:real": "pnpm publish --access public"
   },
   "keywords": [
     "echo",

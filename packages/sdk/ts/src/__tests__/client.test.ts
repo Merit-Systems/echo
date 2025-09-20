@@ -479,11 +479,14 @@ describe('EchoClient', () => {
         },
       ];
 
-      mockFetch.mockResolvedValueOnce(createMockResponse({ apps: mockApps }));
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({ items: mockApps, total_count: mockApps.length })
+      );
 
-      const apps = await client.apps.listEchoApps();
+      const { items, total_count } = await client.apps.listEchoApps();
 
-      expect(apps).toEqual(mockApps);
+      expect(items).toEqual(mockApps);
+      expect(total_count).toBe(mockApps.length);
       expect(mockFetch).toHaveBeenCalledWith(
         `${TEST_SERVER_URL}/api/v1/apps`,
         expect.objectContaining({
@@ -493,12 +496,15 @@ describe('EchoClient', () => {
     });
 
     it('should handle empty app list', async () => {
-      mockFetch.mockResolvedValueOnce(createMockResponse({ apps: [] }));
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({ items: [], total_count: 0 })
+      );
 
-      const apps = await client.apps.listEchoApps();
+      const { items, total_count } = await client.apps.listEchoApps();
 
-      expect(apps).toEqual([]);
-      expect(Array.isArray(apps)).toBe(true);
+      expect(items).toEqual([]);
+      expect(Array.isArray(items)).toBe(true);
+      expect(total_count).toBe(0);
     });
   });
 
@@ -594,7 +600,7 @@ describe('EchoClient', () => {
   describe('getAppUrl', () => {
     it('should generate correct app URL', async () => {
       const appId = 'test-app-123';
-      const expectedUrl = `${TEST_SERVER_URL}/apps/${appId}`;
+      const expectedUrl = `${TEST_SERVER_URL}/app/${appId}`;
 
       const url = client.apps.getAppUrl(appId);
 
@@ -603,7 +609,7 @@ describe('EchoClient', () => {
 
     it('should handle special characters in app ID', async () => {
       const appId = 'test-app-with-special-chars_123';
-      const expectedUrl = `${TEST_SERVER_URL}/apps/${appId}`;
+      const expectedUrl = `${TEST_SERVER_URL}/app/${appId}`;
 
       const url = client.apps.getAppUrl(appId);
 

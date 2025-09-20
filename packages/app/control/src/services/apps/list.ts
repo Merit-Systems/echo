@@ -79,15 +79,7 @@ export const listMemberApps = async (
       where,
       skip,
       take: page_size,
-      select: {
-        ...appSelect,
-        appMemberships: {
-          select: {
-            role: true,
-            status: true,
-          },
-        },
-      },
+      select: appSelect,
       orderBy: {
         Transactions: {
           _count: 'desc',
@@ -128,15 +120,7 @@ export const listOwnerApps = async (
       where,
       skip,
       take: page_size,
-      select: {
-        ...appSelect,
-        appMemberships: {
-          select: {
-            role: true,
-            status: true,
-          },
-        },
-      },
+      select: appSelect,
       orderBy: {
         Transactions: {
           _count: 'desc',

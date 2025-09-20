@@ -13,7 +13,7 @@ import {
   TableEmpty,
 } from '@/components/ui/table';
 
-import { formatCurrency } from '@/lib/balance';
+import { formatCurrency } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/trpc/client';
 import {

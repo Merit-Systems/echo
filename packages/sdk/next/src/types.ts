@@ -2,9 +2,8 @@ import {
   AnthropicProvider,
   GoogleGenerativeAIProvider,
   OpenAIProvider,
-  User,
+  CreateOauthTokenResponse,
 } from '@merit-systems/echo-typescript-sdk';
-import { RefreshTokenResponse } from 'auth/token-manager';
 import { NextRequest } from 'next/server';
 
 export interface EchoConfig {
@@ -38,7 +37,7 @@ export type AppRouteHandlers = Record<
 export type EchoResult = {
   handlers: AppRouteHandlers;
 
-  getUser: () => Promise<RefreshTokenResponse['user'] | null>;
+  getUser: () => Promise<CreateOauthTokenResponse['user'] | null>;
   isSignedIn: () => Promise<boolean>;
 
   /** Get the Echo access token for server-side API calls */

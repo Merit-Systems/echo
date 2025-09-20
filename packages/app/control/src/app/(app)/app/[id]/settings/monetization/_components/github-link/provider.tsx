@@ -1,6 +1,6 @@
 'use client';
 
-import { updateGithubLinkSchema } from '@/services/apps/github-link';
+import { githubLinkSchema } from '@/services/github/schema';
 import {
   FormProvider,
   type FormProviderProps,
@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import z from 'zod';
 
 type Props = Omit<
-  FormProviderProps<z.infer<typeof updateGithubLinkSchema>>,
+  FormProviderProps<z.infer<typeof githubLinkSchema>>,
   'schema'
 >;
 
@@ -20,7 +20,7 @@ export const GithubLinkFormProvider: React.FC<Props> = ({
   return (
     <FormProvider
       {...props}
-      schema={updateGithubLinkSchema}
+      schema={githubLinkSchema}
       onSuccess={() => {
         toast.success(`Github link updated successfully`);
       }}

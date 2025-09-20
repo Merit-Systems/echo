@@ -7,16 +7,13 @@ import {
 } from '@/lib/payment-processing';
 import Stripe from 'stripe';
 import { logger } from '@/logger';
+import { env } from '@/env';
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY || 'test_secret_stripe_key',
-  {
-    apiVersion: '2025-05-28.basil',
-  }
-);
+const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+  apiVersion: '2025-05-28.basil',
+});
 
-const webhookSecret =
-  process.env.STRIPE_WEBHOOK_SECRET || 'test_webhook_secret';
+const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
 
 // POST /api/stripe/webhook - Handle Stripe webhooks
 export async function POST(request: NextRequest) {

@@ -1,5 +1,5 @@
 import { updateSpendPoolFromPayment } from './spend-pools';
-import { updateUserBalanceFromPayment } from './balance';
+import { updateUserBalanceFromPayment } from '../services/user/balance';
 import type { Payment } from '@/generated/prisma';
 import type { PrismaClient } from '@/generated/prisma';
 import { db } from './db';

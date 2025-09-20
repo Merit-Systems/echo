@@ -127,7 +127,12 @@ export const ZeroFreeTierWithRealBalance: Story = {
         mockState={{
           isLoggedIn: true,
           user: mockStates.authenticated.user,
-          balance: { totalPaid: 2.5, totalSpent: 0.5, balance: 2.0 },
+          balance: {
+            totalPaid: 2.5,
+            totalSpent: 0.5,
+            balance: 2.0,
+            currency: 'USD',
+          },
           freeTierBalance: {
             spendPoolBalance: 0,
             userSpendInfo: {

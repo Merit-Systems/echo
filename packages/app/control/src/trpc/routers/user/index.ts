@@ -10,7 +10,7 @@ import {
 
 import { userPayoutRouter } from './payout';
 
-import { getUser } from '@/services/user/get';
+import { getPublicUser, getFullUser } from '@/services/user/get';
 import { getUserFeed, userFeedSchema } from '@/services/feed';
 import { listCreditPayments } from '@/services/payments';
 import { createPaymentLink, createPaymentLinkSchema } from '@/services/stripe';
@@ -32,7 +32,10 @@ import {
   updateGithubLinkForUser,
   updateUserGithubLinkSchema,
 } from '@/services/user/github-link';
-import { getUserAppBalance, getUserGlobalBalance } from '@/lib/balance';
+import {
+  getUserAppBalance,
+  getUserGlobalBalance,
+} from '@/services/user/balance';
 import { appIdSchema } from '@/services/apps/lib/schemas';
 import { getCustomerSpendInfoForApp } from '@/lib/spend-pools';
 
@@ -56,11 +59,11 @@ export const userRouter = createTRPCRouter({
   payout: userPayoutRouter,
 
   current: protectedProcedure.query(async ({ ctx }) => {
-    return getUser(ctx.session.user.id);
+    return getFullUser(ctx.session.user.id);
   }),
 
   get: publicProcedure.input(userIdSchema).query(async ({ input }) => {
-    const user = await getUser(input);
+    const user = await getPublicUser(input);
     if (!user) {
       throw new TRPCError({
         code: 'NOT_FOUND',

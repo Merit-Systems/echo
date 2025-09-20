@@ -22,7 +22,7 @@ export function EchoAccountButtonPopover({ echo }: { echo: EchoContextValue }) {
         >
           <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.picture} />
+              <AvatarImage src={user?.image ?? ''} />
               <AvatarFallback>
                 {user?.name?.charAt(0) || user?.email?.charAt(0)}
               </AvatarFallback>

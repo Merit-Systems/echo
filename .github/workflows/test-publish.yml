@@ -35,6 +35,50 @@ jobs:
       next-version: ${{ steps.get-versions.outputs.next-version }}
       echo-start-version: ${{ steps.get-versions.outputs.echo-start-version }}
 
+    env:
+      # Database Configuration
+      DATABASE_URL: postgresql://test:test@localhost:5433/echo_integration_test
+
+      # Service URLs
+      ECHO_CONTROL_URL: http://localhost:3001
+      ECHO_DATA_SERVER_URL: http://localhost:3069
+
+      # Authentication Secrets
+      JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+      JWT_ISSUER: http://localhost:3001
+      JWT_AUDIENCE: echo-proxy
+
+      # Auth.js Configuration
+      AUTH_SECRET: ${{ secrets.TEST_AUTH_SECRET }}
+
+      # Integration Test JWTs
+      INTEGRATION_TEST_JWT: ${{ secrets.INTEGRATION_TEST_JWT }}
+      INTEGRATION_TEST_JWT_USER_2: ${{ secrets.INTEGRATION_TEST_JWT_USER_2 }}
+
+      # API Keys for Echo Server
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # OAuth Configuration
+      OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 2592000
+      OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: 86400
+
+      # Environment Flags
+      CI: true
+      NODE_ENV: test
+      INTEGRATION_TEST_MODE: true
+
+      NEXT_PUBLIC_ECHO_APP_ID: 74d9c979-e036-4e43-904f-32d214b361fc
+
+      # Optional Stripe Configuration
+      STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
+      STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.TEST_STRIPE_WEBHOOK_SECRET }}
+
+      # Test Configuration
+      HEADLESS: true
+      LOG_LEVEL: error
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

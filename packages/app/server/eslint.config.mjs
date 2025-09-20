@@ -10,8 +10,8 @@ export default [
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        project: './tsconfig.json',
-        tsconfigRootDir: '.',
+        project: true,
+        tsconfigRootDir: __dirname,
       },
       globals: {
         console: 'readonly',
@@ -43,7 +43,11 @@ export default [
   },
   {
     name: 'echo-server/tests',
-    files: ['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    files: [
+      '**/__tests__/**/*.{ts,tsx}',
+      '**/*.test.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+    ],
     languageOptions: {
       globals: {
         jest: 'readonly',
@@ -67,12 +71,6 @@ export default [
   },
   {
     name: 'echo-server/ignores',
-    ignores: [
-      'node_modules/',
-      'dist/',
-      'build/',
-      'coverage/',
-      '**/*.d.ts',
-    ],
+    ignores: ['node_modules/', 'dist/', 'build/', 'coverage/', '**/*.d.ts'],
   },
-]; 
+];

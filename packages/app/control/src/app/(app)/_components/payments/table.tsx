@@ -17,7 +17,7 @@ import {
 
 import { LoadingPaymentStatus, PaymentStatus } from './status';
 
-import { formatCurrency } from '@/lib/balance';
+import { formatCurrency } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface MinimalPayment {

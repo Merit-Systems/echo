@@ -304,7 +304,7 @@ describe('Component Security Integration', () => {
           <div>
             <div data-testid="user-name">{user?.name}</div>
             <div data-testid="user-email">{user?.email}</div>
-            <div data-testid="user-picture">{user?.picture}</div>
+            <div data-testid="user-picture">{user?.image}</div>
             <div data-testid="user-id">{user?.id}</div>
           </div>
         );

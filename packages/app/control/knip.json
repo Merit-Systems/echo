@@ -6,13 +6,7 @@
     "src/app/**/route.{js,jsx,ts,tsx}",
     "src/mdx-components.{js,jsx,ts,tsx}"
   ],
-  "ignoreDependencies": [
-    "eslint-config-next",
-    "husky",
-    "tw-animate-css",
-    "@merit-systems/echo-typescript-sdk",
-    "ts-morph"
-  ],
+  "ignoreDependencies": ["eslint-config-next", "husky", "tw-animate-css"],
   "ignore": [
     "/scripts/**",
     "/source.config.ts",

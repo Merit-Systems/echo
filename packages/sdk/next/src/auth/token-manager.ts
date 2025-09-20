@@ -1,31 +1,12 @@
 import {
   EchoClient,
   EchoConfig,
-  User,
+  CreateOauthTokenResponse,
 } from '@merit-systems/echo-typescript-sdk';
 import { cookies as getCookies } from 'next/headers';
 import { resolveEchoBaseUrl } from '../config';
 import { ECHO_COOKIE, namespacedCookie } from './cookie-names';
 import { shouldRefreshToken } from './jwt-utils';
-
-export interface RefreshTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token: string;
-  refresh_token_expires_in: number;
-  scope: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
-  echo_app: {
-    id: string;
-    name: string;
-    description: string;
-  };
-}
 
 /**
  * Refresh an access token using a refresh token
@@ -36,7 +17,7 @@ export interface RefreshTokenResponse {
 export async function performTokenRefresh(
   refreshToken: string,
   config: EchoConfig
-): Promise<RefreshTokenResponse> {
+): Promise<CreateOauthTokenResponse> {
   return fetch(`${resolveEchoBaseUrl(config)}/api/oauth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -47,7 +28,7 @@ export async function performTokenRefresh(
     }),
   }).then(async r => {
     if (r.ok) {
-      const tokenData = (await r.json()) as RefreshTokenResponse;
+      const tokenData = (await r.json()) as CreateOauthTokenResponse;
       return tokenData;
     }
     return Promise.reject(new Error(await r.text()));
@@ -129,7 +110,7 @@ export async function getEchoToken(config: EchoConfig): Promise<string | null> {
   return accessToken;
 }
 
-export async function getUser(config: EchoConfig): Promise<User> {
+export async function getUser(config: EchoConfig) {
   const echo = await getEchoClient(config);
   if (!echo) {
     throw new Error('User not signed in');

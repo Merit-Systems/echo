@@ -1,9 +1,12 @@
-import { EchoConfig } from '@merit-systems/echo-typescript-sdk';
+import {
+  EchoConfig,
+  CreateOauthTokenResponse,
+} from '@merit-systems/echo-typescript-sdk';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveEchoBaseUrl } from '../config';
 import { ECHO_COOKIE, namespacedCookie } from './cookie-names';
-import { getEchoToken, RefreshTokenResponse } from './token-manager';
+import { getEchoToken } from './token-manager';
 
 /**
  * Generate PKCE code challenge and verifier
@@ -174,7 +177,7 @@ export async function handleCallback(
     );
   }
 
-  const tokenData = (await tokenResponse.json()) as RefreshTokenResponse;
+  const tokenData = (await tokenResponse.json()) as CreateOauthTokenResponse;
 
   const response = NextResponse.redirect(`${origin}`);
 

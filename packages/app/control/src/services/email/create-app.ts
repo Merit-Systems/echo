@@ -3,6 +3,7 @@ import { sendEmailWithRetry } from './emailer/retry-wrapper';
 import { logger } from '@/logger';
 import { db } from '@/lib/db';
 import { z } from 'zod';
+import { env } from '@/env';
 
 export const createAppFollowUpEmailSchema = z.object({
   userId: z.string(),
@@ -11,11 +12,13 @@ export const createAppFollowUpEmailSchema = z.object({
 });
 
 // When user performs action, schedule email for 1 hour later
-export async function scheduleCreateAppFollowUpEmail(params: z.infer<typeof createAppFollowUpEmailSchema>) {
+export async function scheduleCreateAppFollowUpEmail(
+  params: z.infer<typeof createAppFollowUpEmailSchema>
+) {
   const { userId, appName, appId } = params;
 
-  const resend = new Resend(process.env.AUTH_RESEND_KEY!);
-  const fromEmail = process.env.AUTH_RESEND_FROM_EMAIL!;
+  const resend = new Resend(env.AUTH_RESEND_KEY);
+  const fromEmail = env.AUTH_RESEND_FROM_EMAIL;
   const user = await db.user.findUnique({
     where: { id: userId },
   });

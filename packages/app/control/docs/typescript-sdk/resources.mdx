@@ -17,21 +17,63 @@ const app = await echo.apps.getEchoApp('app-id');
 const appUrl = echo.apps.getAppUrl('app-id');
 ```
 
-### Methods
+### Get App
 
-- **`listEchoApps()`** - List all your Echo applications
-- **`getEchoApp(appId)`** - Get specific application details
-- **`getAppUrl(appId)`** - Generate application URL
+```typescript
+const app = await echo.apps.getEchoApp('app-id');
+```
+
+#### Parameters
+
+<AutoTypeTable path="../../sdk/ts/src/api-types.ts" name="GetAppsByIdParams" />
+
+#### Response
+
+<AutoTypeTable
+  path="../../sdk/ts/src/api-types.ts"
+  name="GetAppsByIdResponse"
+/>
+
+### List Apps
+
+```typescript
+const apps = await echo.apps.listEchoApps(params);
+```
+
+#### Parameters (optional)
+
+<AutoTypeTable path="../../sdk/ts/src/api-types.ts" name="GetAppsQuery" />
+
+#### Response
+
+<AutoTypeTable path="../../sdk/ts/src/api-types.ts" name="GetAppsResponse" />
+
+### Get App URL
+
+```typescript
+const appUrl = echo.apps.getAppUrl('app-id');
+```
+
+#### Response
+
+`https://echo.merit.systems/app/{app-id}`
 
 ### Types
 
 ```typescript
-import type { EchoApp } from '@merit-systems/echo-typescript-sdk';
+import type {
+  GetAppsByIdResponse,
+  GetAppsByIdParams,
+  GetAppsResponse,
+  GetAppsQuery,
+} from '@merit-systems/echo-typescript-sdk';
 ```
 
-#### EchoApp
+### Methods
 
-<AutoTypeTable path="../../sdk/ts/src/types.ts" name="EchoApp" />
+- **`listEchoApps(query?)`** - List all Echo apps with optional pagination and search
+- **`getEchoApp(appId)`** - Get a specific Echo app by ID
+- **`getAppUrl(appId)`** - Get app URL for a specific Echo app
 
 ## Balance Resource
 
@@ -42,32 +84,54 @@ const balance = await echo.balance.getBalance();
 const freeBalance = await echo.balance.getFreeBalance('app-id');
 ```
 
-### Methods
+### Get Balance
 
-- **`getBalance()`** - Get total account balance across all apps
-- **`getFreeBalance(echoAppId)`** - Get free tier balance for specific app
+Get the currently authenticated user's global echo balance.
+
+```typescript
+const balance = await echo.balance.getBalance();
+```
+
+#### Response
+
+<AutoTypeTable path="../../sdk/ts/src/api-types.ts" name="GetBalanceResponse" />
+
+### Get Free Balance
+
+Get the currently authenticated user's free tier balance for your specific app.
+
+```typescript
+const freeBalance = await echo.balance.getFreeBalance('app-id');
+```
+
+#### Parameters
+
+<AutoTypeTable
+  path="../../sdk/ts/src/api-types.ts"
+  name="GetBalanceByIdFreeParams"
+/>
+
+#### Response
+
+<AutoTypeTable
+  path="../../sdk/ts/src/api-types.ts"
+  name="GetBalanceByIdFreeResponse"
+/>
 
 ### Types
 
 ```typescript
 import type {
-  Balance,
-  FreeBalance,
-  UserSpendInfo,
+  GetBalanceResponse,
+  GetBalanceByIdFreeResponse,
+  GetBalanceByIdFreeParams,
 } from '@merit-systems/echo-typescript-sdk';
 ```
 
-#### Balance
+### Methods
 
-<AutoTypeTable path="../../sdk/ts/src/types.ts" name="Balance" />
-
-#### FreeBalance
-
-<AutoTypeTable path="../../sdk/ts/src/types.ts" name="FreeBalance" />
-
-#### UserSpendInfo
-
-<AutoTypeTable path="../../sdk/ts/src/types.ts" name="UserSpendInfo" />
+- **`getBalance()`** - Get current balance for the authenticated user across all apps
+- **`getFreeBalance(echoAppId)`** - Get free tier balance for a specific app
 
 ## Payments Resource
 
@@ -82,6 +146,43 @@ const paymentLink = await echo.payments.createPaymentLink({
 const paymentUrl = await echo.payments.getPaymentUrl(10, 'Quick Top-up');
 ```
 
+### Create Payment Link
+
+Create a payment link for purchasing credits.
+
+```typescript
+const paymentLink = await echo.payments.createPaymentLink({
+  amount: 25,
+  description: 'Echo Credits',
+});
+```
+
+#### Request Body
+
+<AutoTypeTable
+  path="../../sdk/ts/src/api-types.ts"
+  name="CreateStripePaymentLinkBody"
+/>
+
+#### Response
+
+<AutoTypeTable
+  path="../../sdk/ts/src/api-types.ts"
+  name="CreateStripePaymentLinkResponse"
+/>
+
+### Get Payment URL
+
+Get a payment URL for purchasing credits.
+
+```typescript
+const paymentUrl = await echo.payments.getPaymentUrl(10, 'Quick Top-up');
+```
+
+#### Response
+
+Returns a `string` containing the payment URL.
+
 ### Methods
 
 - **`createPaymentLink(request)`** - Create detailed payment link with options
@@ -91,24 +192,12 @@ const paymentUrl = await echo.payments.getPaymentUrl(10, 'Quick Top-up');
 
 ```typescript
 import type {
-  CreatePaymentLinkRequest,
-  CreatePaymentLinkResponse,
+  CreateStripePaymentLinkBody,
+  CreateStripePaymentLinkResponse,
+  GetBasePaymentLinkQuery,
+  GetBasePaymentLinkResponse,
 } from '@merit-systems/echo-typescript-sdk';
 ```
-
-#### CreatePaymentLinkRequest
-
-<AutoTypeTable
-  path="../../sdk/ts/src/types.ts"
-  name="CreatePaymentLinkRequest"
-/>
-
-#### CreatePaymentLinkResponse
-
-<AutoTypeTable
-  path="../../sdk/ts/src/types.ts"
-  name="CreatePaymentLinkResponse"
-/>
 
 ## Models Resource
 
@@ -159,38 +248,57 @@ const referralResult = await echo.users.registerReferralCode(
 );
 ```
 
-### Methods
+### Get User Info
 
-- **`getUserInfo()`** - Get current user information and spending data
-- **`registerReferralCode(echoAppId, code)`** - Register referral code for benefits
+Get the currently authenticated user's information.
+
+```typescript
+const user = await echo.users.getUserInfo();
+```
+
+#### Response
+
+<AutoTypeTable path="../../sdk/ts/src/api-types.ts" name="GetUserResponse" />
+
+### Register Referral Code
+
+Register a referral code for benefits.
+
+```typescript
+const referralResult = await echo.users.registerReferralCode(
+  'app-id',
+  'REFERRAL123'
+);
+```
+
+#### Request Body
+
+<AutoTypeTable
+  path="../../sdk/ts/src/api-types.ts"
+  name="CreateUserReferralBody"
+/>
+
+#### Response
+
+<AutoTypeTable
+  path="../../sdk/ts/src/api-types.ts"
+  name="CreateUserReferralResponse"
+/>
 
 ### Types
 
 ```typescript
 import type {
-  User,
-  RegisterReferralCodeRequest,
-  RegisterReferralCodeResponse,
+  GetUserResponse,
+  CreateUserReferralBody,
+  CreateUserReferralResponse,
 } from '@merit-systems/echo-typescript-sdk';
 ```
 
-#### User
+### Methods
 
-<AutoTypeTable path="../../sdk/ts/src/types.ts" name="User" />
-
-#### RegisterReferralCodeRequest
-
-<AutoTypeTable
-  path="../../sdk/ts/src/types.ts"
-  name="RegisterReferralCodeRequest"
-/>
-
-#### RegisterReferralCodeResponse
-
-<AutoTypeTable
-  path="../../sdk/ts/src/types.ts"
-  name="RegisterReferralCodeResponse"
-/>
+- **`getUserInfo()`** - Get current user information and spending data
+- **`registerReferralCode(echoAppId, code)`** - Register referral code for benefits
 
 ## Example Usage
 

@@ -2,6 +2,7 @@ import { CreateEmailOptions, Resend } from 'resend';
 import { sendEmailWithRetry } from './emailer/retry-wrapper';
 import { logger } from '@/logger';
 import { db } from '@/lib/db';
+import { env } from '@/env';
 import { z } from 'zod';
 
 export const limboAppReminderEmailSchema = z.object({
@@ -10,11 +11,13 @@ export const limboAppReminderEmailSchema = z.object({
   appId: z.string(),
 });
 // When user performs action, schedule email for 1 hour later
-export async function scheduleLimboAppReminderEmail(params: z.infer<typeof limboAppReminderEmailSchema>) {
+export async function scheduleLimboAppReminderEmail(
+  params: z.infer<typeof limboAppReminderEmailSchema>
+) {
   const { userId, appName, appId } = params;
 
-  const resend = new Resend(process.env.AUTH_RESEND_KEY!);
-  const fromEmail = process.env.AUTH_RESEND_FROM_EMAIL!;
+  const resend = new Resend(env.AUTH_RESEND_KEY);
+  const fromEmail = env.AUTH_RESEND_FROM_EMAIL;
   const user = await db.user.findUnique({
     where: { id: userId },
   });
@@ -39,9 +42,7 @@ export async function scheduleLimboAppReminderEmail(params: z.infer<typeof limbo
     </div>
     `,
     scheduledAt: 'in 1 hour', // Natural language scheduling
-  }
-
-
+  };
 
   const { data, error } = await sendEmailWithRetry(resend, emailPayload);
 

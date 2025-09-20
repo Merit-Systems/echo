@@ -10,7 +10,8 @@ import { Callout } from 'fumadocs-ui/components/callout';
 The Echo V1 API provides programmatic access for SDKs, CLI tools, and applications. All endpoints are prefixed with `/api/v1/`.
 
 <Callout type="info">
-All API endpoints use JSON request/response format. Most endpoints require authentication via API keys or JWT tokens.
+  All API endpoints use JSON request/response format. Most endpoints require
+  authentication via API keys or JWT tokens.
 </Callout>
 
 ## Authentication
@@ -18,19 +19,23 @@ All API endpoints use JSON request/response format. Most endpoints require authe
 The V1 API supports two authentication methods:
 
 ### API Keys
+
 API keys are the primary authentication method for programmatic access. Include your API key in the request header:
 
 ```http
 Authorization: Bearer your_api_key_here
 ```
 
-### JWT Tokens  
+### JWT Tokens
+
 JWT tokens are used for OAuth flows and temporary access. Include JWT tokens in either header:
 
 ```http
 Authorization: Bearer your_jwt_token_here
 ```
+
 or
+
 ```http
 X-Echo-Token: your_jwt_token_here
 ```
@@ -38,27 +43,32 @@ X-Echo-Token: your_jwt_token_here
 ## Applications
 
 ### List User Apps
+
 ```http
 GET /api/v1/apps
 ```
 
 List all Echo apps owned by the authenticated user.
 
-**Authentication:** API key or JWT token required  
+**Authentication:** API key or JWT token required
 
 **Response Type:**
+
 ```typescript
 {
-  apps: PublicEchoApp[]
+  items: Array<App>;
+  has_next: boolean;
+  page: number;
+  page_size: number;
+  total_count: number;
 }
 ```
 
-<AutoTypeTable 
-  path="src/lib/apps/types.ts" 
-  name="PublicEchoApp" 
+<AutoTypeTable
+  path="src/services/apps/list.ts"
+  type={`Awaited<ReturnType<typeof listOwnerApps>>["items"][number]`}
 />
 
-### Get App Details
 ```http
 GET /api/v1/apps/{id}
 ```
@@ -67,18 +77,20 @@ Get detailed app information for programmatic access.
 
 **Authentication:** API key or JWT token required  
 **Path Parameters:**
+
 - `id` (UUID) - App ID
 
-**Response Type:** Returns a `PublicEchoApp` with detailed statistics
+**Response Type:**
 
-<AutoTypeTable 
-  path="src/lib/apps/types.ts" 
-  name="GlobalStatistics" 
+<AutoTypeTable
+  path="src/services/user/balance.ts"
+  type={`Awaited<ReturnType<typeof getUserGlobalBalance>>`}
 />
 
 ## Balance & Billing
 
 ### Get User Balance
+
 ```http
 GET /api/v1/balance
 ```
@@ -87,67 +99,54 @@ Get authenticated user's credit balance.
 
 **Authentication:** API key or JWT token required  
 **Query Parameters:**
+
 - `echoAppId` (UUID, optional) - Get app-specific balance instead of global
 
 **Response Type:**
 
-<AutoTypeTable 
-  path="src/lib/balance/types.ts" 
-  name="Balance" 
-/>
-
-For app-specific balance queries, returns:
-
-<AutoTypeTable 
-  path="src/lib/balance/types.ts" 
-  name="AppBalance" 
+<AutoTypeTable
+  path="src/services/user/balance.ts"
+  type={`Awaited<ReturnType<typeof getUserGlobalBalance>>`}
 />
 
 ### Get Free Tier Balance
+
 ```http
-POST /api/v1/balance/free
+POST /api/v1/balance/{appId}/free
 ```
 
 Get user's free tier spending information for a specific app.
 
-**Authentication:** API key or JWT token required  
-
-**Request Body:**
-```typescript
-{
-  echoAppId: string
-}
-```
+**Authentication:** API key or JWT token required
 
 **Response Type:**
+
 ```typescript
 {
-  spendPoolBalance: {
-    available: number;
-    total: number; 
-    used: number;
-  };
+  spendPoolBalance: number;
   userSpendInfo: UserSpendInfo;
 }
 ```
 
-<AutoTypeTable 
-  path="src/lib/spend-pools/types.ts" 
-  name="UserSpendInfo" 
+<AutoTypeTable
+  path="src/lib/spend-pools/fetch-user-spend.ts"
+  type={`Awaited<ReturnType<typeof getCustomerSpendInfoForApp>>["userSpendInfo"]`}
 />
 
 ## Payments
 
 ### Create Payment Link
+
 ```http
 POST /api/v1/stripe/payment-link
 ```
 
 Generate Stripe payment link for credit purchases.
 
-**Authentication:** API key or JWT token required  
+**Authentication:** API key or JWT token required
 
 **Request Body:**
+
 ```typescript
 {
   amount: number;
@@ -156,6 +155,7 @@ Generate Stripe payment link for credit purchases.
 ```
 
 **Response Type:**
+
 ```typescript
 {
   paymentUrl: string;
@@ -165,21 +165,24 @@ Generate Stripe payment link for credit purchases.
 ```
 
 <Callout type="info">
-Payment amounts are in USD. The `successUrl` parameter is optional and will redirect users after successful payment.
+  Payment amounts are in USD. The `successUrl` parameter is optional and will
+  redirect users after successful payment.
 </Callout>
 
 ## Models & Capabilities
 
 ### Get Supported Models
+
 ```http
 GET /api/v1/supported-models
 ```
 
 Get list of supported AI models with pricing information.
 
-**Authentication:** None required  
+**Authentication:** None required
 
 **Response Type:**
+
 ```typescript
 {
   models: SupportedModel[];
@@ -188,6 +191,7 @@ Get list of supported AI models with pricing information.
 ```
 
 **SupportedModel Interface:**
+
 ```typescript
 interface SupportedModel {
   id: string;
@@ -202,15 +206,17 @@ interface SupportedModel {
 ## User Management
 
 ### Get User Info
+
 ```http
 GET /api/v1/user
 ```
 
 Get authenticated user profile information.
 
-**Authentication:** API key or JWT token required  
+**Authentication:** API key or JWT token required
 
 **Response Type:**
+
 ```typescript
 {
   id: string;
@@ -224,15 +230,17 @@ Get authenticated user profile information.
 ```
 
 ### Register Referral Code
+
 ```http
 POST /api/v1/user/referral
 ```
 
 Apply a referral code for credits on a specific app.
 
-**Authentication:** API key or JWT token required  
+**Authentication:** API key or JWT token required
 
 **Request Body:**
+
 ```typescript
 {
   echoAppId: string;
@@ -241,6 +249,7 @@ Apply a referral code for credits on a specific app.
 ```
 
 **Response Type:**
+
 ```typescript
 {
   success: boolean;
@@ -262,14 +271,16 @@ All endpoints return appropriate HTTP status codes and JSON error responses:
 ```
 
 ### Common Status Codes
+
 - `200 OK` - Success
 - `201 Created` - Resource created
 - `400 Bad Request` - Invalid request data
 - `401 Unauthorized` - Authentication required
 - `403 Forbidden` - Insufficient permissions
-- `404 Not Found` - Resource not found  
+- `404 Not Found` - Resource not found
 - `500 Internal Server Error` - Server error
 
 <Callout type="info">
-All endpoints require HTTPS in production environments. UUID parameters are validated for proper format.
+  All endpoints require HTTPS in production environments. UUID parameters are
+  validated for proper format.
 </Callout>

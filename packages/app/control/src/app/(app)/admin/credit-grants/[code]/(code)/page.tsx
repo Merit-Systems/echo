@@ -17,6 +17,7 @@ import {
 import { CopyCode } from '@/components/ui/copy-code';
 import { api, HydrateClient } from '@/trpc/server';
 import { CreditGrantUsersTable } from './_components/users-table';
+import { env } from '@/env';
 
 export default async function AdminCodePage(
   props: PageProps<'/admin/credit-grants/[code]'>
@@ -53,7 +54,7 @@ export default async function AdminCodePage(
           </CardHeader>
           <CardContent className="py-4">
             <CopyCode
-              code={`${process.env.ECHO_CONTROL_APP_BASE_URL}/credits/claim/${code}`}
+              code={`${env.NEXT_PUBLIC_APP_URL}/credits/claim/${code}`}
               toastMessage="Copied to clipboard"
             />
           </CardContent>

@@ -1,69 +1,30 @@
 import Stripe from 'stripe';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-import { createPaymentLink } from '@/services/stripe';
+import { createPaymentLink, createPaymentLinkSchema } from '@/services/stripe';
 
-import { getAuthenticatedUser } from '@/lib/auth';
+import { authRoute } from '../../../../../lib/api/auth-route';
 
-import { isValidUrl } from '@/lib/utils';
-
-import type { User } from '@/generated/prisma';
-
-// POST /api/v1/stripe/payment-link - Generate real Stripe payment link for authenticated user
-export async function POST(request: NextRequest) {
-  try {
-    let user: User;
+export const POST = authRoute
+  .body(createPaymentLinkSchema)
+  .handler(async (_, context) => {
     try {
-      const { user: userResult } = await getAuthenticatedUser(request);
-      user = userResult;
+      const result = await createPaymentLink(context.ctx.userId, context.body);
+      return NextResponse.json(result);
     } catch (error) {
-      console.error('Error creating payment link:', error);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
-
-    // Validate callback URLs if provided
-    if (body.successUrl && !isValidUrl(body.successUrl)) {
+      if (error instanceof Stripe.errors.StripeError) {
+        return NextResponse.json(
+          { message: `Stripe error: ${error.message}` },
+          { status: 400 }
+        );
+      }
+      if (error instanceof Error) {
+        return NextResponse.json({ message: error.message }, { status: 500 });
+      }
       return NextResponse.json(
-        { error: 'Invalid success URL format' },
-        { status: 400 }
+        { message: 'Internal server error' },
+        { status: 500 }
       );
     }
-
-    const result = await createPaymentLink(user.id, body);
-
-    return NextResponse.json(result, { status: 201 });
-  } catch (error) {
-    console.error('Error creating payment link:', error);
-
-    if (error instanceof Error && error.message === 'Not authenticated') {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    if (
-      error instanceof Error &&
-      error.message === 'Valid amount is required'
-    ) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    if (error instanceof Stripe.errors.StripeError) {
-      return NextResponse.json(
-        {
-          error: 'Stripe error: ' + error.message,
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  });

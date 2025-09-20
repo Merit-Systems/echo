@@ -45,4 +45,4 @@ next-env.d.ts
 # fumadocs
 /.source/
 
-/src/generated/prisma
+/src/generated

@@ -7,11 +7,10 @@ import { createEchoAnthropic } from 'ai-providers/anthropic';
 import { createEchoGoogle } from 'ai-providers/google';
 import { createEchoOpenAI } from 'ai-providers/openai';
 
+import { CreateOauthTokenResponse } from '@merit-systems/echo-typescript-sdk';
+
 import { ECHO_COOKIE, namespacedCookie } from 'auth/cookie-names';
-import {
-  RefreshTokenResponse,
-  getEchoToken as getEchoTokenInternal,
-} from 'auth/token-manager';
+import { getEchoToken as getEchoTokenInternal } from 'auth/token-manager';
 import { handleEchoClientProxy } from 'proxy';
 import {
   handleCallback,
@@ -73,7 +72,7 @@ export default function Echo(config: EchoConfig): EchoResult {
     if (!userInfo) {
       return null;
     }
-    const user = JSON.parse(userInfo) as RefreshTokenResponse['user'];
+    const user = JSON.parse(userInfo) as CreateOauthTokenResponse['user'];
     return user;
   };
 

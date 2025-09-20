@@ -1,5 +1,5 @@
 import { HttpClient } from '../http-client';
-import { CreatePaymentLinkRequest, CreatePaymentLinkResponse } from '../types';
+import { ApiRoutes } from '../api-types';
 import { BaseResource } from '../utils/error-handling';
 
 export class PaymentsResource extends BaseResource {
@@ -12,9 +12,11 @@ export class PaymentsResource extends BaseResource {
    * @param request Payment link details
    */
   async createPaymentLink(
-    request: CreatePaymentLinkRequest
-  ): Promise<CreatePaymentLinkResponse> {
-    return this.handleRequest<CreatePaymentLinkResponse>(
+    request: ApiRoutes['POST /stripe/payment-link']['body']
+  ) {
+    return this.handleRequest<
+      ApiRoutes['POST /stripe/payment-link']['response']
+    >(
       () => this.http.post('/api/v1/stripe/payment-link', request),
       'creating payment link',
       '/api/v1/stripe/payment-link'
@@ -32,7 +34,7 @@ export class PaymentsResource extends BaseResource {
     description?: string,
     successUrl?: string
   ): Promise<string> {
-    const request: CreatePaymentLinkRequest = {
+    const request: ApiRoutes['POST /stripe/payment-link']['body'] = {
       amount,
       description: description || 'Echo Credits',
     };

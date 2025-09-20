@@ -8,7 +8,7 @@ import {
 } from '@/trpc/trpc';
 import { TRPCError } from '@trpc/server';
 
-import { createApp, createAppSchema } from '@/services/apps/create';
+import { createApp } from '@/services/apps/create';
 import {
   appOwnerProcedure,
   protectedAppProcedure,
@@ -30,14 +30,10 @@ import {
   listMemberApps,
   listOwnerApps,
 } from '@/services/apps/list';
-import { updateApp, updateAppSchema } from '@/services/apps/update';
+import { updateApp } from '@/services/apps/update';
 import { getAppOwner } from '@/services/apps/get';
 import { appIdSchema } from '@/services/apps/lib/schemas';
-import {
-  getAppMarkup,
-  updateMarkup,
-  updateMarkupSchema,
-} from '@/services/apps/markup';
+import { getAppMarkup, updateMarkup } from '@/services/apps/markup';
 import {
   getGithubLink,
   updateGithubLinkSchema,
@@ -91,6 +87,11 @@ import {
   getUserAppReferralCode,
 } from '@/services/apps/referral-code';
 import { deleteApp, deleteAppSchema } from '@/services/apps/delete';
+import {
+  createAppSchema,
+  updateAppSchema,
+  updateMarkupSchema,
+} from '@/services/apps/lib/schemas';
 import {
   createFreeTierPaymentFromBalance,
   createFreeTierPaymentFromBalanceSchema,

@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/balance';
+import { formatCurrency } from '@/lib/utils';
 
 import { api } from '@/trpc/client';
 

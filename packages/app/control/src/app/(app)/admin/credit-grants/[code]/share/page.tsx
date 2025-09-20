@@ -19,6 +19,7 @@ import {
 import { ShareButton } from './_components/share-button';
 import { formatCurrency } from '@/lib/utils';
 import { checkCreditGrant } from '../_lib/checks';
+import { env } from '@/env';
 
 export default async function AdminCodePage(
   props: PageProps<'/admin/credit-grants/[code]/share'>
@@ -37,7 +38,7 @@ export default async function AdminCodePage(
         <div className="grid grid-cols-1 lg:grid-cols-3 items-center gap-4 lg:gap-8">
           <Card className="aspect-square shrink-0 rounded-xl border overflow-hidden relative p-4">
             <QRCode
-              value={`${process.env.ECHO_CONTROL_APP_BASE_URL}/credits/claim/${code}`}
+              value={`${env.NEXT_PUBLIC_APP_URL}/credits/claim/${code}`}
               className="size-full"
             />
             <Card className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card p-2 rounded-xl border-primary border-4">
@@ -56,7 +57,7 @@ export default async function AdminCodePage(
             <CouponDivider />
             <CouponFooter>
               <ShareButton
-                url={`${process.env.ECHO_CONTROL_APP_BASE_URL}/credits/claim/${code}`}
+                url={`${env.NEXT_PUBLIC_APP_URL}/credits/claim/${code}`}
               />
             </CouponFooter>
           </CouponContainer>

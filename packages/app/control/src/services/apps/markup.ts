@@ -1,8 +1,10 @@
+import z from 'zod';
+
 import { db } from '@/lib/db';
 
-import type { AppId } from './lib/schemas';
-import z from 'zod';
+import { updateMarkupSchema } from './lib/schemas';
 import { AppRole } from '@/lib/permissions';
+import { AppId } from './lib/schemas';
 
 export const getAppMarkup = async (appId: AppId) => {
   return await db.markUp.findUnique({
@@ -12,13 +14,6 @@ export const getAppMarkup = async (appId: AppId) => {
     },
   });
 };
-
-export const updateMarkupSchema = z.object({
-  markup: z
-    .number()
-    .min(1, 'Markup must be at least 1x')
-    .max(10, 'Markup cannot exceed 10x (1000%)'),
-});
 
 export const updateMarkup = async (
   appId: AppId,

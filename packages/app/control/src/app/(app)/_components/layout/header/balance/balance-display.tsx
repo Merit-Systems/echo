@@ -2,7 +2,7 @@
 
 import { api } from '@/trpc/client';
 
-import { formatCurrency } from '@/lib/balance';
+import { formatCurrency } from '@/lib/utils';
 
 export const Balance = () => {
   const [balance] = api.user.balance.get.useSuspenseQuery();

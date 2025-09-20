@@ -144,7 +144,6 @@ export function EchoTokens({
     balance,
     freeTierBalance,
     isLoading,
-    isLoggedIn,
     refreshBalance,
     isInsufficientFunds,
     setIsInsufficientFunds,
@@ -320,9 +319,9 @@ export function EchoTokens({
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Avatar or Logo */}
-        {showAvatar && user?.picture ? (
+        {showAvatar && user?.image ? (
           <img
-            src={user.picture}
+            src={user.image}
             alt={user.name || user.email || 'User avatar'}
             style={{
               width: '24px',

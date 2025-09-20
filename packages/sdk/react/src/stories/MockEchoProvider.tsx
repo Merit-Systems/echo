@@ -1,4 +1,4 @@
-import { FreeBalance } from '@merit-systems/echo-typescript-sdk';
+import { GetBalanceByIdFreeResponse } from '@merit-systems/echo-typescript-sdk';
 import { User } from 'oidc-client-ts';
 import { ReactNode } from 'react';
 import { EchoContext, EchoContextValue } from '../context';
@@ -19,7 +19,7 @@ const mockUser: EchoUser = {
   id: 'mock-user-123',
   email: 'demo@echo-systems.com',
   name: 'Demo User',
-  picture: 'https://avatars.githubusercontent.com/u/11855252?v=4',
+  image: 'https://avatars.githubusercontent.com/u/11855252?v=4',
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',
 };
@@ -28,9 +28,10 @@ const mockBalance: EchoBalance = {
   totalPaid: 150,
   totalSpent: 0,
   balance: 150,
+  currency: 'USD',
 };
 
-const mockFreeTierBalance: FreeBalance = {
+const mockFreeTierBalance: GetBalanceByIdFreeResponse = {
   spendPoolBalance: 100,
   userSpendInfo: {
     userId: 'mock-user-123',
@@ -133,14 +134,14 @@ export const mockStates = {
   lowBalance: createMockContext({
     isLoggedIn: true,
     user: mockUser as EchoUser,
-    balance: { totalPaid: 5, totalSpent: 0, balance: 5 },
+    balance: { totalPaid: 5, totalSpent: 0, balance: 5, currency: 'USD' },
     isLoading: false,
   }),
 
   freeTierOnly: createMockContext({
     isLoggedIn: true,
     user: mockUser as EchoUser,
-    balance: { totalPaid: 0, totalSpent: 0, balance: 0 },
+    balance: { totalPaid: 0, totalSpent: 0, balance: 0, currency: 'USD' },
     freeTierBalance: {
       spendPoolBalance: 50,
       userSpendInfo: {

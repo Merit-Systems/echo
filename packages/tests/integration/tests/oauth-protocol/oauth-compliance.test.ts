@@ -49,7 +49,7 @@ describe('OAuth 2.0 Protocol Compliance', () => {
           code_challenge: '',
           code_challenge_method: 'S256',
         })
-      ).rejects.toThrow(/code_challenge must be at least 43 characters/i);
+      ).rejects.toThrow(/code_challenge must be base64url encoded/i);
     });
 
     test('validates client_id against database', async () => {
@@ -64,7 +64,9 @@ describe('OAuth 2.0 Protocol Compliance', () => {
           code_challenge: codeChallenge,
           code_challenge_method: 'S256',
         })
-      ).rejects.toThrow(/not_found.*Echo app not found/i);
+      ).rejects.toThrow(
+        /\{"error":"invalid_client","error_description":"Echo app not found"\}/i
+      );
     });
 
     test('enforces redirect URI allowlist', async () => {
@@ -145,8 +147,8 @@ describe('OAuth 2.0 Protocol Compliance', () => {
         if (response.status === 400) {
           // Parameter validation rejected it (ideal case)
           const result = await response.json();
-          expect(result.message).toBe('Invalid query');
-          expect(JSON.stringify(result.errors)).toMatch(
+          expect(result.error).toBe('invalid_request');
+          expect(result.error_description).toMatch(
             /Only S256 code challenge method is supported/i
           );
         } else if (response.status === 302) {
@@ -200,8 +202,8 @@ describe('OAuth 2.0 Protocol Compliance', () => {
         expect(response.status).toBe(400);
 
         const result = await response.json();
-        expect(result.message).toBe('Invalid query');
-        expect(JSON.stringify(result.errors)).toMatch(
+        expect(result.error).toBe('unsupported_response_type');
+        expect(result.error_description).toMatch(
           /Only authorization code flow \(response_type=code\) is supported/i
         );
       }

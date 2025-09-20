@@ -1,5 +1,5 @@
 import { HttpClient } from '../http-client';
-import { Balance, FreeBalance, GetFreeBalanceRequest } from '../types';
+import { ApiRoutes } from '../api-types';
 import { BaseResource } from '../utils/error-handling';
 
 export class BalanceResource extends BaseResource {
@@ -10,7 +10,7 @@ export class BalanceResource extends BaseResource {
   /**
    * Get current balance for the authenticated user across all apps
    */
-  async getBalance(): Promise<Balance> {
+  async getBalance(): Promise<ApiRoutes['GET /balance']['response']> {
     return this.handleRequest(
       () => this.http.get('/api/v1/balance'),
       'fetching balance',
@@ -22,10 +22,11 @@ export class BalanceResource extends BaseResource {
    * Get free tier balance for a specific app
    * @param echoAppId The Echo app ID to get free tier balance for
    */
-  async getFreeBalance(echoAppId: string): Promise<FreeBalance> {
-    const request: GetFreeBalanceRequest = { echoAppId };
+  async getFreeBalance(
+    echoAppId: string
+  ): Promise<ApiRoutes['GET /balance/{id}/free']['response']> {
     return this.handleRequest(
-      () => this.http.post('/api/v1/balance/free', request),
+      () => this.http.get(`/api/v1/balance/${echoAppId}/free`),
       'fetching free tier balance',
       '/api/v1/balance/free'
     );

@@ -74,6 +74,7 @@ COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY tsconfig.base.json ./
+COPY turbo.json ./
 
 # Copy all project files first
 COPY packages/app/control/ ./packages/app/control/
@@ -82,27 +83,20 @@ COPY packages/sdk/ts/ ./packages/sdk/ts/
 COPY packages/sdk/next/ ./packages/sdk/next/
 COPY packages/sdk/react/ ./packages/sdk/react/
 
-# Install dependencies for both projects (including dev dependencies for build)
-WORKDIR /app/packages/app/control
+# Install all workspace dependencies
+WORKDIR /app
 RUN pnpm install
 
-WORKDIR /app/packages/app/server
-RUN pnpm install
+# Build all packages in correct dependency order using Turbo
+WORKDIR /app
+RUN pnpm run build
 
-# Step 1: Build echo-control and generate Prisma client
+# Generate Prisma client and copy schema for server
 WORKDIR /app/packages/app/control
 RUN pnpm run prisma:generate
-RUN pnpm run build
-
-WORKDIR /app/packages/sdk/ts
-RUN pnpm install
-RUN pnpm run build
 
 WORKDIR /app/packages/app/server
 RUN pnpm run copy-prisma
-
-# Step 3: Build echo-server
-RUN pnpm run build
 
 # Set NODE_OPTIONS to enable OpenTelemetry for echo-server
 

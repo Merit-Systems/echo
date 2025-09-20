@@ -1,9 +1,5 @@
 import { TEST_CONFIG } from '../config/index.js';
-import {
-  Balance,
-  EchoClient,
-  FreeBalance,
-} from '@merit-systems/echo-typescript-sdk';
+import { EchoClient } from '@merit-systems/echo-typescript-sdk';
 
 export interface EchoControlApiClient {
   baseUrl: string;
@@ -221,7 +217,7 @@ export class EchoControlApiClient {
   }
 
   // Balance endpoint (requires authentication)
-  async getBalance(authToken: string): Promise<Balance> {
+  async getBalance(authToken: string) {
     const echoClient = new EchoClient({
       apiKey: authToken,
       baseUrl: this.baseUrl,
@@ -255,10 +251,7 @@ export class EchoControlApiClient {
     };
   }
 
-  async getFreeTierBalance(
-    authToken: string,
-    echoAppId: string
-  ): Promise<FreeBalance> {
+  async getFreeTierBalance(authToken: string, echoAppId: string) {
     const echoClient = new EchoClient({
       apiKey: authToken,
       baseUrl: this.baseUrl,

@@ -1,7 +1,6 @@
-import type { FreeBalance } from '@merit-systems/echo-typescript-sdk';
-import { EchoClient, parseEchoError } from '@merit-systems/echo-typescript-sdk';
 import useSWR from 'swr';
-import { EchoBalance } from '../types';
+
+import { EchoClient, parseEchoError } from '@merit-systems/echo-typescript-sdk';
 
 export function useEchoBalance(echoClient: EchoClient | null, appId: string) {
   const { data, error, isLoading, mutate } = useSWR(
