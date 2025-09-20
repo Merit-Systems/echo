@@ -9,8 +9,6 @@
     "lint": "biome check --write"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.26",
-    "@ai-sdk/react": "^2.0.44",
     "@merit-systems/echo-next-sdk": "^0.0.20",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.12",

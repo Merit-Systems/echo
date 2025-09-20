@@ -1,6 +1,6 @@
 {
   "name": "@merit-systems/echo-next-sdk",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "description": "Next.js SDK for Echo",
   "type": "module",
   "main": "./dist/index.js",
@@ -46,9 +46,28 @@
     "swr": "^2.3.1"
   },
   "peerDependencies": {
+    "@ai-sdk/anthropic": "^2.0.0",
+    "@ai-sdk/google": "^2.0.0",
+    "@ai-sdk/openai": "^2.0.0",
+    "@openrouter/ai-sdk-provider": "^1.0.0",
+    "ai": "^5.0.0",
     "next": ">=15.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@ai-sdk/anthropic": {
+      "optional": true
+    },
+    "@ai-sdk/google": {
+      "optional": true
+    },
+    "@ai-sdk/openai": {
+      "optional": true
+    },
+    "@openrouter/ai-sdk-provider": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

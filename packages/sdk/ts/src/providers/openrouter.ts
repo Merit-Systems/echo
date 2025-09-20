@@ -3,8 +3,8 @@ import {
   OpenRouterProvider,
 } from '@openrouter/ai-sdk-provider';
 import { ROUTER_BASE_URL } from 'config';
-import { echoFetch } from './index';
 import { EchoConfig } from '../types';
+import { echoFetch } from './index';
 
 export function createEchoOpenRouter(
   { appId, baseRouterUrl = ROUTER_BASE_URL }: EchoConfig,

@@ -44,7 +44,11 @@
   "pnpm": {
     "overrides": {
       "@types/react": "19.1.10",
-      "@types/react-dom": "19.1.7"
+      "@types/react-dom": "19.1.7",
+      "@ai-sdk/openai": "2.0.32",
+      "@ai-sdk/anthropic": "2.0.17",
+      "@ai-sdk/google": "2.0.14",
+      "@openrouter/ai-sdk-provider": "1.2.0"
     },
     "engine-strict": true
   }

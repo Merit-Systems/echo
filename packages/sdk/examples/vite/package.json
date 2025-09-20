@@ -1,5 +1,5 @@
 {
-  "name": "echo-vite-template",
+  "name": "echo-vite-example",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@merit-systems/echo-react-sdk": "workspace:*",
-    "ai": "^5.0.20",
+    "ai": "^5.0.47",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
