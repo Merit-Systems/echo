@@ -14,6 +14,7 @@ import {
 } from './middleware/transaction-escrow-middleware';
 import standardRouter from './routers/common';
 import inFlightMonitorRouter from './routers/in-flight-monitor';
+import createX402Router from './routers/x402';
 import { checkBalance } from './services/BalanceCheckService';
 import { modelRequestService } from './services/ModelRequestService';
 
@@ -63,6 +64,9 @@ app.use(standardRouter);
 
 // Use in-flight monitor router for monitoring endpoints
 app.use(inFlightMonitorRouter);
+
+// Use X402 router for facilitator endpoints
+app.use('/x402', createX402Router(prisma));
 
 // Main route handler - handles authentication, escrow, and business logic
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
