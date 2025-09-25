@@ -15,8 +15,9 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 ## Operations
 
 ### Echo
+
 - Echo Chat Model
-    - Send a chat message to any AI model through Echo
+  - Send a chat message to any AI model through Echo
 
 ## Credentials
 
@@ -30,4 +31,4 @@ Compatible with n8n@1.60.0 or later
 
 ## Resources
 
-* [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
+- [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)

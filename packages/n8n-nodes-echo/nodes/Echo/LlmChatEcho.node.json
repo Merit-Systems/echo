@@ -1,18 +1,18 @@
 {
-	"node": "@merit-systems/n8n-nodes-echo",
-	"nodeVersion": "1.0",
-	"codexVersion": "1.0",
-	"categories": ["Development", "Developer Tools"],
-	"resources": {
-		"credentialDocumentation": [
-			{
-				"url": "https://echo.merit.systems/docs"
-			}
-		],
-		"primaryDocumentation": [
-			{
-				"url": "https://echo.merit.systems/docs"
-			}
-		]
-	}
+  "node": "@merit-systems/n8n-nodes-echo",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "categories": ["Development", "Developer Tools"],
+  "resources": {
+    "credentialDocumentation": [
+      {
+        "url": "https://echo.merit.systems/docs"
+      }
+    ],
+    "primaryDocumentation": [
+      {
+        "url": "https://echo.merit.systems/docs"
+      }
+    ]
+  }
 }
