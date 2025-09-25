@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: nextjs-api-template-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nextjs_api_template
+      POSTGRES_USER: api_user
+      POSTGRES_PASSWORD: api_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U api_user -d nextjs_api_template"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data: 
