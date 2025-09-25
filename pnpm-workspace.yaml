@@ -3,6 +3,7 @@ packages:
   - packages/sdk/*
   - packages/sdk/examples/*
   - packages/tests/*
+  - packages/n8n-nodes-echo/
 allowBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'
