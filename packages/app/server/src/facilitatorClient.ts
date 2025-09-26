@@ -4,6 +4,7 @@ export class FacilitatorClient {
     private baseUrl: string;
 
     constructor(baseUrl: string) {
+        console.log('FacilitatorClient constructor', baseUrl);
         this.baseUrl = baseUrl;
     }
 
@@ -26,6 +27,9 @@ export class FacilitatorClient {
 
         if (!res.ok) {
             const text = await res.text().catch(() => '');
+            console.log('FacilitatorClient post', res.statusText, text);
+            console.log('FacilitatorClient post', res.status);
+            console.log(res.body);
             throw new Error(`Facilitator API Error: ${res.status} ${res.statusText}\n${text}`);
         }
 

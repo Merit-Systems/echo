@@ -6,8 +6,10 @@ import { vi } from 'vitest';
 
 import { EchoControlService } from '../services/EchoControlService';
 import { X402PaymentBody } from 'types';
-import { signTransferWithAuthorization } from '../transferWithAuth';
+import { settleWithAuthorization, signTransferWithAuthorization } from '../transferWithAuth';
 import { randomBytes } from 'crypto';
+
+const prevFetch = global.fetch;
 
 // Mock the fetch module for outbound API calls
 const mockFetch = vi.fn();
@@ -518,6 +520,25 @@ describe('Server Tests', () => {
       });
 
       console.log('signature', signature);
+
+    const realFetch = (global as any).__REAL_FETCH;
+    const saved = global.fetch as any;
+    (global.fetch as any) = realFetch;
+
+      try {
+        await settleWithAuthorization({
+          to: to,
+          value: amount,
+          valid_after: 0,
+          valid_before: Math.floor(Date.now() / 1000) + 30 * 60, // unix time
+
+          // random nonce, based on EIP-3009
+          // https://eips.ethereum.org/EIPS/eip-3009#unique-random-nonce-instead-of-sequential-nonce
+          nonce: `0x${randomBytes(32).toString('hex')}`, 
+        })
+      } finally {
+        (global.fetch) = saved;
+      }
     });
   })
 });

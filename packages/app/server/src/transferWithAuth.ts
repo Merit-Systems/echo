@@ -108,7 +108,9 @@ export async function settleWithAuthorization(
   }
 
   const facilitator = new FacilitatorClient(process.env.FACILITATOR_BASE_URL!);
-  return await facilitator.settle(settleRequest);
+  const result = await facilitator.settle(settleRequest);
+  console.log('settleWithAuthorization result', result);
+  return result;
 }
 
 export async function decodeSignature(signature: string) {
