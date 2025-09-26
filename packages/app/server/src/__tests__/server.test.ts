@@ -5,6 +5,9 @@ import request from 'supertest';
 import { vi } from 'vitest';
 
 import { EchoControlService } from '../services/EchoControlService';
+import { X402PaymentBody } from 'types';
+import { signTransferWithAuthorization } from '../transferWithAuth';
+import { randomBytes } from 'crypto';
 
 // Mock the fetch module for outbound API calls
 const mockFetch = vi.fn();
@@ -487,4 +490,34 @@ describe('Server Tests', () => {
       expect(response.body?.error).toBe('Payment Required');
     });
   });
+
+  describe('X402 route', () => {
+    it('call x-402', async () => {
+      const response = await request(app)
+        .post('/catchall-test')
+        .send({});
+
+      expect(response.status).toBe(402);
+      console.log('response', response.body);
+
+      const body = response.body as {payment: X402PaymentBody};
+
+      const amount = body.payment.amount;
+      const to = body.payment.to;
+
+      // create signature
+      const signature = await signTransferWithAuthorization({
+        to: to,
+        value: amount,
+        valid_after: 0,
+        valid_before: Math.floor(Date.now() / 1000) + 30 * 60, // unix time
+
+        // random nonce, based on EIP-3009
+        // https://eips.ethereum.org/EIPS/eip-3009#unique-random-nonce-instead-of-sequential-nonce
+        nonce: `0x${randomBytes(32).toString('hex')}`, 
+      });
+
+      console.log('signature', signature);
+    });
+  })
 });

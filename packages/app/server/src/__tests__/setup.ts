@@ -4,6 +4,10 @@ import { vi } from 'vitest';
 // Load environment variables from .env.test if it exists, otherwise from .env
 dotenv.config({ path: '.env.test' });
 
+// Mock the environment variables
+process.env.NETWORK = 'base-sepolia';
+process.env.ECHO_ROUTER_BASE_URL = 'http://localhost:3000';
+
 // Mock the EchoControlService
 vi.mock('../services/EchoControlService', () => {
   return {

@@ -8,6 +8,7 @@ export const verifyUserHeaderCheck = async (
   headers: Record<string, string>,
   prisma: PrismaClient
 ): Promise<[Record<string, string>, EchoControlService]> => {
+  console.log('headers', headers);
   /**
    * Process authentication for the user (authenticated with Echo Api Key)
    *
@@ -32,11 +33,12 @@ export const verifyUserHeaderCheck = async (
     connection: _connection,
     'x-api-key': xApiKey,
     'x-goog-api-key': xGoogleApiKey,
+    'x-402-challenge': x402Challenge,
     ...restHeaders
   } = headers;
   /* eslint-enable @typescript-eslint/no-unused-vars */
 
-  if (!(authorization || xApiKey || xGoogleApiKey)) {
+  if (!(authorization || xApiKey || xGoogleApiKey || x402Challenge)) {
     logger.error(`Missing authentication headers: ${JSON.stringify(headers)}`);
     throw new UnauthorizedError('Please include auth headers.');
   }

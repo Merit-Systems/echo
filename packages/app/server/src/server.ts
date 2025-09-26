@@ -67,18 +67,21 @@ app.use(inFlightMonitorRouter);
 // Main route handler
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
   try {
+    console.log('Handling request');
     const headers = req.headers as Record<string, string>;
+
+    if (!isApiRequest(headers) && !isX402Request(headers)) {
+      console.log('Building X402 response');
+      return await buildX402Response(res);
+    }
 
     const { processedHeaders, echoControlService } = await authenticateRequest(
       headers,
       prisma
     );
 
-    if (!isApiRequest(headers) && !isX402Request(headers)) {
-      return buildX402Response(res);
-    }
-
     if (isX402Request(headers)) {
+      console.log('Handling X402 request');
       await handleX402Request({req, res, processedHeaders, echoControlService});
       return;
     }
@@ -93,6 +96,7 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
     });
 
   } catch (error) {
+    console.error('Error handling request:', error);
     return next(error);
   }
 });

@@ -4,6 +4,7 @@ import { SmartAccount } from "@coinbase/cdp-sdk/_types/client/evm/evm.types";
 import { CdpClient } from "@coinbase/cdp-sdk";
 import { WALLET_OWNER } from "./constants";
 import { WALLET_SMART_ACCOUNT } from "./constants";
+import { X402PaymentBody } from "./types";
 
 export function parseX402Headers(headers: Record<string, string>): ExactEvmPayloadAuthorization {
     return {
@@ -23,11 +24,12 @@ export function alvaroInferenceCostEstimation(): string {
 }
 
 function buildX402Challenge(params: X402ChallengeParams): string {
+  console.log('params', params);
   const esc = (value: string) => value.replace(/"/g, '\\"');
   return `X-402 realm=${esc(params.realm)}", link="${esc(params.link)}", network="${esc(params.network)}"`
 }
 
-export function buildX402Response(res: Response) {
+export async function buildX402Response(res: Response) {
   const network = process.env.NETWORK as Network;
   const costEstimation = alvaroInferenceCostEstimation();
   const paymentUrl = `${process.env.ECHO_ROUTER_BASE_URL}/api/v1/${network}/payment-link?amount=${encodeURIComponent(costEstimation)}`;
@@ -41,13 +43,17 @@ export function buildX402Response(res: Response) {
     })
   )
 
-  return res.status(402).json({
-    error: 'Payment Required',
-    payment: {
+  const paymentBody: X402PaymentBody = {
       type: 'x402',
       url: paymentUrl,
+      amount: costEstimation,
       network,
-    }
+      to: (await getSmartAccount()).smartAccount.address,
+  }
+
+  return res.status(402).json({
+    error: 'Payment Required',
+    payment: paymentBody,
   })
 }
 

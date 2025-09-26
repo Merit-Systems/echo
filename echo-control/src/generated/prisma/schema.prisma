@@ -1,0 +1,380 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String               @id @default(uuid()) @db.Uuid
+  email          String               @unique
+  name           String?
+  emailVerified  DateTime?
+  image          String?
+  isArchived     Boolean              @default(false)
+  archivedAt     DateTime?            @db.Timestamptz(6)
+  createdAt      DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime             @updatedAt @db.Timestamptz(6)
+  totalPaid      Decimal              @default(0) @db.Decimal(65, 14)
+  totalSpent     Decimal              @default(0) @db.Decimal(65, 14)
+  admin          Boolean              @default(false)
+  accounts       Account[]
+  sessions       Session[]
+  apiKeys        ApiKey[]
+  appMemberships AppMembership[]
+  payments       Payment[]
+  refreshTokens  RefreshToken[]
+  transactions   Transaction[]
+  spendPoolUsage UserSpendPoolUsage[]
+  ReferralCode   ReferralCode[]
+  appSessions    AppSession[]
+
+  @@map("users")
+}
+
+model Account {
+  userId            String   @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String   @db.Uuid
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model EchoApp {
+  id                     String    @id @default(uuid()) @db.Uuid
+  name                   String
+  description            String?
+  profilePictureUrl      String?
+  bannerImageUrl         String?
+  homepageUrl            String?
+  isPublic               Boolean   @default(false)
+  isArchived             Boolean   @default(false)
+  archivedAt             DateTime? @db.Timestamptz
+  createdAt              DateTime  @default(now()) @db.Timestamptz
+  updatedAt              DateTime  @updatedAt @db.Timestamptz
+  authorizedCallbackUrls String[]  @default([]) // Array of allowed redirect URIs
+
+  apiKeys                 ApiKey[] // API keys for the app 
+  Transactions            Transaction[] // LLM transactions for that App
+  refreshTokens           RefreshToken[] // Refresh tokens
+  appMemberships          AppMembership[] // Customers of app and owners
+  markUp                  MarkUp? // The markup rate for this app (one-to-one)
+  githubLink              GithubLink? // The GitHub link for this app (one-to-one)
+  spendPools              SpendPool[] // Spend pools associated with this app
+  ReferralCode            ReferralCode[]
+  currentReferralRewardId String?          @db.Uuid // Reference to current active referral reward
+  currentReferralReward   ReferralReward?  @relation("CurrentReferralReward", fields: [currentReferralRewardId], references: [id])
+  ReferralRewards         ReferralReward[] @relation("AppReferralRewards") // All referral rewards for this app
+  appSessions             AppSession[]
+
+  @@map("echo_apps")
+}
+
+model AppMembership {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  echoAppId   String    @db.Uuid
+  role        String
+  status      String    @default("active")
+  isArchived  Boolean   @default(false)
+  archivedAt  DateTime? @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6)
+  totalSpent  Decimal   @db.Decimal(65, 14)
+  amountSpent Decimal   @default(0.0) @db.Decimal(65, 14)
+  referrerId  String?   @db.Uuid
+
+  referrer ReferralCode? @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  echoApp  EchoApp       @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, echoAppId])
+  @@map("app_memberships")
+}
+
+model ApiKey {
+  id           String        @id @default(uuid()) @db.Uuid
+  /// Deterministic HMAC-SHA256 hash of the API key for secure storage and O(1) lookup
+  keyHash      String        @unique
+  name         String?
+  isArchived   Boolean       @default(false)
+  archivedAt   DateTime?     @db.Timestamptz(6)
+  lastUsed     DateTime?     @db.Timestamptz(6)
+  metadata     Json?
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
+  userId       String        @db.Uuid
+  echoAppId    String        @db.Uuid
+  scope        String        @default("owner")
+  echoApp      EchoApp       @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Transactions Transaction[]
+
+  @@map("api_keys")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  token      String    @unique
+  isArchived Boolean   @default(false)
+  archivedAt DateTime? @db.Timestamptz(6)
+  expiresAt  DateTime  @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(6)
+  userId     String    @db.Uuid
+  echoAppId  String    @db.Uuid
+  scope      String    @default("llm:invoke offline_access")
+  echoApp    EchoApp   @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sessionId String?     @db.Uuid
+  session   AppSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, echoAppId, isArchived])
+  @@index([sessionId, isArchived])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model AppSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  echoAppId  String    @db.Uuid
+  deviceName String?
+  userAgent  String?
+  ipAddress  String?
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(6)
+  lastSeenAt DateTime? @db.Timestamptz(6)
+  revokedAt  DateTime? @db.Timestamptz(6)
+  isArchived Boolean   @default(false)
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  echoApp       EchoApp        @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+
+  @@index([userId, echoAppId])
+  @@index([echoAppId, isArchived])
+  @@map("app_sessions")
+}
+
+model Payment {
+  id          String     @id @default(uuid()) @db.Uuid
+  paymentId   String     @unique
+  amount      Decimal    @db.Decimal(65, 14)
+  currency    String     @default("usd")
+  status      String
+  description String?
+  isArchived  Boolean    @default(false)
+  archivedAt  DateTime?  @db.Timestamptz(6)
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(6)
+  userId      String     @db.Uuid
+  spendPoolId String?    @db.Uuid
+  spendPool   SpendPool? @relation(fields: [spendPoolId], references: [id])
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model MarkUp {
+  id           String        @id @default(uuid()) @db.Uuid
+  amount       Decimal       @default(1.0) @db.Decimal(65, 14)
+  description  String?
+  isArchived   Boolean       @default(false)
+  archivedAt   DateTime?     @db.Timestamptz(6)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
+  echoAppId    String        @unique @db.Uuid
+  echoApp      EchoApp       @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  Transactions Transaction[]
+
+  @@map("markups")
+}
+
+model GithubLink {
+  id           String        @id @default(uuid()) @db.Uuid
+  githubId     Int
+  githubType   GithubType
+  githubUrl    String
+  description  String?
+  isArchived   Boolean       @default(false)
+  archivedAt   DateTime?     @db.Timestamptz(6)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
+  echoAppId    String        @unique @db.Uuid
+  echoApp      EchoApp       @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  Transactions Transaction[]
+
+  @@map("github_links")
+}
+
+enum GithubType {
+  user
+  repo
+}
+
+model Transaction {
+  id                    String               @id @default(uuid()) @db.Uuid
+  transactionMetadataId String?              @db.Uuid
+  totalCost             Decimal              @default(0.0) @db.Decimal(65, 14)
+  appProfit             Decimal              @default(0.0) @db.Decimal(65, 14)
+  markUpProfit          Decimal              @default(0.0) @db.Decimal(65, 14)
+  referralProfit        Decimal              @default(0.0) @db.Decimal(65, 14)
+  rawTransactionCost    Decimal              @default(0.0) @db.Decimal(65, 14)
+  status                String?
+  isArchived            Boolean              @default(false)
+  archivedAt            DateTime?            @db.Timestamptz(6)
+  createdAt             DateTime             @default(now()) @db.Timestamptz(6)
+  userId                String               @db.Uuid
+  echoAppId             String               @db.Uuid
+  apiKeyId              String?              @db.Uuid
+  markUpId              String?              @db.Uuid
+  githubLinkId          String?              @db.Uuid
+  spendPoolId           String?              @db.Uuid
+  userSpendPoolUsageId  String?              @db.Uuid
+  referralCodeId        String?              @db.Uuid
+  referrerRewardId      String?              @db.Uuid
+  apiKey                ApiKey?              @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  echoApp               EchoApp              @relation(fields: [echoAppId], references: [id])
+  githubLink            GithubLink?          @relation(fields: [githubLinkId], references: [id])
+  markUp                MarkUp?              @relation(fields: [markUpId], references: [id])
+  spendPool             SpendPool?           @relation(fields: [spendPoolId], references: [id])
+  transactionMetadata   TransactionMetadata? @relation(fields: [transactionMetadataId], references: [id])
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userSpendPoolUsage    UserSpendPoolUsage?  @relation(fields: [userSpendPoolUsageId], references: [id])
+  referralCode          ReferralCode?        @relation(fields: [referralCodeId], references: [id])
+  referrerReward        ReferralReward?      @relation(fields: [referrerRewardId], references: [id])
+
+  @@map("transactions")
+}
+
+model SpendPool {
+  id                String               @id @default(uuid()) @db.Uuid
+  name              String
+  description       String?
+  totalPaid         Decimal              @default(0.0) @db.Decimal(65, 14)
+  perUserSpendLimit Decimal?             @db.Decimal(65, 14)
+  totalSpent        Decimal              @default(0.0) @db.Decimal(65, 14)
+  isArchived        Boolean              @default(false)
+  archivedAt        DateTime?            @db.Timestamptz(6)
+  createdAt         DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime             @updatedAt @db.Timestamptz(6)
+  echoAppId         String               @db.Uuid
+  payments          Payment[]
+  echoApp           EchoApp              @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  Transactions      Transaction[]
+  userUsage         UserSpendPoolUsage[]
+
+  @@map("spend_pools")
+}
+
+model UserSpendPoolUsage {
+  id           String        @id @default(uuid()) @db.Uuid
+  userId       String        @db.Uuid
+  spendPoolId  String        @db.Uuid
+  totalSpent   Decimal       @default(0.0) @db.Decimal(65, 14)
+  isArchived   Boolean       @default(false)
+  archivedAt   DateTime?     @db.Timestamptz(6)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
+  Transactions Transaction[]
+  spendPool    SpendPool     @relation(fields: [spendPoolId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, spendPoolId])
+  @@map("user_spend_pool_usage")
+}
+
+model TransactionMetadata {
+  id           String        @id @default(uuid()) @db.Uuid
+  providerId   String
+  provider     String
+  model        String
+  inputTokens  Int
+  outputTokens Int
+  totalTokens  Int
+  toolCost     Decimal       @default(0.0) @db.Decimal(65, 14)
+  prompt       String?
+  isArchived   Boolean       @default(false)
+  archivedAt   DateTime?     @db.Timestamptz(6)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
+  transactions Transaction[]
+
+  @@map("transaction_metadata")
+}
+
+model ReferralCode {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @unique
+  userId      String?   @db.Uuid
+  echoAppId   String?   @db.Uuid
+  grantType   String // 'credits' or 'referral'
+  grantAmount Decimal?  @default(0.0) @db.Decimal(65, 14) // Amount of credits to grant if grantType is 'credits'
+  reusable    Boolean   @default(false)
+  expiresAt   DateTime  @db.Timestamptz
+  isUsed      Boolean   @default(false)
+  isArchived  Boolean   @default(false)
+  archivedAt  DateTime? @db.Timestamptz
+  usedAt      DateTime? @db.Timestamptz
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @db.Timestamptz
+
+  appMemberships AppMembership[]
+
+  user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  echoApp     EchoApp?      @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  Transaction Transaction[]
+
+  @@map("referral_codes")
+}
+
+model ReferralReward {
+  id          String    @id @default(uuid()) @db.Uuid
+  amount      Decimal   @default(1.0) @db.Decimal(65, 14) // Mark-up multiplier for per-token charging - supports unlimited precision
+  description String? // Optional description for the markup rate
+  isArchived  Boolean   @default(false)
+  archivedAt  DateTime? @db.Timestamptz
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @db.Timestamptz
+  echoAppId   String    @db.Uuid // Reference to the app this reward belongs to (many-to-one)
+
+  echoApp        EchoApp       @relation("AppReferralRewards", fields: [echoAppId], references: [id], onDelete: Cascade) // App this reward belongs to
+  currentForApps EchoApp[]     @relation("CurrentReferralReward") // Apps that have this as current reward
+  Transaction    Transaction[]
+
+  @@map("referral_rewards")
+}

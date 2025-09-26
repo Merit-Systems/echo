@@ -114,8 +114,10 @@ export interface X402ChallengeParams {
 
 export interface X402PaymentBody {
   type: 'x402';
+  amount: string;
   url: string;
   network: Network;
+  to: Address;
 }
 
 export enum X402Version {
