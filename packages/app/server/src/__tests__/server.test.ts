@@ -475,4 +475,16 @@ describe('Server Tests', () => {
       expect(response.status).toBe(200);
     });
   });
+
+  describe('Catch-all route', () => {
+    it('returns X402 challenge when authorized but no request-type headers', async () => {
+      const response = await request(app)
+        .post('/catchall-test')
+        .set('Authorization', `Bearer ${TEST_TOKEN}`)
+        .send({});
+
+      expect(response.status).toBe(402);
+      expect(response.body?.error).toBe('Payment Required');
+    });
+  });
 });

@@ -1,11 +1,11 @@
-import { FacilitatorClient } from "facilitatorClient";
-import { TransactionEscrowMiddleware } from "middleware/transaction-escrow-middleware";
-import { modelRequestService } from "services/ModelRequestService";
-import { HandlerInput, X402Version } from "types";
-import { parseX402Headers } from "utils";
-import { settleWithAuthorization } from "transferWithAuth";
-import { checkBalance } from "services/BalanceCheckService";
-import { prisma } from "server";
+import { FacilitatorClient } from "./facilitatorClient";
+import { TransactionEscrowMiddleware } from "./middleware/transaction-escrow-middleware";
+import { modelRequestService } from "./services/ModelRequestService";
+import { HandlerInput, X402Version } from "./types";
+import { parseX402Headers } from "./utils";
+import { settleWithAuthorization } from "./transferWithAuth";
+import { checkBalance } from "./services/BalanceCheckService";
+import { prisma } from "./server";
 
 export async function handleX402Request(
         {req, res, processedHeaders, echoControlService}: HandlerInput

@@ -1,11 +1,10 @@
-import { CdpClient } from "@coinbase/cdp-sdk";
 import { ERC3009_ABI, USDC_ADDRESS } from "./services/fund-repo/constants";
 import { encodeFunctionData } from "viem";
 import { serializeTransaction } from "viem";
 import { DOMAIN_NAME, DOMAIN_VERSION, DOMAIN_CHAIN_ID, TRANSFER_WITH_AUTHORIZATION_TYPE, TRANSFER_WITH_AUTHORIZATION_NAME } from "./constants";
-import { Network, Schema, SettleRequest, TransferWithAuthorization, X402Version } from "types";
-import { FacilitatorClient } from "facilitatorClient";
-import { getSmartAccount } from "utils";
+import { Network, Schema, SettleRequest, TransferWithAuthorization, X402Version } from "./types";
+import { FacilitatorClient } from "./facilitatorClient";
+import { getSmartAccount } from "./utils";
 
 export async function signTransferWithAuthorization(
     transfer: TransferWithAuthorization,
