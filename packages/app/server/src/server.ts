@@ -14,10 +14,13 @@ import {
 } from './middleware/transaction-escrow-middleware';
 import standardRouter from './routers/common';
 import inFlightMonitorRouter from './routers/in-flight-monitor';
+import { buildX402Response, isApiRequest, isX402Request } from 'utils';
+import { handleX402Request, handleApiKeyRequest } from './handlers';
 import { checkBalance } from './services/BalanceCheckService';
 import { modelRequestService } from './services/ModelRequestService';
 import { initializeProvider } from './services/ProviderInitializationService';
 import { makeProxyPassthroughRequest } from './services/ProxyPassthroughService';
+import { getRequestMaxCost } from './services/PricingService';
 
 dotenv.config();
 
@@ -66,61 +69,57 @@ app.use(standardRouter);
 // Use in-flight monitor router for monitoring endpoints
 app.use(inFlightMonitorRouter);
 
-// Main route handler - handles authentication, escrow, and business logic
+// Main route handler
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
   try {
-    // Step 1: Authentication
-
+    const headers = req.headers as Record<string, string>;
     // VERIFY
     const { processedHeaders, echoControlService } = await authenticateRequest(
-      req.headers as Record<string, string>,
+      headers,
       prisma
     );
-    const balanceCheckResult = await checkBalance(echoControlService);
-    
-    // Step 2: Set up escrow context and apply escrow middleware logic
-    transactionEscrowMiddleware.setupEscrowContext(
-      req,
-      echoControlService.getUserId()!,
-      echoControlService.getEchoAppId()!,
-      balanceCheckResult.effectiveBalance ?? 0
-    );
 
-    // Apply escrow middleware logic inline
-    await transactionEscrowMiddleware.handleInFlightRequestIncrement(req, res);
+    const { provider, isStream, isPassthroughProxyRoute, providerId } =
+      await initializeProvider(req, res, echoControlService);
+    const maxCost = getRequestMaxCost(req, provider);
 
-
-    // NEXT    
-    const { provider, isStream, isPassthroughProxyRoute, providerId } = await initializeProvider(
-      req,
-      res,
-      echoControlService
-    );
-
-    if (isPassthroughProxyRoute && providerId) {
-      return await makeProxyPassthroughRequest(req, res, provider, processedHeaders, providerId);
+    if (!isApiRequest(headers) && !isX402Request(headers)) {
+      return buildX402Response(res, maxCost);
     }
 
-
-    // Step 3: Execute business logic
-    const { transaction, data } =
-      await modelRequestService.executeModelRequest(
+    if (isX402Request(headers)) {
+      await handleX402Request({
         req,
         res,
         processedHeaders,
+        echoControlService,
+        maxCost,
+        isPassthroughProxyRoute,
+        providerId,
         provider,
-        isStream
-      );
-    
-    modelRequestService.handleResolveResponse(
-        res,
         isStream,
-        data,
-      );
+      });
+      return;
+    }
 
-    // SETTLE
-    await echoControlService.createTransaction(transaction);
-   
+    if (isApiRequest(headers)) {
+      await handleApiKeyRequest({
+        req,
+        res,
+        processedHeaders,
+        echoControlService,
+        maxCost,
+        isPassthroughProxyRoute,
+        providerId,
+        provider,
+        isStream,
+      });
+      return;
+    }
+
+    return res.status(400).json({
+      error: 'No request type found',
+    });
   } catch (error) {
     return next(error);
   }
@@ -159,6 +158,10 @@ app.use((error: Error, req: Request, res: Response) => {
       error: 'Internal Server Error',
     });
   }
+
+  return res.status(500).json({
+    erorr: 'Internal Server Error',
+  });
 });
 
 // Graceful shutdown handler

@@ -1,4 +1,8 @@
 import { Decimal } from '@prisma/client/runtime/library';
+import { EscrowRequest } from 'middleware/transaction-escrow-middleware';
+import { EchoControlService } from 'services/EchoControlService';
+import { Response } from 'express';
+import { BaseProvider } from 'providers/BaseProvider';
 
 export interface EchoApp {
   id: string;
@@ -45,7 +49,6 @@ export interface Balance {
   balance: number;
 }
 
-
 export interface TransactionMetadata {
   providerId: string;
   provider: string;
@@ -61,7 +64,7 @@ export interface LlmTransactionMetadata extends TransactionMetadata {
   toolCost?: Decimal;
 }
 
-export interface VeoTransactionMetadata extends TransactionMetadata{
+export interface VeoTransactionMetadata extends TransactionMetadata {
   durationSeconds: number;
   generateAudio: boolean;
 }
@@ -108,10 +111,127 @@ export interface EchoAccessJwtPayload {
 }
 
 // Type guard functions for transaction metadata
-export function isLlmTransactionMetadata(metadata: LlmTransactionMetadata | VeoTransactionMetadata): metadata is LlmTransactionMetadata {
+export function isLlmTransactionMetadata(
+  metadata: LlmTransactionMetadata | VeoTransactionMetadata
+): metadata is LlmTransactionMetadata {
   return 'inputTokens' in metadata;
 }
 
-export function isVeoTransactionMetadata(metadata: LlmTransactionMetadata | VeoTransactionMetadata): metadata is VeoTransactionMetadata {
+export function isVeoTransactionMetadata(
+  metadata: LlmTransactionMetadata | VeoTransactionMetadata
+): metadata is VeoTransactionMetadata {
   return 'durationSeconds' in metadata;
 }
+
+export enum Network {
+  BASE = 'base',
+  BASE_SEPOLIA = 'base-sepolia',
+}
+
+export interface X402ChallengeParams {
+  realm: string;
+  link: string;
+  network: Network;
+}
+
+export interface X402PaymentBody {
+  type: 'x402';
+  url: string;
+  network: Network;
+}
+
+export enum X402Version {
+  V1 = 'V1',
+}
+
+export enum Schema {
+  Exact = 'Exact',
+}
+
+export type Address = string;
+export type TokenAmount = string;
+export type Url = string;
+export type Nonce = string;
+
+export interface ExactEvmPayloadAuthorization {
+  from: Address;
+  to: Address;
+  value: TokenAmount;
+  valid_after: number;
+  valid_before: number;
+  nonce: Nonce;
+}
+
+export interface ExactEvmPayload {
+  signature: string;
+  authorization: ExactEvmPayloadAuthorization;
+}
+
+export interface PaymentPayload {
+  x402_version: X402Version;
+  schema: Schema;
+  network: Network;
+  payload: ExactEvmPayload;
+}
+
+export interface PaymentRequirements {
+  schema: Schema;
+  network: Network;
+  max_amount_required: TokenAmount;
+  resource: Url;
+  description: string;
+  mime_type: string;
+  output_schema?: unknown;
+  pay_to: Address;
+  max_timeout_seconds: number;
+  asset: Address;
+  extra?: unknown;
+}
+
+export interface VerifyResponse {
+  verified: boolean;
+  transaction_id?: string;
+}
+
+export interface VerifyRequest {
+  x402_version: X402Version;
+  payment_payload: PaymentPayload;
+  payment_requirements: PaymentRequirements;
+}
+
+export type SettleRequest = VerifyRequest;
+export type SettleResponse = VerifyResponse;
+
+export interface PaymentRequiredResponse {
+  error: string;
+  accepts: PaymentRequirements[];
+  x402_version: X402Version;
+}
+
+export interface SupportedPaymentKind {
+  x402_version: X402Version;
+  schema: Schema;
+  network: Network;
+  extra?: { fee_payer: Address };
+}
+
+export interface SupportedPaymentKindsResponse {
+  kinds: SupportedPaymentKind[];
+}
+
+export type TransferWithAuthorization = Omit<
+  ExactEvmPayloadAuthorization,
+  'from'
+>;
+
+export type HandlerInput = {
+  req: EscrowRequest;
+  res: Response;
+  processedHeaders: Record<string, string>;
+  echoControlService: EchoControlService;
+  maxCost: Decimal;
+  isPassthroughProxyRoute: boolean;
+  providerId: string | null;
+  provider: BaseProvider;
+  isStream: boolean;
+};
