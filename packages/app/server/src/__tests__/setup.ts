@@ -7,6 +7,7 @@ dotenv.config({ path: '.env.test' });
 // Mock the environment variables
 process.env.NETWORK = 'base-sepolia';
 process.env.ECHO_ROUTER_BASE_URL = 'http://localhost:3000';
+process.env.USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'; // sepolia
 
 // Mock the EchoControlService
 vi.mock('../services/EchoControlService', () => {

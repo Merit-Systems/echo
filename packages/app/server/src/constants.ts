@@ -13,6 +13,6 @@ export const TRANSFER_WITH_AUTHORIZATION_TYPE = {
         { name: 'value', type: 'uint256' },
         { name: 'validAfter', type: 'uint256' },
         { name: 'validBefore', type: 'uint256' },
-        { name: 'nonce', type: 'uint256' },
+        { name: 'nonce', type: 'bytes32' },
     ]
 };

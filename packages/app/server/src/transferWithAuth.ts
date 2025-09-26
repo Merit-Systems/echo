@@ -1,7 +1,7 @@
 import { ERC3009_ABI, USDC_ADDRESS } from "./services/fund-repo/constants";
 import { encodeFunctionData } from "viem";
 import { serializeTransaction } from "viem";
-import { DOMAIN_NAME, DOMAIN_VERSION, DOMAIN_CHAIN_ID, TRANSFER_WITH_AUTHORIZATION_TYPE, TRANSFER_WITH_AUTHORIZATION_NAME } from "./constants";
+import { DOMAIN_NAME, DOMAIN_VERSION, DOMAIN_CHAIN_ID, TRANSFER_WITH_AUTHORIZATION_TYPE, TRANSFER_WITH_AUTHORIZATION_NAME, WALLET_OWNER } from "./constants";
 import { Network, Schema, SettleRequest, TransferWithAuthorization, X402Version } from "./types";
 import { FacilitatorClient } from "./facilitatorClient";
 import { getSmartAccount } from "./utils";
@@ -9,7 +9,8 @@ import { getSmartAccount } from "./utils";
 export async function signTransferWithAuthorization(
     transfer: TransferWithAuthorization,
 ) {
-    const {cdp, smartAccount} = await getSmartAccount();
+    const {cdp} = await getSmartAccount();
+    const owner = await cdp.evm.getOrCreateAccount({ name: WALLET_OWNER });
 
     const domain = {
         name: DOMAIN_NAME,
@@ -19,7 +20,7 @@ export async function signTransferWithAuthorization(
     }
 
     const message = {
-        from: smartAccount.address,
+        from: owner.address,
         to: transfer.to,
         value: transfer.value,
         validAfter: transfer.valid_after,
@@ -28,7 +29,7 @@ export async function signTransferWithAuthorization(
     }
 
     const authoriztionSignature = await cdp.evm.signTypedData({
-        address: smartAccount.address,
+        address: owner.address,
         domain,
         types: TRANSFER_WITH_AUTHORIZATION_TYPE,
         primaryType: TRANSFER_WITH_AUTHORIZATION_NAME,
@@ -39,7 +40,7 @@ export async function signTransferWithAuthorization(
         abi: ERC3009_ABI,
         functionName: 'transferWithAuthorization',
         args: [
-            smartAccount.address,
+            owner.address,
             transfer.to as `0x${string}`,
             BigInt(transfer.value),
             BigInt(transfer.valid_after),
@@ -50,11 +51,18 @@ export async function signTransferWithAuthorization(
     })
 
     return await cdp.evm.signTransaction({
-        address: smartAccount.address,
+        address: owner.address,
         transaction: serializeTransaction({
+            type: 'eip1559',
+            chainId: DOMAIN_CHAIN_ID,
             to: USDC_ADDRESS,
             data,
             value: 0n,
+
+            // gas
+            gas: 3_000_000n,
+            maxFeePerGas: 2_000_000_000n, // 2 Gwei
+            maxPriorityFeePerGas: 1_000_000_000n, // 1 Gwei
         }),
     }).then(tx => tx.signature);
 }
@@ -62,7 +70,8 @@ export async function signTransferWithAuthorization(
 export async function settleWithAuthorization(
   transfer: TransferWithAuthorization,
 ) {
-  const {smartAccount} = await getSmartAccount();
+  const {cdp, smartAccount} = await getSmartAccount();
+  const owner = await cdp.evm.getOrCreateAccount({ name: WALLET_OWNER });
 
   const signature = await signTransferWithAuthorization(transfer);
   const network = process.env.NETWORK as Network;
@@ -76,7 +85,7 @@ export async function settleWithAuthorization(
       payload: {
         signature: signature,
         authorization: {
-          from: smartAccount.address,
+          from: owner.address,
           to: transfer.to,
           value: transfer.value,
           valid_after: transfer.valid_after,
