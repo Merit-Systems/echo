@@ -39,6 +39,8 @@
     "use-stick-to-bottom": "^1.1.1",
     "viem": "~2.33.3",
     "wagmi": "^2.17.5",
+    "x402-fetch": "^0.6.0",
+    "x402-next": "^0.6.5",
     "zod": "^4.1.5"
   },
   "devDependencies": {

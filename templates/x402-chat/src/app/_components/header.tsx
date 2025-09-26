@@ -1,6 +1,6 @@
 import { EchoAccount } from '@/components/echo-account-next';
 import { isSignedIn } from '@/echo';
-import { ConnectWallet } from '@/components/ConnectWallet';
+import { ConnectWallet } from '@/app/_components/x402/ConnectWallet';
 import type { FC } from 'react';
 
 interface HeaderProps {

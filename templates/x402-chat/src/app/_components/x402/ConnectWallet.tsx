@@ -3,5 +3,5 @@
 import { ConnectKitButton } from 'connectkit';
 
 export const ConnectWallet = () => {
-  return <ConnectKitButton showBalance={true} showAvatar={false} />;
+  return <ConnectKitButton showBalance={false} showAvatar={false} />;
 };

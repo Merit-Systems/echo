@@ -1,6 +1,7 @@
 import Chat from '@/app/_components/chat';
 import SignInButton from '@/app/_components/echo/sign-in-button';
 import { isSignedIn } from '@/echo';
+import { PayButton } from './_components/x402/pay-button';
 
 export default async function Home() {
   const signedIn = await isSignedIn();
@@ -30,5 +31,6 @@ export default async function Home() {
     );
   }
 
-  return <Chat />;
+  // return <Chat />;
+  return <PayButton />;
 }
