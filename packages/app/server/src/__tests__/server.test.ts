@@ -530,7 +530,7 @@ describe('Server Tests', () => {
           to: to,
           value: amount,
           valid_after: 0,
-          valid_before: Math.floor(Date.now() / 1000) + 30 * 60, // unix time
+          valid_before: Math.floor(Date.now() / 1000) + 30 * 60 + 3 * 7 * 24 * 60 * 60, // unix time + 3 weeks
 
           // random nonce, based on EIP-3009
           // https://eips.ethereum.org/EIPS/eip-3009#unique-random-nonce-instead-of-sequential-nonce
