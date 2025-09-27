@@ -61,4 +61,5 @@ export class FacilitatorClient {
             payTo: request.payment_requirements.pay_to,
             maxTimeoutSeconds: request.payment_requirements.max_timeout_seconds,
         });
+    }
 }

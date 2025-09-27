@@ -10,7 +10,7 @@ import { prisma } from "./server";
 export async function handleX402Request(
         {req, res, processedHeaders, echoControlService}: HandlerInput
     ) {
-    const facilitator = new FacilitatorClient(process.env.FACILITATOR_BASE_URL!);
+    const facilitator = new FacilitatorClient();
 
     await facilitator.settle({
         x402_version: X402Version.V1,

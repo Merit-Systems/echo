@@ -107,7 +107,7 @@ export async function settleWithAuthorization(
     },
   }
 
-  const facilitator = new FacilitatorClient(process.env.FACILITATOR_BASE_URL!);
+  const facilitator = new FacilitatorClient();
   const result = await facilitator.settle(settleRequest);
   console.log('settleWithAuthorization result', result);
   return result;
