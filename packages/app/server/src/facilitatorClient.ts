@@ -1,11 +1,11 @@
 import { SettleRequest, SettleResponse, VerifyRequest, VerifyResponse, X402Version } from "./types";
-import { useFacilitator } from "x402/dist/cjs/verify"; // TODO: fix import
+import { facilitator } from "@coinbase/x402";
+import { useFacilitator } from "x402/verify";
 
 export class FacilitatorClient {
 
-    // TODO: fix the type mess!
     async verify(request: VerifyRequest): Promise<VerifyResponse> {
-        return await useFacilitator().verify({
+        const result = await useFacilitator(facilitator).verify({
             scheme: "exact",
             network: request.payment_requirements.network,
             x402Version: Number(X402Version.V1),
@@ -31,11 +31,13 @@ export class FacilitatorClient {
             payTo: request.payment_requirements.pay_to,
             maxTimeoutSeconds: request.payment_requirements.max_timeout_seconds,
         });
+        return result.payer
+            ? { isValid: result.isValid, transaction_id: result.payer }
+            : { isValid: result.isValid };
     }
 
-    // TODO: fix the type mess!
     async settle(request: SettleRequest): Promise<SettleResponse> {
-        return await useFacilitator().settle({
+        const result = await useFacilitator(facilitator).settle({
             scheme: "exact",
             network: request.payment_requirements.network,
             x402Version: Number(X402Version.V1),
@@ -61,5 +63,8 @@ export class FacilitatorClient {
             payTo: request.payment_requirements.pay_to,
             maxTimeoutSeconds: request.payment_requirements.max_timeout_seconds,
         });
+        return result.payer
+            ? { transaction: result.transaction, transaction_id: result.payer }
+            : { transaction: result.transaction };
     }
 }
