@@ -169,9 +169,8 @@ export interface PaymentRequirements {
 }
 
 export interface VerifyResponse {
-  verified: boolean;
+  isValid: boolean;
   transaction_id?: string;
-
 }
 
 export interface VerifyRequest {
@@ -181,7 +180,11 @@ export interface VerifyRequest {
 }
 
 export type SettleRequest = VerifyRequest;
-export type SettleResponse = VerifyResponse;
+
+export type SettleResponse = {
+  transaction_id?: string;
+  transaction?: string;
+};
 
 export interface PaymentRequiredResponse {
   error: string;

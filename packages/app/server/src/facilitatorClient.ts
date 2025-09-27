@@ -1,39 +1,64 @@
-import { SettleRequest, SettleResponse, VerifyRequest, VerifyResponse } from "types";
+import { SettleRequest, SettleResponse, VerifyRequest, VerifyResponse, X402Version } from "./types";
+import { useFacilitator } from "x402/dist/cjs/verify"; // TODO: fix import
 
 export class FacilitatorClient {
-    private baseUrl: string;
 
-    constructor(baseUrl: string) {
-        console.log('FacilitatorClient constructor', baseUrl);
-        this.baseUrl = baseUrl;
-    }
-
+    // TODO: fix the type mess!
     async verify(request: VerifyRequest): Promise<VerifyResponse> {
-        return this.post<VerifyResponse>('/verify', request);
-    }
-
-    async settle(request: SettleRequest): Promise<SettleResponse> {
-        return this.post<SettleResponse>('/settle', request);
-    }
-
-    private async post<T>(path: string, body: unknown): Promise<T> {
-        const res = await fetch(`${this.baseUrl}${path}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+        return await useFacilitator().verify({
+            scheme: "exact",
+            network: request.payment_requirements.network,
+            x402Version: Number(X402Version.V1),
+            payload: {
+                signature: request.payment_payload.payload.signature,
+                authorization: {
+                    from: request.payment_payload.payload.authorization.from,
+                    to: request.payment_payload.payload.authorization.to,
+                    value: request.payment_payload.payload.authorization.value,
+                    validAfter: request.payment_payload.payload.authorization.valid_after.toString(),
+                    validBefore: request.payment_payload.payload.authorization.valid_before.toString(),
+                    nonce: request.payment_payload.payload.authorization.nonce,
+                },
             },
-            body: JSON.stringify(body),
+        }, {
+            scheme: "exact",
+            network: request.payment_requirements.network,
+            maxAmountRequired: request.payment_requirements.max_amount_required,
+            mimeType: request.payment_requirements.mime_type,
+            description: request.payment_requirements.description,
+            resource: request.payment_requirements.resource,
+            asset: request.payment_requirements.asset,
+            payTo: request.payment_requirements.pay_to,
+            maxTimeoutSeconds: request.payment_requirements.max_timeout_seconds,
         });
-
-        if (!res.ok) {
-            const text = await res.text().catch(() => '');
-            console.log('FacilitatorClient post', res.statusText, text);
-            console.log('FacilitatorClient post', res.status);
-            console.log(res.body);
-            throw new Error(`Facilitator API Error: ${res.status} ${res.statusText}\n${text}`);
-        }
-
-        return res.json();
     }
 
+    // TODO: fix the type mess!
+    async settle(request: SettleRequest): Promise<SettleResponse> {
+        return await useFacilitator().settle({
+            scheme: "exact",
+            network: request.payment_requirements.network,
+            x402Version: Number(X402Version.V1),
+            payload: {
+                signature: request.payment_payload.payload.signature,
+                authorization: {
+                    from: request.payment_payload.payload.authorization.from,
+                    to: request.payment_payload.payload.authorization.to,
+                    value: request.payment_payload.payload.authorization.value,
+                    validAfter: request.payment_payload.payload.authorization.valid_after.toString(),
+                    validBefore: request.payment_payload.payload.authorization.valid_before.toString(),
+                    nonce: request.payment_payload.payload.authorization.nonce,
+                },
+            },
+        }, {
+            scheme: "exact",
+            network: request.payment_requirements.network,
+            maxAmountRequired: request.payment_requirements.max_amount_required,
+            mimeType: request.payment_requirements.mime_type,
+            description: request.payment_requirements.description,
+            resource: request.payment_requirements.resource,
+            asset: request.payment_requirements.asset,
+            payTo: request.payment_requirements.pay_to,
+            maxTimeoutSeconds: request.payment_requirements.max_timeout_seconds,
+        });
 }
