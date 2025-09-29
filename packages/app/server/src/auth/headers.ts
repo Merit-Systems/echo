@@ -34,9 +34,23 @@ export const verifyUserHeaderCheck = async (
     'x-api-key': xApiKey,
     'x-goog-api-key': xGoogleApiKey,
     'x-402-challenge': x402Challenge,
+    'x-payment': xPayment,
     ...restHeaders
   } = headers;
   /* eslint-enable @typescript-eslint/no-unused-vars */
+
+  // If x-payment header is present, x402 middleware has verified payment
+  // Return without API key verification
+  if (xPayment) {
+    const dummyService = new EchoControlService(prisma, '');
+    return [
+      {
+        ...restHeaders,
+        'accept-encoding': 'gzip, deflate',
+      },
+      dummyService,
+    ];
+  }
 
   if (!(authorization || xApiKey || xGoogleApiKey || x402Challenge)) {
     logger.error(`Missing authentication headers: ${JSON.stringify(headers)}`);

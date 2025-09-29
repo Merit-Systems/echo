@@ -10,13 +10,13 @@ import { prisma } from "./server";
 export async function handleX402Request(
         {req, res, processedHeaders, echoControlService}: HandlerInput
     ) {
-    const facilitator = new FacilitatorClient();
+    // const facilitator = new FacilitatorClient();
 
-    await facilitator.settle({
-        x402_version: X402Version.V1,
-        payment_payload: req.body.payment_payload,
-        payment_requirements: req.body.payment_requirements,
-    })
+    // await facilitator.settle({
+    //     x402_version: X402Version.V1,
+    //     payment_payload: req.body.payment_payload,
+    //     payment_requirements: req.body.payment_requirements,
+    // })
 
     const { transaction, isStream, data } =
       await modelRequestService.executeModelRequest(
@@ -30,9 +30,11 @@ export async function handleX402Request(
 
     const inferenceCost = transaction.rawTransactionCost;
     const refundAmount = (Number(req.body.payment_payload.value) - Number(inferenceCost)).toString()
-    const result = await settleWithAuthorization({...payload, value: refundAmount })
+    // const result = await settleWithAuthorization({...payload, value: refundAmount })
 
-    return {transaction, isStream, data, result, refundAmount};
+    // TODO: will transfer back refund later
+
+    return {transaction, isStream, data, refundAmount};
 }
 
 export async function handleApiKeyRequest(

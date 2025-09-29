@@ -37,10 +37,39 @@ export function x402DynamicPricingMiddleware() {
 
         console.log("facilitator base url", process.env.FACILITATOR_BASE_URL);
 
+        const base = new URL(process.env.FACILITATOR_BASE_URL!); // e.g. https://api.cdp.coinbase.com/platform/v2/x402
+        const host = base.host;
+        const baseUrl = `${base.origin}${base.pathname}`;
+
+        const createAuthHeaders = async () => {
+            const verifyJwt = await generateJwt({
+              apiKeyId: process.env.CDP_API_KEY_ID!,
+              apiKeySecret: process.env.CDP_API_KEY_SECRET!,
+              requestMethod: 'POST',
+              requestHost: host,
+              requestPath: `${base.pathname}/verify`,
+              expiresIn: 120_000,
+            });
+            const settleJwt = await generateJwt({
+              apiKeyId: process.env.CDP_API_KEY_ID!,
+              apiKeySecret: process.env.CDP_API_KEY_SECRET!,
+              requestMethod: 'POST',
+              requestHost: host,
+              requestPath: `${base.pathname}/settle`,
+              expiresIn: 120_000,
+            });
+            return {
+              verify: { Authorization: `Bearer ${verifyJwt}` },
+              settle: { Authorization: `Bearer ${settleJwt}` },
+              supported: {},
+              list: {},
+            };
+          };
+
         return paymentMiddleware(
             payTo,
             routes,
-            { url: process.env.FACILITATOR_BASE_URL as `${string}://${string}`},
+            { url: baseUrl as `${string}://${string}`, createAuthHeaders },
             {
                 cdpClientKey: process.env.CDP_CLIENT_KEY!,
                 appName: 'Echo',
