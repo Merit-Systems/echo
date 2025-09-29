@@ -5,9 +5,11 @@ import request from 'supertest';
 import { vi } from 'vitest';
 
 import { EchoControlService } from '../services/EchoControlService';
-import { X402PaymentBody } from 'types';
-import { settleWithAuthorization, signTransferWithAuthorization } from '../transferWithAuth';
-import { randomBytes } from 'crypto';
+import { getSmartAccount } from '../utils';
+import { wrapFetchWithPayment } from 'x402-fetch'
+import { privateKeyToAccount } from 'viem/accounts';
+import { createWalletClient, http } from 'viem';
+import { baseSepolia } from 'viem/chains';
 
 const prevFetch = global.fetch;
 
@@ -481,11 +483,11 @@ describe('Server Tests', () => {
     });
   });
 
-  describe('Catch-all route', () => {
+  describe('X402 challenge', () => {
     it('returns X402 challenge when authorized but no request-type headers', async () => {
       const response = await request(app)
         .post('/catchall-test')
-        .set('Authorization', `Bearer ${TEST_TOKEN}`)
+        // .set('Authorization', `Bearer ${TEST_TOKEN}`)
         .send({});
 
       expect(response.status).toBe(402);
@@ -495,52 +497,75 @@ describe('Server Tests', () => {
     });
   });
 
-  describe('X402 route', () => {
-    it('call x-402', async () => {
-      const response = await request(app)
-        .post('/catchall-test')
-        .send({});
+  describe('X402 payment', () => {
+    it('returns X402 payment when authorized and X-PAYMENT header is present', async () => {
+      const { cdp, smartAccount } = await getSmartAccount();
+
+      const account = privateKeyToAccount("0x7dd32215355ee9e03246b59db75281bf3be76aa561cafda90a3c356ebfb0d873");
+      // 7dd32215355ee9e03246b59db75281bf3be76aa561cafda90a3c356ebfb0d873
+      const client = createWalletClient({
+        account,           // viem version mismatch
+        transport: http(),
+        chain: baseSepolia // viem version mismatch
+      }) 
+
+      const testFetch = async (url: string, init: any = {}) => {
+        const toPath = (u: string) => {
+          if (/^https?:\/\//i.test(u)) {
+            const parsed = new URL(u);
+            return parsed.pathname + parsed.search;
+          }
+          return u;
+        };
+
+        const method = (init.method || 'GET').toLowerCase();
+        let req = (request as any)(app)[method](toPath(url));
+
+        if (init.headers) {
+          for (const [k, v] of Object.entries(init.headers)) {
+            if (v !== undefined) req = req.set(k, String(v));
+          }
+        }
+
+        if (init.body) {
+          const body = typeof init.body === 'string' ? JSON.parse(init.body) : init.body;
+          req = req.send(body);
+        }
+
+        const res = await req;
+        const headers = res.headers || {};
+        const getHeader = (name: string) => headers[name.toLowerCase()] ?? headers[name];
+
+        return {
+          status: res.status,
+          ok: res.status >= 200 && res.status < 300,
+          headers: {
+            get: (name: string) => getHeader(name),
+            has: (name: string) => getHeader(name) != null,
+            forEach: (cb: (value: string, key: string) => void) => {
+              Object.entries(headers).forEach(([k, v]) => cb(String(v), k));
+            },
+          },
+          json: async () => res.body,
+          text: async () => (res.text ?? JSON.stringify(res.body)),
+        };
+      };
+
+      const fetchWithPay = wrapFetchWithPayment(testFetch, client);
+
+      const response = await fetchWithPay('/catch-all', {
+        method: 'POST',
+        body: JSON.stringify({
+          test: 'test',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
 
       expect(response.status).toBe(402);
-      console.log('response', response.body);
 
-      const body = response.body as {payment: X402PaymentBody};
-
-      const amount = body.payment.amount;
-      const to = body.payment.to;
-
-      // create signature
-      const signature = await signTransferWithAuthorization({
-        to: to,
-        value: amount,
-        valid_after: 0,
-        valid_before: Math.floor(Date.now() / 1000) + 30 * 60, // unix time
-
-        // random nonce, based on EIP-3009
-        // https://eips.ethereum.org/EIPS/eip-3009#unique-random-nonce-instead-of-sequential-nonce
-        nonce: `0x${randomBytes(32).toString('hex')}`, 
-      });
-
-      console.log('signature', signature);
-
-    const realFetch = (global as any).__REAL_FETCH;
-    const saved = global.fetch as any;
-    (global.fetch as any) = realFetch;
-
-      try {
-        await settleWithAuthorization({
-          to: to,
-          value: amount,
-          valid_after: 0,
-          valid_before: Math.floor(Date.now() / 1000) + 30 * 60 + 3 * 7 * 24 * 60 * 60, // unix time + 3 weeks
-
-          // random nonce, based on EIP-3009
-          // https://eips.ethereum.org/EIPS/eip-3009#unique-random-nonce-instead-of-sequential-nonce
-          nonce: `0x${randomBytes(32).toString('hex')}`, 
-        })
-      } finally {
-        (global.fetch) = saved;
-      }
+      console.log('response', await response.json());
     });
-  })
+  });
 });

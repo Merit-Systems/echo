@@ -40,6 +40,7 @@
         "winston": "^3.17.0",
         "x402": "^0.6.5",
         "x402-express": "^0.6.5",
+        "x402-fetch": "^0.6.0",
       },
       "devDependencies": {
         "@anthropic-ai/sdk": "^0.39.0",
@@ -1766,6 +1767,8 @@
     "x402": ["x402@0.6.5", "", { "dependencies": { "@scure/base": "^1.2.6", "@solana-program/compute-budget": "^0.8.0", "@solana-program/token": "^0.5.1", "@solana-program/token-2022": "^0.4.2", "@solana/kit": "^2.1.1", "@solana/transaction-confirmation": "^2.1.1", "viem": "^2.21.26", "wagmi": "^2.15.6", "zod": "^3.24.2" } }, "sha512-Pk+JZiCwuXSzwuhY6Dsz5mu/O9T6QnZD7VPVcgI3gixe4F/rwv4h09bUygB9kckRpq+XYYx3Hqv4nTk8uBCzvQ=="],
 
     "x402-express": ["x402-express@0.6.5", "", { "dependencies": { "@coinbase/cdp-sdk": "^1.22.0", "@solana/kit": "^2.1.1", "express": "^4.18.2", "viem": "^2.21.26", "x402": "^0.6.5", "zod": "^3.24.2" } }, "sha512-sVuNr+02VmKUyUxKruVxNUx0j67ysrDS6n9sKUjAydNIhme+/L71WnEpTRYm5qB7v1c846/FDPTex1JylQrtrg=="],
+
+    "x402-fetch": ["x402-fetch@0.6.0", "", { "dependencies": { "viem": "^2.21.26", "x402": "^0.6.0", "zod": "^3.24.2" } }, "sha512-c7ZQQOjgBWyX9xbmRCliUguVeG0RCofTlcnPKBrAgNYxEo8p/yuQr2PRvyN9tdQdXVTlGgIsII7GO1wLHJpLhA=="],
 
     "xmlhttprequest-ssl": ["xmlhttprequest-ssl@2.1.2", "", {}, "sha512-TEU+nJVUUnA4CYJFLvK5X9AOeH4KvDvhIfm0vV1GaQRtchnG0hgK5p8hw/xjv8cunWYCsiPCSDzObPyhEwq3KQ=="],
 

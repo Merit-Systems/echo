@@ -75,7 +75,8 @@
     "viem": "^2.33.3",
     "winston": "^3.17.0",
     "x402": "^0.6.5",
-    "x402-express": "^0.6.5"
+    "x402-express": "^0.6.5",
+    "x402-fetch": "^0.6.0"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

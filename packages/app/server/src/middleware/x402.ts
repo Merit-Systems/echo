@@ -6,8 +6,11 @@ import { getSmartAccount } from "../utils";
 
 export function x402DynamicPricingMiddleware() {
     return async (req: Request, res: Response, next: NextFunction) => {
+        console.log('x402DynamicPricingMiddleware');
         const amount = alvaroInferenceCostEstimation();
         const network = process.env.NETWORK as Network;
+
+        console.log('req', req.headers);
 
         const routes = {
             [`${req.method.toUpperCase()} ${req.path}`]: {
