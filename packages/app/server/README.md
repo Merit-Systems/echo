@@ -17,6 +17,7 @@ This server depends on the generated Prisma client from the `echo-control` proje
 
 2. Copy the generated Prisma client:
    ```bash
+   cd ../server
    pnpm run copy-prisma
    ```
 
