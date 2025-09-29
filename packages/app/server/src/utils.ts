@@ -13,7 +13,7 @@ import { getRequestMaxCost } from 'services/PricingService';
 import { Decimal } from 'generated/prisma/runtime/library';
 import { PaymentRequiredResponseSchema, PaymentRequirementsSchema } from 'schema/x402';
 import { USDC_ADDRESS } from 'services/fund-repo/constants';
-import { chatCompletionsRequirements } from 'schema/accepts';
+import { chatCompletionsRequirements, geminiFlashImageRequirements } from 'schema/accepts';
 /**
  * USDC has 6 decimal places
  */
@@ -88,6 +88,7 @@ export function buildX402Response(res: Response, maxCost: Decimal) {
     error: 'Payment Required',
     accepts: [
       chatCompletionsRequirements(maxCostBigInt, paymentUrl),
+      geminiFlashImageRequirements(maxCostBigInt, paymentUrl),
     ],
   });
 
