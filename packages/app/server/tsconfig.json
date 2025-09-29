@@ -6,8 +6,8 @@
     "baseUrl": "./src",
     "types": ["node"],
     "skipLibCheck": true,
-    "moduleResolution": "NodeNext",
-    "module": "NodeNext"
+    "moduleResolution": "Bundler",
+    "module": "ESNext"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "__tests__/**/*"]

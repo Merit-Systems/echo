@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "copy-schema": "mkdir -p prisma && cp ../control/prisma/schema.prisma prisma/ && cp -r ../control/prisma/migrations prisma/",
     "prisma:generate": "pnpx prisma generate",
@@ -73,7 +74,8 @@
     "uuid": "^11.1.0",
     "viem": "^2.33.3",
     "winston": "^3.17.0",
-    "x402": "^0.6.5"
+    "x402": "^0.6.5",
+    "x402-express": "^0.6.5"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

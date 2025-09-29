@@ -489,7 +489,9 @@ describe('Server Tests', () => {
         .send({});
 
       expect(response.status).toBe(402);
-      expect(response.body?.error).toBe('Payment Required');
+      expect(response.body?.error).toBe('X-PAYMENT header is required');
+
+      console.log('response', response.body);
     });
   });
 

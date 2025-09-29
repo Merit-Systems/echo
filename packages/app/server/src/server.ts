@@ -16,6 +16,7 @@ import standardRouter from './routers/common';
 import inFlightMonitorRouter from './routers/in-flight-monitor';
 import { buildX402Response, isApiRequest, isX402Request } from './utils';
 import { handleX402Request, handleApiKeyRequest } from './handlers';
+import { x402DynamicPricingMiddleware } from './middleware/x402';
 
 dotenv.config();
 
@@ -57,6 +58,7 @@ app.use(
 app.use(express.json({ limit: '100mb' }));
 app.use(upload.any()); // Handle multipart/form-data with any field names
 app.use(compression());
+app.use(x402DynamicPricingMiddleware());
 
 // Use common router for utility routes
 app.use(standardRouter);
@@ -70,31 +72,19 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
     console.log('Handling request');
     const headers = req.headers as Record<string, string>;
 
-    if (!isApiRequest(headers) && !isX402Request(headers)) {
-      console.log('Building X402 response');
-      return await buildX402Response(res);
-    }
-
+    // X402 challenge is handled by the x402 middleware
     const { processedHeaders, echoControlService } = await authenticateRequest(
       headers,
       prisma
     );
-
-    if (isX402Request(headers)) {
-      console.log('Handling X402 request');
-      await handleX402Request({req, res, processedHeaders, echoControlService});
-      return;
-    }
 
     if (isApiRequest(headers)) {
       await handleApiKeyRequest({req, res, processedHeaders, echoControlService});
       return;
     }
 
-    return res.status(400).json({
-      error: 'No request type found',
-    });
-
+    await handleX402Request({req, res, processedHeaders, echoControlService});
+    return;
   } catch (error) {
     console.error('Error handling request:', error);
     return next(error);
