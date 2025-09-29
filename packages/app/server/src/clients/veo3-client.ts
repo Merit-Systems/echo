@@ -7,6 +7,7 @@ async function makeRequest() {
   const ai = new GoogleGenAI({
     apiKey: process.env.ECHO_API_KEY || '',
     // apiKey: process.env.GEMINI_API_KEY || '',
+    vertexai: true,
     httpOptions: {
       baseUrl: 'http://localhost:3070',
     },

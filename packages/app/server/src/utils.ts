@@ -11,7 +11,9 @@ import { WALLET_OWNER } from './constants';
 import { WALLET_SMART_ACCOUNT } from './constants';
 import { getRequestMaxCost } from 'services/PricingService';
 import { Decimal } from 'generated/prisma/runtime/library';
-
+import { PaymentRequiredResponseSchema, PaymentRequirementsSchema } from 'schema/x402';
+import { USDC_ADDRESS } from 'services/fund-repo/constants';
+import { chatCompletionsRequirements } from 'schema/accepts';
 /**
  * USDC has 6 decimal places
  */
@@ -81,14 +83,15 @@ export function buildX402Response(res: Response, maxCost: Decimal) {
     })
   );
 
-  return res.status(402).json({
+  const paymentRequiredResponse = PaymentRequiredResponseSchema.parse({
+    x402Version: 1,
     error: 'Payment Required',
-    payment: {
-      type: 'x402',
-      url: paymentUrl,
-      network,
-    },
+    accepts: [
+      chatCompletionsRequirements(maxCostBigInt, paymentUrl),
+    ],
   });
+
+  return res.status(402).json(paymentRequiredResponse);
 }
 
 export function isApiRequest(headers: Record<string, string>): boolean {
