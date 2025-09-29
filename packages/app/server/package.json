@@ -41,6 +41,7 @@
   "license": "ISC",
   "dependencies": {
     "@coinbase/cdp-sdk": "^1.34.0",
+    "@google/genai": "^1.20.0",
     "@merit-systems/echo-typescript-sdk": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "0.57.2",
@@ -74,7 +75,8 @@
     "uuid": "^11.1.0",
     "viem": "^2.33.3",
     "winston": "^3.17.0",
-    "@google/genai": "^1.20.0"
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
