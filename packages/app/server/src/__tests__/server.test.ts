@@ -499,6 +499,9 @@ describe('Server Tests', () => {
 
   describe('X402 payment', () => {
     it('returns X402 payment when authorized and X-PAYMENT header is present', async () => {
+      const realFetch = (global as any).__REAL_FETCH;
+      global.fetch = realFetch;
+
       const { cdp, smartAccount } = await getSmartAccount();
 
       const account = privateKeyToAccount("0x7dd32215355ee9e03246b59db75281bf3be76aa561cafda90a3c356ebfb0d873");
@@ -510,16 +513,14 @@ describe('Server Tests', () => {
       }) 
 
       const testFetch = async (url: string, init: any = {}) => {
-        const toPath = (u: string) => {
-          if (/^https?:\/\//i.test(u)) {
-            const parsed = new URL(u);
-            return parsed.pathname + parsed.search;
-          }
-          return u;
-        };
+        // If it's an external URL (facilitator API), use real fetch
+        if (/^https?:\/\//i.test(url)) {
+          return realFetch(url, init);
+        }
 
+        // For local paths, use supertest
         const method = (init.method || 'GET').toLowerCase();
-        let req = (request as any)(app)[method](toPath(url));
+        let req = (request as any)(app)[method](url);
 
         if (init.headers) {
           for (const [k, v] of Object.entries(init.headers)) {

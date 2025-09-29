@@ -3,6 +3,7 @@ import { alvaroInferenceCostEstimation } from "../utils";
 import { USDC_ADDRESS } from "../services/fund-repo/constants";
 import { Network, paymentMiddleware } from "x402-express";
 import { getSmartAccount } from "../utils";
+import { generateJwt } from "@coinbase/cdp-sdk/auth";
 
 export function x402DynamicPricingMiddleware() {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -34,10 +35,12 @@ export function x402DynamicPricingMiddleware() {
 
         const payTo = (await getSmartAccount()).smartAccount.address;
 
+        console.log("facilitator base url", process.env.FACILITATOR_BASE_URL);
+
         return paymentMiddleware(
             payTo,
             routes,
-            { url: process.env.FACILITATOR_URL as `${string}://${string}` },
+            { url: process.env.FACILITATOR_BASE_URL as `${string}://${string}`},
             {
                 cdpClientKey: process.env.CDP_CLIENT_KEY!,
                 appName: 'Echo',
