@@ -75,7 +75,7 @@ const getPayoutInformation = async (appIds: string[]) => {
       COALESCE(SUM(p.amount), 0) as "totalClaimed"
     FROM "payouts" p
     WHERE (p."echoAppId" = ANY($1::uuid[]) OR p."userId" = ANY($2::uuid[]))
-      AND p.status = 'completed'
+      AND p.status = 'COMPLETED'::"EnumPayoutStatus"
     GROUP BY p."echoAppId", p."userId", p.type
   `;
 

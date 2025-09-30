@@ -7,4 +7,7 @@ export default defineConfig({
     setupFiles: ['src/__tests__/setup.ts'],
     globals: true,
   },
+  optimizeDeps: {
+    exclude: ['@merit-systems/echo-typescript-sdk'],
+  },
 });

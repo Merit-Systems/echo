@@ -61,7 +61,8 @@ const ChatBotDemo = () => {
   const [input, setInput] = useState('');
   const [model, setModel] = useState<string>(models[0].value);
   const { messages, sendMessage, status } = useChat();
-  const { isLoading, hasValidApiKey, requiresSetup, refetch } = useValidApiKey();
+  const { isLoading, hasValidApiKey, requiresSetup, refetch } =
+    useValidApiKey();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +94,13 @@ const ChatBotDemo = () => {
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col p-6">
-      {requiresSetup && !isLoading && < AcceptApiKey onApiKeySubmitted={() => {refetch()}}/>}
+      {requiresSetup && !isLoading && (
+        <AcceptApiKey
+          onApiKeySubmitted={() => {
+            refetch();
+          }}
+        />
+      )}
       <div className="flex h-full min-h-0 flex-col">
         <Conversation className="relative min-h-0 w-full flex-1 overflow-hidden">
           <ConversationContent>
@@ -199,7 +206,11 @@ const ChatBotDemo = () => {
             onChange={e => setInput(e.target.value)}
             value={input}
             disabled={!hasValidApiKey}
-            placeholder={!hasValidApiKey ? "Please add your API key to start chatting..." : undefined}
+            placeholder={
+              !hasValidApiKey
+                ? 'Please add your API key to start chatting...'
+                : undefined
+            }
           />
           <PromptInputToolbar>
             <PromptInputTools>
@@ -224,7 +235,10 @@ const ChatBotDemo = () => {
                 </PromptInputModelSelectContent>
               </PromptInputModelSelect>
             </PromptInputTools>
-            <PromptInputSubmit disabled={!input || !hasValidApiKey} status={status} />
+            <PromptInputSubmit
+              disabled={!input || !hasValidApiKey}
+              status={status}
+            />
           </PromptInputToolbar>
         </PromptInput>
       </div>

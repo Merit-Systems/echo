@@ -373,9 +373,11 @@ model TransactionMetadata {
   providerId   String
   provider     String
   model        String
-  inputTokens  Int
-  outputTokens Int
-  totalTokens  Int
+  inputTokens  Int?
+  outputTokens Int?
+  totalTokens  Int?
+  durationSeconds Int?
+  generateAudio Boolean?
   toolCost     Decimal       @default(0.0) @db.Decimal(65, 14)
   prompt       String?
   isArchived   Boolean       @default(false)

@@ -105,9 +105,9 @@ export class AnthropicNativeProvider extends BaseProvider {
     return process.env.ANTHROPIC_API_KEY;
   }
 
-  override formatAuthHeaders(
+  override async formatAuthHeaders(
     headers: Record<string, string>
-  ): Record<string, string> {
+  ): Promise<Record<string, string>> {
     const apiKey = this.getApiKey();
     if (apiKey === undefined || apiKey.length === 0) {
       throw new Error('No API key found');

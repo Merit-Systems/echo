@@ -176,5 +176,11 @@ export default tseslint.config(
       'no-process-env-outside-env/no-process-env-outside-env': 'error',
       'no-db-client-outside-db/no-db-client-outside-db': 'error',
     },
+  },
+  {
+    files: ['docs/mcp-server/**/*.ts'],
+    rules: {
+      'no-process-env-outside-env/no-process-env-outside-env': 'off',
+    },
   }
 );

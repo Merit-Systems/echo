@@ -95,7 +95,7 @@ async function getUserOverviewSummary(
         SELECT 
           COALESCE(SUM(p."amount"), 0) AS "totalCompletedPayouts"
         FROM "payouts" p
-        WHERE p."userId" = u.id AND p."status" = 'completed'
+        WHERE p."userId" = u.id AND p."status" = 'COMPLETED'::"EnumPayoutStatus"
       ) p_agg ON TRUE
       WHERE u.id = $1::uuid
     ),
@@ -232,8 +232,8 @@ export const getUserOverviewMetrics = async (
     ),
     payouts_user AS (
       SELECT 
-        COALESCE(SUM(CASE WHEN p."status" = 'completed' AND p."createdAt" >= r.start_current AND p."createdAt" < r.end_current THEN p."amount" END), 0)::double precision AS payouts_current,
-        COALESCE(SUM(CASE WHEN p."status" = 'completed' AND p."createdAt" >= r.start_prev AND p."createdAt" < r.end_prev THEN p."amount" END), 0)::double precision AS payouts_prev
+        COALESCE(SUM(CASE WHEN p."status" = 'COMPLETED'::"EnumPayoutStatus" AND p."createdAt" >= r.start_current AND p."createdAt" < r.end_current THEN p."amount" END), 0)::double precision AS payouts_current,
+        COALESCE(SUM(CASE WHEN p."status" = 'COMPLETED'::"EnumPayoutStatus" AND p."createdAt" >= r.start_prev AND p."createdAt" < r.end_prev THEN p."amount" END), 0)::double precision AS payouts_prev
       FROM "payouts" p, ranges r
       WHERE p."userId" = $1::uuid
     ),

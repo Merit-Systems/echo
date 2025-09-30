@@ -42,7 +42,7 @@ export async function POST(req: Request) {
         }
       );
     }
-    
+
     const user = await getUser();
 
     if (!user) {
@@ -62,19 +62,23 @@ export async function POST(req: Request) {
       throw new Error('API key not found');
     }
 
-    const openai = createEchoOpenAI({
-      appId: process.env.ECHO_APP_ID!,
-    }, async (appId) => {
-      console.log("appId", appId);
-      return apiKey.apiKey;
-    }, () => {
-      return new Response(
-        JSON.stringify({
-          error: 'Insufficient funds',
-          message: 'Insufficient funds',
-        }),
-      );
-    });
+    const openai = createEchoOpenAI(
+      {
+        appId: process.env.ECHO_APP_ID!,
+      },
+      async appId => {
+        console.log('appId', appId);
+        return apiKey.apiKey;
+      },
+      () => {
+        return new Response(
+          JSON.stringify({
+            error: 'Insufficient funds',
+            message: 'Insufficient funds',
+          })
+        );
+      }
+    );
 
     const result = streamText({
       model: openai(model),

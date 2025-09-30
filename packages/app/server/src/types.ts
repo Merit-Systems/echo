@@ -45,10 +45,13 @@ export interface Balance {
   balance: number;
 }
 
-export interface LlmTransactionMetadata {
+export interface TransactionMetadata {
   providerId: string;
   provider: string;
   model: string;
+}
+
+export interface LlmTransactionMetadata extends TransactionMetadata {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
@@ -57,8 +60,13 @@ export interface LlmTransactionMetadata {
   toolCost?: Decimal;
 }
 
+export interface VeoTransactionMetadata extends TransactionMetadata {
+  durationSeconds: number;
+  generateAudio: boolean;
+}
+
 export interface Transaction {
-  metadata: LlmTransactionMetadata;
+  metadata: LlmTransactionMetadata | VeoTransactionMetadata;
   rawTransactionCost: Decimal;
   status: string;
 }
@@ -96,4 +104,17 @@ export interface EchoAccessJwtPayload {
   exp: number;
   iat: number;
   jti: string;
+}
+
+// Type guard functions for transaction metadata
+export function isLlmTransactionMetadata(
+  metadata: LlmTransactionMetadata | VeoTransactionMetadata
+): metadata is LlmTransactionMetadata {
+  return 'inputTokens' in metadata;
+}
+
+export function isVeoTransactionMetadata(
+  metadata: LlmTransactionMetadata | VeoTransactionMetadata
+): metadata is VeoTransactionMetadata {
+  return 'durationSeconds' in metadata;
 }

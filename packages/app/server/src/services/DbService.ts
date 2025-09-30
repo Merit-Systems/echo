@@ -3,6 +3,8 @@ import {
   ApiKeyValidationResult,
   EchoAccessJwtPayload,
   TransactionRequest,
+  isLlmTransactionMetadata,
+  isVeoTransactionMetadata,
 } from '../types';
 import { createHmac } from 'crypto';
 import { jwtVerify } from 'jose';
@@ -296,10 +298,26 @@ export class EchoDbService {
         providerId: transaction.metadata.providerId,
         provider: transaction.metadata.provider,
         model: transaction.metadata.model,
-        inputTokens: transaction.metadata.inputTokens,
-        outputTokens: transaction.metadata.outputTokens,
-        totalTokens: transaction.metadata.totalTokens,
-        prompt: transaction.metadata.prompt || null,
+        // LLM-specific fields
+        inputTokens: isLlmTransactionMetadata(transaction.metadata)
+          ? transaction.metadata.inputTokens
+          : null,
+        outputTokens: isLlmTransactionMetadata(transaction.metadata)
+          ? transaction.metadata.outputTokens
+          : null,
+        totalTokens: isLlmTransactionMetadata(transaction.metadata)
+          ? transaction.metadata.totalTokens
+          : null,
+        prompt: isLlmTransactionMetadata(transaction.metadata)
+          ? transaction.metadata.prompt || null
+          : null,
+        // Veo-specific fields
+        durationSeconds: isVeoTransactionMetadata(transaction.metadata)
+          ? transaction.metadata.durationSeconds
+          : null,
+        generateAudio: isVeoTransactionMetadata(transaction.metadata)
+          ? transaction.metadata.generateAudio
+          : null,
       },
     });
 
@@ -485,5 +503,23 @@ export class EchoDbService {
       logger.error(`Error creating free tier transaction: ${error}`);
       throw error;
     }
+  }
+
+  async confirmAccessControl(
+    userId: string,
+    providerId: string
+  ): Promise<boolean> {
+    const transaction: Transaction | null = await this.db.transaction.findFirst(
+      {
+        where: {
+          userId,
+          transactionMetadata: {
+            providerId,
+          },
+        },
+      }
+    );
+
+    return !!transaction;
   }
 }

@@ -1,4 +1,4 @@
-import { Response as ExpressResponse } from 'express';
+import { Response as ExpressResponse, Request } from 'express';
 import { BaseProvider } from '../providers/BaseProvider';
 import { Transaction } from '../types';
 
@@ -13,6 +13,7 @@ export class HandleNonStreamingService {
   async handleNonStreaming(
     response: Response,
     provider: BaseProvider,
+    req: Request,
     res: ExpressResponse
   ): Promise<{ transaction: Transaction; data: unknown }> {
     // Parse the JSON response with error handling
@@ -25,8 +26,14 @@ export class HandleNonStreamingService {
       throw new Error(`Failed to parse JSON response: ${text}`);
     }
 
+    // Apply provider-specific response transformations (e.g., signed URLs)
+    data = await provider.transformResponse(data);
+
     // Process the response body for accounting/transaction creation
-    const transaction = await provider.handleBody(JSON.stringify(data));
+    const transaction = await provider.handleBody(
+      JSON.stringify(data),
+      req.body
+    );
 
     // Set the appropriate content type
     res.setHeader('content-type', 'application/json');

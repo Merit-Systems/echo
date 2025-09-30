@@ -41,7 +41,7 @@ const COLUMN_MAPPINGS: Record<string, string> = {
   referralCodesGenerated: 'COUNT(DISTINCT rc.id)',
   referredUsersCount: 'COUNT(DISTINCT am_referred.id)',
   totalCompletedPayouts:
-    'COALESCE(SUM(p."amount") FILTER (WHERE p."status" = \'completed\'), 0)',
+    'COALESCE(SUM(p."amount") FILTER (WHERE p."status" = \'COMPLETED\'::"EnumPayoutStatus"), 0)',
   createdAt: 'u."createdAt"',
   updatedAt: 'u."updatedAt"',
 };
@@ -90,7 +90,7 @@ export const getUserEarningsWithPagination = async (
       ) as "uniqueEmailCampaigns",
       COUNT(DISTINCT rc.id) as "referralCodesGenerated",
       COUNT(DISTINCT am_referred.id) as "referredUsersCount",
-      COALESCE(SUM(p."amount") FILTER (WHERE p."status" = 'completed'), 0) as "totalCompletedPayouts",
+      COALESCE(SUM(p."amount") FILTER (WHERE p."status" = 'COMPLETED'::"EnumPayoutStatus"), 0) as "totalCompletedPayouts",
       u."createdAt",
       u."updatedAt"
     FROM "users" u

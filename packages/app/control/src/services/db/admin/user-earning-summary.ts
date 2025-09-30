@@ -39,7 +39,7 @@ export async function getUserEarningsOverviewMetrics(): Promise<
         0 AS earning_users -- placeholder; real value in eu CTE
       FROM "transactions" t
     ), p AS (
-      SELECT COALESCE(SUM(p."amount") FILTER (WHERE p."status" = 'completed'), 0)::double precision AS total_completed_payouts
+      SELECT COALESCE(SUM(p."amount") FILTER (WHERE p."status" = 'COMPLETED'::"EnumPayoutStatus"), 0)::double precision AS total_completed_payouts
       FROM "payouts" p
     ), eu AS (
       SELECT COUNT(DISTINCT am."userId") AS earning_users
@@ -89,8 +89,8 @@ export async function getUserEarningsOverviewMetrics(): Promise<
     ),
     payouts AS (
       SELECT 
-        COALESCE(SUM(CASE WHEN p."status" = 'completed' AND p."createdAt" >= r.start_current AND p."createdAt" < r.end_current THEN p."amount" END), 0)::double precision AS payouts_current,
-        COALESCE(SUM(CASE WHEN p."status" = 'completed' AND p."createdAt" >= r.start_prev AND p."createdAt" < r.end_prev THEN p."amount" END), 0)::double precision AS payouts_prev
+        COALESCE(SUM(CASE WHEN p."status" = 'COMPLETED'::"EnumPayoutStatus" AND p."createdAt" >= r.start_current AND p."createdAt" < r.end_current THEN p."amount" END), 0)::double precision AS payouts_current,
+        COALESCE(SUM(CASE WHEN p."status" = 'COMPLETED'::"EnumPayoutStatus" AND p."createdAt" >= r.start_prev AND p."createdAt" < r.end_prev THEN p."amount" END), 0)::double precision AS payouts_prev
       FROM "payouts" p, ranges r
     ),
     earning_users AS (

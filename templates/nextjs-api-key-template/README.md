@@ -178,7 +178,7 @@ export const { GET, POST } = handlers;
    ```bash
    # Copy the example environment file
    cp env.example .env
-   
+
    # Update .env with your configuration
    # Run the database setup script
    ./setup-db.sh

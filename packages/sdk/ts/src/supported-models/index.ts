@@ -6,3 +6,5 @@ export * from './chat/openai';
 export * from './chat/openrouter';
 export * from './image/openai';
 export * from './responses/openai';
+export * from './video/gemini';
+export * from './video/vertex-ai';

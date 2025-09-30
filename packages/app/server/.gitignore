@@ -11,3 +11,5 @@ src/generated/
 
 
 prisma/
+
+video_outputs/

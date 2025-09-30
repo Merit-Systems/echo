@@ -6,6 +6,7 @@ import { ReadableStream } from 'stream/web';
 import logger from '../logger';
 import { BaseProvider } from '../providers/BaseProvider';
 import { Transaction } from '../types';
+import { Request } from 'express';
 
 export class HandleStreamService {
   /**
@@ -29,6 +30,7 @@ export class HandleStreamService {
   async handleStream(
     response: Response,
     provider: BaseProvider,
+    req: Request,
     res: ExpressResponse
   ): Promise<Transaction> {
     const bodyStream = response.body as ReadableStream<Uint8Array>;
@@ -45,6 +47,7 @@ export class HandleStreamService {
     // Promise for processing data and creating transaction
     const reader2 = accountingStream.getReader();
     const transactionPromise = this.processStreamData(
+      req,
       reader2 as ReadableStreamDefaultReader<Uint8Array>,
       provider
     );
@@ -83,6 +86,7 @@ export class HandleStreamService {
    * @param provider - The provider instance for handling the response
    */
   private async processStreamData(
+    req: Request,
     reader: ReadableStreamDefaultReader<Uint8Array>,
     provider: BaseProvider
   ): Promise<Transaction> {
@@ -97,7 +101,7 @@ export class HandleStreamService {
       // flush any remaining decoder state
       data += decoder.decode();
       // Wait for transaction to complete before resolving
-      return await provider.handleBody(data);
+      return await provider.handleBody(data, req.body);
     } catch (error) {
       logger.error(`Error processing stream: ${error}`);
       throw error;

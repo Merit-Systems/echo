@@ -4,23 +4,20 @@ import { db } from '@/lib/db';
 
 export async function GET() {
   const user = await getUser();
-  
+
   if (!user) {
-    return NextResponse.json(
-      { error: 'Not authenticated' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
   const existingUser = await db.user.findUnique({
-    where: { email: user.email }
+    where: { email: user.email },
   });
 
   if (!existingUser) {
     return NextResponse.json({
       requiresSetup: true,
       message: 'Please fill out the form to complete your profile setup.',
-      user: { email: user.email }
+      user: { email: user.email },
     });
   }
 
@@ -29,43 +26,34 @@ export async function GET() {
     user: {
       id: existingUser.id,
       email: existingUser.email,
-      hasApiKey: !!existingUser.apiKey
-    }
+      hasApiKey: !!existingUser.apiKey,
+    },
   });
 }
 
 export async function POST(request: NextRequest) {
   const user = await getUser();
-  
+
   if (!user) {
-    return NextResponse.json(
-      { error: 'Not authenticated' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
   const body = await request.json().catch(() => null);
-  
+
   if (!body || !body.apiKey) {
-    return NextResponse.json(
-      { error: 'API key is required' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'API key is required' }, { status: 400 });
   }
 
   const existingUser = await db.user.findUnique({
-    where: { email: user.email }
+    where: { email: user.email },
   });
 
   if (existingUser) {
-    return NextResponse.json(
-      { error: 'User already exists' },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: 'User already exists' }, { status: 409 });
   }
 
   const existingApiKey = await db.user.findUnique({
-    where: { apiKey: body.apiKey }
+    where: { apiKey: body.apiKey },
   });
 
   if (existingApiKey) {
@@ -78,8 +66,8 @@ export async function POST(request: NextRequest) {
   const newUser = await db.user.create({
     data: {
       email: user.email,
-      apiKey: body.apiKey
-    }
+      apiKey: body.apiKey,
+    },
   });
 
   return NextResponse.json({
@@ -87,7 +75,7 @@ export async function POST(request: NextRequest) {
     user: {
       id: newUser.id,
       email: newUser.email,
-      hasApiKey: true
-    }
+      hasApiKey: true,
+    },
   });
 }

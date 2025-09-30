@@ -22,7 +22,7 @@ export function AcceptApiKey({ onApiKeySubmitted }: AcceptApiKeyProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!apiKey.trim()) {
       setSubmitError('Please enter your API key');
       return;
@@ -93,7 +93,7 @@ export function AcceptApiKey({ onApiKeySubmitted }: AcceptApiKeyProps) {
               type="password"
               id="apiKey"
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={e => setApiKey(e.target.value)}
               placeholder="Enter your API key"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
               disabled={isSubmitting}

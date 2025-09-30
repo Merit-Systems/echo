@@ -1,39 +1,9 @@
 import { Request } from 'express';
-
-export function extractGeminiModelName(req: Request): string | undefined {
-  const path = req.path;
-
-  // Expected format: /v1beta/models/{model-name}:streamGenerateContent or /v1beta/models/{model-name}:generateContent
-  // OR: /models/{model-name}:streamGenerateContent or /models/{model-name}:generateContent
-  const expectedPrefixes = ['/v1beta/models/', '/models/'];
-  const expectedSuffixes = [':streamGenerateContent', ':generateContent'];
-
-  // Check if path matches any of the expected prefixes
-  const matchingPrefix = expectedPrefixes.find(prefix =>
-    path.startsWith(prefix)
-  );
-  if (!matchingPrefix) {
-    return undefined;
-  }
-
-  // Find which suffix matches
-  const matchingSuffix = expectedSuffixes.find(suffix => path.endsWith(suffix));
-  if (!matchingSuffix) {
-    return undefined;
-  }
-
-  // Extract the model name from between the prefix and suffix
-  const modelName = path.slice(
-    matchingPrefix.length,
-    path.length - matchingSuffix.length
-  );
-  // Ensure the model name is not empty
-  if (!modelName) {
-    return undefined;
-  }
-
-  return modelName;
-}
+import { BaseProvider } from '../providers/BaseProvider';
+import {
+  isGeminiStreamingPath,
+  extractGeminiModelName,
+} from '../utils/gemini/string-parsing.js';
 
 export function extractModelName(req: Request): string | undefined {
   const model = req.body.model;
@@ -51,11 +21,6 @@ export function extractModelName(req: Request): string | undefined {
   return undefined;
 }
 
-export function extractGeminiIsStream(req: Request): boolean {
-  const path = req.path;
-  return path.endsWith(':streamGenerateContent');
-}
-
 export function extractIsStream(req: Request): boolean {
   const stream = req.body.stream;
 
@@ -63,9 +28,16 @@ export function extractIsStream(req: Request): boolean {
     return stream;
   }
 
-  if (extractGeminiIsStream(req)) {
+  if (isGeminiStreamingPath(req.path)) {
     return true;
   }
 
   return false;
+}
+
+export function formatUpstreamUrl(
+  provider: BaseProvider,
+  req: Request
+): string {
+  return provider.formatUpstreamUrl(req);
 }

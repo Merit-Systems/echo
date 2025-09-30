@@ -26,7 +26,6 @@ export const Earnings: React.FC<Props> = async ({ numAppsPromise }) => {
 
   await api.user.creatorActivity.prefetch({
     startDate: user.createdAt,
-    isCumulative: false,
   });
 
   return (

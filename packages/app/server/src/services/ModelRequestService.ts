@@ -1,13 +1,11 @@
 import { Request, Response } from 'express';
-import { HttpError, UnknownModelError } from '../errors/http';
+import { HttpError } from '../errors/http';
 import logger from '../logger';
-import { getProvider } from '../providers/ProviderFactory';
+import { BaseProvider } from '../providers/BaseProvider';
 import { Transaction } from '../types';
-import { isValidImageModel, isValidModel } from './AccountingService';
-import { EchoControlService } from './EchoControlService';
 import { handleNonStreamingService } from './HandleNonStreamingService';
 import { handleStreamService } from './HandleStreamService';
-import { extractIsStream, extractModelName } from './RequestDataService';
+import { formatUpstreamUrl } from './RequestDataService';
 
 export class ModelRequestService {
   /**
@@ -23,26 +21,15 @@ export class ModelRequestService {
     req: Request,
     res: Response,
     processedHeaders: Record<string, string>,
-    echoControlService: EchoControlService
-  ): Promise<{ transaction: Transaction; isStream: boolean; data: unknown }> {
-    const model = extractModelName(req);
-
-    if (!model || (!isValidModel(model) && !isValidImageModel(model))) {
-      logger.error(`Invalid model: ${model}`);
-      res.status(422).json({
-        error: `Invalid model: ${model} Echo does not yet support this model.`,
-      });
-      throw new UnknownModelError('Invalid model');
-    }
-
-    // Extract stream flag
-    const isStream = extractIsStream(req);
-
-    // Get the appropriate provider
-    const provider = getProvider(model, echoControlService, isStream, req.path);
-
+    provider: BaseProvider,
+    isStream: boolean
+  ): Promise<{
+    transaction: Transaction;
+    data: unknown;
+  }> {
     // Format authentication headers
-    const authenticatedHeaders = provider.formatAuthHeaders(processedHeaders);
+    const authenticatedHeaders =
+      await provider.formatAuthHeaders(processedHeaders);
 
     logger.info(
       `New outbound request: ${req.method} ${provider.getBaseUrl(req.path)}${req.path}`
@@ -51,6 +38,9 @@ export class ModelRequestService {
     // Ensure stream usage is set correctly (OpenAI Format)
     req.body = provider.ensureStreamUsage(req.body, req.path);
 
+    // Apply provider-specific request body transformations
+    req.body = provider.transformRequestBody(req.body, req.path);
+
     // Format request body and headers based on content type
     const { requestBody, headers: formattedHeaders } = this.formatRequestBody(
       req,
@@ -58,9 +48,8 @@ export class ModelRequestService {
     );
 
     // this rewrites the base url to the provider's base url and retains the rest
-    const upstreamUrl = `${provider.getBaseUrl(req.path)}${req.path}${
-      req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''
-    }`;
+    const upstreamUrl = formatUpstreamUrl(provider, req);
+
     // Forward the request to the provider's API
     const response = await fetch(upstreamUrl, {
       method: req.method,
@@ -86,17 +75,22 @@ export class ModelRequestService {
       const transaction = await handleStreamService.handleStream(
         response,
         provider,
+        req,
         res
       );
-      return { transaction, isStream: true, data: null };
+      return {
+        transaction,
+        data: null,
+      };
     } else {
       const { transaction, data } =
         await handleNonStreamingService.handleNonStreaming(
           response,
           provider,
+          req,
           res
         );
-      return { transaction, isStream: false, data };
+      return { transaction, data };
     }
   }
 
@@ -115,7 +109,7 @@ export class ModelRequestService {
    * @param authenticatedHeaders - Base authenticated headers
    * @returns Object with formatted requestBody and headers
    */
-  private formatRequestBody(
+  formatRequestBody(
     req: Request,
     authenticatedHeaders: Record<string, string>
   ): {

@@ -142,9 +142,6 @@ export class TransactionEscrowMiddleware {
           numberInFlight: 1,
         },
       });
-      logger.info(
-        `Incremented in-flight requests for user ${userId} and app ${echoAppId} to ${updatedInFlightRequest.numberInFlight}`
-      );
     });
   }
 
@@ -167,21 +164,15 @@ export class TransactionEscrowMiddleware {
         });
 
         if (!inFlightRequest) {
-          logger.warn(
-            `Attempted to decrement in-flight requests for ${userId}/${echoAppId} but record doesn't exist`
-          );
           return;
         }
 
         if (inFlightRequest.numberInFlight <= 0) {
-          logger.warn(
-            `Attempted to decrement in-flight requests for ${userId}/${echoAppId} but count is already 0`
-          );
           return;
         }
 
         // Use updateMany to avoid throwing error if record doesn't exist
-        const updateResult = await tx.inFlightRequest.updateMany({
+        await tx.inFlightRequest.updateMany({
           where: {
             userId,
             echoAppId,
@@ -192,16 +183,6 @@ export class TransactionEscrowMiddleware {
             updatedAt: new Date(),
           },
         });
-
-        if (updateResult.count === 0) {
-          logger.warn(
-            `No records updated when decrementing in-flight requests for ${userId}/${echoAppId}`
-          );
-        } else {
-          logger.debug(
-            `Successfully decremented in-flight requests for ${userId}/${echoAppId}`
-          );
-        }
       });
     } catch (error) {
       logger.warn(
@@ -221,9 +202,6 @@ export class TransactionEscrowMiddleware {
 
     // decrementInFlightRequests now handles its own errors gracefully
     await this.decrementInFlightRequests(userId, echoAppId);
-    logger.debug(
-      `Cleanup completed for in-flight request ${requestId} for user ${userId}`
-    );
   };
 
   /**
@@ -260,7 +238,7 @@ export class TransactionEscrowMiddleware {
     const cutoffTime = new Date(Date.now() - REQUEST_TIMEOUT_MS);
 
     // Bulk update all orphaned requests
-    const result = await this.db.inFlightRequest.updateMany({
+    await this.db.inFlightRequest.updateMany({
       where: {
         numberInFlight: { gt: 0 },
         updatedAt: { lt: cutoffTime },
@@ -270,10 +248,6 @@ export class TransactionEscrowMiddleware {
         updatedAt: new Date(),
       },
     });
-
-    if (result.count > 0) {
-      logger.info(`Cleaned up ${result.count} orphaned requests`);
-    }
   }
 
   /**
@@ -283,8 +257,6 @@ export class TransactionEscrowMiddleware {
     this.cleanupInterval = setInterval(async () => {
       await this.cleanupOrphanedRequests();
     }, CLEANUP_INTERVAL_MS);
-
-    logger.info('Started transaction escrow cleanup process');
   }
 
   /**
@@ -294,7 +266,6 @@ export class TransactionEscrowMiddleware {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
-      logger.info('Stopped transaction escrow cleanup process');
     }
   }
 

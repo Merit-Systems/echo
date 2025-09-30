@@ -54,7 +54,7 @@ export const getHomePageChart = async (
   // For cumulative mode, we'll query directly per bucket
   let transactions: {
     createdAt: Date;
-    transactionMetadata: { totalTokens: number } | null;
+    transactionMetadata: { totalTokens: number | null } | null;
   }[] = [];
   let users: { createdAt: Date }[] = [];
   let apps: { createdAt: Date }[] = [];

@@ -1,6 +1,8 @@
-import { Transaction } from '../types';
 import type { EchoControlService } from '../services/EchoControlService';
+import { Transaction } from '../types';
 
+import { Response } from 'express';
+import { EscrowRequest } from 'middleware/transaction-escrow-middleware';
 import type { ProviderType } from './ProviderType';
 
 export abstract class BaseProvider {
@@ -29,7 +31,18 @@ export abstract class BaseProvider {
   abstract getType(): ProviderType;
   abstract getBaseUrl(reqPath?: string): string;
   abstract getApiKey(): string | undefined;
-  formatAuthHeaders(headers: Record<string, string>): Record<string, string> {
+
+  // Default URL formatting for most providers
+  formatUpstreamUrl(req: { path: string; url: string }): string {
+    const upstreamUrl = `${this.getBaseUrl(req.path)}${req.path}${
+      req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''
+    }`;
+    return upstreamUrl;
+  }
+
+  async formatAuthHeaders(
+    headers: Record<string, string>
+  ): Promise<Record<string, string>> {
     const apiKey = this.getApiKey();
     if (apiKey === undefined || apiKey.length === 0) {
       throw new Error('No API key found');
@@ -39,7 +52,10 @@ export abstract class BaseProvider {
       Authorization: `Bearer ${apiKey}`,
     };
   }
-  abstract handleBody(data: string): Promise<Transaction>;
+  abstract handleBody(
+    data: string,
+    requestBody?: Record<string, unknown>
+  ): Promise<Transaction>;
   getEchoControlService(): EchoControlService {
     return this.echoControlService;
   }
@@ -67,5 +83,34 @@ export abstract class BaseProvider {
       };
     }
     return reqBody;
+  }
+
+  // Provider-specific request body transformations (e.g., GCS bucket prefixing, special configs)
+  // Override this in provider implementations for custom body modifications
+  transformRequestBody(
+    reqBody: Record<string, unknown>,
+    reqPath: string
+  ): Record<string, unknown> {
+    // Default: no transformation
+    return reqBody;
+  }
+
+  // Provider-specific response transformations (e.g., replacing URIs with signed URLs)
+  // Override this in provider implementations for custom response modifications
+  async transformResponse(responseData: unknown): Promise<unknown> {
+    // Default: no transformation
+    return responseData;
+  }
+
+  // For provider such as gemini Veo3 that need to support passthrough requests
+  // which do not create transactions.
+  async forwardProxyRequest(
+    req: EscrowRequest,
+    res: Response,
+    formattedHeaders: Record<string, string>,
+    upstreamUrl: string,
+    requestBody: string | FormData | undefined
+  ) {
+    throw new Error('Not implemented');
   }
 }

@@ -4,18 +4,20 @@ import dotenv from 'dotenv';
 import express, { Express, NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import { authenticateRequest } from './auth';
-import logger, { logMetric } from './logger';
 import { HttpError } from './errors/http';
 import { PrismaClient } from './generated/prisma';
+import logger, { logMetric } from './logger';
 import { traceEnrichmentMiddleware } from './middleware/trace-enrichment-middleware';
 import {
-  TransactionEscrowMiddleware,
   EscrowRequest,
+  TransactionEscrowMiddleware,
 } from './middleware/transaction-escrow-middleware';
 import standardRouter from './routers/common';
 import inFlightMonitorRouter from './routers/in-flight-monitor';
 import { checkBalance } from './services/BalanceCheckService';
 import { modelRequestService } from './services/ModelRequestService';
+import { initializeProvider } from './services/ProviderInitializationService';
+import { makeProxyPassthroughRequest } from './services/ProxyPassthroughService';
 
 dotenv.config();
 
@@ -68,11 +70,12 @@ app.use(inFlightMonitorRouter);
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
   try {
     // Step 1: Authentication
+
+    // VERIFY
     const { processedHeaders, echoControlService } = await authenticateRequest(
       req.headers as Record<string, string>,
       prisma
     );
-
     const balanceCheckResult = await checkBalance(echoControlService);
 
     // Step 2: Set up escrow context and apply escrow middleware logic
@@ -86,17 +89,32 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
     // Apply escrow middleware logic inline
     await transactionEscrowMiddleware.handleInFlightRequestIncrement(req, res);
 
-    // Step 3: Execute business logic
-    const { transaction, isStream, data } =
-      await modelRequestService.executeModelRequest(
+    // NEXT
+    const { provider, isStream, isPassthroughProxyRoute } =
+      await initializeProvider(req, res, echoControlService);
+
+    if (isPassthroughProxyRoute) {
+      return await makeProxyPassthroughRequest(
         req,
         res,
-        processedHeaders,
-        echoControlService
+        provider,
+        processedHeaders
       );
+    }
 
-    await echoControlService.createTransaction(transaction);
+    // Step 3: Execute business logic
+    const { transaction, data } = await modelRequestService.executeModelRequest(
+      req,
+      res,
+      processedHeaders,
+      provider,
+      isStream
+    );
+
     modelRequestService.handleResolveResponse(res, isStream, data);
+
+    // SETTLE
+    await echoControlService.createTransaction(transaction);
   } catch (error) {
     return next(error);
   }

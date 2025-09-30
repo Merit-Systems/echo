@@ -17,9 +17,9 @@ export function useValidApiKey(): UserApiKeyStatus {
   const fetchUserStatus = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     const response = await fetch('/api/user');
-    
+
     if (!response.ok) {
       if (response.status === 401) {
         setError('Not authenticated');
@@ -35,7 +35,7 @@ export function useValidApiKey(): UserApiKeyStatus {
     }
 
     const data = await response.json();
-    
+
     setRequiresSetup(data.requiresSetup || false);
     setHasValidApiKey(!data.requiresSetup && data.user?.hasApiKey);
     setIsLoading(false);
