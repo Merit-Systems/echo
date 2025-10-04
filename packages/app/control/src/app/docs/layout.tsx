@@ -20,7 +20,7 @@ const baseOptions: BaseLayoutProps = {
     {
       text: 'Discord',
       icon: <SiDiscord className="size-4" />,
-      url: 'https://discord.gg/JuKt7tPnNc',
+      url: 'https://discord.gg/merit',
       external: true,
     },
     {

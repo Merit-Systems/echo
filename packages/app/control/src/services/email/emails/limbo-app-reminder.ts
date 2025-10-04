@@ -36,7 +36,7 @@ export async function scheduleLimboAppReminderEmail(
 
       <p style="margin-bottom: 16px;">Here's a link to the docs: <a href="https://echo.merit.systems/docs" target="_blank" style="color: #5865F2; text-decoration: none; font-weight: 500;">https://echo.merit.systems/docs</a></p>
 
-      <p style="margin-bottom: 16px;">We'd love your feedback to help us improve, and you can also join our <a href="https://discord.com/invite/JuKt7tPnNc" target="_blank" style="color: #5865F2; text-decoration: none; font-weight: 500;">Discord</a> to connect with the community. Your input means a lot—hope to see you there!</p>
+      <p style="margin-bottom: 16px;">We'd love your feedback to help us improve, and you can also join our <a href="https://discord.gg/merit" target="_blank" style="color: #5865F2; text-decoration: none; font-weight: 500;">Discord</a> to connect with the community. Your input means a lot—hope to see you there!</p>
     </div>
     `,
     scheduledAt: 'in 1 hour', // Natural language scheduling

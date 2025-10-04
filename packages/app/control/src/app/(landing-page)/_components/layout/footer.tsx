@@ -28,7 +28,7 @@ const links: Link[] = [
   },
   {
     title: 'Discord',
-    href: 'https://discord.com/invite/JuKt7tPnNc',
+    href: 'https://discord.gg/merit',
     icon: <SiDiscord className="size-4" />,
     external: true,
   },
