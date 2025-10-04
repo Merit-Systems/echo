@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { useMemo } from 'react';
 
 export const FormButton = () => {
-  const form = useFormState();
+  const { isValid, isDirty } = useFormState();
 
   const disabled = useMemo(() => {
-    return !form.isValid || !form.isDirty;
-  }, [form.isValid, form.isDirty]);
+    return !isValid || !isDirty;
+  }, [isValid, isDirty]);
 
   return (
     <Button type="submit" disabled={disabled}>
