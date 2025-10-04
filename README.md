@@ -15,13 +15,16 @@
 
   </div>
 
-From Vercel AI SDK to Revenue in 5 Lines
+Start generating revenue from your AI apps in 5 lines of code.
 
-Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usage billing.
+Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usage-based billing.
 
-[Read the docs](https://echo.merit.systems/docs) to get started or [read our announcement](https://www.merit.systems/blog/echo) to learn more.
+Extend the Vercel AI SDK, or call Echo directly - it just works.
 
-Consider giving a star on GitHub!
+```bash
+npm create echo-start@latest
+```
+
 
 ## Why Echo?
 
