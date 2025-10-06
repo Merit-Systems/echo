@@ -97,6 +97,7 @@ export class ModelRequestService {
   handleResolveResponse(res: Response, isStream: boolean, data: unknown): void {
     if (isStream) {
       res.end();
+      return;
     } else {
       res.json(data);
     }

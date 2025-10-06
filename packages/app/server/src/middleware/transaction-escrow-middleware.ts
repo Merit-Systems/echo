@@ -23,6 +23,8 @@ export interface EscrowRequest extends Request {
     processedHeaders: Record<string, string>;
     echoControlService: EchoControlService;
   };
+  // Preserve original content-length before body parsing middleware removes it
+  originalContentLength?: string;
 }
 
 export class TransactionEscrowMiddleware {

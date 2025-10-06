@@ -17,6 +17,10 @@ export interface FundRepoResult {
   tokenAddress: string;
 }
 
+const API_KEY_ID = process.env.CDP_API_KEY_ID || "your-api-key-id";
+const API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || "your-api-key-secret";
+const WALLET_SECRET = process.env.CDP_WALLET_SECRET || "your-wallet-secret";
+
 export async function fundRepo(
   amount: number,
   repoId: number
@@ -38,7 +42,11 @@ export async function fundRepo(
     const amountBigInt = BigInt(Math.ceil(amount * 10 ** 6));
 
     // CDP wallets
-    const cdp = new CdpClient();
+    const cdp = new CdpClient({
+      apiKeyId: API_KEY_ID,
+      apiKeySecret: API_KEY_SECRET,
+      walletSecret: WALLET_SECRET,
+    });
     const owner = await cdp.evm.getOrCreateAccount({
       name: 'echo-fund-owner',
     });

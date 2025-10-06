@@ -21,13 +21,22 @@ import {
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { useVideoGeneration } from '@/lib/hooks/useVideoGeneration';
 import { useVideoHistory } from '@/lib/hooks/useVideoHistory';
 import { useVideoOperations } from '@/lib/hooks/useVideoOperations';
 import type { VideoModelConfig, VideoModelOption } from '@/lib/types';
-import { X } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { FileInputManager } from './FileInputManager';
 import { VideoHistory } from './video-history';
@@ -51,6 +60,7 @@ export default function VideoGenerator() {
     'veo-3.0-fast-generate-preview'
   );
   const [durationSeconds, setDurationSeconds] = useState<4 | 6 | 8>(4);
+  const [generateAudio, setGenerateAudio] = useState<boolean>(false);
   const [hasContent, setHasContent] = useState(false);
   const promptInputRef = useRef<HTMLFormElement>(null);
 
@@ -67,6 +77,7 @@ export default function VideoGenerator() {
   const { handleSubmit: generateVideo } = useVideoGeneration({
     model,
     durationSeconds,
+    generateAudio,
     onVideoAdded: addVideo,
     onVideoUpdated: updateVideo,
   });
@@ -132,7 +143,77 @@ export default function VideoGenerator() {
               </PromptInputModelSelectContent>
             </PromptInputModelSelect>
 
-            <div className="flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg bg-white">
+            {/* Mobile: Settings Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild className="md:hidden">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-3"
+                >
+                  <Settings size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-64">
+                <DropdownMenuLabel>Video Settings</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={e => e.preventDefault()}>
+                  <div className="flex items-center justify-between w-full">
+                    <Label
+                      htmlFor="audio-toggle-mobile"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Audio
+                    </Label>
+                    <Switch
+                      id="audio-toggle-mobile"
+                      checked={generateAudio}
+                      onCheckedChange={setGenerateAudio}
+                    />
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={e => e.preventDefault()}>
+                  <div className="w-full space-y-2">
+                    <Label
+                      htmlFor="duration-slider-mobile"
+                      className="text-sm font-medium pb-2"
+                    >
+                      Duration: {durationSeconds}s
+                    </Label>
+                    <Slider
+                      id="duration-slider-mobile"
+                      value={[allowedDurations.indexOf(durationSeconds)]}
+                      onValueChange={([index]) =>
+                        setDurationSeconds(allowedDurations[index])
+                      }
+                      min={0}
+                      max={allowedDurations.length - 1}
+                      step={1}
+                      className="w-full py-2"
+                    />
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Desktop: Inline Settings */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-white">
+              <Label
+                htmlFor="audio-toggle"
+                className="text-sm font-medium whitespace-nowrap cursor-pointer"
+              >
+                Audio
+              </Label>
+              <Switch
+                id="audio-toggle"
+                checked={generateAudio}
+                onCheckedChange={setGenerateAudio}
+              />
+            </div>
+
+            <div className="hidden md:flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg bg-white">
               <Label
                 htmlFor="duration-slider"
                 className="text-sm font-medium whitespace-nowrap"

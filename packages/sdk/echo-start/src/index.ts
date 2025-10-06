@@ -12,26 +12,47 @@ const program = new Command();
 
 // Available templates - add new ones here
 const DEFAULT_TEMPLATES = {
+  next: {
+    title: 'Next.js',
+    description: 'Minimal Next.js application with Echo integration',
+  },
+  vite: {
+    repo: 'Merit-Systems/echo/templates/react',
+    title: 'React (Vite)',
+    description: 'Minimal Vite React application with Echo integration',
+  },
+  'assistant-ui': {
+    title: 'Assistant UI',
+    description: 'Full-featured chat UI with @assistant-ui/react and AI SDK v5',
+  },
   'next-chat': {
     title: 'Next.js Chat',
     description:
       'Full-stack Next.js application with Echo and the Vercel AI SDK',
   },
-  'react-chat': {
-    title: 'React Chat',
-    description: 'Vite React application with Echo and the Vercel AI SDK',
-  },
-
   'next-image': {
-    repo: 'Merit-Systems/echo/templates/next-image',
     title: 'Next.js Image Gen',
     description:
       'Full-stack Next.js application with Echo and the Vercel AI SDK for image generation',
   },
-  'react-image': {
-    repo: 'Merit-Systems/echo/templates/react-image',
-    title: 'React Image Gen',
+  'next-video-template': {
+    title: 'Next.js Video Gen',
+    description:
+      'Full-stack Next.js application with Echo and the Vercel AI SDK for video generation',
+  },
+  'nextjs-api-key-template': {
+    title: 'Next.js API Key',
+    description:
+      'Next.js application with server-side API key management and database',
+  },
+  'react-chat': {
+    title: 'React Chat',
     description: 'Vite React application with Echo and the Vercel AI SDK',
+  },
+  'react-image': {
+    title: 'React Image Gen',
+    description:
+      'Vite React application with Echo and the Vercel AI SDK for image generation',
   },
 } as const;
 
@@ -111,9 +132,13 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     const spinner = ora(`Downloading template: ${template}`).start();
 
     // Use degit to download the template
-    const emitter = degit(
-      `Merit-Systems/echo/templates/${template}#production`
-    );
+    const templateConfig = DEFAULT_TEMPLATES[template];
+    const repoPath =
+      'repo' in templateConfig
+        ? `${templateConfig.repo}#production`
+        : `Merit-Systems/echo/templates/${template}#production`;
+
+    const emitter = degit(repoPath);
 
     // Collect warnings to show after spinner
     const warnings: string[] = [];

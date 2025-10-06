@@ -22,7 +22,6 @@
 import { isSignedIn } from '@/echo';
 import VideoGenerator from '@/components/video-generator';
 
-import { EchoSignIn } from '@merit-systems/echo-next-sdk/client';
 import { EchoAccount } from '@/components/echo-account-next';
 
 /**

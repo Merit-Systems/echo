@@ -74,7 +74,7 @@ export function useVideoOperations({
             });
 
             // Extract expiresAt if present (added by server when generating signed URLs)
-            const videoWithExpiry = video as any;
+            const videoWithExpiry = video as { expiresAt?: string };
             videoOperationsStorage.update(operationId, {
               videoUrl,
               error: undefined,
@@ -104,7 +104,13 @@ export function useVideoOperations({
   }, [operationStatuses, queryClient, onOperationComplete]);
 }
 
-function extractErrorMessage(opResult: any): string {
+function extractErrorMessage(opResult: {
+  response?: {
+    raiMediaFilteredCount?: number;
+    raiMediaFilteredReasons?: string[];
+  };
+  error?: unknown;
+}): string {
   if (
     opResult.response?.raiMediaFilteredCount &&
     opResult.response.raiMediaFilteredCount > 0

@@ -12,6 +12,8 @@ The easiest way to get started with Echo is to use one of our pre-built template
 The React template is a simple application that uses Vite and `echo-react-sdk`. Uniquely Echo does not require
 a server to make API calls because it handles Oauth directly in the browser.
 
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/react)
+
 <Steps>
     <Step>
         ### Create an Echo App
@@ -50,6 +52,8 @@ a server to make API calls because it handles Oauth directly in the browser.
 ## Next.js
 
 The Next.js template is a full-stack application that uses the Next.js framework with the `echo-next-sdk`.
+
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/next)
 
 <Steps>
     <Step>
@@ -90,6 +94,8 @@ The Next.js template is a full-stack application that uses the Next.js framework
 
 A full-featured chat UI powered by `@assistant-ui/react` integrated with Echo and the Vercel AI SDK v5.
 
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/assistant-ui)
+
 <Steps>
     <Step>
         ### Create an Echo App
@@ -97,52 +103,276 @@ A full-featured chat UI powered by `@assistant-ui/react` integrated with Echo an
     </Step>
 
     <Step>
-        ### Scaffold the Assistant UI template
-        Use `degit` to copy the example into a new directory.
+        ### Create an Assistant UI app
+        Run the following commands to create a new app.
+
         <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
             <Tab value="npm">
                 ```sh lineNumbers
-                npx degit Merit-Systems/echo/examples/assistant-ui my-assistant-ui
-                cd my-assistant-ui
-                npm install
+                npx echo-start@latest --template assistant-ui --app-id YOUR_ECHO_APP_ID
                 ```
             </Tab>
             <Tab value="yarn">
                 ```sh lineNumbers
-                yarn dlx degit Merit-Systems/echo/examples/assistant-ui my-assistant-ui
-                cd my-assistant-ui
-                yarn install
+                yarn dlx echo-start@latest --template assistant-ui --app-id YOUR_ECHO_APP_ID
                 ```
             </Tab>
             <Tab value="pnpm">
                 ```sh lineNumbers
-                pnpx degit Merit-Systems/echo/examples/assistant-ui my-assistant-ui
-                cd my-assistant-ui
-                pnpm install
+                pnpx echo-start@latest --template assistant-ui --app-id YOUR_ECHO_APP_ID
                 ```
             </Tab>
             <Tab value="bun">
                 ```sh lineNumbers
-                bunx degit Merit-Systems/echo/examples/assistant-ui my-assistant-ui
-                cd my-assistant-ui
-                bun install
+                bunx echo-start@latest --template assistant-ui --app-id YOUR_ECHO_APP_ID
                 ```
             </Tab>
         </Tabs>
     </Step>
+</Steps>
 
+## Next.js Chat
+
+A complete chat application with beautiful UI components, real-time balance display, and streaming AI responses.
+
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/next-chat)
+
+<Steps>
     <Step>
-        ### Configure environment
-        Create a `.env.local` file and set your Echo App ID:
-        ```sh lineNumbers
-        NEXT_PUBLIC_ECHO_APP_ID=YOUR_ECHO_APP_ID
-        ```
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
     </Step>
 
     <Step>
-        ### Run the app
-        ```sh lineNumbers
-        pnpm dev
-        ```
+        ### Create a Next.js Chat app
+        Run the following commands to create a new chat app.
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template next-chat --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template next-chat --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template next-chat --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template next-chat --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>
+
+## Next.js Image Generation
+
+AI-powered image generation application with gallery view, download capabilities, and automatic cost tracking.
+
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/next-image)
+
+<Steps>
+    <Step>
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Create a Next.js Image app
+        Run the following commands to create a new image generation app.
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template next-image --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template next-image --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template next-image --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template next-image --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>
+
+## Next.js Video Generation
+
+AI-powered video generation application with video preview, playback, and Echo billing integration.
+
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/next-video-template)
+
+<Steps>
+    <Step>
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Create a Next.js Video app
+        Run the following commands to create a new video generation app.
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template next-video-template --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template next-video-template --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template next-video-template --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template next-video-template --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>
+
+## Next.js API Key Template
+
+Server-side API key management with PostgreSQL database, Prisma ORM, and Docker setup for local development.
+
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/nextjs-api-key-template)
+
+<Steps>
+    <Step>
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Create a Next.js API Key app
+        Run the following commands to create a new API key management app.
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template nextjs-api-key-template --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template nextjs-api-key-template --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template nextjs-api-key-template --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template nextjs-api-key-template --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>
+
+## React Chat
+
+Chat interface built for React applications with Vite, Tailwind CSS, and Echo OAuth integration.
+
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/react-chat)
+
+<Steps>
+    <Step>
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Create a React Chat app
+        Run the following commands to create a new React chat app.
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template react-chat --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template react-chat --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template react-chat --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template react-chat --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>
+
+## React Image Generation
+
+Client-side image generation for React applications with Echo billing and image gallery.
+
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/react-image)
+
+<Steps>
+    <Step>
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Create a React Image app
+        Run the following commands to create a new React image generation app.
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template react-image --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template react-image --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template react-image --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template react-image --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+        </Tabs>
     </Step>
 </Steps>

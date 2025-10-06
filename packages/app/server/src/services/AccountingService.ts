@@ -54,7 +54,7 @@ ALL_SUPPORTED_VIDEO_MODELS.forEach(model => {
   VIDEO_MODEL_MAP.set(model.model_id, model);
 });
 
-const getModelPrice = (model: string) => {
+export const getModelPrice = (model: string) => {
   const supportedModel = MODEL_PRICE_MAP.get(model);
 
   if (supportedModel) {
@@ -69,7 +69,7 @@ const getModelPrice = (model: string) => {
   return null;
 };
 
-const getImageModelPrice = (model: string) => {
+export const getImageModelPrice = (model: string) => {
   const imageModel = IMAGE_MODEL_MAP.get(model);
 
   if (imageModel) {

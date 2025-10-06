@@ -7,7 +7,10 @@ import { createEchoAnthropic } from 'ai-providers/anthropic';
 import { createEchoGoogle } from 'ai-providers/google';
 import { createEchoOpenAI } from 'ai-providers/openai';
 
-import { CreateOauthTokenResponse } from '@merit-systems/echo-typescript-sdk';
+import {
+  CreateOauthTokenResponse,
+  validateAppId,
+} from '@merit-systems/echo-typescript-sdk';
 
 import { ECHO_COOKIE, namespacedCookie } from 'auth/cookie-names';
 import { getEchoToken as getEchoTokenInternal } from 'auth/token-manager';
@@ -25,6 +28,7 @@ import {
  * Provides OAuth authentication and token management for Echo API integration
  */
 export default function Echo(config: EchoConfig): EchoResult {
+  validateAppId(config.appId, 'Echo');
   /**
    * HTTP handler for OAuth routes (signin and callback)
    */

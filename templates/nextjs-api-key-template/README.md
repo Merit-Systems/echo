@@ -1,4 +1,18 @@
-# Echo AI Demo App
+# Echo Next.js API Key Template
+
+A Next.js application demonstrating server-side API key management with Echo, featuring database storage, user authentication, and AI billing.
+
+## Quick Start
+
+Use the Echo CLI to create a new project with this template:
+
+```bash
+npx echo-start@latest --template nextjs-api-key-template
+```
+
+You'll be prompted for your Echo App ID. Don't have one? Get it at [echo.merit.systems/new](https://echo.merit.systems/new).
+
+---
 
 This is a demonstration Next.js application showcasing the power and simplicity of [Echo](https://echo.merit.systems) - a platform that provides AI billing, user management, and authentication for AI applications.
 

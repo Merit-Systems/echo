@@ -14,14 +14,14 @@ export abstract class BaseProvider {
     'https://generativelanguage.googleapis.com/v1beta/openai';
   protected readonly OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
-  private readonly echoControlService: EchoControlService;
+  private echoControlService: EchoControlService | undefined;
   private readonly isStream: boolean;
   private readonly model: string;
 
   constructor(
-    echoControlService: EchoControlService,
     stream: boolean,
-    model: string
+    model: string,
+    echoControlService?: EchoControlService
   ) {
     this.echoControlService = echoControlService;
     this.isStream = stream;
@@ -56,11 +56,12 @@ export abstract class BaseProvider {
     data: string,
     requestBody?: Record<string, unknown>
   ): Promise<Transaction>;
-  getEchoControlService(): EchoControlService {
-    return this.echoControlService;
-  }
+
   getUserId(): string | null {
-    return this.echoControlService.getUserId();
+    return this.echoControlService?.getUserId() ?? null;
+  }
+  setEchoControlService(echoControlService: EchoControlService) {
+    this.echoControlService = echoControlService;
   }
   getIsStream(): boolean {
     return this.isStream;

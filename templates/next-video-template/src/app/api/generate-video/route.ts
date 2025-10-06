@@ -29,6 +29,7 @@ export async function POST(req: Request) {
       prompt,
       model,
       durationSeconds = 4,
+      generateAudio = false,
       image,
       lastFrame,
     } = body as GenerateVideoRequest;
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
       prompt,
       model,
       durationSeconds,
+      generateAudio,
       image,
       lastFrame
     );

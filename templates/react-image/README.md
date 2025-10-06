@@ -1,4 +1,18 @@
-# Echo React SDK - Vite Example
+# Echo React Image Generation Template
+
+An image generation application built with React, Vite, and Echo SDK, featuring client-side AI image generation with automatic billing.
+
+## Quick Start
+
+Use the Echo CLI to create a new project with this template:
+
+```bash
+npx echo-start@latest --template react-image
+```
+
+You'll be prompted for your Echo App ID. Don't have one? Get it at [echo.merit.systems/new](https://echo.merit.systems/new).
+
+---
 
 A minimal example showing how to use the Echo React SDK with Vite.
 

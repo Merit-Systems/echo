@@ -34,7 +34,6 @@ export class VertexAIProvider extends BaseProvider {
 
   static detectPassthroughProxy(
     req: Request,
-    echoControlService: EchoControlService,
     extractIsStream: (req: Request) => boolean
   ):
     | {
@@ -49,7 +48,7 @@ export class VertexAIProvider extends BaseProvider {
 
     const model = PROXY_PASSTHROUGH_ONLY_MODEL;
     const isStream = extractIsStream(req);
-    const provider = new VertexAIProvider(echoControlService, isStream, model);
+    const provider = new VertexAIProvider(isStream, model);
 
     return { provider, model, isStream };
   }

@@ -15,7 +15,38 @@ Echo standardizes AI billing like Clerk standardized auth. Drop in our SDK, set 
 
 Result: Your users get one universal balance that works across all Echo-powered apps, creating network effects that grow your user base while you focus on building.
 
-For example, here's how you can add complete user management and LLM billing to your app:
+## Starting Fresh
+
+The quickest way to get started with Echo is to use the `echo-start` CLI tool, which scaffolds a new project with Echo already configured:
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template next
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template next
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template next
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template next
+                ```
+            </Tab>
+        </Tabs>
+
+This will create a new Next.js app with Echo integration ready to go. For other templates and frameworks, check out our [templates section](/docs/getting-started/templates).
+
+## Example Integration
+
+Here's how you can add complete user management and LLM billing to your app:
 
 ```tsx
 import { EchoProvider, EchoTokens, useEchoModelProviders } from '@merit-systems/echo-react-sdk';
@@ -71,8 +102,8 @@ The React and Next.js SDKs are opinionated wrappers around the TypeScript SDK, p
         />
       ),
       docsLink: '/docs/getting-started/react',
-      liveExampleLink: 'https://example.com/react-demo',
-      githubLink: 'https://github.com/Merit-Systems/echo-react-example',
+      liveExampleLink: 'https://echo-react-boilerplate.vercel.app',
+      githubLink: 'https://github.com/Merit-Systems/echo/tree/master/templates/react',
     },
     {
       title: 'Next.js',
@@ -86,8 +117,8 @@ The React and Next.js SDKs are opinionated wrappers around the TypeScript SDK, p
         />
       ),
       docsLink: '/docs/getting-started/next-js',
-      liveExampleLink: 'https://example.com/nextjs-demo',
-      githubLink: 'https://github.com/Merit-Systems/echo-nextjs-example',
+      liveExampleLink: 'https://echo-next-boilerplate.vercel.app/',
+      githubLink: 'https://github.com/Merit-Systems/echo/tree/master/templates/next',
     },
     {
       title: 'CLI',
@@ -101,3 +132,23 @@ The React and Next.js SDKs are opinionated wrappers around the TypeScript SDK, p
     },
   ]}
 />
+
+## Templates
+
+We provide a variety of ready-to-use templates to help you get started quickly with Echo:
+
+### Core Templates
+- [**Next.js**](/docs/getting-started/templates#nextjs) — Full-stack Next.js app with Echo integration
+- [**React**](/docs/getting-started/templates#react) — Vite-powered React app with Echo SDK
+- [**Assistant UI**](/docs/getting-started/templates#assistant-ui) — Full-featured chat UI with `@assistant-ui/react`
+
+### Feature-Specific Templates
+- **Next.js Chat** — Chat interface built with Next.js and Echo
+- **Next.js Image Generation** — Image generation app with Echo billing
+- **Next.js Video** — Video generation app with Echo integration
+- **Next.js API Key** — Server-side API key management template
+- **React Chat** — Chat interface for React apps
+- **React Image** — Image generation for React apps
+
+All templates are available through `echo-start` or in the [GitHub repository](https://github.com/Merit-Systems/echo/tree/master/templates). Visit our [templates documentation](/docs/getting-started/templates) for detailed setup instructions.
+

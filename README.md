@@ -21,7 +21,11 @@ Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usag
 
 [Read the docs](https://echo.merit.systems/docs) to get started or [read our announcement](https://www.merit.systems/blog/echo) to learn more.
 
-Consider giving a star on GitHub!
+## Getting started
+
+```bash
+npx echo-start@latest
+```
 
 ## Why Echo?
 

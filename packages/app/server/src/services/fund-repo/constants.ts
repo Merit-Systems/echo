@@ -64,6 +64,24 @@ export const ERC20_CONTRACT_ABI = [
   },
 ] as const;
 
+export const ERC3009_ABI = [
+  {
+    name: 'transferWithAuthorization',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address' },
+      { name: 'to', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'validAfter', type: 'uint256' },
+      { name: 'validBefore', type: 'uint256' },
+      { name: 'nonce', type: 'bytes32' },
+      { name: 'signature', type: 'bytes' },
+    ],
+    outputs: [],
+  },
+] as const;
+
 export const MERIT_CONTRACT_ADDRESS = process.env
   .MERIT_CONTRACT_ADDRESS as `0x${string}`;
 export const USDC_ADDRESS = process.env.USDC_ADDRESS as `0x${string}`;

@@ -15,7 +15,10 @@ export function validateGenerateVideoRequest(body: unknown): ValidationResult {
     };
   }
 
-  const { prompt, model, durationSeconds } = body as Record<string, unknown>;
+  const { prompt, model, durationSeconds, generateAudio } = body as Record<
+    string,
+    unknown
+  >;
 
   if (!prompt || typeof prompt !== 'string') {
     return {
@@ -59,6 +62,16 @@ export function validateGenerateVideoRequest(body: unknown): ValidationResult {
         },
       };
     }
+  }
+
+  if (generateAudio !== undefined && typeof generateAudio !== 'boolean') {
+    return {
+      isValid: false,
+      error: {
+        message: 'generateAudio must be a boolean',
+        status: 400,
+      },
+    };
   }
 
   return { isValid: true };

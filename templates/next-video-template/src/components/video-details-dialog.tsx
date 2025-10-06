@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,9 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import type { GeneratedVideo } from '@/lib/types';
-import { Copy, Download, X } from 'lucide-react';
+import { Copy, Download } from 'lucide-react';
 import { useCallback } from 'react';
 
 interface VideoDetailsDialogProps {

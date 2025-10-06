@@ -32,6 +32,7 @@ export const verifyUserHeaderCheck = async (
     connection: _connection,
     'x-api-key': xApiKey,
     'x-goog-api-key': xGoogleApiKey,
+    'x-payment': xPayment,
     ...restHeaders
   } = headers;
   /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -42,9 +43,7 @@ export const verifyUserHeaderCheck = async (
   }
 
   const apiKey = authorization ?? xApiKey ?? xGoogleApiKey;
-
   const cleanApiKey = apiKey?.replace('Bearer ', '') ?? '';
-
   const echoControlService = new EchoControlService(prisma, cleanApiKey);
   const authResult = await echoControlService.verifyApiKey();
 

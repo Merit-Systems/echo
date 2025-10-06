@@ -20,10 +20,7 @@ import { extractIsStream, extractModelName } from './RequestDataService';
  *
  * @returns
  */
-export function detectPassthroughProxyRoute(
-  req: Request,
-  echoControlService: EchoControlService
-):
+export function detectPassthroughProxyRoute(req: Request):
   | {
       provider: BaseProvider;
       model: string;
@@ -33,7 +30,6 @@ export function detectPassthroughProxyRoute(
   // Check for Vertex AI proxy routes first
   const vertexAIProxy = VertexAIProvider.detectPassthroughProxy(
     req,
-    echoControlService,
     extractIsStream
   );
   if (vertexAIProxy) {
@@ -41,27 +37,19 @@ export function detectPassthroughProxyRoute(
   }
 
   // Then check for Gemini VEO proxy routes
-  return GeminiVeoProvider.detectPassthroughProxy(
-    req,
-    echoControlService,
-    extractIsStream
-  );
+  return GeminiVeoProvider.detectPassthroughProxy(req, extractIsStream);
 }
 
 export async function initializeProvider(
   req: Request,
-  res: Response,
-  echoControlService: EchoControlService
+  res: Response
 ): Promise<{
   provider: BaseProvider;
   model: string;
   isStream: boolean;
   isPassthroughProxyRoute: boolean;
 }> {
-  const passthroughProxyRoute = detectPassthroughProxyRoute(
-    req,
-    echoControlService
-  );
+  const passthroughProxyRoute = detectPassthroughProxyRoute(req);
   if (passthroughProxyRoute)
     return { ...passthroughProxyRoute, isPassthroughProxyRoute: true };
 
@@ -83,7 +71,7 @@ export async function initializeProvider(
   const isStream = extractIsStream(req);
 
   // Get the appropriate provider
-  const provider = getProvider(model, echoControlService, isStream, req.path);
+  const provider = getProvider(model, isStream, req.path);
 
   return {
     provider,

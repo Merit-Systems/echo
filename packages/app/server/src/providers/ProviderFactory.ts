@@ -99,7 +99,6 @@ export const VIDEO_MODEL_TO_PROVIDER: Record<string, ProviderType> =
 
 export const getProvider = (
   model: string,
-  echoControlService: EchoControlService,
   stream: boolean,
   completionPath: string
 ): BaseProvider => {
@@ -154,25 +153,25 @@ export const getProvider = (
 
   switch (type) {
     case ProviderType.GPT:
-      return new GPTProvider(echoControlService, stream, model);
+      return new GPTProvider(stream, model);
     case ProviderType.ANTHROPIC_GPT:
-      return new AnthropicGPTProvider(echoControlService, stream, model);
+      return new AnthropicGPTProvider(stream, model);
     case ProviderType.ANTHROPIC_NATIVE:
-      return new AnthropicNativeProvider(echoControlService, stream, model);
+      return new AnthropicNativeProvider(stream, model);
     case ProviderType.GEMINI:
-      return new GeminiProvider(echoControlService, stream, model);
+      return new GeminiProvider(stream, model);
     case ProviderType.GEMINI_GPT:
-      return new GeminiGPTProvider(echoControlService, stream, model);
+      return new GeminiGPTProvider(stream, model);
     case ProviderType.OPENAI_RESPONSES:
-      return new OpenAIResponsesProvider(echoControlService, stream, model);
+      return new OpenAIResponsesProvider(stream, model);
     case ProviderType.OPENROUTER:
-      return new OpenRouterProvider(echoControlService, stream, model);
+      return new OpenRouterProvider(stream, model);
     case ProviderType.OPENAI_IMAGES:
-      return new OpenAIImageProvider(echoControlService, stream, model);
+      return new OpenAIImageProvider(stream, model);
     case ProviderType.GEMINI_VEO:
-      return new GeminiVeoProvider(echoControlService, stream, model);
+      return new GeminiVeoProvider(stream, model);
     case ProviderType.VERTEX_AI:
-      return new VertexAIProvider(echoControlService, stream, model);
+      return new VertexAIProvider(stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }

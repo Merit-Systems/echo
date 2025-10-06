@@ -8,6 +8,7 @@ export * from './resources';
 export * from './types';
 export * from './api-types';
 export * from './utils/error-handling';
+export * from './utils/validation';
 export * from './providers';
 
 // Export tool-related types and utilities

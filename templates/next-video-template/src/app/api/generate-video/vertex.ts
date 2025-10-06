@@ -16,6 +16,7 @@ export async function handleGeminiGenerate(
   prompt: string,
   model: 'veo-3.0-fast-generate-preview' | 'veo-3.0-generate-preview',
   durationSeconds: number = 4,
+  generateAudio: boolean = false,
   image?: string, // Base64 encoded image or data URL (first frame)
   lastFrame?: string // Base64 encoded image or data URL (last frame)
 ): Promise<Response> {
@@ -45,7 +46,7 @@ export async function handleGeminiGenerate(
         durationSeconds,
         enhancePrompt: true,
         personGeneration: 'allow_all',
-        generateAudio: true,
+        generateAudio,
         outputGcsUri: 'template-v1',
       },
     };
@@ -82,8 +83,6 @@ export async function handleGeminiGenerate(
     }
 
     const operation = await ai.models.generateVideos(generateParams);
-
-    console.log('operation: ', operation);
 
     // Return the SDK operation directly - no wrapper needed
     return Response.json(operation);
