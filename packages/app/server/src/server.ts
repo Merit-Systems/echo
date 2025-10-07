@@ -92,7 +92,7 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
     }
 
     if (isX402Request(headers)) {
-      await handleX402Request({
+      return handleX402Request({
         req,
         res,
         headers,
@@ -101,19 +101,16 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
         provider,
         isStream,
       });
-      return;
     }
 
     if (isApiRequest(headers)) {
-
       const { processedHeaders, echoControlService } = await authenticateRequest(
         headers,
         prisma
       );
-  
       provider.setEchoControlService(echoControlService);
-  
-      await handleApiKeyRequest({
+
+      return handleApiKeyRequest({
         req,
         res,
         headers: processedHeaders,
@@ -123,7 +120,6 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
         isStream,
         maxCost,
       });
-      return;
     }
 
     return res.status(400).json({
