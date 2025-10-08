@@ -13,6 +13,7 @@ import { extractMaxOutputTokens } from './RequestDataService';
 import { EscrowRequest } from '../middleware/transaction-escrow-middleware';
 import { ProviderType } from 'providers/ProviderType';
 import { Tool } from 'openai/resources/responses/responses';
+import { SupportedVideoModel } from '@merit-systems/echo-typescript-sdk';
 
 export function getRequestMaxCost(
   req: EscrowRequest,
@@ -27,13 +28,7 @@ export function getRequestMaxCost(
         `No pricing found for video model: ${provider.getModel()}`
       );
     }
-    const durationSeconds: number = Number(req.body.durationSeconds) || 8;
-    const generateAudio: boolean = Boolean(req.body.generateAudio) || true;
-    return new Decimal(
-      generateAudio
-        ? videoModelWithPricing.cost_per_second_with_audio
-        : videoModelWithPricing.cost_per_second_without_audio
-    ).mul(durationSeconds);
+    return predictMaxVideoCost(req, provider, videoModelWithPricing);
   } else if (isValidImageModel(provider.getModel())) {
     if (req.path.includes('images/generations')) {
       // Text to image generation pricing
@@ -99,6 +94,30 @@ function predictMaxToolCost(
 
       return totalToolCost;
 
+    default:
+      return new Decimal(0);
+  }
+}
+
+function predictMaxVideoCost(
+  req: EscrowRequest,
+  provider: BaseProvider,
+  videoModelWithPricing: SupportedVideoModel
+): Decimal {
+  switch (provider.getType()) {
+    case ProviderType.OPENAI_VIDEOS:
+      const seconds: number = Number(req.body.seconds) || 4;
+      return new Decimal(videoModelWithPricing.cost_per_second_with_audio).mul(
+        seconds
+      );
+    case ProviderType.VERTEX_AI:
+      const durationSeconds: number = Number(req.body.durationSeconds) || 8;
+      const generateAudio: boolean = Boolean(req.body.generateAudio) || true;
+      return new Decimal(
+        generateAudio
+          ? videoModelWithPricing.cost_per_second_with_audio
+          : videoModelWithPricing.cost_per_second_without_audio
+      ).mul(durationSeconds);
     default:
       return new Decimal(0);
   }

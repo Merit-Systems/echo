@@ -34,28 +34,25 @@ export async function handleX402Request({
   isStream,
 }: X402HandlerInput) {
   if (isPassthroughProxyRoute) {
-    return await makeProxyPassthroughRequest(
-      req,
-      res,
-      provider,
-      headers
-    );
+    return await makeProxyPassthroughRequest(req, res, provider, headers);
   }
-  
+
   // Apply x402 payment middleware with the calculated maxCost
   const network = process.env.NETWORK as Network;
-  
+
   let recipient: string;
   try {
     recipient = (await getSmartAccount()).smartAccount.address;
   } catch (error) {
     return buildX402Response(req, res, maxCost);
   }
+  let xPaymentData: PaymentPayload;
+  try {
+    xPaymentData = validateXPaymentHeader(headers, req);
+  } catch (error) {
+    return buildX402Response(req, res, maxCost);
+  }
 
-  const xPaymentData: PaymentPayload = validateXPaymentHeader(
-    headers,
-    req
-  );
   const payload = xPaymentData.payload as ExactEvmPayload;
 
   const paymentAmount = payload.authorization.value;
@@ -129,8 +126,11 @@ export async function handleX402Request({
         await transfer(
           authPayload.from as `0x${string}`,
           refundAmountUsdcBigInt
-        ).catch((transferError) => {
-          logger.error('Failed to process refund', { error: transferError, refundAmount: refundAmount.toString() });
+        ).catch(transferError => {
+          logger.error('Failed to process refund', {
+            error: transferError,
+            refundAmount: refundAmount.toString(),
+          });
         });
       }
     } catch (error) {
@@ -143,8 +143,12 @@ export async function handleX402Request({
         await transfer(
           authPayload.from as `0x${string}`,
           refundAmountUsdcBigInt
-        ).catch((transferError) => {
-          logger.error('Failed to process full refund after error', { error: transferError, originalError: error, refundAmount: refundAmount.toString() });
+        ).catch(transferError => {
+          logger.error('Failed to process full refund after error', {
+            error: transferError,
+            originalError: error,
+            refundAmount: refundAmount.toString(),
+          });
         });
       }
     }
@@ -164,6 +168,11 @@ export async function handleApiKeyRequest({
   isStream,
 }: HandlerInput) {
   const transactionEscrowMiddleware = new TransactionEscrowMiddleware(prisma);
+
+  if (isPassthroughProxyRoute) {
+    return await makeProxyPassthroughRequest(req, res, provider, headers);
+  }
+
   const balanceCheckResult = await checkBalance(echoControlService);
 
   // Step 2: Set up escrow context and apply escrow middleware logic
@@ -177,12 +186,7 @@ export async function handleApiKeyRequest({
   await transactionEscrowMiddleware.handleInFlightRequestIncrement(req, res);
 
   if (isPassthroughProxyRoute) {
-    return await makeProxyPassthroughRequest(
-      req,
-      res,
-      provider,
-      headers
-    );
+    return await makeProxyPassthroughRequest(req, res, provider, headers);
   }
 
   // Step 3: Execute business logic

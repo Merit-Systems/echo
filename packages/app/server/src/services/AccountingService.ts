@@ -17,6 +17,7 @@ import { logMetric } from '../logger';
 import {
   GeminiVideoModels,
   VertexAIVideoModels,
+  OpenAIVideoModels,
 } from '@merit-systems/echo-typescript-sdk';
 
 // Combine all supported chat models from the TypeScript SDK
@@ -34,6 +35,7 @@ export const ALL_SUPPORTED_IMAGE_MODELS: SupportedImageModel[] =
 export const ALL_SUPPORTED_VIDEO_MODELS: SupportedVideoModel[] = [
   ...GeminiVideoModels,
   ...VertexAIVideoModels,
+  ...OpenAIVideoModels,
 ];
 
 // Create a lookup map for O(1) model price retrieval

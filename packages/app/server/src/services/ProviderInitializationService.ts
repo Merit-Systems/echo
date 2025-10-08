@@ -12,6 +12,7 @@ import {
 } from './AccountingService';
 import { EchoControlService } from './EchoControlService';
 import { extractIsStream, extractModelName } from './RequestDataService';
+import { OpenAIVideoProvider } from 'providers/OpenAIVideoProvider';
 
 /**
  * Detects if the request is a proxy route, and should be forwarded rather
@@ -32,6 +33,13 @@ export function detectPassthroughProxyRoute(req: Request):
     req,
     extractIsStream
   );
+  const openAIVideoProxy = OpenAIVideoProvider.detectPassthroughProxy(
+    req,
+    extractIsStream
+  );
+  if (openAIVideoProxy) {
+    return openAIVideoProxy;
+  }
   if (vertexAIProxy) {
     return vertexAIProxy;
   }

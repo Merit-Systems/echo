@@ -87,7 +87,11 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
       await initializeProvider(req, res);
     const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
 
-    if (!isApiRequest(headers) && !isX402Request(headers)) {
+    if (
+      !isApiRequest(headers) &&
+      !isX402Request(headers) &&
+      !isPassthroughProxyRoute
+    ) {
       return buildX402Response(req, res, maxCost);
     }
 
@@ -105,14 +109,11 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
     }
 
     if (isApiRequest(headers)) {
+      const { processedHeaders, echoControlService } =
+        await authenticateRequest(headers, prisma);
 
-      const { processedHeaders, echoControlService } = await authenticateRequest(
-        headers,
-        prisma
-      );
-  
       provider.setEchoControlService(echoControlService);
-  
+
       await handleApiKeyRequest({
         req,
         res,
@@ -149,7 +150,7 @@ app.use((error: Error, req: Request, res: Response) => {
       error: error.message,
     });
   }
-  
+
   if (error instanceof Error) {
     logMetric('server.internal_error', 1, {
       error_type: error.name,
@@ -160,7 +161,7 @@ app.use((error: Error, req: Request, res: Response) => {
       error: error.message || 'Internal Server Error',
     });
   }
-  
+
   logMetric('server.internal_error', 1, {
     error_type: 'unknown_error',
   });

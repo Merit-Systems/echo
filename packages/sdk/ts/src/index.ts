@@ -50,3 +50,5 @@ export { GeminiVideoModels } from './supported-models/video/gemini';
 export type { GeminiVideoModel } from './supported-models/video/gemini';
 export { VertexAIVideoModels } from './supported-models/video/vertex-ai';
 export type { VertexAIVideoModel } from './supported-models/video/vertex-ai';
+export { OpenAIVideoModels } from './supported-models/video/open-ai';
+export type { OpenAIVideoModel } from './supported-models/video/open-ai';

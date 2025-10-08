@@ -10,6 +10,7 @@ import { AnthropicNativeProvider } from './AnthropicNativeProvider';
 import type { BaseProvider } from './BaseProvider';
 import { GeminiGPTProvider } from './GeminiGPTProvider';
 import { GeminiProvider } from './GeminiProvider';
+import { OpenAIVideoProvider } from './OpenAIVideoProvider';
 import {
   GeminiVeoProvider,
   PROXY_PASSTHROUGH_ONLY_MODEL as GeminiVeoProxyPassthroughOnlyModel,
@@ -78,6 +79,9 @@ const createVideoModelToProviderMapping = (): Record<string, ProviderType> => {
     }
     if (modelConfig.provider === 'VertexAI') {
       mapping[modelConfig.model_id] = ProviderType.VERTEX_AI;
+    }
+    if (modelConfig.provider === 'OpenAI') {
+      mapping[modelConfig.model_id] = ProviderType.OPENAI_VIDEOS;
     }
   }
   return mapping;
@@ -172,6 +176,8 @@ export const getProvider = (
       return new GeminiVeoProvider(stream, model);
     case ProviderType.VERTEX_AI:
       return new VertexAIProvider(stream, model);
+    case ProviderType.OPENAI_VIDEOS:
+      return new OpenAIVideoProvider(stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }

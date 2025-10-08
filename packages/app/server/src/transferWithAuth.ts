@@ -30,6 +30,8 @@ export async function transfer(
 
     return result;
   } catch (error) {
-    throw new Error(`Transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
