@@ -18,6 +18,7 @@ import { buildX402Response, isApiRequest, isX402Request } from './utils';
 import { handleX402Request, handleApiKeyRequest } from './handlers';
 import { initializeProvider } from './services/ProviderInitializationService';
 import { getRequestMaxCost } from './services/PricingService';
+import { Decimal } from '@prisma/client/runtime/library';
 
 dotenv.config();
 
@@ -83,8 +84,12 @@ app.use(inFlightMonitorRouter);
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
   try {
     const headers = req.headers as Record<string, string>;
-    const { provider, isStream, isPassthroughProxyRoute } =
+    const { provider, isStream, isPassthroughProxyRoute, is402Sniffer } =
       await initializeProvider(req, res);
+    if (!provider || is402Sniffer) {
+      await buildX402Response(req, res, new Decimal(0));
+      return res.end();
+    }
     const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
 
     if (
@@ -139,6 +144,12 @@ app.use((error: Error, req: Request, res: Response) => {
   logger.error(
     `Error handling request: ${error.message} | Stack: ${error.stack}`
   );
+
+  // If response has already been sent, just log the error and return
+  if (res.headersSent) {
+    logger.warn('Response already sent, cannot send error response');
+    return;
+  }
 
   if (error instanceof HttpError) {
     logMetric('server.internal_error', 1, {

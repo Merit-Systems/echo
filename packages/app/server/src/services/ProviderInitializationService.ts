@@ -1,19 +1,18 @@
 import { Request, Response } from 'express';
-import { PaymentRequiredError, UnknownModelError } from '../errors/http';
+import { OpenAIVideoProvider } from 'providers/OpenAIVideoProvider';
+import { isApiRequest, isX402Request } from 'utils';
+import { UnknownModelError } from '../errors/http';
 import logger from '../logger';
 import { BaseProvider } from '../providers/BaseProvider';
 import { GeminiVeoProvider } from '../providers/GeminiVeoProvider';
-import { VertexAIProvider } from '../providers/VertexAIProvider';
 import { getProvider } from '../providers/ProviderFactory';
+import { VertexAIProvider } from '../providers/VertexAIProvider';
 import {
   isValidImageModel,
   isValidModel,
   isValidVideoModel,
 } from './AccountingService';
 import { extractIsStream, extractModelName } from './RequestDataService';
-import { OpenAIVideoProvider } from 'providers/OpenAIVideoProvider';
-import { buildX402Response, isX402Request, isApiRequest } from 'utils';
-import { Decimal } from 'generated/prisma/runtime/library';
 
 /**
  * Detects if the request is a proxy route, and should be forwarded rather
@@ -53,10 +52,11 @@ export async function initializeProvider(
   req: Request,
   res: Response
 ): Promise<{
-  provider: BaseProvider;
   model: string;
   isStream: boolean;
   isPassthroughProxyRoute: boolean;
+  provider?: BaseProvider;
+  is402Sniffer?: boolean;
 }> {
   const passthroughProxyRoute = detectPassthroughProxyRoute(req);
   if (passthroughProxyRoute)
@@ -71,14 +71,24 @@ export async function initializeProvider(
   ) {
     logger.error(`Invalid model: ${model}`);
     // if auth or x402 header, return 422
-    if (isApiRequest(req.headers as Record<string, string>) || isX402Request(req.headers as Record<string, string>)) {
+    if (
+      isApiRequest(req.headers as Record<string, string>) ||
+      isX402Request(req.headers as Record<string, string>)
+    ) {
       res.status(422).json({
         error: `Invalid model: ${model} Echo does not yet support this model.`,
       });
       throw new UnknownModelError('Invalid model');
     } else {
-    await buildX402Response(req, res, new Decimal(0));
-    throw new PaymentRequiredError('No Model or Auth method detected, returning 402 Schema');
+      logger.error(
+        `No Model or Auth method detected, returning 402 Schema for model: ${model}`
+      );
+      return {
+        is402Sniffer: true,
+        model: '',
+        isStream: false,
+        isPassthroughProxyRoute: false,
+      };
     }
   }
 

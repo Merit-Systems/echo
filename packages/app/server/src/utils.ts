@@ -135,7 +135,15 @@ export async function buildX402Response(
       network,
     })
   );
-  const outputSchema = getSchemaForRoute(req.path);
+  
+  let outputSchema;
+  try {
+    outputSchema = getSchemaForRoute(req.path);
+    logger.info('Schema generated for route', { path: req.path, hasSchema: !!outputSchema });
+  } catch (error) {
+    logger.error('Failed to generate schema for route', { path: req.path, error });
+    outputSchema = undefined;
+  }
 
   const resBody = {
     x402Version: 1,
@@ -168,6 +176,7 @@ export async function buildX402Response(
     ],
   };
 
+  logger.info('Sending 402 response', { path: req.path });
   return res.status(402).json(resBody);
 }
 
