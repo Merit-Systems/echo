@@ -84,6 +84,7 @@ export class OpenAIVideoProvider extends BaseProvider {
     requestBody?: Record<string, unknown>
   ): Promise<Transaction> {
     const providerId = this.parseProviderIdFromResponseBody(data);
+    logger.info(`Video created with id: ${providerId}`);
     if (!requestBody) {
       throw new Error('Request body is required for OpenAI Videos');
     }

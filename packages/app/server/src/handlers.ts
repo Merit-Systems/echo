@@ -54,6 +54,7 @@ export async function handleX402Request({
   }
 
   const payload = xPaymentData.payload as ExactEvmPayload;
+  logger.info(`Payment payload: ${JSON.stringify(payload)}`);
 
   const paymentAmount = payload.authorization.value;
   const paymentAmountDecimal = usdcBigIntToDecimal(paymentAmount);
