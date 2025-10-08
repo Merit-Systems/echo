@@ -1,7 +1,7 @@
-export const WALLET_OWNER = 'echo-fund-owner';
-export const WALLET_SMART_ACCOUNT = process.env.WALLET_NAME
-  ? `${process.env.WALLET_NAME}`
-  : 'echo-fund-smart-account';
+export const WALLET_OWNER = process.env.WALLET_OWNER
+  ? `${process.env.WALLET_OWNER}`
+  : 'echo-fund-owner';
+export const WALLET_SMART_ACCOUNT = 'echo-fund-smart-account';
 
 export const DOMAIN_NAME = 'USD Coin';
 export const DOMAIN_VERSION = '2';
