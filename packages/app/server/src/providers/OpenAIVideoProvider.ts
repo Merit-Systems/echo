@@ -26,15 +26,20 @@ export class OpenAIVideoProvider extends BaseProvider {
     const { method, path } = req;
 
     // 1. Create video route (POST /v1/videos) - return undefined (not passthrough)
-    if (method === 'POST' && path.endsWith('/videos') && !path.includes('/videos/')) {
+    if (
+      method === 'POST' &&
+      path.endsWith('/videos') &&
+      !path.includes('/videos/')
+    ) {
       return undefined;
     }
 
     // 2. Retrieve video (GET /v1/videos/{video_id}) - passthrough
     const isRetrieveRoute = method === 'GET' && /\/videos\/[^/]+$/.test(path);
-    
+
     // 3. Download content (GET /v1/videos/{video_id}/content) - passthrough
-    const isDownloadRoute = method === 'GET' && /\/videos\/[^/]+\/content$/.test(path);
+    const isDownloadRoute =
+      method === 'GET' && /\/videos\/[^/]+\/content$/.test(path);
 
     if (isRetrieveRoute || isDownloadRoute) {
       const model = PROXY_PASSTHROUGH_ONLY_MODEL;
@@ -48,7 +53,11 @@ export class OpenAIVideoProvider extends BaseProvider {
       };
     }
     // 4. List videos (GET /v1/videos) - 404
-    if (method === 'GET' && path.endsWith('/videos') && path.endsWith('/videos')) {
+    if (
+      method === 'GET' &&
+      path.endsWith('/videos') &&
+      path.endsWith('/videos')
+    ) {
       throw new HttpError(404, 'List videos endpoint is not supported');
     }
 
@@ -71,7 +80,10 @@ export class OpenAIVideoProvider extends BaseProvider {
     return ProviderType.OPENAI_VIDEOS;
   }
 
-  getBaseUrl(): string {
+  getBaseUrl(reqPath?: string): string {
+    if (reqPath && reqPath.startsWith('/v1')) {
+      return this.OPENAI_BASE_URL.replace('/v1', '');
+    }
     return this.OPENAI_BASE_URL;
   }
 

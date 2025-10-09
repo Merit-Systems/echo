@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+const modelSchema = z.enum(["sora-2" ,"sora-2-pro"]);
+
 export const OpenAIVideoCreateParamsSchema = z.object({
-    model: z.enum(["sora-2"]),
-    prompt: z.string(),
+    model: modelSchema,
+    prompt: z.string().nonoptional(),
     seconds: z.union([z.literal(4), z.literal(8), z.literal(12)]),
     size: z.string().optional(),
 });
@@ -15,7 +17,7 @@ export const OpenAIVideoSchema = z.object({
     created_at: z.number(),
     completed_at: z.number().nullable(),
     expires_at: z.number().optional(),
-    model: z.enum(["sora-2"]),
+    model: modelSchema,
     remixed_from_video_id: z.string().optional(),
     seconds: z.union([z.literal(4), z.literal(8), z.literal(12)]).optional(),
     size: z.string().optional(),

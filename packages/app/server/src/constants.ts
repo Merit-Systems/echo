@@ -27,7 +27,7 @@ export const MIME_TYPE = 'application/json';
 export const MAX_TIMEOUT_SECONDS = 1000;
 export const DISCOVERABLE = true;
 
-export const X402_TYPE = 'x402';
+export const X402_TYPE = 'http';
 export const X402_SCHEME = 'exact';
 export const X402_VERSION = '1';
 export const X402_ERROR_MESSAGE = 'Payment Required';

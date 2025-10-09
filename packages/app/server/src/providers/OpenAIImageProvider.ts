@@ -59,7 +59,10 @@ export class OpenAIImageProvider extends BaseProvider {
     return ProviderType.OPENAI_IMAGES;
   }
 
-  getBaseUrl(): string {
+  getBaseUrl(reqPath?: string): string {
+    if (reqPath && reqPath.startsWith('/v1')) {
+      return this.OPENAI_BASE_URL.replace('/v1', '');
+    }
     return this.OPENAI_BASE_URL;
   }
 

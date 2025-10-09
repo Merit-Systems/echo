@@ -117,7 +117,8 @@ export async function buildX402Response(
   const network = process.env.NETWORK as Network;
   const maxCostBigInt = decimalToUsdcBigInt(maxCost);
   const paymentUrl = req.path;
-  const resourceUrl = req.url;
+  const host = process.env.ECHO_ROUTER_BASE_URL;
+  const resourceUrl = `${host}${req.url}`;
 
   let recipient: string;
   try {
@@ -157,7 +158,7 @@ export async function buildX402Response(
         recipient: recipient,
         currency: USDC_ADDRESS,
         to: recipient,
-        url: paymentUrl,
+        url: resourceUrl,
         nonce: generateRandomNonce(),
         scheme: X402_SCHEME,
         resource: resourceUrl,
