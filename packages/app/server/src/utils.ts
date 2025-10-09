@@ -34,11 +34,11 @@ import {
   PaymentPayload,
   PaymentPayloadSchema,
 } from './services/facilitator/x402-types';
+import { getSchemaForRoute } from './schema/schemaForRoute';
 
-
-const API_KEY_ID = process.env.CDP_API_KEY_ID || "your-api-key-id";
-const API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || "your-api-key-secret";
-const WALLET_SECRET = process.env.CDP_WALLET_SECRET || "your-wallet-secret";
+const API_KEY_ID = process.env.CDP_API_KEY_ID || 'your-api-key-id';
+const API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || 'your-api-key-secret';
+const WALLET_SECRET = process.env.CDP_WALLET_SECRET || 'your-wallet-secret';
 /**
  * Converts a decimal amount (USD) to USDC BigInt representation
  * USDC has 6 decimal places, so $1.234567 becomes 1234567n
@@ -117,14 +117,15 @@ export async function buildX402Response(
   const network = process.env.NETWORK as Network;
   const maxCostBigInt = decimalToUsdcBigInt(maxCost);
   const paymentUrl = req.path;
-  const resourceUrl = req.url;
+  const host = process.env.ECHO_ROUTER_BASE_URL;
+  const resourceUrl = `${host}${req.url}`;
 
   let recipient: string;
   try {
     recipient = (await getSmartAccount()).smartAccount.address;
   } catch (error) {
     logger.error('Failed to get smart account for X402 response', { error });
-    recipient = '0x0000000000000000000000000000000000000000';
+    throw error;
   }
 
   res.setHeader(
@@ -135,6 +136,15 @@ export async function buildX402Response(
       network,
     })
   );
+  
+  let outputSchema;
+  try {
+    outputSchema = getSchemaForRoute(req.path);
+    logger.info('Schema generated for route', { path: req.path, hasSchema: !!outputSchema });
+  } catch (error) {
+    logger.error('Failed to generate schema for route', { path: req.path, error });
+    outputSchema = undefined;
+  }
 
   const resBody = {
     x402Version: 1,
@@ -148,7 +158,7 @@ export async function buildX402Response(
         recipient: recipient,
         currency: USDC_ADDRESS,
         to: recipient,
-        url: paymentUrl,
+        url: resourceUrl,
         nonce: generateRandomNonce(),
         scheme: X402_SCHEME,
         resource: resourceUrl,
@@ -162,10 +172,12 @@ export async function buildX402Response(
           name: DOMAIN_NAME,
           version: DOMAIN_VERSION,
         },
+        ...(outputSchema ? { outputSchema: outputSchema } : {}),
       },
     ],
   };
 
+  logger.info('Sending 402 response', { path: req.path });
   return res.status(402).json(resBody);
 }
 
@@ -190,7 +202,7 @@ export async function getSmartAccount(): Promise<{
       apiKeySecret: API_KEY_SECRET,
       walletSecret: WALLET_SECRET,
     });
-    
+
     const owner = await cdp.evm.getOrCreateAccount({
       name: WALLET_OWNER,
     });
@@ -203,7 +215,9 @@ export async function getSmartAccount(): Promise<{
     return { smartAccount };
   } catch (error) {
     logger.error('Failed to get smart account', { error });
-    throw new Error(`CDP authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `CDP authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 

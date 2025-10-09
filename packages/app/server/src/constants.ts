@@ -1,5 +1,7 @@
-export const WALLET_OWNER = 'echo-fund-owner';
-export const WALLET_SMART_ACCOUNT = 'echo-fund-smart-account';
+export const WALLET_OWNER = process.env.WALLET_OWNER
+  ? `${process.env.WALLET_OWNER}`
+  : 'echo-fund-owner';
+export const WALLET_SMART_ACCOUNT = process.env.WALLET_OWNER + '-smart-account';
 
 export const DOMAIN_NAME = 'USD Coin';
 export const DOMAIN_VERSION = '2';
@@ -25,7 +27,7 @@ export const MIME_TYPE = 'application/json';
 export const MAX_TIMEOUT_SECONDS = 1000;
 export const DISCOVERABLE = true;
 
-export const X402_TYPE = 'x402';
+export const X402_TYPE = 'http';
 export const X402_SCHEME = 'exact';
 export const X402_VERSION = '1';
 export const X402_ERROR_MESSAGE = 'Payment Required';

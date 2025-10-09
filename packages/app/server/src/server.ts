@@ -18,6 +18,7 @@ import { buildX402Response, isApiRequest, isX402Request } from './utils';
 import { handleX402Request, handleApiKeyRequest } from './handlers';
 import { initializeProvider } from './services/ProviderInitializationService';
 import { getRequestMaxCost } from './services/PricingService';
+import { Decimal } from '@prisma/client/runtime/library';
 
 dotenv.config();
 
@@ -83,11 +84,19 @@ app.use(inFlightMonitorRouter);
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
   try {
     const headers = req.headers as Record<string, string>;
-    const { provider, isStream, isPassthroughProxyRoute } =
+    const { provider, isStream, isPassthroughProxyRoute, is402Sniffer } =
       await initializeProvider(req, res);
+    if (!provider || is402Sniffer) {
+      await buildX402Response(req, res, new Decimal(0));
+      return res.end();
+    }
     const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
 
-    if (!isApiRequest(headers) && !isX402Request(headers)) {
+    if (
+      !isApiRequest(headers) &&
+      !isX402Request(headers) &&
+      !isPassthroughProxyRoute
+    ) {
       return buildX402Response(req, res, maxCost);
     }
 
@@ -121,6 +130,18 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
         maxCost,
       });
     }
+    if (isX402Request(headers) || isPassthroughProxyRoute) {
+      await handleX402Request({
+        req,
+        res,
+        headers,
+        maxCost,
+        isPassthroughProxyRoute,
+        provider,
+        isStream,
+      });
+      return;
+    }
 
     return res.status(400).json({
       error: 'No request type found',
@@ -136,6 +157,12 @@ app.use((error: Error, req: Request, res: Response) => {
     `Error handling request: ${error.message} | Stack: ${error.stack}`
   );
 
+  // If response has already been sent, just log the error and return
+  if (res.headersSent) {
+    logger.warn('Response already sent, cannot send error response');
+    return;
+  }
+
   if (error instanceof HttpError) {
     logMetric('server.internal_error', 1, {
       error_type: 'http_error',
@@ -145,7 +172,7 @@ app.use((error: Error, req: Request, res: Response) => {
       error: error.message,
     });
   }
-  
+
   if (error instanceof Error) {
     logMetric('server.internal_error', 1, {
       error_type: error.name,
@@ -156,7 +183,7 @@ app.use((error: Error, req: Request, res: Response) => {
       error: error.message || 'Internal Server Error',
     });
   }
-  
+
   logMetric('server.internal_error', 1, {
     error_type: 'unknown_error',
   });

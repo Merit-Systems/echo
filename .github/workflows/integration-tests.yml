@@ -148,6 +148,7 @@ jobs:
           CDP_API_KEY_ID=${{ secrets.CDP_API_KEY_ID }}
           CDP_API_KEY_SECRET=${{ secrets.CDP_API_KEY_SECRET }}
           CDP_WALLET_SECRET=${{ secrets.CDP_WALLET_SECRET }}
+          WALLET_OWNER="integration-test-owner"
 
           # OAuth Configuration
           OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=5
@@ -234,6 +235,7 @@ jobs:
           CDP_API_KEY_ID="${CDP_API_KEY_ID}" \
           CDP_API_KEY_SECRET="${CDP_API_KEY_SECRET}" \
           CDP_WALLET_SECRET="${CDP_WALLET_SECRET}" \
+          WALLET_OWNER="integration-test-owner" \
           nohup pnpm start > /tmp/echo-data-server.log 2>&1 &
           
           echo $! > /tmp/echo-data-server.pid

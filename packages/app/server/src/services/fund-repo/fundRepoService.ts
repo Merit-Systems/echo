@@ -17,9 +17,9 @@ export interface FundRepoResult {
   tokenAddress: string;
 }
 
-const API_KEY_ID = process.env.CDP_API_KEY_ID || "your-api-key-id";
-const API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || "your-api-key-secret";
-const WALLET_SECRET = process.env.CDP_WALLET_SECRET || "your-wallet-secret";
+const API_KEY_ID = process.env.CDP_API_KEY_ID || 'your-api-key-id';
+const API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || 'your-api-key-secret';
+const WALLET_SECRET = process.env.CDP_WALLET_SECRET || 'your-wallet-secret';
 
 export async function fundRepo(
   amount: number,
