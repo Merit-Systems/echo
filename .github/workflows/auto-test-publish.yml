@@ -16,6 +16,7 @@ jobs:
       typescript-published: ${{ steps.publish-typescript.outputs.published }}
       react-published: ${{ steps.publish-react.outputs.published }}
       next-published: ${{ steps.publish-next.outputs.published }}
+      aix402-published: ${{ steps.publish-aix402.outputs.published }}
       echo-start-published: ${{ steps.publish-echo-start.outputs.published }}
       version: ${{ steps.get-version.outputs.version }}
 
@@ -161,6 +162,48 @@ jobs:
       - name: Publish Next.js SDK to test tag
         id: publish-next
         working-directory: ./packages/sdk/next
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+
+          echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
+          pnpm publish --access public --tag test --no-git-checks
+          echo "published=true" >> $GITHUB_OUTPUT
+          echo "✅ Successfully published $PACKAGE_NAME to test tag"
+
+      # AIx402 SDK
+      - name: Version and build AIx402 SDK
+        working-directory: ./packages/sdk/aix402
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR_NUM="${{ github.event.number }}"
+            PREID="test-pr${PR_NUM}.${SHORT_SHA}"
+          else
+            PREID="test.${SHORT_SHA}"
+          fi
+
+          echo "📦 Versioning AIx402 SDK with preid: ${PREID}"
+          pnpm version prerelease --preid="${PREID}" --no-git-tag-version
+
+          echo "🔨 Building AIx402 SDK..."
+          pnpm run build
+          echo "✅ AIx402 SDK built"
+
+      - name: Test AIx402 SDK
+        working-directory: ./packages/sdk/aix402
+        run: |
+          echo "🧪 Testing AIx402 SDK..."
+          pnpm run test
+          pnpm run type-check
+          echo "✅ AIx402 SDK tests passed"
+
+      - name: Publish AIx402 SDK to test tag
+        id: publish-aix402
+        working-directory: ./packages/sdk/aix402
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |

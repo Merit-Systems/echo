@@ -102,13 +102,11 @@ RUN pnpm run prisma:generate
 WORKDIR /app/packages/app/server
 RUN pnpm run copy-prisma
 
-# Set NODE_OPTIONS to enable OpenTelemetry for echo-server
-
 # Step 4: Install production dependencies only
 RUN pnpm install
 
 # Expose the port that echo-server runs on
 EXPOSE 3069
 
-# Step 5: Start the server with NODE_OPTIONS for OpenTelemetry instrumentation
-CMD ["sh", "-c", "NODE_OPTIONS=\"--require @opentelemetry/auto-instrumentations-node/register\" pnpm start"] 
+# Step 5: Start the server
+CMD ["pnpm", "start"] 

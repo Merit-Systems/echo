@@ -1,3 +1,11 @@
+// Load OpenTelemetry instrumentation before any other imports
+try {
+  require('@opentelemetry/auto-instrumentations-node/register');
+  console.log('✅ OpenTelemetry loaded');
+} catch (err: any) {
+  console.warn('⚠️ OpenTelemetry not available:', err.message);
+}
+
 import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -87,8 +95,7 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
     const { provider, isStream, isPassthroughProxyRoute, is402Sniffer } =
       await initializeProvider(req, res);
     if (!provider || is402Sniffer) {
-      await buildX402Response(req, res, new Decimal(0));
-      return res.end();
+      return buildX402Response(req, res, new Decimal(0));
     }
     const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
 
@@ -200,6 +207,34 @@ const gracefulShutdown = (signal: string) => {
       process.exit(1);
     });
 };
+
+// Global error handlers to prevent server crashes
+process.on(
+  'unhandledRejection',
+  (reason: unknown, promise: Promise<unknown>) => {
+    logger.error('Unhandled Promise Rejection', {
+      reason: reason instanceof Error ? reason.message : String(reason),
+      stack: reason instanceof Error ? reason.stack : undefined,
+      promise,
+    });
+    logMetric('server.unhandled_rejection', 1, {
+      reason: reason instanceof Error ? reason.message : 'unknown',
+    });
+    // Don't exit - log and continue
+  }
+);
+
+process.on('uncaughtException', (error: Error) => {
+  logger.error('Uncaught Exception', {
+    error: error.message,
+    stack: error.stack,
+  });
+  logMetric('server.uncaught_exception', 1, {
+    error_message: error.message,
+  });
+  // For uncaught exceptions, we should exit gracefully
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
+});
 
 // Register shutdown handlers
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

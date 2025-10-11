@@ -69,7 +69,7 @@ export async function initializeProvider(
       !isValidImageModel(model) &&
       !isValidVideoModel(model))
   ) {
-    logger.error(`Invalid model: ${model}`);
+    logger.warn(`Invalid model: ${model}`);
     // if auth or x402 header, return 422
     if (
       isApiRequest(req.headers as Record<string, string>) ||
@@ -80,7 +80,7 @@ export async function initializeProvider(
       });
       throw new UnknownModelError('Invalid model');
     } else {
-      logger.error(
+      logger.warn(
         `No Model or Auth method detected, returning 402 Schema for model: ${model}`
       );
       return {
