@@ -1,3 +1,11 @@
+// Load OpenTelemetry instrumentation before any other imports
+try {
+  require('@opentelemetry/auto-instrumentations-node/register');
+  console.log('✅ OpenTelemetry loaded');
+} catch (err: any) {
+  console.warn('⚠️ OpenTelemetry not available:', err.message);
+}
+
 import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
