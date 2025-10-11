@@ -309,11 +309,11 @@ export class EchoControlService {
       markUpProfit,
     } = await this.computeTransactionCosts(transaction, this.referralCodeId);
 
-    logger.error(
+    logger.info(
       `Transaction cost: ${rawTransactionCost}, Max cost: ${maxCost}`
     );
     if (rawTransactionCost.greaterThan(maxCost)) {
-      logger.error(` Difference: ${rawTransactionCost.minus(maxCost)}`);
+      logger.info(` Difference: ${rawTransactionCost.minus(maxCost)}`);
     }
 
     const { userId, echoAppId, apiKeyId } = this.authResult;
