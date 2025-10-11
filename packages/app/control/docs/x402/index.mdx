@@ -1,0 +1,92 @@
+---
+title: Overview
+description: x402 payment protocol SDK for AI billing
+---
+
+# x402 SDK
+
+The x402 SDK enables direct-to-protocol AI payments using crypto wallets. No API keys required - payments are handled via HTTP 402 status codes and on-chain signatures.
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash
+    npm install @merit-systems/ai-x402  
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @merit-systems/ai-x402
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @merit-systems/ai-x402
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @merit-systems/ai-x402
+    ```
+  </Tab>
+</Tabs>
+
+## Quick Start
+
+```typescript
+import { createX402OpenAI } from '@merit-systems/ai-x402';
+import { generateText } from 'ai';
+import { CdpClient } from '@coinbase/cdp-sdk';
+import { toAccount } from 'viem/accounts';
+
+// Create wallet using Coinbase Developer Platform
+const cdp = new CdpClient({
+  apiKeyId: process.env.CDP_API_KEY_ID,
+  apiKeySecret: process.env.CDP_API_KEY_SECRET,
+  walletSecret: process.env.CDP_WALLET_SECRET,
+});
+
+const account = await cdp.evm.getOrCreateAccount({
+  name: process.env.CDP_WALLET_OWNER,
+});
+
+const walletClient = toAccount(account);
+
+// Create OpenAI provider with automatic x402 payment handling
+const openai = createX402OpenAI(walletClient);
+
+// Use with Vercel AI SDK
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  prompt: 'Hello world'
+});
+```
+
+## How It Works
+
+1. First request returns HTTP 402 with payment requirements
+2. SDK creates payment signature using your wallet
+3. SDK retries request with `x-payment` header
+4. Request succeeds and payment settles on-chain
+
+## API
+
+### `createX402OpenAI(walletClient, baseRouterUrl?)`
+
+Creates an OpenAI provider that handles x402 payments automatically.
+
+**Parameters:**
+- `walletClient` - x402 wallet signer
+- `baseRouterUrl` - Optional router URL (default: `https://echo.router.merit.systems`)
+
+**Returns:** OpenAI provider compatible with Vercel AI SDK
+
+## Custom Router
+
+```typescript
+const openai = createX402OpenAI(
+  walletClient,
+  'https://your-router.com'
+);
+```

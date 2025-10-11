@@ -9,7 +9,8 @@
     "typescript-sdk",
     "providers",
     "advanced",
-    "cookbook"
+    "cookbook",
+    "x402"
   ],
   "root": true
 }

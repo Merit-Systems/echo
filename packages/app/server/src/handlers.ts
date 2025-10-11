@@ -154,6 +154,7 @@ export async function handleX402Request({
       }
     }
   } catch (error) {
+    logger.error('Error in handleX402Request', { error });
     throw error;
   }
 }

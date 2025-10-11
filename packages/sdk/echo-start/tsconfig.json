@@ -6,6 +6,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "module": "ES2022",
     "moduleResolution": "node",
     "allowImportingTsExtensions": false,
     "noEmit": true,

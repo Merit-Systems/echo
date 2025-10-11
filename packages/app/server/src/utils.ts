@@ -34,8 +34,8 @@ import {
   PaymentPayload,
   PaymentPayloadSchema,
 } from './services/facilitator/x402-types';
-import { getSchemaForRoute } from './schema/schemaForRoute';
 
+import { getSchemaForRoute } from './schema/schemaForRoute';
 const API_KEY_ID = process.env.CDP_API_KEY_ID || 'your-api-key-id';
 const API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || 'your-api-key-secret';
 const WALLET_SECRET = process.env.CDP_WALLET_SECRET || 'your-wallet-secret';
@@ -136,13 +136,19 @@ export async function buildX402Response(
       network,
     })
   );
-  
+
   let outputSchema;
   try {
     outputSchema = getSchemaForRoute(req.path);
-    logger.info('Schema generated for route', { path: req.path, hasSchema: !!outputSchema });
+    logger.info('Schema generated for route', {
+      path: req.path,
+      hasSchema: !!outputSchema,
+    });
   } catch (error) {
-    logger.error('Failed to generate schema for route', { path: req.path, error });
+    logger.error('Failed to generate schema for route', {
+      path: req.path,
+      error,
+    });
     outputSchema = undefined;
   }
 
