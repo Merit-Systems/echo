@@ -47,7 +47,7 @@ export abstract class BaseProvider {
     if (apiKey === undefined || apiKey.length === 0) {
       throw new Error('No API key found');
     }
-    delete headers["authorization"];
+    delete headers['authorization'];
     return {
       ...headers,
       Authorization: `Bearer ${apiKey}`,

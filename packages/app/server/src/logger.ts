@@ -1,21 +1,25 @@
+import { context, metrics, trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
-import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
-import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
-import { resourceFromAttributes } from '@opentelemetry/resources';
-import { trace, context, metrics } from '@opentelemetry/api';
 import {
   MeterProvider,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
-import winston from 'winston';
+import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
+import { AsyncLocalStorage } from 'async_hooks';
 import dotenv from 'dotenv';
+import winston from 'winston';
 
 dotenv.config();
+
+// AsyncLocalStorage for storing requestId across async operations
+export const requestIdStorage = new AsyncLocalStorage<string>();
 
 const OTEL_SERVICE_NAME = process.env.OTEL_SERVICE_NAME!;
 const OTEL_SERVICE_VERSION = process.env.OTEL_SERVICE_VERSION!;
@@ -52,7 +56,7 @@ loggerProvider.addLogRecordProcessor(
 // Register the logger provider
 logs.setGlobalLoggerProvider(loggerProvider);
 
-// Custom Winston format to inject traceId/spanId
+// Custom Winston format to inject traceId/spanId/requestId
 const traceContextFormat = winston.format(info => {
   const span = trace.getSpan(context.active());
   if (span) {
@@ -60,6 +64,13 @@ const traceContextFormat = winston.format(info => {
     info.traceId = spanContext.traceId;
     info.spanId = spanContext.spanId;
   }
+
+  // Inject requestId from AsyncLocalStorage
+  const requestId = requestIdStorage.getStore();
+  if (requestId) {
+    info.requestId = requestId;
+  }
+
   return info;
 });
 
