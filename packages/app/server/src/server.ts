@@ -163,6 +163,7 @@ app.use((error: Error, req: Request, res: Response) => {
       error_type: 'http_error',
       error_message: error.message,
     });
+    logger.error('HTTP Error', error);
     return res.status(error.statusCode).json({
       error: error.message,
     });

@@ -1,0 +1,149 @@
+---
+title: Direct Provider Clients
+description: Use OpenAI, Anthropic, Google Gemini, or other provider SDKs directly without Echo SDK wrappers
+---
+
+# Direct Provider Clients
+
+You can use provider SDKs directly (OpenAI, Anthropic, Google, etc.) with Echo by overriding the base URL and API key. This is useful when you want to use provider-specific features or avoid the Echo SDK layer.
+
+## OpenAI SDK
+
+```typescript tab="TypeScript"
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  baseURL: 'https://echo.router.merit.systems',
+  apiKey: process.env.ECHO_API_KEY, // Your Echo API key
+});
+
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }],
+});
+```
+
+```python tab="Python"
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://echo.router.merit.systems",
+    api_key="your_echo_api_key"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## Anthropic SDK
+
+```typescript tab="TypeScript"
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic({
+  baseURL: 'https://echo.router.merit.systems',
+  apiKey: process.env.ECHO_API_KEY,
+});
+
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022',
+  max_tokens: 1024,
+  messages: [{ role: 'user', content: 'Hello!' }],
+});
+```
+
+```python tab="Python"
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://echo.router.merit.systems",
+    api_key="your_echo_api_key"
+)
+
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## Google Gemini SDK
+
+```typescript tab="TypeScript"
+import { GoogleGenAI } from '@google/genai';
+
+const genAI = new GoogleGenAI({
+  apiKey: process.env.ECHO_API_KEY,
+  httpOptions: {
+    baseUrl: 'https://echo.router.merit.systems',
+    apiVersion: 'v1',
+  },
+});
+
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+const result = await model.generateContent('Hello!');
+const response = result.text();
+```
+
+```python tab="Python"
+import google.generativeai as genai
+
+# Configure with Echo proxy
+genai.configure(
+    api_key="your_echo_api_key",
+    transport="rest",
+    client_options={"api_endpoint": "https://echo.router.merit.systems/v1"}
+)
+
+model = genai.GenerativeModel('gemini-1.5-pro')
+response = model.generate_content('Hello!')
+print(response.text)
+```
+
+## Authentication Options
+
+You can authenticate with Echo using either:
+
+### API Key (Recommended for Server-Side)
+
+Use your Echo API key from the dashboard:
+
+```typescript
+{
+  apiKey: process.env.ECHO_API_KEY;
+}
+```
+
+### OAuth Access Token (For Client-Side)
+
+Use an OAuth access token obtained from the OAuth flow:
+
+```typescript
+{
+  apiKey: accessToken; // JWT token from OAuth
+}
+```
+
+<Callout type="info">
+  Access tokens are short-lived JWTs obtained through the OAuth2 + PKCE flow.
+  They're ideal for client-side applications where you can't safely store API
+  keys.
+</Callout>
+
+## Streaming Responses
+
+All streaming features work as expected:
+
+```typescript
+const stream = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Tell me a story' }],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || '');
+}
+```

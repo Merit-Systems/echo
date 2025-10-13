@@ -1,0 +1,256 @@
+---
+title: Raw Proxy Access
+description: Use Echo from any language or platform by calling the OpenAI-compatible proxy directly
+---
+
+# Raw Proxy Access
+
+Echo exposes an OpenAI-compatible proxy that can be used from any language or HTTP client. This is ideal for platforms and languages where no Echo SDK exists.
+
+## Base URL
+
+All requests should be sent to:
+
+```
+https://echo.router.merit.systems
+```
+
+## Authentication
+
+Include your Echo API key or OAuth access token in the Authorization header:
+
+```http
+Authorization: Bearer your_echo_api_key_or_token
+```
+
+## Endpoints
+
+Echo proxies the standard OpenAI API endpoints:
+
+### Chat Completions
+
+```http
+POST https://echo.router.merit.systems/v1/chat/completions
+```
+
+Refer to [OpenAI API Reference](https://platform.openai.com/docs/api-reference/chat) for more details.
+
+### Responses
+
+```http
+POST https://echo.router.merit.systems/v1/responses
+```
+
+Refer to [OpenAI API Reference](https://platform.openai.com/docs/api-reference/responses) for more details.
+
+### Images
+
+```http
+POST https://echo.router.merit.systems/v1/images/generations
+```
+
+Refer to [OpenAI API Reference](https://platform.openai.com/docs/api-reference/images) for more details.
+
+### Videos
+
+```http
+POST https://echo.router.merit.systems/v1/videos
+```
+
+Refer to [OpenAI API Reference](https://platform.openai.com/docs/api-reference/videos) for more details.
+
+## Examples
+
+```bash tab="cURL"
+curl https://echo.router.merit.systems/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_echo_api_key" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+```python tab="Python"
+import requests
+
+response = requests.post(
+    "https://echo.router.merit.systems/v1/chat/completions",
+    headers={
+        "Authorization": "Bearer your_echo_api_key",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "gpt-4",
+        "messages": [{"role": "user", "content": "Hello!"}]
+    }
+)
+
+print(response.json())
+```
+
+```ruby tab="Ruby"
+require 'net/http'
+require 'json'
+
+uri = URI('https://echo.router.merit.systems/v1/chat/completions')
+request = Net::HTTP::Post.new(uri)
+request['Authorization'] = 'Bearer your_echo_api_key'
+request['Content-Type'] = 'application/json'
+request.body = {
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+}.to_json
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+  http.request(request)
+end
+
+puts response.body
+```
+
+```go tab="Go"
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    url := "https://echo.router.merit.systems/v1/chat/completions"
+
+    payload := map[string]interface{}{
+        "model": "gpt-4",
+        "messages": []map[string]string{
+            {"role": "user", "content": "Hello!"},
+        },
+    }
+
+    jsonData, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+    req.Header.Set("Authorization", "Bearer your_echo_api_key")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Println(result)
+}
+```
+
+```rust tab="Rust"
+use reqwest;
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+
+    let response = client
+        .post("https://echo.router.merit.systems/v1/chat/completions")
+        .header("Authorization", "Bearer your_echo_api_key")
+        .json(&json!({
+            "model": "gpt-4",
+            "messages": [{"role": "user", "content": "Hello!"}]
+        }))
+        .send()
+        .await?;
+
+    println!("{}", response.text().await?);
+    Ok(())
+}
+```
+
+```php tab="PHP"
+<?php
+$ch = curl_init();
+
+curl_setopt($ch, CURLOPT_URL, 'https://echo.router.merit.systems/v1/chat/completions');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Authorization: Bearer your_echo_api_key',
+    'Content-Type: application/json'
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    'model' => 'gpt-4',
+    'messages' => [
+        ['role' => 'user', 'content' => 'Hello!']
+    ]
+]));
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+print_r(json_decode($response, true));
+?>
+```
+
+## Streaming
+
+To enable streaming, add `"stream": true` to your request:
+
+```bash
+curl https://echo.router.merit.systems/v1/chat/completions \
+  -H "Authorization: Bearer your_echo_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "stream": true
+  }'
+```
+
+Streaming responses use Server-Sent Events (SSE) format.
+
+## Response Format
+
+Responses follow the OpenAI API format. See the [OpenAI API documentation](https://platform.openai.com/docs/api-reference/chat/create) for complete response schemas.
+
+Example response:
+
+```json
+{
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1677652288,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 9,
+    "completion_tokens": 12,
+    "total_tokens": 21
+  }
+}
+```
+
+## Error Handling
+
+Echo returns standard HTTP error codes:
+
+- `401 Unauthorized` - Invalid or missing API key
+- `402 Payment Required` - Insufficient credits
+- `429 Too Many Requests` - Rate limit exceeded
+- `500 Internal Server Error` - Server error
+
+<Callout type="info">
+  The proxy is fully compatible with the OpenAI API specification. Any HTTP
+  client or library that works with OpenAI will work with Echo by simply
+  changing the base URL and API key.
+</Callout>

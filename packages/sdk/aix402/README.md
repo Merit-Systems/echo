@@ -1,33 +1,53 @@
-# @merit-systems/echo-aix402-sdk
+# @merit-systems/ai-x402
 
 AI x402 payment integration SDK for Echo platform.
 
 ## Installation
 
 ```bash
-pnpm add @merit-systems/echo-aix402-sdk
+pnpm add @merit-systems/ai-x402
 ```
 
-## Usage
+## Client Usage
+
+React hook for automatic x402 payment handling:
 
 ```typescript
-import { useChatWithPayment } from '@merit-systems/echo-aix402-sdk';
+import { useChatWithPayment } from '@merit-systems/ai-x402/client';
 
-// In your React component
-const chat = useChatWithPayment({
+const { messages, input, handleInputChange, handleSubmit } = useChatWithPayment({
+  api: '/api/chat',
   walletClient: yourWalletClient,
-  regenerateOptions: {},
-  // ... other useChat options
 });
 ```
 
-## Features
+## Server Usage
 
-- React hook for chat with x402 payment handling
-- Automatic payment error handling and regeneration
-- Seamless integration with @ai-sdk/react
+### With Automatic Payment Handling
 
-## License
+```typescript
+import { createX402OpenAI } from '@merit-systems/ai-x402/server';
+import { streamText } from 'ai';
 
-MIT
+const openai = createX402OpenAI(walletClient);
 
+const result = streamText({
+  model: openai('gpt-4'),
+  messages: [{ role: 'user', content: 'Hello!' }],
+});
+```
+
+### With Pre-signed Payment Header
+
+```typescript
+import { createX402OpenAIWithoutPayment } from '@merit-systems/ai-x402/server';
+import { streamText } from 'ai';
+
+const paymentHeader = req.headers.get('x-payment');
+const openai = createX402OpenAIWithoutPayment(paymentHeader);
+
+const result = streamText({
+  model: openai('gpt-4'),
+  messages: [{ role: 'user', content: 'Hello!' }],
+});
+```

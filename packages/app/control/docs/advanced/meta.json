@@ -1,6 +1,8 @@
 {
   "pages": [
     "how-echo-works",
+    "direct-provider-clients",
+    "raw-proxy",
     "api-reference",
     "callback-urls",
     "system-prompt"
