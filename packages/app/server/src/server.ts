@@ -15,7 +15,10 @@ import { authenticateRequest } from './auth';
 import { HttpError } from './errors/http';
 import { PrismaClient } from './generated/prisma';
 import logger, { logMetric } from './logger';
-import { traceEnrichmentMiddleware } from './middleware/trace-enrichment-middleware';
+import {
+  traceLoggingMiddleware,
+  traceSetupMiddleware,
+} from './middleware/trace-enrichment-middleware';
 import {
   EscrowRequest,
   TransactionEscrowMiddleware,
@@ -52,7 +55,8 @@ export const prisma = new PrismaClient({
 // Initialize the transaction escrow middleware
 const transactionEscrowMiddleware = new TransactionEscrowMiddleware(prisma);
 
-app.use(traceEnrichmentMiddleware);
+// This ensures all logs (including body parsing errors) have requestId
+app.use(traceSetupMiddleware);
 
 // Add middleware
 app.use(
@@ -81,6 +85,8 @@ app.use((req: EscrowRequest, res, next) => {
 app.use(express.json({ limit: '100mb' }));
 app.use(upload.any()); // Handle multipart/form-data with any field names
 app.use(compression());
+
+app.use(traceLoggingMiddleware);
 
 // Use common router for utility routes
 app.use(standardRouter);
