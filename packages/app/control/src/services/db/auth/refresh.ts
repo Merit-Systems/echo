@@ -19,12 +19,12 @@ export const findRefreshToken = async (token: string) => {
         {
           isArchived: true,
           archivedAt: {
-            lt: subMilliseconds(
+            gt: subMilliseconds(
               new Date(),
               env.OAUTH_REFRESH_TOKEN_ARCHIVE_GRACE_MS
             ),
           },
-          expiresAt: { lt: new Date() },
+          expiresAt: { gt: new Date() },
         },
       ],
       session: { isArchived: false, revokedAt: null },
