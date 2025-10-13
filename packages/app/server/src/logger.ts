@@ -77,10 +77,9 @@ const traceContextFormat = winston.format(info => {
 const logger = winston.createLogger({
   level: 'debug',
   format: winston.format.combine(
-    traceContextFormat(), // 👈 injects traceId/spanId into each log
+    traceContextFormat(), // 👈 injects traceId/spanId/requestId into each log
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
-    winston.format.metadata(),
     winston.format.json()
   ),
   defaultMeta: {
