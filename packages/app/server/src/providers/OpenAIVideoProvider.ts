@@ -103,7 +103,7 @@ export class OpenAIVideoProvider extends BaseProvider {
 
     const durationSeconds = Number(requestBody.seconds) || 4;
     // TODO: Size pricing??
-    const size = requestBody.size || '720x1280';
+    // const size = requestBody.size || '720x1280';
     const videoModelPrice = getVideoModelPrice(this.getModel());
 
     if (!videoModelPrice) {

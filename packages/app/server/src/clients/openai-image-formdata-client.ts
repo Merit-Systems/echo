@@ -69,7 +69,8 @@ async function makeImageEditRequest() {
   }
 }
 
-async function makeImageEditRequestWithMultipleImages() {
+// Unused test function - commented out for now
+/* async function makeImageEditRequestWithMultipleImages() {
   try {
     // Initialize OpenAI client
     const client = new OpenAI({
@@ -139,7 +140,7 @@ async function makeImageEditRequestWithMultipleImages() {
   } catch (error) {
     console.error('Error making multi-image edit request:', error);
   }
-}
+} */
 
 // Test single image edit
 makeImageEditRequest().then(() => {

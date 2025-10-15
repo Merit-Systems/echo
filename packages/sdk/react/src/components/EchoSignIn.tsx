@@ -10,7 +10,7 @@ export function EchoSignIn({
   className = '',
   children,
 }: EchoSignInProps) {
-  const { signIn, isLoading, isLoggedIn, user, error } = useEcho();
+  const { signIn, isLoading, user, error } = useEcho();
   const [isHovered, setIsHovered] = useState(false);
 
   React.useEffect(() => {

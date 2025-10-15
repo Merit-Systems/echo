@@ -1,5 +1,3 @@
-import type { EchoOpenAIProvider } from '@merit-systems/echo-typescript-sdk';
-
 export const ECHO_TOKEN = process.env.ECHO_API_KEY;
 export const ECHO_APP_ID = process.env.ECHO_APP_ID;
 export const baseRouterUrl =

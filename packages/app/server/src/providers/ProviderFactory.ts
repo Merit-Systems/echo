@@ -4,7 +4,6 @@ import {
   ALL_SUPPORTED_MODELS,
   ALL_SUPPORTED_VIDEO_MODELS,
 } from '../services/AccountingService';
-import type { EchoControlService } from '../services/EchoControlService';
 import { AnthropicGPTProvider } from './AnthropicGPTProvider';
 import { AnthropicNativeProvider } from './AnthropicNativeProvider';
 import type { BaseProvider } from './BaseProvider';

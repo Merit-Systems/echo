@@ -77,7 +77,7 @@ export abstract class BaseProvider {
   // This is specific to OpenAI Format, Anthropic Native and others will need to override this
   ensureStreamUsage(
     reqBody: Record<string, unknown>,
-    reqPath: string
+    _reqPath: string
   ): Record<string, unknown> {
     if (this.isStream) {
       reqBody.stream_options = {
@@ -91,7 +91,7 @@ export abstract class BaseProvider {
   // Override this in provider implementations for custom body modifications
   transformRequestBody(
     reqBody: Record<string, unknown>,
-    reqPath: string
+    _reqPath: string
   ): Record<string, unknown> {
     // Default: no transformation
     return reqBody;
@@ -107,11 +107,11 @@ export abstract class BaseProvider {
   // For provider such as gemini Veo3 that need to support passthrough requests
   // which do not create transactions.
   async forwardProxyRequest(
-    req: EscrowRequest,
-    res: Response,
-    formattedHeaders: Record<string, string>,
-    upstreamUrl: string,
-    requestBody: string | FormData | undefined
+    _req: EscrowRequest,
+    _res: Response,
+    _formattedHeaders: Record<string, string>,
+    _upstreamUrl: string,
+    _requestBody: string | FormData | undefined
   ) {
     throw new Error('Not implemented');
   }

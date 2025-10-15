@@ -118,7 +118,7 @@ export class ModelRequestService {
     headers: Record<string, string>;
   } {
     let requestBody: string | FormData | undefined;
-    let finalHeaders = { ...authenticatedHeaders };
+    const finalHeaders = { ...authenticatedHeaders };
 
     if (req.method !== 'GET') {
       // Check if this is a form data request

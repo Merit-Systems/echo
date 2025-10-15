@@ -9,7 +9,6 @@ import { EscrowRequest } from '../middleware/transaction-escrow-middleware';
 import { prisma } from '../server';
 import { getVideoModelPrice } from '../services/AccountingService';
 import { EchoDbService } from '../services/DbService';
-import type { EchoControlService } from '../services/EchoControlService';
 import { Transaction } from '../types';
 import { extractOperationId } from '../utils/gemini/string-parsing.js';
 import { BaseProvider } from './BaseProvider';
@@ -103,7 +102,7 @@ export class VertexAIProvider extends BaseProvider {
 
   override transformRequestBody(
     reqBody: Record<string, unknown>,
-    reqPath: string
+    _reqPath: string
   ): Record<string, unknown> {
     const userId = this.getRequiredUserId();
     const modifiedBody = JSON.parse(JSON.stringify(reqBody));

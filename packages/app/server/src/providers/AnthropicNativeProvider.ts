@@ -16,7 +16,6 @@ export const parseSSEAnthropicFormat = (
 ): AnthropicUsage | null => {
   // Split by lines to process each SSE event
   const lines = data.split('\n');
-  let currentEvent = '';
   let currentData = '';
 
   let messageStartUsage: Partial<AnthropicUsage> = {};
@@ -27,7 +26,7 @@ export const parseSSEAnthropicFormat = (
     if (!line) continue;
 
     if (line.startsWith('event: ')) {
-      currentEvent = line.substring(7); // Remove 'event: ' prefix
+      // Event type not currently used
     } else if (line.startsWith('data: ')) {
       currentData = line.substring(6); // Remove 'data: ' prefix
 

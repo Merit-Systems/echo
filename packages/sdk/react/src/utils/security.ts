@@ -271,6 +271,7 @@ export async function openPaymentFlow(
   try {
     // Direct redirect - no popups, much simpler
     window.location.href = safeUrl;
+    onComplete?.();
   } catch (err) {
     const error = err instanceof Error ? err : new Error('Payment flow failed');
     onError?.(error);

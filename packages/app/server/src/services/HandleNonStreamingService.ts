@@ -20,7 +20,7 @@ export class HandleNonStreamingService {
     let data;
     try {
       data = await response.json();
-    } catch (jsonError) {
+    } catch {
       // If JSON parsing fails, get the text response instead
       const text = await response.text();
       throw new Error(`Failed to parse JSON response: ${text}`);

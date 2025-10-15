@@ -5,8 +5,6 @@ import { EchoControlService } from '../services/EchoControlService';
 import { getRequestId } from '../utils/trace';
 
 const MAX_IN_FLIGHT_REQUESTS = Number(process.env.MAX_IN_FLIGHT_REQUESTS) || 10;
-const ESTIMATED_COST_PER_TRANSACTION =
-  Number(process.env.ESTIMATED_COST_PER_TRANSACTION) || 0.01;
 const CLEANUP_INTERVAL_MS = Number(process.env.CLEANUP_INTERVAL_MS) || 300000;
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 300000;
 
@@ -83,7 +81,7 @@ export class TransactionEscrowMiddleware {
   private async incrementInFlightRequestsOrReject(
     userId: string,
     echoAppId: string,
-    effectiveBalance: number
+    _effectiveBalance: number
   ): Promise<void> {
     await this.db.$transaction(async tx => {
       // Get current in-flight request count
@@ -127,7 +125,7 @@ export class TransactionEscrowMiddleware {
       // }
 
       // Atomically increment the counter
-      const updatedInFlightRequest = await tx.inFlightRequest.upsert({
+      await tx.inFlightRequest.upsert({
         where: {
           userId_echoAppId: {
             userId,
@@ -215,7 +213,7 @@ export class TransactionEscrowMiddleware {
     echoAppId: string,
     requestId: string
   ) {
-    let cleanupExecuted = false;
+    const cleanupExecuted = false;
 
     // Cleanup on response finish (normal case)
     res.on('finish', () =>
