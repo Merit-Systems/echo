@@ -4,7 +4,7 @@ import type {
   GetBalanceByIdFreeResponse,
 } from '@merit-systems/echo-typescript-sdk';
 import { User } from 'oidc-client-ts';
-import { EchoBalance, EchoUser } from './types';
+import { BalanceData, EchoBalance, EchoUser } from './types';
 import { createContext } from 'react';
 
 export interface EchoContextValue {
@@ -24,7 +24,7 @@ export interface EchoContextValue {
 
   freeTierBalance: GetBalanceByIdFreeResponse | null;
   balance: EchoBalance | null;
-  refreshBalance: () => Promise<any>;
+  refreshBalance: () => Promise<BalanceData | undefined>;
 
   createPaymentLink: (
     amount: number,

@@ -1,3 +1,5 @@
+import type { OpenAIProvider } from '@merit-systems/echo-typescript-sdk';
+
 export const ECHO_TOKEN = process.env.ECHO_API_KEY;
 export const ECHO_APP_ID = process.env.ECHO_APP_ID;
 export const baseRouterUrl =
@@ -11,7 +13,7 @@ export function assertEnv() {
 }
 
 export function getApiErrorDetails(err: unknown): string {
-  const e = err as any;
+  const e = err as Record<string, unknown>;
   const status = e?.statusCode;
   const url = e?.url;
   const body = e?.responseBody;
@@ -22,12 +24,12 @@ export function getApiErrorDetails(err: unknown): string {
 }
 
 export function getOpenAITools(
-  openai: any, // TODO: fix this,
+  openai: OpenAIProvider,
   modelId: string
 ): Record<string, unknown> | undefined {
   return modelId.includes('deep-research')
     ? {
-        webSearchPreview: openai.tools.webSearchPreview({
+        webSearchPreview: openai.tools.webSearch({
           searchContextSize: 'medium',
         }),
       }
