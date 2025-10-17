@@ -3,6 +3,7 @@ import {
   createEchoGoogle,
   createEchoOpenAI,
   createEchoOpenRouter,
+  createEchoVercelGateway,
 } from '@merit-systems/echo-typescript-sdk';
 import { useMemo } from 'react';
 import { useEcho } from './useEcho';
@@ -23,6 +24,11 @@ export const useEchoModelProviders = () => {
       anthropic: createEchoAnthropic(baseConfig, getToken, onInsufficientFunds),
       google: createEchoGoogle(baseConfig, getToken, onInsufficientFunds),
       openrouter: createEchoOpenRouter(
+        baseConfig,
+        getToken,
+        onInsufficientFunds
+      ),
+      vercelGateway: createEchoVercelGateway(
         baseConfig,
         getToken,
         onInsufficientFunds

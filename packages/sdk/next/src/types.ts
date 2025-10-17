@@ -2,6 +2,7 @@ import {
   AnthropicProvider,
   GoogleGenerativeAIProvider,
   OpenAIProvider,
+  GatewayProvider,
   CreateOauthTokenResponse,
 } from '@merit-systems/echo-typescript-sdk';
 import { NextRequest } from 'next/server';
@@ -46,4 +47,5 @@ export type EchoResult = {
   openai: OpenAIProvider;
   anthropic: AnthropicProvider;
   google: GoogleGenerativeAIProvider;
+  vercelGateway: GatewayProvider;
 };

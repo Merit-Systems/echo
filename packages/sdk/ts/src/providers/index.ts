@@ -1,7 +1,9 @@
 export * from './anthropic';
 export * from './google';
+export * from './groq';
 export * from './openai';
 export * from './openrouter';
+export * from './vercel-gateway';
 
 export function echoFetch(
   originalFetch: typeof fetch,
@@ -57,5 +59,7 @@ export function echoFetch(
 // re-export the underlying types so that next doesn't need to depend on provider specific types
 export { type AnthropicProvider } from '@ai-sdk/anthropic';
 export { type GoogleGenerativeAIProvider } from '@ai-sdk/google';
+export { type GroqProvider } from '@ai-sdk/groq';
 export { type OpenAIProvider } from '@ai-sdk/openai';
 export { type OpenRouterProvider } from '@openrouter/ai-sdk-provider';
+export { type GatewayProvider } from '@ai-sdk/gateway';

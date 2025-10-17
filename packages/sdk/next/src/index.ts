@@ -6,6 +6,7 @@ import { EchoConfig, EchoResult } from './types';
 import { createEchoAnthropic } from 'ai-providers/anthropic';
 import { createEchoGoogle } from 'ai-providers/google';
 import { createEchoOpenAI } from 'ai-providers/openai';
+import { createEchoVercelGateway } from 'ai-providers/vercel-gateway';
 
 import {
   CreateOauthTokenResponse,
@@ -22,6 +23,7 @@ import {
   handleSignOut,
   handleSession,
 } from './auth/oauth-handlers';
+import { createEchoGroq } from 'ai-providers/groq';
 
 /**
  * Echo SDK for Next.js
@@ -112,5 +114,7 @@ export default function Echo(config: EchoConfig): EchoResult {
     openai: createEchoOpenAI(config),
     anthropic: createEchoAnthropic(config),
     google: createEchoGoogle(config),
+    groq: createEchoGroq(config),
+    vercelGateway: createEchoVercelGateway(config),
   };
 }

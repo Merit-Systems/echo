@@ -13,6 +13,7 @@ export abstract class BaseProvider {
   protected readonly GEMINI_GPT_BASE_URL =
     'https://generativelanguage.googleapis.com/v1beta/openai';
   protected readonly OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+  protected readonly VERCEL_GATEWAY_BASE_URL = 'https://api.vercel.com/v1/ai';
 
   private echoControlService: EchoControlService | undefined;
   private readonly isStream: boolean;
