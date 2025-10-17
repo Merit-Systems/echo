@@ -69,6 +69,7 @@ export const getPaymentsWithPagination = async (
     defaultWhere: 'WHERE p."isArchived" = false',
     dateColumns: ['createdAt', 'updatedAt'],
     numericColumns: ['amount'],
+    enumColumns: ['source'],
   });
   const orderByClause = buildOrderByClause(params.sorts, {
     columnMappings: COLUMN_MAPPINGS,
