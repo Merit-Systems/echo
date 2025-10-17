@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "docker-compose -f docker-local-db.yml up -d && sleep 3 && prisma generate && prisma migrate deploy",
+    "predev": "docker compose -f docker-local-db.yml up -d && sleep 3 && prisma generate && prisma migrate deploy",
     "dev": "next dev --turbopack",
     "prebuild": "prisma generate",
     "build": "next build",

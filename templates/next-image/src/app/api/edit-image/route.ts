@@ -17,6 +17,14 @@ const providers = {
   gemini: handleGoogleEdit,
 };
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '4mb',
+    },
+  },
+};
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();

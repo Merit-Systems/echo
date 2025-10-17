@@ -61,32 +61,36 @@ const ChatBotDemo = () => {
   const [model, setModel] = useState<string>(models[0].value);
   const pendingMessageRef = useRef<string | null>(null);
 
-  const { messages, sendMessage, status } = useChat(
-
-  );
+  const { messages, sendMessage, status } = useChat();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
       pendingMessageRef.current = input;
 
-      sendMessage({ text: input }, {
-        body: {
-          model: model,
-          useServerWallet: true,
-        },
-      });
+      sendMessage(
+        { text: input },
+        {
+          body: {
+            model: model,
+            useServerWallet: true,
+          },
+        }
+      );
       setInput('');
     }
   };
 
   const handleSuggestionClick = async (suggestion: string) => {
     pendingMessageRef.current = suggestion;
-    sendMessage({ text: suggestion}, {
-      body: {
-        model: model,
-        useServerWallet: true,
-      },
-    });
+    sendMessage(
+      { text: suggestion },
+      {
+        body: {
+          model: model,
+          useServerWallet: true,
+        },
+      }
+    );
   };
 
   return (

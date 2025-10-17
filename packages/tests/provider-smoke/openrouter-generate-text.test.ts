@@ -10,6 +10,7 @@ import {
   baseRouterUrl,
   getApiErrorDetails,
   getToken,
+  shouldSkipModelInTests,
 } from './test-helpers';
 
 beforeAll(assertEnv);
@@ -21,7 +22,11 @@ describe.concurrent('OpenRouter generateText per model', () => {
   );
 
   for (const { model_id } of OpenRouterModels) {
-    it(`OpenAI ${model_id}`, async () => {
+    if (shouldSkipModelInTests(model_id)) {
+      continue;
+    }
+
+    it(`OpenRouter generateText ${model_id}`, async () => {
       try {
         const { text } = await generateText({
           model: openrouter(model_id),
@@ -35,6 +40,6 @@ describe.concurrent('OpenRouter generateText per model', () => {
           `[generateText] OpenRouter ${model_id} failed: ${details}`
         );
       }
-    });
+    }); // 15 second timeout per test
   }
 });

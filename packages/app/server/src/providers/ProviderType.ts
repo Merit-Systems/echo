@@ -10,4 +10,5 @@ export enum ProviderType {
   OPENROUTER = 'OPENROUTER',
   OPENAI_IMAGES = 'OPENAI_IMAGES',
   OPENAI_VIDEOS = 'OPENAI_VIDEOS',
+  GROQ = 'GROQ',
 }

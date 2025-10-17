@@ -3,6 +3,8 @@ import {
   GoogleGenerativeAIProvider,
   OpenAIProvider,
   CreateOauthTokenResponse,
+  GroqProvider,
+  OpenRouterProvider,
 } from '@merit-systems/echo-typescript-sdk';
 import { NextRequest } from 'next/server';
 
@@ -46,4 +48,6 @@ export type EchoResult = {
   openai: OpenAIProvider;
   anthropic: AnthropicProvider;
   google: GoogleGenerativeAIProvider;
+  groq: GroqProvider;
+  openrouter: OpenRouterProvider;
 };

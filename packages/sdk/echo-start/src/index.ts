@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 
-import { intro, outro, select, text, spinner, log, isCancel, cancel } from '@clack/prompts';
+import {
+  intro,
+  outro,
+  select,
+  text,
+  spinner,
+  log,
+  isCancel,
+  cancel,
+} from '@clack/prompts';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import degit from 'degit';
@@ -82,7 +91,10 @@ function detectPackageManager(): PackageManager {
   return 'pnpm';
 }
 
-function getPackageManagerCommands(pm: PackageManager): { install: string; dev: string } {
+function getPackageManagerCommands(pm: PackageManager): {
+  install: string;
+  dev: string;
+} {
   switch (pm) {
     case 'pnpm':
       return { install: 'pnpm install', dev: 'pnpm dev' };
@@ -114,7 +126,7 @@ async function runInstall(
   projectPath: string,
   onProgress?: (line: string) => void
 ): Promise<boolean> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const command = packageManager;
     const args = ['install'];
 
@@ -125,7 +137,7 @@ async function runInstall(
 
     let lastLine = '';
 
-    child.stdout?.on('data', (data) => {
+    child.stdout?.on('data', data => {
       const lines = data.toString().split('\n');
       const relevantLine = lines
         .filter((line: string) => line.trim().length > 0)
@@ -141,7 +153,7 @@ async function runInstall(
       }
     });
 
-    child.on('close', (code) => {
+    child.on('close', code => {
       resolve(code === 0);
     });
 
@@ -170,11 +182,13 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
   if (!template) {
     const selectedTemplate = await select({
       message: 'Which template would you like to use?',
-      options: Object.entries(DEFAULT_TEMPLATES).map(([key, { title, description }]) => ({
-        label: title,
-        hint: description,
-        value: key,
-      })),
+      options: Object.entries(DEFAULT_TEMPLATES).map(
+        ([key, { title, description }]) => ({
+          label: title,
+          hint: description,
+          value: key,
+        })
+      ),
     });
 
     if (isCancel(selectedTemplate)) {
@@ -272,7 +286,9 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
       packageJson.name = toSafePackageName(projectDir);
       writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-      log.message(`Updated package.json with project name: ${toSafePackageName(projectDir)}`);
+      log.message(
+        `Updated package.json with project name: ${toSafePackageName(projectDir)}`
+      );
     }
 
     // Update .env.local with the provided app ID
@@ -310,8 +326,10 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       const installSuccess = await runInstall(
         packageManager,
         absoluteProjectPath,
-        (progressLine) => {
-          s.message(`Installing dependencies with ${packageManager}... ${chalk.gray(progressLine + '...')}`);
+        progressLine => {
+          s.message(
+            `Installing dependencies with ${packageManager}... ${chalk.gray(progressLine + '...')}`
+          );
         }
       );
 
@@ -319,7 +337,9 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
         s.stop('Dependencies installed successfully');
       } else {
         s.stop('Failed to install dependencies');
-        log.warning(`Could not install dependencies with ${packageManager}. Please run manually.`);
+        log.warning(
+          `Could not install dependencies with ${packageManager}. Please run manually.`
+        );
       }
     }
 
@@ -328,9 +348,9 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       ? [`cd ${projectDir}`, install, dev]
       : [`cd ${projectDir}`, dev];
 
-    const nextSteps = `${chalk.cyan('Get started:')}\n` + steps
-      .map(step => `  ${chalk.cyan('└')} ${step}`)
-      .join('\n');
+    const nextSteps =
+      `${chalk.cyan('Get started:')}\n` +
+      steps.map(step => `  ${chalk.cyan('└')} ${step}`).join('\n');
 
     outro(`Success! Created ${projectDir}\n\n${nextSteps}`);
 
@@ -338,9 +358,13 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('could not find commit hash')) {
-        cancel(`Template "${template}" not found in repository.\n\nThe template might not exist yet. Please check:\nhttps://github.com/Merit-Systems/echo/tree/master/templates`);
+        cancel(
+          `Template "${template}" not found in repository.\n\nThe template might not exist yet. Please check:\nhttps://github.com/Merit-Systems/echo/tree/master/templates`
+        );
       } else if (error.message.includes('Repository does not exist')) {
-        cancel('Repository not accessible.\n\nMake sure you have access to the Merit-Systems/echo repository.');
+        cancel(
+          'Repository not accessible.\n\nMake sure you have access to the Merit-Systems/echo repository.'
+        );
       } else {
         cancel(`Failed to create app: ${error.message}`);
       }

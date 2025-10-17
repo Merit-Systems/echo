@@ -4,6 +4,7 @@ import { Request } from 'express';
 import { ProviderType } from './ProviderType';
 import { EscrowRequest } from '../middleware/transaction-escrow-middleware';
 import { Response } from 'express';
+import { transfer } from 'transferWithAuth';
 import { getVideoModelPrice } from 'services/AccountingService';
 import { HttpError, UnknownModelError } from 'errors/http';
 import { Decimal } from 'generated/prisma/runtime/library';
@@ -11,6 +12,7 @@ import { Transaction } from '../types';
 import { prisma } from '../server';
 import { EchoDbService } from '../services/DbService';
 import logger from '../logger';
+import { decimalToUsdcBigInt } from 'utils';
 
 export class OpenAIVideoProvider extends BaseProvider {
   static detectPassthroughProxy(
@@ -173,7 +175,70 @@ export class OpenAIVideoProvider extends BaseProvider {
     }
 
     const responseData = await response.json();
+    switch (responseData.status) {
+      case 'completed':
+        await this.handleSuccessfulVideoGeneration(responseData.id as string);
+        break;
+      case 'failed':
+        await this.handleFailedVideoGeneration(responseData.id as string);
+        break;
+      default:
+        break;
+    }
     res.json(responseData);
+  }
+
+  // ====== Refund methods ======
+  private async handleSuccessfulVideoGeneration(
+    videoId: string
+  ): Promise<void> {
+    await prisma.$transaction(async tx => {
+      const result = await tx.$queryRawUnsafe(
+        `SELECT * FROM "video_generation_x402" WHERE "videoId" = $1 FOR UPDATE`,
+        videoId
+      );
+      const video = (result as any[])[0];
+      if (video && !video.isFinal) {
+        await tx.videoGenerationX402.update({
+          where: {
+            videoId: video.videoId,
+          },
+          data: {
+            isFinal: true,
+          },
+        });
+      }
+    });
+  }
+
+  private async handleFailedVideoGeneration(videoId: string): Promise<void> {
+    await prisma.$transaction(async tx => {
+      const result = await tx.$queryRawUnsafe(
+        `SELECT * FROM "video_generation_x402" WHERE "videoId" = $1 FOR UPDATE`,
+        videoId
+      );
+      const video = (result as any[])[0];
+      // Exit early if video already final
+      if (!video || video.isFinal) {
+        return;
+      }
+      if (video.wallet) {
+        const refundAmount = decimalToUsdcBigInt(video.cost);
+        await transfer(video.wallet as `0x${string}`, refundAmount);
+      }
+      if (video.userId) {
+        // Proccess the refund to the user. There is some level of complexity here since there is a markup. Not as simple as just credit grant.
+        logger.info(`Refunding video generation ${video.videoId} to user ${video.userId} on app ${video.echoAppId}`);
+      }
+      await tx.videoGenerationX402.update({
+        where: {
+          videoId: video.videoId,
+        },
+        data: {
+          isFinal: true,
+        },
+      });
+    });
   }
 
   // ========== Video Download Handling ==========

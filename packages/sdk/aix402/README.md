@@ -15,10 +15,12 @@ React hook for automatic x402 payment handling:
 ```typescript
 import { useChatWithPayment } from '@merit-systems/ai-x402/client';
 
-const { messages, input, handleInputChange, handleSubmit } = useChatWithPayment({
-  api: '/api/chat',
-  walletClient: yourWalletClient,
-});
+const { messages, input, handleInputChange, handleSubmit } = useChatWithPayment(
+  {
+    api: '/api/chat',
+    walletClient: yourWalletClient,
+  }
+);
 ```
 
 ## Server Usage

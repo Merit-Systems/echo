@@ -6,10 +6,7 @@ interface HeaderProps {
   className?: string;
 }
 
-const Header: FC<HeaderProps> = ({
-  title = 'My App',
-  className = '',
-}) => {
+const Header: FC<HeaderProps> = ({ title = 'My App', className = '' }) => {
   return (
     <header
       className={`border-gray-200 border-b bg-white shadow-sm ${className}`}

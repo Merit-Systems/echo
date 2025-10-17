@@ -2,19 +2,21 @@ import { z } from 'zod';
 import { ALL_SUPPORTED_MODELS } from 'services/AccountingService';
 
 const ChatMessage = z.object({
-    role: z.enum(["system", "user", "assistant", "function"]),
-    content: z.string().optional(),
-    name: z.string().optional(),        // only used when role = “function” or “assistant” sometimes
-    function_call: z
-      .object({
-        name: z.string(),
-        arguments: z.string().optional(),
-      })
-      .optional(),
-  });
+  role: z.enum(['system', 'user', 'assistant', 'function']),
+  content: z.string().optional(),
+  name: z.string().optional(), // only used when role = “function” or “assistant” sometimes
+  function_call: z
+    .object({
+      name: z.string(),
+      arguments: z.string().optional(),
+    })
+    .optional(),
+});
 
 export const ChatCompletionInput = z.object({
-  model: z.enum(ALL_SUPPORTED_MODELS.map(model => model.model_id) as [string, ...string[]]),
+  model: z.enum(
+    ALL_SUPPORTED_MODELS.map(model => model.model_id) as [string, ...string[]]
+  ),
   messages: z.array(ChatMessage),
 
   // optional parameters
@@ -40,17 +42,14 @@ export const ChatCompletionInput = z.object({
     .optional(),
 
   function_call: z
-    .union([
-      z.enum(["none", "auto"]),
-      z.object({ name: z.string() }),
-    ])
+    .union([z.enum(['none', 'auto']), z.object({ name: z.string() })])
     .optional(),
 
   // new structured output / response_format
   response_format: z
     .object({
-      type: z.enum(["json_schema"]),
-      json_schema: z.any(),   // you may replace with a more precise JSON Schema type
+      type: z.enum(['json_schema']),
+      json_schema: z.any(), // you may replace with a more precise JSON Schema type
     })
     .optional(),
 });
@@ -63,7 +62,7 @@ const ChatMessageContentPart = z.object({
 });
 
 const ChatMessageOutput = z.object({
-  role: z.enum(["system", "user", "assistant", "function"]),
+  role: z.enum(['system', 'user', 'assistant', 'function']),
   content: z.union([z.string(), z.array(ChatMessageContentPart)]).nullable(),
   name: z.string().optional(),
   function_call: z
@@ -76,7 +75,7 @@ const ChatMessageOutput = z.object({
     .array(
       z.object({
         id: z.string(),
-        type: z.enum(["function"]),
+        type: z.enum(['function']),
         function: z.object({
           name: z.string(),
           arguments: z.string(),
@@ -90,7 +89,9 @@ const ChatMessageOutput = z.object({
 const ChatCompletionChoice = z.object({
   index: z.number(),
   message: ChatMessageOutput,
-  finish_reason: z.enum(["stop", "length", "tool_calls", "content_filter", "function_call"]).nullable(),
+  finish_reason: z
+    .enum(['stop', 'length', 'tool_calls', 'content_filter', 'function_call'])
+    .nullable(),
   logprobs: z
     .object({
       content: z
@@ -119,7 +120,7 @@ const ChatCompletionChoice = z.object({
 // The full response object
 export const ChatCompletionOutput = z.object({
   id: z.string(),
-  object: z.literal("chat.completion"),
+  object: z.literal('chat.completion'),
   created: z.number(),
   model: z.string(),
   choices: z.array(ChatCompletionChoice),

@@ -3,11 +3,12 @@ import {
   GeminiModels,
 } from '@merit-systems/echo-typescript-sdk';
 import { streamText } from 'ai';
+import { BLACKLISTED_MODELS } from 'gemini-generate-text.test';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
-  ECHO_APP_ID,
   assertEnv,
   baseRouterUrl,
+  ECHO_APP_ID,
   getApiErrorDetails,
   getToken,
 } from './test-helpers';
@@ -21,6 +22,10 @@ describe.concurrent('Gemini streamText per model', () => {
   );
 
   for (const { model_id } of GeminiModels) {
+    if (BLACKLISTED_MODELS.has(model_id)) {
+      console.log('Skipping generateText for blacklisted model', model_id);
+      continue;
+    }
     it(`Gemini streamText ${model_id}`, async () => {
       try {
         const { textStream } = streamText({

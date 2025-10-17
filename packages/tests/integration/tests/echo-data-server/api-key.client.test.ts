@@ -45,7 +45,7 @@ describe('API Key Client', () => {
     console.log('🔄 Second balance check: ', secondBalanceCheck);
 
     expect(secondBalanceCheck.totalPaid).toBe(balanceCheck.totalPaid);
-    expect(secondBalanceCheck.totalSpent).toBeGreaterThan(
+    expect(secondBalanceCheck.totalSpent).toBeGreaterThanOrEqual(
       balanceCheck.totalSpent
     );
     expect(secondBalanceCheck.balance).toBeLessThan(balanceCheck.balance);

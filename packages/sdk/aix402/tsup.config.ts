@@ -11,4 +11,3 @@ export default defineConfig({
   splitting: false,
   bundle: true,
 });
-

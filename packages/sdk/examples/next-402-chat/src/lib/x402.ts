@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-const evmAddress = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid EVM address');
+const evmAddress = z
+  .string()
+  .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid EVM address');
 const hexString = z.string().regex(/^0x[a-fA-F0-9]+$/, 'Invalid hex string');
 const decimalString = z.string().regex(/^\d+$/, 'Must be a decimal string');
 
@@ -47,7 +49,7 @@ export function handleX402Error(error: Error): X402PaymentDetails | false {
     const paymentDetails = X402PaymentDetailsSchema.parse(parsedError);
     return paymentDetails;
   } catch (error) {
-    console.error("error: ", error)
-    return false
+    console.error('error: ', error);
+    return false;
   }
 }

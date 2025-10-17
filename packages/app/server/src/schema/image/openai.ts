@@ -1,10 +1,10 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /** Allowed image sizes, per docs */
-const ImageSize = z.enum(["256x256", "512x512", "1024x1024"]);
+const ImageSize = z.enum(['256x256', '512x512', '1024x1024']);
 
 /** Allowed response formats */
-const ResponseFormat = z.enum(["url", "b64_json"]);
+const ResponseFormat = z.enum(['url', 'b64_json']);
 
 /** Create Images API: request (input) */
 export const CreateImagesRequest = z.object({

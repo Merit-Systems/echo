@@ -23,6 +23,109 @@ import {
 } from 'services/facilitator/x402-types';
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from 'logger';
+import { Request, Response } from 'express';
+import { ProviderType } from 'providers/ProviderType';
+
+export async function refund(
+  paymentAmountDecimal: Decimal,
+  payload: ExactEvmPayload
+) {
+  try {
+    const refundAmountUsdcBigInt = decimalToUsdcBigInt(paymentAmountDecimal);
+    const authPayload = payload.authorization;
+    await transfer(authPayload.from as `0x${string}`, refundAmountUsdcBigInt);
+  } catch (error) {
+    logger.error('Failed to refund', error);
+  }
+}
+
+export async function settle(
+  req: Request,
+  res: Response,
+  headers: Record<string, string>,
+  maxCost: Decimal
+): Promise<
+  { payload: ExactEvmPayload; paymentAmountDecimal: Decimal } | undefined
+> {
+  const network = process.env.NETWORK as Network;
+
+  let recipient: string;
+  try {
+    recipient = (await getSmartAccount()).smartAccount.address;
+  } catch (error) {
+    buildX402Response(req, res, maxCost);
+    return undefined;
+  }
+
+  let xPaymentData: PaymentPayload;
+  try {
+    xPaymentData = validateXPaymentHeader(headers, req);
+  } catch (error) {
+    buildX402Response(req, res, maxCost);
+    return undefined;
+  }
+
+  const payload = xPaymentData.payload as ExactEvmPayload;
+  logger.info(`Payment payload: ${JSON.stringify(payload)}`);
+
+  const paymentAmount = payload.authorization.value;
+  const paymentAmountDecimal = usdcBigIntToDecimal(paymentAmount);
+
+  // Note(shafu, alvaro): Edge case where client sends the x402-challenge
+  // but the payment amount is less than what we returned in the first response
+  if (BigInt(paymentAmount) < decimalToUsdcBigInt(maxCost)) {
+    buildX402Response(req, res, maxCost);
+    return undefined;
+  }
+
+  const facilitatorClient = new FacilitatorClient();
+  const paymentRequirements = PaymentRequirementsSchema.parse({
+    scheme: 'exact',
+    network,
+    maxAmountRequired: paymentAmount,
+    resource: `${req.protocol}://${req.get('host')}${req.url}`,
+    description: 'Echo x402',
+    mimeType: 'application/json',
+    payTo: recipient,
+    maxTimeoutSeconds: 60,
+    asset: USDC_ADDRESS,
+    extra: {
+      name: 'USD Coin',
+      version: '2',
+    },
+  });
+
+  const settleRequest = SettleRequestSchema.parse({
+    paymentPayload: xPaymentData,
+    paymentRequirements,
+  });
+
+  const settleResult = await facilitatorClient.settle(settleRequest);
+
+  if (!settleResult.success || !settleResult.transaction) {
+    buildX402Response(req, res, maxCost);
+    return undefined;
+  }
+
+  return { payload, paymentAmountDecimal };
+}
+
+export async function finalize(
+  paymentAmountDecimal: Decimal,
+  transaction: Transaction,
+  payload: ExactEvmPayload
+) {
+  const refundAmount = calculateRefundAmount(
+    paymentAmountDecimal,
+    transaction.rawTransactionCost
+  );
+
+  if (!refundAmount.equals(0) && refundAmount.greaterThan(0)) {
+    const refundAmountUsdcBigInt = decimalToUsdcBigInt(refundAmount);
+    const authPayload = payload.authorization;
+    await transfer(authPayload.from as `0x${string}`, refundAmountUsdcBigInt);
+  }
+}
 
 export async function handleX402Request({
   req,
@@ -37,125 +140,48 @@ export async function handleX402Request({
     return await makeProxyPassthroughRequest(req, res, provider, headers);
   }
 
-  // Apply x402 payment middleware with the calculated maxCost
-  const network = process.env.NETWORK as Network;
-
-  let recipient: string;
-  try {
-    recipient = (await getSmartAccount()).smartAccount.address;
-  } catch (error) {
-    return buildX402Response(req, res, maxCost);
-  }
-  let xPaymentData: PaymentPayload;
-  try {
-    xPaymentData = validateXPaymentHeader(headers, req);
-  } catch (error) {
-    return buildX402Response(req, res, maxCost);
+  const settleResult = await settle(req, res, headers, maxCost);
+  if (!settleResult) {
+    return;
   }
 
-  const payload = xPaymentData.payload as ExactEvmPayload;
-  logger.info(`Payment payload: ${JSON.stringify(payload)}`);
+  const { payload, paymentAmountDecimal } = settleResult;
 
-  const paymentAmount = payload.authorization.value;
-  const paymentAmountDecimal = usdcBigIntToDecimal(paymentAmount);
-
-  // Note(shafu, alvaro): Edge case where client sends the x402-challenge
-  // but the payment amount is less than what we returned in the first response
-  if (BigInt(paymentAmount) < decimalToUsdcBigInt(maxCost)) {
-    return buildX402Response(req, res, maxCost);
-  }
-
-  const facilitatorClient = new FacilitatorClient();
   try {
-    // Default to no refund
-    let refundAmount = new Decimal(0);
-    let transaction: Transaction | null = null;
-    let data: unknown = null;
+    const transactionResult = await modelRequestService.executeModelRequest(
+      req,
+      res,
+      headers,
+      provider,
+      isStream
+    );
+    const transaction = transactionResult.transaction;
 
-    // Construct and validate PaymentRequirements using Zod schema
-    const paymentRequirements = PaymentRequirementsSchema.parse({
-      scheme: 'exact',
-      network,
-      maxAmountRequired: paymentAmount,
-      resource: `${req.protocol}://${req.get('host')}${req.url}`,
-      description: 'Echo x402',
-      mimeType: 'application/json',
-      payTo: recipient,
-      maxTimeoutSeconds: 60,
-      asset: USDC_ADDRESS,
-      extra: {
-        name: 'USD Coin',
-        version: '2',
-      },
-    });
-    // Validate and execute settle request
-    const settleRequest = SettleRequestSchema.parse({
-      paymentPayload: xPaymentData,
-      paymentRequirements,
-    });
 
-    const settleResult = await facilitatorClient.settle(settleRequest);
-
-    if (!settleResult.success || !settleResult.transaction) {
-      return buildX402Response(req, res, maxCost);
+    if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
+      await prisma.videoGenerationX402.create({
+        data: {
+          videoId: transaction.metadata.providerId,
+          wallet: payload.authorization.from,
+          cost: transaction.rawTransactionCost,
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 1),
+        },
+      });
     }
 
-    try {
-      const transactionResult = await modelRequestService.executeModelRequest(
-        req,
-        res,
-        headers,
-        provider,
-        isStream
-      );
-      transaction = transactionResult.transaction;
-      data = transactionResult.data;
+    modelRequestService.handleResolveResponse(
+      res,
+      isStream,
+      transactionResult.data
+    );
 
-      // Send the response - the middleware has intercepted res.end()/res.json()
-      // and will actually send it after settlement completes
-      modelRequestService.handleResolveResponse(res, isStream, data);
-
-      refundAmount = calculateRefundAmount(
-        paymentAmountDecimal,
-        transaction.rawTransactionCost
-      );
-
-      // Process refund if needed
-      if (!refundAmount.equals(0) && refundAmount.greaterThan(0)) {
-        const refundAmountUsdcBigInt = decimalToUsdcBigInt(refundAmount);
-        const authPayload = payload.authorization;
-        await transfer(
-          authPayload.from as `0x${string}`,
-          refundAmountUsdcBigInt
-        ).catch(transferError => {
-          logger.error('Failed to process refund', {
-            error: transferError,
-            refundAmount: refundAmount.toString(),
-          });
-        });
-      }
-    } catch (error) {
-      // In case of error, do full refund
-      refundAmount = paymentAmountDecimal;
-
-      if (!refundAmount.equals(0) && refundAmount.greaterThan(0)) {
-        const refundAmountUsdcBigInt = decimalToUsdcBigInt(refundAmount);
-        const authPayload = payload.authorization;
-        await transfer(
-          authPayload.from as `0x${string}`,
-          refundAmountUsdcBigInt
-        ).catch(transferError => {
-          logger.error('Failed to process full refund after error', {
-            error: transferError,
-            originalError: error,
-            refundAmount: refundAmount.toString(),
-          });
-        });
-      }
-    }
+    await finalize(
+      paymentAmountDecimal,
+      transactionResult.transaction,
+      payload
+    );
   } catch (error) {
-    logger.error('Error in handleX402Request', { error });
-    throw error;
+    await refund(paymentAmountDecimal, payload);
   }
 }
 
@@ -200,10 +226,25 @@ export async function handleApiKeyRequest({
     isStream
   );
 
+  
+
   // There is no actual refund, this logs if we underestimate the raw cost
   calculateRefundAmount(maxCost, transaction.rawTransactionCost);
 
   modelRequestService.handleResolveResponse(res, isStream, data);
 
   await echoControlService.createTransaction(transaction, maxCost);
+  
+  if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
+    const transactionCost = await echoControlService.computeTransactionCosts(transaction, null);
+    await prisma.videoGenerationX402.create({
+      data: {
+        videoId: transaction.metadata.providerId,
+        userId: echoControlService.getUserId()!,
+        echoAppId: echoControlService.getEchoAppId()!,
+        cost: transactionCost.totalTransactionCost,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 1),
+      },
+    });
+  }
 }

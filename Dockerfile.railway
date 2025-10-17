@@ -91,6 +91,10 @@ COPY packages/sdk/component-registry/ ./packages/sdk/component-registry/
 WORKDIR /app
 RUN pnpm install
 
+# Build SDK first to ensure latest version is used
+WORKDIR /app
+RUN pnpm exec turbo run build --filter=@merit-systems/echo-typescript-sdk
+
 # Build only what's needed for the server
 WORKDIR /app
 RUN SKIP_ENV_VALIDATION=true pnpm exec turbo run build --filter=echo-server
@@ -103,7 +107,7 @@ WORKDIR /app/packages/app/server
 RUN pnpm run copy-prisma
 
 # Step 4: Install production dependencies only
-RUN pnpm install
+RUN pnpm install --prod
 
 # Expose the port that echo-server runs on
 EXPOSE 3069

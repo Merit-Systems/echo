@@ -11,6 +11,7 @@ import type { BaseProvider } from './BaseProvider';
 import { GeminiGPTProvider } from './GeminiGPTProvider';
 import { GeminiProvider } from './GeminiProvider';
 import { OpenAIVideoProvider } from './OpenAIVideoProvider';
+import { GroqProvider } from './GroqProvider';
 import {
   GeminiVeoProvider,
   PROXY_PASSTHROUGH_ONLY_MODEL as GeminiVeoProxyPassthroughOnlyModel,
@@ -47,6 +48,9 @@ const createChatModelToProviderMapping = (): Record<string, ProviderType> => {
           break;
         case 'OpenRouter':
           mapping[modelConfig.model_id] = ProviderType.OPENROUTER;
+          break;
+        case 'Groq':
+          mapping[modelConfig.model_id] = ProviderType.GROQ;
           break;
         // Add other providers as needed
         default:
@@ -178,6 +182,8 @@ export const getProvider = (
       return new VertexAIProvider(stream, model);
     case ProviderType.OPENAI_VIDEOS:
       return new OpenAIVideoProvider(stream, model);
+    case ProviderType.GROQ:
+      return new GroqProvider(stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }

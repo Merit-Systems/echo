@@ -30,6 +30,7 @@ import { handleX402Request, handleApiKeyRequest } from './handlers';
 import { initializeProvider } from './services/ProviderInitializationService';
 import { getRequestMaxCost } from './services/PricingService';
 import { Decimal } from '@prisma/client/runtime/library';
+import resourceRouter from './routers/resource';
 
 dotenv.config();
 
@@ -93,6 +94,9 @@ app.use(standardRouter);
 
 // Use in-flight monitor router for monitoring endpoints
 app.use(inFlightMonitorRouter);
+
+// Use resource router for resource routes
+app.use('/resource', resourceRouter);
 
 // Main route handler
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {

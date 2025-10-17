@@ -44,6 +44,8 @@ export { GeminiModels } from './supported-models/chat/gemini';
 export type { GeminiModel } from './supported-models/chat/gemini';
 export { OpenRouterModels } from './supported-models/chat/openrouter';
 export type { OpenRouterModel } from './supported-models/chat/openrouter';
+export { GroqModels } from './supported-models/chat/groq';
+export type { GroqModel } from './supported-models/chat/groq';
 export { OpenAIImageModels } from './supported-models/image/openai';
 export type { OpenAIImageModel } from './supported-models/image/openai';
 export { GeminiVideoModels } from './supported-models/video/gemini';

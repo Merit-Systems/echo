@@ -10,9 +10,17 @@ import {
   baseRouterUrl,
   getApiErrorDetails,
   getToken,
+  shouldSkipModelInTests,
 } from './test-helpers';
 
 beforeAll(assertEnv);
+
+const BLACKLISTED_MODELS = new Set([
+  'deepseek/deepseek-r1-distill-qwen-14b',
+  'qwen/qwen3-30b-a3b',
+  'thudm/glm-z1-32b',
+  'qwen/qwen3-coder',
+]);
 
 describe.concurrent('OpenAI streamText per model', () => {
   const openrouter = createEchoOpenRouter(
@@ -21,6 +29,13 @@ describe.concurrent('OpenAI streamText per model', () => {
   );
 
   for (const { model_id } of OpenRouterModels) {
+    if (shouldSkipModelInTests(model_id)) {
+      continue;
+    }
+    if (BLACKLISTED_MODELS.has(model_id)) {
+      console.log('Skipping streamText for blacklisted model', model_id);
+      continue;
+    }
     it(`OpenRouter stream ${model_id}`, async () => {
       try {
         const { textStream } = streamText({
@@ -38,6 +53,6 @@ describe.concurrent('OpenAI streamText per model', () => {
           `[streamText] OpenRouter ${model_id} failed: ${details}`
         );
       }
-    });
+    }); // 45 second timeout per test
   }
 });

@@ -71,7 +71,7 @@ const ChatBotDemo = () => {
       },
     },
     onError: (error: any) => {
-      console.error("error: ", error)
+      console.error('error: ', error);
     },
   });
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,22 +79,28 @@ const ChatBotDemo = () => {
     if (input.trim()) {
       pendingMessageRef.current = input;
 
-      sendMessage({ text: input }, {
-        body: {
-          model: model,
-        },
-      });
+      sendMessage(
+        { text: input },
+        {
+          body: {
+            model: model,
+          },
+        }
+      );
       setInput('');
     }
   };
 
   const handleSuggestionClick = async (suggestion: string) => {
     pendingMessageRef.current = suggestion;
-    sendMessage({ text: suggestion}, {
-      body: {
-        model: model,
-      },
-    });
+    sendMessage(
+      { text: suggestion },
+      {
+        body: {
+          model: model,
+        },
+      }
+    );
   };
 
   return (

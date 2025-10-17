@@ -1,0 +1,3 @@
+export const PRICE_PER_VCPU_PER_SECOND = 0.000014;
+
+export const DEFAULT_VCPU_COUNT = 2;

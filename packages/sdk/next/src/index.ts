@@ -6,6 +6,8 @@ import { EchoConfig, EchoResult } from './types';
 import { createEchoAnthropic } from 'ai-providers/anthropic';
 import { createEchoGoogle } from 'ai-providers/google';
 import { createEchoOpenAI } from 'ai-providers/openai';
+import { createEchoOpenRouter } from 'ai-providers/openrouter';
+import { createEchoGroq } from 'ai-providers/groq';
 
 import {
   CreateOauthTokenResponse,
@@ -18,9 +20,9 @@ import { handleEchoClientProxy } from 'proxy';
 import {
   handleCallback,
   handleRefresh,
+  handleSession,
   handleSignIn,
   handleSignOut,
-  handleSession,
 } from './auth/oauth-handlers';
 
 /**
@@ -112,5 +114,7 @@ export default function Echo(config: EchoConfig): EchoResult {
     openai: createEchoOpenAI(config),
     anthropic: createEchoAnthropic(config),
     google: createEchoGoogle(config),
+    groq: createEchoGroq(config),
+    openrouter: createEchoOpenRouter(config),
   };
 }

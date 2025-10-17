@@ -1,10 +1,10 @@
 import { getEchoToken } from '../auth/token-manager';
 import {
-  createEchoOpenAI as createEchoOpenAIBase,
+  createEchoOpenRouter as createEchoOpenRouterBase,
   EchoConfig,
-  OpenAIProvider,
+  OpenRouterProvider,
 } from '@merit-systems/echo-typescript-sdk';
 
-export function createEchoOpenRouter(config: EchoConfig): OpenAIProvider {
-  return createEchoOpenAIBase(config, async () => getEchoToken(config));
+export function createEchoOpenRouter(config: EchoConfig): OpenRouterProvider {
+  return createEchoOpenRouterBase(config, async () => getEchoToken(config));
 }
