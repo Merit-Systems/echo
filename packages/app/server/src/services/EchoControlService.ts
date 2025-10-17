@@ -32,7 +32,7 @@ export class EchoControlService {
 
   constructor(db: PrismaClient, apiKey: string) {
     // Check if the generated Prisma client exists
-    const generatedPrismaPath = join(__dirname, 'generated', 'prisma');
+    const generatedPrismaPath = join(__dirname, '..', 'generated', 'prisma');
     if (!existsSync(generatedPrismaPath)) {
       throw new Error(
         `Generated Prisma client not found at ${generatedPrismaPath}. ` +

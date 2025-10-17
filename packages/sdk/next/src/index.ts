@@ -6,23 +6,24 @@ import { EchoConfig, EchoResult } from './types';
 import { createEchoAnthropic } from 'ai-providers/anthropic';
 import { createEchoGoogle } from 'ai-providers/google';
 import { createEchoOpenAI } from 'ai-providers/openai';
+import { createEchoOpenRouter } from 'ai-providers/openrouter';
 
 import {
   CreateOauthTokenResponse,
   validateAppId,
 } from '@merit-systems/echo-typescript-sdk';
 
+import { createEchoGroq } from 'ai-providers/groq';
 import { ECHO_COOKIE, namespacedCookie } from 'auth/cookie-names';
 import { getEchoToken as getEchoTokenInternal } from 'auth/token-manager';
 import { handleEchoClientProxy } from 'proxy';
 import {
   handleCallback,
   handleRefresh,
+  handleSession,
   handleSignIn,
   handleSignOut,
-  handleSession,
 } from './auth/oauth-handlers';
-import { createEchoGroq } from 'ai-providers/groq';
 
 /**
  * Echo SDK for Next.js
@@ -114,5 +115,6 @@ export default function Echo(config: EchoConfig): EchoResult {
     anthropic: createEchoAnthropic(config),
     google: createEchoGoogle(config),
     groq: createEchoGroq(config),
+    openrouter: createEchoOpenRouter(config),
   };
 }
