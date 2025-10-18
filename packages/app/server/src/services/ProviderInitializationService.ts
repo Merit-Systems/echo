@@ -11,6 +11,7 @@ import {
   isValidImageModel,
   isValidModel,
   isValidVideoModel,
+  isValidAudioModel,
 } from './AccountingService';
 import { extractIsStream, extractModelName } from './RequestDataService';
 
@@ -67,7 +68,8 @@ export async function initializeProvider(
     !model ||
     (!isValidModel(model) &&
       !isValidImageModel(model) &&
-      !isValidVideoModel(model))
+      !isValidVideoModel(model) &&
+      !isValidAudioModel(model))
   ) {
     logger.warn(`Invalid model: ${model}`);
     // if auth or x402 header, return 422

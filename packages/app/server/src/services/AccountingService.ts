@@ -64,6 +64,12 @@ ALL_SUPPORTED_VIDEO_MODELS.forEach(model => {
   VIDEO_MODEL_MAP.set(model.model_id, model);
 });
 
+// Create a separate map for audio models
+const AUDIO_MODEL_MAP = new Map<string, SupportedAudioModel>();
+ALL_SUPPORTED_AUDIO_MODELS.forEach(model => {
+  AUDIO_MODEL_MAP.set(model.model_id, model);
+});
+
 export const getModelPrice = (model: string) => {
   const supportedModel = MODEL_PRICE_MAP.get(model);
 
@@ -116,6 +122,10 @@ export const isValidImageModel = (model: string) => {
 
 export const isValidVideoModel = (model: string) => {
   return VIDEO_MODEL_MAP.has(model);
+};
+
+export const isValidAudioModel = (model: string) => {
+  return AUDIO_MODEL_MAP.has(model);
 };
 
 export const getCostPerToken = (
