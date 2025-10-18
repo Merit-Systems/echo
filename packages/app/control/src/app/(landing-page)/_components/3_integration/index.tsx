@@ -19,7 +19,7 @@ export const IntegrationSection = () => {
       <div className="p-4 md:p-8 flex flex-col items-center justify-center gap-8">
         <div className="flex flex-col items-center justify-center gap-2">
           <h1 className="text-2xl font-bold text-center">
-            Start Earning in Seconds
+            Distribution Ready in Seconds
           </h1>
           <p className="text-sm text-muted-foreground text-center">
             Our SDKs are designed to minimize the time from idea to revenue
