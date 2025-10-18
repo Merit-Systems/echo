@@ -5,10 +5,12 @@ import {
   OpenRouterModels,
   GroqModels,
   OpenAIImageModels,
+  OpenAIAudioModels,
   SupportedOpenAIResponseToolPricing,
   SupportedModel,
   SupportedImageModel,
   SupportedVideoModel,
+  SupportedAudioModel,
 } from '@merit-systems/echo-typescript-sdk';
 
 import { Decimal } from '@prisma/client/runtime/library';
@@ -38,6 +40,10 @@ export const ALL_SUPPORTED_VIDEO_MODELS: SupportedVideoModel[] = [
   ...GeminiVideoModels,
   ...VertexAIVideoModels,
   ...OpenAIVideoModels,
+];
+
+export const ALL_SUPPORTED_AUDIO_MODELS: SupportedAudioModel[] = [
+  ...OpenAIAudioModels,
 ];
 
 // Create a lookup map for O(1) model price retrieval

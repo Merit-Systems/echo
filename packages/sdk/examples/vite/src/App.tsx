@@ -7,9 +7,10 @@ import {
 import { useState } from 'react';
 import { ChatInterface } from './components/ChatInterface';
 import { ImageGeneration } from './components/ImageGeneration';
+import { AudioTranscription } from './components/AudioTranscription';
 import UseChatInterface from './components/UseChatInterface';
 
-type Tab = 'chat' | 'images' | 'use-chat';
+type Tab = 'chat' | 'images' | 'audio' | 'use-chat';
 
 function Dashboard() {
   const { user, balance, error, isLoading } = useEcho();
@@ -129,6 +130,16 @@ function Dashboard() {
               🎨 Image Generation
             </button>
             <button
+              onClick={() => setActiveTab('audio')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'audio'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              🎵 Audio Transcription
+            </button>
+            <button
               onClick={() => setActiveTab('use-chat')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'use-chat'
@@ -145,6 +156,7 @@ function Dashboard() {
         <div className="bg-white rounded-lg shadow-sm p-6 min-h-[600px]">
           {activeTab === 'chat' && <ChatInterface />}
           {activeTab === 'images' && <ImageGeneration />}
+          {activeTab === 'audio' && <AudioTranscription />}
           {activeTab === 'use-chat' && <UseChatInterface />}
         </div>
 
