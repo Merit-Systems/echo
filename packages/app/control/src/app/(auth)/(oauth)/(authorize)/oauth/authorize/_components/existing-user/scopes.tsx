@@ -1,4 +1,4 @@
-import { BrainCircuit, User } from 'lucide-react';
+import { BrainCircuit, Key, User } from 'lucide-react';
 
 interface Props {
   scopes: string[];
@@ -37,5 +37,9 @@ const scopeData = {
   offline_access: {
     name: 'Connect your user profile',
     icon: User,
+  },
+  'api_key:create': {
+    name: 'Create API keys',
+    icon: Key,
   },
 };
