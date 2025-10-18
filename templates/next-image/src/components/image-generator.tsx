@@ -26,6 +26,7 @@ import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fileToDataUrl } from '@/lib/image-utils';
+import { compressImage } from '@/lib/image-compression';
 import type {
   EditImageRequest,
   GeneratedImage,
@@ -219,12 +220,16 @@ export default function ImageGenerator() {
           try {
             const imageUrls = await Promise.all(
               imageFiles.map(async imageFile => {
-                // Convert blob URL to data URL for API
+                // Convert blob URL to File
                 const response = await fetch(imageFile.url);
                 const blob = await response.blob();
-                return await fileToDataUrl(
-                  new File([blob], 'image', { type: imageFile.mediaType })
-                );
+                const file = new File([blob], 'image', { type: imageFile.mediaType });
+
+                // Compress before converting to data URL
+                const compressed = await compressImage(file);
+
+                // Convert compressed file to data URL for API
+                return await fileToDataUrl(compressed);
               })
             );
 

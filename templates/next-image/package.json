@@ -20,6 +20,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "ai": "5.0.47",
     "autonumeric": "^4.10.9",
+    "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.263.1",
