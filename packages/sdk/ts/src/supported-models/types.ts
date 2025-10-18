@@ -84,3 +84,9 @@ export interface SupportedVideoModel {
   cost_per_second_without_audio: number;
   provider: string;
 }
+
+export interface SupportedAudioModel {
+  model_id: string;
+  cost_per_minute: number;
+  provider: string;
+}

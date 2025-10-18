@@ -6,9 +6,11 @@ import {
   GeminiModels,
   OpenRouterModels,
   OpenAIImageModels,
+  OpenAIAudioModels,
   SupportedModel,
   SupportedImageModel,
   SupportedVideoModel,
+  SupportedAudioModel,
   GeminiVideoModels,
 } from '../supported-models';
 
@@ -37,5 +39,9 @@ export class ModelsResource extends BaseResource {
 
   async listSupportedVideoModels(): Promise<SupportedVideoModel[]> {
     return GeminiVideoModels;
+  }
+
+  async listSupportedAudioModels(): Promise<SupportedAudioModel[]> {
+    return OpenAIAudioModels;
   }
 }
