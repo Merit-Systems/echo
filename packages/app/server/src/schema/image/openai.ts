@@ -9,6 +9,7 @@ const ResponseFormat = z.enum(['url', 'b64_json']);
 /** Create Images API: request (input) */
 export const CreateImagesRequest = z.object({
   prompt: z.string().min(1),
+  model: z.enum(['gpt-image-1']),
   n: z.number().int().optional(),
   size: ImageSize.optional(),
   response_format: ResponseFormat.optional(),
