@@ -10,6 +10,7 @@ pnpm run update-models:openai
 pnpm run update-models:anthropic
 pnpm run update-models:gemini
 pnpm run update-models:openrouter
+pnpm run update-models:groq
 
 # Update all providers at once
 pnpm run update-all-models
@@ -23,6 +24,7 @@ Set environment variables for provider API keys:
 - `ANTHROPIC_API_KEY`
 - `GOOGLE_GEMINI_API_KEY`
 - `OPENROUTER_API_KEY`
+- `GROQ_API_KEY`
 
 ## What it does
 

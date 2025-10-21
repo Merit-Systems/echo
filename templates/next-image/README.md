@@ -1,6 +1,16 @@
-# Next.js Image Generation Template
+# Echo Next.js Image Generation Template
 
-This is a Next.js application that demonstrates image generation using AI. It's built with the Echo SDK and showcases how to integrate AI-powered image generation into a Next.js application.
+AI-powered image generation application built with Next.js and Echo, featuring automatic billing and user management.
+
+## Quick Start
+
+Use the Echo CLI to create a new project with this template:
+
+```bash
+npx echo-start@latest --template next-image
+```
+
+You'll be prompted for your Echo App ID. Don't have one? Get it at [echo.merit.systems/new](https://echo.merit.systems/new).
 
 ## Getting Started
 

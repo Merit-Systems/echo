@@ -23,7 +23,7 @@ export const Navbar = () => {
               <span>Sign In</span>
             </Button>
           </Link>
-          <Link href="https://discord.com/invite/JuKt7tPnNc" target="_blank">
+          <Link href="https://discord.gg/merit" target="_blank">
             <Button variant="outline" className="h-8 md:h-9" size="icon">
               <SiDiscord className="size-4" />
             </Button>

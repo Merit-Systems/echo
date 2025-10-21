@@ -1,6 +1,6 @@
 {
   "name": "@merit-systems/echo-typescript-sdk",
-  "version": "1.0.18",
+  "version": "1.0.22",
   "description": "TypeScript SDK for Echo platform",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -28,7 +28,8 @@
     "update-models:anthropic": "tsx scripts/update-anthropic-models.ts",
     "update-models:gemini": "tsx scripts/update-gemini-models.ts",
     "update-models:openrouter": "tsx scripts/update-openrouter-models.ts",
-    "update-all-models": "pnpm run update-models:openai && pnpm run update-models:anthropic && pnpm run update-models:gemini && pnpm run update-models:openrouter",
+    "update-models:groq": "tsx scripts/update-groq-models.ts",
+    "update-all-models": "pnpm run update-models:openai && pnpm run update-models:anthropic && pnpm run update-models:gemini && pnpm run update-models:openrouter && pnpm run update-models:groq",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
@@ -46,6 +47,7 @@
     "@typescript-eslint/parser": "^8.34.1",
     "dotenv": "^16.5.0",
     "eslint": "^9.29.0",
+    "groq-sdk": "^0.33.0",
     "tsup": "^8.5.0",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3",
@@ -57,6 +59,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "2.0.17",
     "@ai-sdk/google": "2.0.14",
+    "@ai-sdk/groq": "2.0.17",
     "@ai-sdk/openai": "2.0.32",
     "@openrouter/ai-sdk-provider": "1.2.0",
     "ai": "5.0.47"

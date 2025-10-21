@@ -10,6 +10,8 @@ import { AnthropicNativeProvider } from './AnthropicNativeProvider';
 import type { BaseProvider } from './BaseProvider';
 import { GeminiGPTProvider } from './GeminiGPTProvider';
 import { GeminiProvider } from './GeminiProvider';
+import { OpenAIVideoProvider } from './OpenAIVideoProvider';
+import { GroqProvider } from './GroqProvider';
 import {
   GeminiVeoProvider,
   PROXY_PASSTHROUGH_ONLY_MODEL as GeminiVeoProxyPassthroughOnlyModel,
@@ -47,6 +49,9 @@ const createChatModelToProviderMapping = (): Record<string, ProviderType> => {
         case 'OpenRouter':
           mapping[modelConfig.model_id] = ProviderType.OPENROUTER;
           break;
+        case 'Groq':
+          mapping[modelConfig.model_id] = ProviderType.GROQ;
+          break;
         // Add other providers as needed
         default:
           // Skip models with unsupported providers
@@ -79,6 +84,9 @@ const createVideoModelToProviderMapping = (): Record<string, ProviderType> => {
     if (modelConfig.provider === 'VertexAI') {
       mapping[modelConfig.model_id] = ProviderType.VERTEX_AI;
     }
+    if (modelConfig.provider === 'OpenAI') {
+      mapping[modelConfig.model_id] = ProviderType.OPENAI_VIDEOS;
+    }
   }
   return mapping;
 };
@@ -99,7 +107,6 @@ export const VIDEO_MODEL_TO_PROVIDER: Record<string, ProviderType> =
 
 export const getProvider = (
   model: string,
-  echoControlService: EchoControlService,
   stream: boolean,
   completionPath: string
 ): BaseProvider => {
@@ -154,25 +161,29 @@ export const getProvider = (
 
   switch (type) {
     case ProviderType.GPT:
-      return new GPTProvider(echoControlService, stream, model);
+      return new GPTProvider(stream, model);
     case ProviderType.ANTHROPIC_GPT:
-      return new AnthropicGPTProvider(echoControlService, stream, model);
+      return new AnthropicGPTProvider(stream, model);
     case ProviderType.ANTHROPIC_NATIVE:
-      return new AnthropicNativeProvider(echoControlService, stream, model);
+      return new AnthropicNativeProvider(stream, model);
     case ProviderType.GEMINI:
-      return new GeminiProvider(echoControlService, stream, model);
+      return new GeminiProvider(stream, model);
     case ProviderType.GEMINI_GPT:
-      return new GeminiGPTProvider(echoControlService, stream, model);
+      return new GeminiGPTProvider(stream, model);
     case ProviderType.OPENAI_RESPONSES:
-      return new OpenAIResponsesProvider(echoControlService, stream, model);
+      return new OpenAIResponsesProvider(stream, model);
     case ProviderType.OPENROUTER:
-      return new OpenRouterProvider(echoControlService, stream, model);
+      return new OpenRouterProvider(stream, model);
     case ProviderType.OPENAI_IMAGES:
-      return new OpenAIImageProvider(echoControlService, stream, model);
+      return new OpenAIImageProvider(stream, model);
     case ProviderType.GEMINI_VEO:
-      return new GeminiVeoProvider(echoControlService, stream, model);
+      return new GeminiVeoProvider(stream, model);
     case ProviderType.VERTEX_AI:
-      return new VertexAIProvider(echoControlService, stream, model);
+      return new VertexAIProvider(stream, model);
+    case ProviderType.OPENAI_VIDEOS:
+      return new OpenAIVideoProvider(stream, model);
+    case ProviderType.GROQ:
+      return new GroqProvider(stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }

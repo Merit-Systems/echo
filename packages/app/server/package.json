@@ -21,12 +21,13 @@
     "gemini-gpt-client": "npx tsx src/clients/gemini-gpt-client.ts",
     "veo3-client": "npx tsx src/clients/veo3-client.ts",
     "openai-client": "npx tsx src/clients/gpt-client.ts",
+    "sora-2-client": "npx tsx src/clients/sora-2-client.ts",
     "openrouter-client": "npx tsx src/clients/openrouter-client.ts",
     "openai-image-formdata-client": "npx tsx src/clients/openai-image-formdata-client.ts",
     "test": "vitest run",
     "test:integration": "vitest run",
     "test:watch": "vitest",
-    "build": "tsc && pnpm run copy-prisma-to-dist",
+    "build": "tsup && pnpm run copy-prisma-to-dist",
     "lint": "pnpx eslint src/**/*.ts --no-warn-ignored",
     "lint:fix": "pnpx eslint src/**/*.ts --no-warn-ignored --fix",
     "type-check": "tsc --noEmit",
@@ -41,6 +42,8 @@
   "license": "ISC",
   "dependencies": {
     "@coinbase/cdp-sdk": "^1.34.0",
+    "@coinbase/x402": "^0.6.5",
+    "@e2b/code-interpreter": "^2.0.1",
     "@google-cloud/storage": "^7.17.1",
     "@google/genai": "^1.20.0",
     "@merit-systems/echo-typescript-sdk": "workspace:*",
@@ -69,14 +72,16 @@
     "jose": "^6.0.11",
     "multer": "^2.0.2",
     "node-fetch": "^2.7.0",
-    "openai": "^4.97.0",
+    "openai": "^6.2.0",
     "prisma": "6.16.0",
     "register": "link:@opentelemetry/auto-instrumentations-node/register",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "uuid": "^11.1.0",
     "viem": "^2.33.3",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "x402-express": "^0.6.5",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -85,6 +90,7 @@
     "@typescript-eslint/parser": "^8.34.1",
     "eslint": "^9.29.0",
     "supertest": "^6.3.4",
+    "tsup": "^8.5.0",
     "tsx": "^4.20.5",
     "vitest": "^3.2.3"
   }

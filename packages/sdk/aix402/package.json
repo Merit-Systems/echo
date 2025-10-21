@@ -1,0 +1,74 @@
+{
+  "name": "@merit-systems/ai-x402",
+  "version": "0.1.1",
+  "description": "AI x402 payment integration SDK for Echo platform",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.cjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js",
+      "require": "./dist/server.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "pnpx eslint src/**/*.ts",
+    "lint:fix": "pnpx eslint src/**/*.ts --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write src",
+    "test": "echo 'No tests'",
+    "test:unit": "echo 'No tests'",
+    "test:watch": "echo 'No tests'",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "echo",
+    "typescript",
+    "sdk",
+    "api",
+    "x402",
+    "payment"
+  ],
+  "author": "Merit Systems",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@types/react": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
+    "eslint": "^9.29.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "dependencies": {
+    "@ai-sdk/react": "2.0.17",
+    "ai": "5.0.47",
+    "react": "^18.0.0",
+    "x402-fetch": "^0.6.0",
+    "x402": "^0.6.5",
+    "zod": "^4.1.5",
+    "@merit-systems/echo-react-sdk": "workspace:*",
+    "@ai-sdk/openai": "2.0.16"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  }
+}

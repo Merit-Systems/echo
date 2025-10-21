@@ -294,8 +294,13 @@ describe('Echo Data Server Client Integration Tests', () => {
     console.log(`🔍 Access token expires in ${accessToken.expires_in} seconds`);
 
     // Wait for the access token to expire
-    const waitTime = accessToken.expires_in * 1000 + 1000; // Add 1000ms buffer
-    console.log(`Waiting ${waitTime}ms for access token to expire...`);
+    // Note: jwtVerify has a 5-second clock tolerance, so we need to wait for expiry + tolerance + buffer
+    const clockTolerance = 5000; // 5 seconds
+    const buffer = 1000; // 1 second buffer
+    const waitTime = accessToken.expires_in * 1000 + clockTolerance + buffer;
+    console.log(
+      `⏳ Waiting ${waitTime}ms for access token to expire (includes 5s clock tolerance)...`
+    );
     await new Promise(resolve => setTimeout(resolve, waitTime));
 
     const openaiClient = new OpenAI({
@@ -318,7 +323,7 @@ describe('Echo Data Server Client Integration Tests', () => {
     expect(completion).toBeUndefined();
 
     console.log('✅ Access token expired and was rejected');
-  });
+  }, 40000); // 40 second timeout (needs to wait ~21 seconds for token to expire)
 
   test("User that hasn't paid -- should get 402", async () => {
     const accessToken = await getAccessTokenForUnpaidUser();

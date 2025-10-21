@@ -5,6 +5,9 @@ export type OpenAIModel =
   | 'gpt-3.5-turbo'
   | 'gpt-3.5-turbo-0125'
   | 'gpt-3.5-turbo-1106'
+  | 'gpt-3.5-turbo-16k'
+  | 'gpt-3.5-turbo-instruct'
+  | 'gpt-3.5-turbo-instruct-0914'
   | 'gpt-4'
   | 'gpt-4-0125-preview'
   | 'gpt-4-0613'
@@ -24,15 +27,26 @@ export type OpenAIModel =
   | 'gpt-4o-2024-11-20'
   | 'gpt-4o-mini'
   | 'gpt-4o-mini-2024-07-18'
+  | 'gpt-4o-mini-search-preview'
+  | 'gpt-4o-mini-search-preview-2025-03-11'
+  | 'gpt-4o-search-preview'
+  | 'gpt-4o-search-preview-2025-03-11'
   | 'gpt-5'
   | 'gpt-5-2025-08-07'
   | 'gpt-5-chat-latest'
+  | 'gpt-5-codex'
   | 'gpt-5-mini'
   | 'gpt-5-mini-2025-08-07'
   | 'gpt-5-nano'
   | 'gpt-5-nano-2025-08-07'
+  | 'gpt-5-pro'
+  | 'gpt-5-pro-2025-10-06'
+  | 'gpt-5-search-api'
+  | 'gpt-5-search-api-2025-10-14'
   | 'o1'
   | 'o1-2024-12-17'
+  | 'o1-mini'
+  | 'o1-mini-2024-09-12'
   | 'o1-pro'
   | 'o1-pro-2025-03-19'
   | 'o3'
@@ -61,6 +75,24 @@ export const OpenAIModels: SupportedModel[] = [
     model_id: 'gpt-3.5-turbo-1106',
     input_cost_per_token: 5e-7,
     output_cost_per_token: 0.0000015,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-3.5-turbo-16k',
+    input_cost_per_token: 5e-7,
+    output_cost_per_token: 0.0000015,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-3.5-turbo-instruct',
+    input_cost_per_token: 0.0000015,
+    output_cost_per_token: 0.000002,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-3.5-turbo-instruct-0914',
+    input_cost_per_token: 0.0000015,
+    output_cost_per_token: 0.000002,
     provider: 'OpenAI',
   },
   {
@@ -178,6 +210,30 @@ export const OpenAIModels: SupportedModel[] = [
     provider: 'OpenAI',
   },
   {
+    model_id: 'gpt-4o-mini-search-preview',
+    input_cost_per_token: 1.5e-7,
+    output_cost_per_token: 6e-7,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-4o-mini-search-preview-2025-03-11',
+    input_cost_per_token: 1.5e-7,
+    output_cost_per_token: 6e-7,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-4o-search-preview',
+    input_cost_per_token: 0.0000025,
+    output_cost_per_token: 0.00001,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-4o-search-preview-2025-03-11',
+    input_cost_per_token: 0.0000025,
+    output_cost_per_token: 0.00001,
+    provider: 'OpenAI',
+  },
+  {
     model_id: 'gpt-5',
     input_cost_per_token: 0.00000125,
     output_cost_per_token: 0.00001,
@@ -191,6 +247,12 @@ export const OpenAIModels: SupportedModel[] = [
   },
   {
     model_id: 'gpt-5-chat-latest',
+    input_cost_per_token: 0.00000125,
+    output_cost_per_token: 0.00001,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-5-codex',
     input_cost_per_token: 0.00000125,
     output_cost_per_token: 0.00001,
     provider: 'OpenAI',
@@ -220,6 +282,30 @@ export const OpenAIModels: SupportedModel[] = [
     provider: 'OpenAI',
   },
   {
+    model_id: 'gpt-5-pro',
+    input_cost_per_token: 0.000015,
+    output_cost_per_token: 0.00012,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-5-pro-2025-10-06',
+    input_cost_per_token: 0.000015,
+    output_cost_per_token: 0.00012,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-5-search-api',
+    input_cost_per_token: 0.00000125,
+    output_cost_per_token: 0.00001,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'gpt-5-search-api-2025-10-14',
+    input_cost_per_token: 0.00000125,
+    output_cost_per_token: 0.00001,
+    provider: 'OpenAI',
+  },
+  {
     model_id: 'o1',
     input_cost_per_token: 0.000015,
     output_cost_per_token: 0.00006,
@@ -227,6 +313,18 @@ export const OpenAIModels: SupportedModel[] = [
   },
   {
     model_id: 'o1-2024-12-17',
+    input_cost_per_token: 0.000015,
+    output_cost_per_token: 0.00006,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'o1-mini',
+    input_cost_per_token: 0.000015,
+    output_cost_per_token: 0.00006,
+    provider: 'OpenAI',
+  },
+  {
+    model_id: 'o1-mini-2024-09-12',
     input_cost_per_token: 0.000015,
     output_cost_per_token: 0.00006,
     provider: 'OpenAI',

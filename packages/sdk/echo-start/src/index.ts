@@ -1,119 +1,249 @@
 #!/usr/bin/env node
 
+import {
+  intro,
+  outro,
+  select,
+  text,
+  spinner,
+  log,
+  isCancel,
+  cancel,
+} from '@clack/prompts';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import degit from 'degit';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
-import ora from 'ora';
 import path from 'path';
-import prompts from 'prompts';
+import { spawn } from 'child_process';
 
 const program = new Command();
 
+// Get version from package.json
+const packageJsonPath = new URL('../package.json', import.meta.url);
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+const VERSION = packageJson.version;
+
 // Available templates - add new ones here
 const DEFAULT_TEMPLATES = {
+  next: {
+    title: 'Next.js',
+    description: 'Minimal Next.js application with Echo integration',
+  },
+  vite: {
+    repo: 'Merit-Systems/echo/templates/react',
+    title: 'React (Vite)',
+    description: 'Minimal Vite React application with Echo integration',
+  },
+  'assistant-ui': {
+    title: 'Assistant UI',
+    description: 'Full-featured chat UI with @assistant-ui/react and AI SDK v5',
+  },
   'next-chat': {
     title: 'Next.js Chat',
     description:
       'Full-stack Next.js application with Echo and the Vercel AI SDK',
   },
-  'react-chat': {
-    title: 'React Chat',
-    description: 'Vite React application with Echo and the Vercel AI SDK',
-  },
-
   'next-image': {
-    repo: 'Merit-Systems/echo/templates/next-image',
     title: 'Next.js Image Gen',
     description:
       'Full-stack Next.js application with Echo and the Vercel AI SDK for image generation',
   },
-  'react-image': {
-    repo: 'Merit-Systems/echo/templates/react-image',
-    title: 'React Image Gen',
+  'next-video-template': {
+    title: 'Next.js Video Gen',
+    description:
+      'Full-stack Next.js application with Echo and the Vercel AI SDK for video generation',
+  },
+  'nextjs-api-key-template': {
+    title: 'Next.js API Key',
+    description:
+      'Next.js application with server-side API key management and database',
+  },
+  'react-chat': {
+    title: 'React Chat',
     description: 'Vite React application with Echo and the Vercel AI SDK',
+  },
+  'react-image': {
+    title: 'React Image Gen',
+    description:
+      'Vite React application with Echo and the Vercel AI SDK for image generation',
   },
 } as const;
 
 type TemplateName = keyof typeof DEFAULT_TEMPLATES;
+type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
+
+function printHeader(): void {
+  console.log();
+  console.log(`${chalk.cyan('Echo Start')} ${chalk.gray(`(${VERSION})`)}`);
+  console.log();
+}
+
+function detectPackageManager(): PackageManager {
+  const userAgent = process.env.npm_config_user_agent || '';
+
+  if (userAgent.includes('pnpm')) return 'pnpm';
+  if (userAgent.includes('yarn')) return 'yarn';
+  if (userAgent.includes('bun')) return 'bun';
+  if (userAgent.includes('npm')) return 'npm';
+
+  // Default to pnpm (Echo's preference)
+  return 'pnpm';
+}
+
+function getPackageManagerCommands(pm: PackageManager): {
+  install: string;
+  dev: string;
+} {
+  switch (pm) {
+    case 'pnpm':
+      return { install: 'pnpm install', dev: 'pnpm dev' };
+    case 'yarn':
+      return { install: 'yarn install', dev: 'yarn dev' };
+    case 'bun':
+      return { install: 'bun install', dev: 'bun dev' };
+    case 'npm':
+    default:
+      return { install: 'npm install', dev: 'npm run dev' };
+  }
+}
+
+function cleanProgressLine(line: string, maxLength: number): string {
+  return line
+    .replace(/\x1b\[[0-9;]*m/g, '') // Remove ANSI color codes
+    .trim()
+    .substring(0, maxLength);
+}
+
+function calculateProgressSpace(packageManager: PackageManager): number {
+  const terminalWidth = process.stdout.columns || 80;
+  const mainMessage = `Installing dependencies with ${packageManager}... `;
+  return Math.max(20, terminalWidth - mainMessage.length - 10);
+}
+
+async function runInstall(
+  packageManager: PackageManager,
+  projectPath: string,
+  onProgress?: (line: string) => void
+): Promise<boolean> {
+  return new Promise(resolve => {
+    const command = packageManager;
+    const args = ['install'];
+
+    const child = spawn(command, args, {
+      cwd: projectPath,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    let lastLine = '';
+
+    child.stdout?.on('data', data => {
+      const lines = data.toString().split('\n');
+      const relevantLine = lines
+        .filter((line: string) => line.trim().length > 0)
+        .pop(); // Get the last non-empty line
+
+      if (relevantLine && onProgress) {
+        const availableSpace = calculateProgressSpace(packageManager);
+        const cleanLine = cleanProgressLine(relevantLine, availableSpace);
+        if (cleanLine !== lastLine && cleanLine.length > 0) {
+          onProgress(cleanLine);
+          lastLine = cleanLine;
+        }
+      }
+    });
+
+    child.on('close', code => {
+      resolve(code === 0);
+    });
+
+    child.on('error', () => {
+      resolve(false);
+    });
+  });
+}
 
 interface CreateAppOptions {
   template?: TemplateName;
   appId?: string;
+  skipInstall?: boolean;
 }
 
 async function createApp(projectDir: string, options: CreateAppOptions) {
   let { template, appId } = options;
+  const { skipInstall } = options;
+  const packageManager = detectPackageManager();
+
+  printHeader();
+
+  intro('Creating your Echo application');
 
   // If no template specified, prompt for it
   if (!template) {
-    const response = await prompts({
-      type: 'select',
-      name: 'template',
+    const selectedTemplate = await select({
       message: 'Which template would you like to use?',
-      choices: Object.entries(DEFAULT_TEMPLATES).map(([key, template]) => ({
-        title: template.title,
-        description: template.description,
-        value: key,
-      })),
-      initial: 0,
+      options: Object.entries(DEFAULT_TEMPLATES).map(
+        ([key, { title, description }]) => ({
+          label: title,
+          hint: description,
+          value: key,
+        })
+      ),
     });
 
-    if (response.template) {
-      template = response.template as TemplateName;
-    } else {
-      console.log(chalk.red('Aborted.'));
+    if (isCancel(selectedTemplate)) {
+      cancel('Operation cancelled.');
       process.exit(1);
     }
+
+    template = selectedTemplate as TemplateName;
   }
+
+  log.step(`Selected template: ${DEFAULT_TEMPLATES[template].title}`);
 
   // If no app ID specified, prompt for it
   if (!appId) {
-    const response = await prompts({
-      type: 'text',
-      name: 'appId',
+    const enteredAppId = await text({
       message: 'What is your Echo App ID?',
+      placeholder: 'Enter your app ID...',
       validate: (value: string) => {
         if (!value.trim()) {
           return 'Please enter an App ID or create one at https://echo.merit.systems/new';
         }
-        return true;
+        return;
       },
     });
 
-    if (response.appId) {
-      appId = response.appId;
-    } else {
-      console.log(chalk.red('Aborted.'));
+    if (isCancel(enteredAppId)) {
+      cancel('Operation cancelled.');
       process.exit(1);
     }
+
+    appId = enteredAppId;
   }
 
-  // Validate template exists
-  if (!template) {
-    console.error(chalk.red(`Template "${template}" does not exist.`));
-    console.log(chalk.gray('Available templates:'));
-    Object.keys(DEFAULT_TEMPLATES).forEach(t => {
-      console.log(chalk.gray(`  - ${t}`));
-    });
-    process.exit(1);
-  }
+  log.step(`Using App ID: ${appId}`);
 
   const absoluteProjectPath = path.resolve(projectDir);
 
   // Check if directory already exists
   if (existsSync(absoluteProjectPath)) {
-    console.error(chalk.red(`Directory "${projectDir}" already exists.`));
+    cancel(`Directory "${projectDir}" already exists.`);
     process.exit(1);
   }
 
   try {
-    const spinner = ora(`Downloading template: ${template}`).start();
+    const s = spinner();
+    s.start('Downloading template files');
 
     // Use degit to download the template
-    const emitter = degit(
-      `Merit-Systems/echo/templates/${template}#production`
-    );
+    const templateConfig = DEFAULT_TEMPLATES[template];
+    const repoPath =
+      'repo' in templateConfig
+        ? `${templateConfig.repo}#production`
+        : `Merit-Systems/echo/templates/${template}#production`;
+
+    const emitter = degit(repoPath);
 
     // Collect warnings to show after spinner
     const warnings: string[] = [];
@@ -124,16 +254,16 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
 
     try {
       await emitter.clone(absoluteProjectPath);
-      spinner.succeed('Template downloaded successfully');
+      s.stop('Template downloaded successfully');
     } catch (cloneError) {
-      spinner.fail('Failed to download template');
+      s.stop('Failed to download template');
       throw cloneError;
     }
 
     // Show any warnings that occurred
     if (warnings.length > 0) {
       warnings.forEach(msg => {
-        console.log(chalk.yellow(`  Warning: ${msg}`));
+        log.warning(msg);
       });
     }
 
@@ -147,6 +277,8 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       );
     }
 
+    log.step('Configuring project files');
+
     // Update package.json with the name of the project
     const packageJsonPath = path.join(absoluteProjectPath, 'package.json');
     // Technically this is checked above, but good practice to check again
@@ -154,7 +286,9 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
       packageJson.name = toSafePackageName(projectDir);
       writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-      console.log(chalk.green(`✓ Updated package.json with project name`));
+      log.message(
+        `Updated package.json with project name: ${toSafePackageName(projectDir)}`
+      );
     }
 
     // Update .env.local with the provided app ID
@@ -167,80 +301,76 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
         // Find the line with *ECHO_APP_ID and replace the value after the = sign
         const updatedContent = envContent.replace(
           /^(.*ECHO_APP_ID\s*=\s*).+$/gm,
-          `$1${appId!}`
+          `$1${appId}`
         );
 
         // Check if the replacement actually occurred
         if (updatedContent === envContent) {
-          console.error(
-            chalk.red(
-              'Error: Could not find *ECHO_APP_ID placeholder in .env.local.'
-            )
+          log.warning('Could not find *ECHO_APP_ID placeholder in .env.local');
+        } else {
+          writeFileSync(envPath, updatedContent);
+          log.message(`Updated ECHO_APP_ID in .env.local`);
+        }
+      } catch {
+        log.warning('Could not update .env.local file');
+      }
+    }
+
+    log.step('Project setup completed successfully');
+
+    // Auto-install dependencies unless skipped
+    if (!skipInstall) {
+      const s = spinner();
+      s.start(`Installing dependencies with ${packageManager}...`);
+
+      const installSuccess = await runInstall(
+        packageManager,
+        absoluteProjectPath,
+        progressLine => {
+          s.message(
+            `Installing dependencies with ${packageManager}... ${chalk.gray(progressLine + '...')}`
           );
         }
+      );
 
-        writeFileSync(envPath, updatedContent);
-        console.log(chalk.green(`✓ Updated *ECHO_APP_ID in .env.local`));
-      } catch (envError) {
-        console.log(
-          chalk.yellow(`Warning: Could not update .env.local file`),
-          envError
+      if (installSuccess) {
+        s.stop('Dependencies installed successfully');
+      } else {
+        s.stop('Failed to install dependencies');
+        log.warning(
+          `Could not install dependencies with ${packageManager}. Please run manually.`
         );
       }
     }
 
-    console.log();
-    console.log(chalk.blue.bold('✓ Initialization completed'));
-    console.log();
+    const { install, dev } = getPackageManagerCommands(packageManager);
+    const steps = skipInstall
+      ? [`cd ${projectDir}`, install, dev]
+      : [`cd ${projectDir}`, dev];
 
-    // Instructions for next steps
-    console.log(chalk.cyan.bold('Next steps:'));
-    console.log(chalk.gray(`▶ cd ${projectDir}`));
-    console.log(chalk.gray(`▶ pnpm install`));
-    console.log(chalk.gray(`▶ pnpm dev`));
+    const nextSteps =
+      `${chalk.cyan('Get started:')}\n` +
+      steps.map(step => `  ${chalk.cyan('└')} ${step}`).join('\n');
+
+    outro(`Success! Created ${projectDir}\n\n${nextSteps}`);
 
     process.exit(0);
   } catch (error) {
-    console.log();
-    console.error(chalk.red('✗ Failed to create app'));
-    console.log();
-
     if (error instanceof Error) {
       if (error.message.includes('could not find commit hash')) {
-        console.error(chalk.red('Template repository or path not found.'));
-        console.error(
-          chalk.gray(
-            `The template "${template}" might not exist in the repository yet.`
-          )
-        );
-        console.error(
-          chalk.gray(
-            'Please check that the example exists in the echo monorepo.'
-          )
+        cancel(
+          `Template "${template}" not found in repository.\n\nThe template might not exist yet. Please check:\nhttps://github.com/Merit-Systems/echo/tree/master/templates`
         );
       } else if (error.message.includes('Repository does not exist')) {
-        console.error(chalk.red('Repository not accessible.'));
-        console.error(
-          chalk.gray(
-            'Make sure you have access to the Merit-Systems/echo repository.'
-          )
+        cancel(
+          'Repository not accessible.\n\nMake sure you have access to the Merit-Systems/echo repository.'
         );
       } else {
-        console.error(chalk.red(`Error: ${error.message}`));
+        cancel(`Failed to create app: ${error.message}`);
       }
     } else {
-      console.error(chalk.red(`Unknown error: ${String(error)}`));
+      cancel(`An unexpected error occurred: ${String(error)}`);
     }
-
-    console.log();
-    console.error(chalk.gray('Troubleshooting:'));
-    console.error(
-      chalk.gray(
-        '- Verify the template exists in https://github.com/Merit-Systems/echo/tree/master/templates directory'
-      )
-    );
-    console.error(chalk.gray('- Check your internet connection'));
-    console.error(chalk.gray('- Try again in a few moments'));
 
     process.exit(1);
   }
@@ -250,13 +380,14 @@ async function main() {
   program
     .name('echo-start')
     .description('Create a new Echo application')
-    .version(require('../package.json').version)
+    .version(VERSION)
     .argument('[directory]', 'Directory to create the app in')
     .option(
       '-t, --template <template>',
       `Template to use (${Object.keys(DEFAULT_TEMPLATES).join(', ')})`
     )
     .option('-a, --app-id <appId>', 'Echo App ID to use in the project')
+    .option('--skip-install', 'Skip automatic dependency installation')
     .action(
       async (directory: string | undefined, options: CreateAppOptions) => {
         let projectDir = directory;
@@ -274,11 +405,14 @@ async function main() {
             counter++;
           }
 
-          const response = await prompts({
-            type: 'text',
-            name: 'projectDir',
+          printHeader();
+
+          intro('Creating your Echo application');
+
+          const enteredProjectDir = await text({
             message: 'What is your project named?',
-            initial: defaultName,
+            placeholder: defaultName,
+            defaultValue: defaultName,
             validate: (value: string) => {
               if (!value.trim()) {
                 return 'Please enter a project name';
@@ -286,26 +420,27 @@ async function main() {
               if (existsSync(path.resolve(value))) {
                 return `Directory "${value}" already exists`;
               }
-              return true;
+              return;
             },
           });
 
-          if (response.projectDir) {
-            projectDir = response.projectDir;
-          } else {
-            console.log(chalk.red('Aborted.'));
+          if (isCancel(enteredProjectDir)) {
+            cancel('Operation cancelled.');
             process.exit(1);
           }
+
+          projectDir = enteredProjectDir;
+          log.step(`Creating project: ${projectDir}`);
         }
 
-        await createApp(projectDir!, options);
+        await createApp(projectDir, options);
       }
     );
 
   await program.parseAsync();
 }
 
-function toSafePackageName(dirname: string) {
+function toSafePackageName(dirname: string): string {
   return dirname
     .toLowerCase()
     .replace(/[^a-z0-9-_.]/g, '-') // replace unsafe chars with dashes

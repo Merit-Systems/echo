@@ -1,6 +1,7 @@
 import {
   createEchoAnthropic,
   createEchoGoogle,
+  createEchoGroq,
   createEchoOpenAI,
   createEchoOpenRouter,
 } from '@merit-systems/echo-typescript-sdk';
@@ -27,6 +28,7 @@ export const useEchoModelProviders = () => {
         getToken,
         onInsufficientFunds
       ),
+      groq: createEchoGroq(baseConfig, getToken, onInsufficientFunds),
     };
   }, [getToken, config.appId, config.baseRouterUrl, setIsInsufficientFunds]);
 };

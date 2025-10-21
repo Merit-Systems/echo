@@ -1,4 +1,18 @@
-# Echo React SDK - Vite Example
+# Echo React Chat Template
+
+A chat application built with React, Vite, and Echo SDK, featuring client-side authentication and AI billing.
+
+## Quick Start
+
+Use the Echo CLI to create a new project with this template:
+
+```bash
+npx echo-start@latest --template react-chat
+```
+
+You'll be prompted for your Echo App ID. Don't have one? Get it at [echo.merit.systems/new](https://echo.merit.systems/new).
+
+---
 
 A minimal example showing how to use the Echo React SDK with Vite.
 

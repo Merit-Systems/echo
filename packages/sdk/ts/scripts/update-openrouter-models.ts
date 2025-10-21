@@ -5,41 +5,58 @@
 
 import { writeFileSync } from 'fs';
 import { join } from 'path';
-
-interface SupportedModel {
-  model_id: string;
-  input_cost_per_token: number;
-  output_cost_per_token: number;
-  provider: string;
-}
-
+import { SupportedModel } from './update-models';
 interface OpenRouterModel {
   id: string;
+  canonical_slug?: string;
+  hugging_face_id?: string;
   name: string;
+  created?: number;
   description?: string;
-  pricing: {
-    prompt: string;
-    completion: string;
-  };
   context_length: number;
   architecture: {
     modality: string;
+    input_modalities?: string[];
+    output_modalities?: string[];
     tokenizer: string;
-    instruct_type?: string;
+    instruct_type?: string | null;
+  };
+  pricing: {
+    prompt: string;
+    completion: string;
+    request?: string;
+    image?: string;
+    web_search?: string;
+    internal_reasoning?: string;
   };
   top_provider: {
-    max_completion_tokens?: number;
-    is_moderated: boolean;
+    context_length?: number;
+    max_completion_tokens?: number | null;
+    is_moderated?: boolean;
   };
-  per_request_limits?: {
-    prompt_tokens: string;
-    completion_tokens: string;
-  };
+  per_request_limits?: unknown;
+  supported_parameters?: string[];
+  default_parameters?: Record<string, any>;
 }
 
 interface OpenRouterResponse {
   data: OpenRouterModel[];
 }
+
+const BLACKLISTED_FAST_FAIL_MODELS = new Set([
+  'anthracite-org/magnum-v2-72b',
+  'arcee-ai/spotlight',
+  'agentica-org/deepcoder-14b-preview',
+  'relace/relace-apply-3',
+  'nousresearch/hermes-3-llama-3.1-70b',
+  'openai/gpt-4o-audio-preview',
+  'qwen/qwen-2.5-coder-32b-instruct',
+  'arliai/qwq-32b-arliai-rpr-v1',
+  'qwen/qwen3-next-80b-a3b-thinking',
+  'anthropic/claude-3.5-haiku-20241022',
+  'minimax/minimax-01',
+  'openrouter/auto',
+]);
 
 async function fetchOpenRouterModels(): Promise<SupportedModel[]> {
   try {
@@ -55,11 +72,24 @@ async function fetchOpenRouterModels(): Promise<SupportedModel[]> {
 
     const data: OpenRouterResponse = await response.json();
     console.log(`🔍 Found ${data.data.length} models from OpenRouter API`);
+    console.log(`🔍 Models:`, data.data);
 
     // Filter for text models only and convert to our format
     const supportedModels: SupportedModel[] = [];
 
     for (const model of data.data) {
+      // Fast fail if the model is in the blacklist
+      if (BLACKLISTED_FAST_FAIL_MODELS.has(model.id)) {
+        console.log(`⏭️ Skipping ${model.id} - blacklisted fast fail`);
+        continue;
+      }
+
+      // Skip free tier models
+      if (model.id.endsWith(':free')) {
+        console.log(`  ⏭️  Skipping ${model.id} - free tier model`);
+        continue;
+      }
+
       // Only include text-based models
       if (
         model.architecture.modality === 'text->text' ||
@@ -69,7 +99,12 @@ async function fetchOpenRouterModels(): Promise<SupportedModel[]> {
         const outputCost = parseFloat(model.pricing.completion);
 
         // Skip models with invalid pricing
-        if (isNaN(inputCost) || isNaN(outputCost)) {
+        if (
+          isNaN(inputCost) ||
+          isNaN(outputCost) ||
+          inputCost === 0 ||
+          outputCost === 0
+        ) {
           console.warn(`⚠️  Skipping ${model.id} - invalid pricing data`);
           continue;
         }
@@ -118,7 +153,7 @@ function generateOpenRouterModelFile(models: SupportedModel[]): string {
     model_id: "${model.model_id}",
     input_cost_per_token: ${model.input_cost_per_token},
     output_cost_per_token: ${model.output_cost_per_token},
-    provider: "OpenRouter"
+    provider: "${model.provider}",
   }`;
     })
     .join(',\n');

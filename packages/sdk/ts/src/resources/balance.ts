@@ -1,6 +1,7 @@
 import { HttpClient } from '../http-client';
 import { ApiRoutes } from '../api-types';
 import { BaseResource } from '../utils/error-handling';
+import { validateAppId } from '../utils/validation';
 
 export class BalanceResource extends BaseResource {
   constructor(http: HttpClient) {
@@ -25,6 +26,8 @@ export class BalanceResource extends BaseResource {
   async getFreeBalance(
     echoAppId: string
   ): Promise<ApiRoutes['GET /balance/{id}/free']['response']> {
+    validateAppId(echoAppId, 'getFreeBalance');
+
     return this.handleRequest(
       () => this.http.get(`/api/v1/balance/${echoAppId}/free`),
       'fetching free tier balance',

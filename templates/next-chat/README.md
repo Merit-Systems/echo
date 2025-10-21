@@ -1,4 +1,18 @@
-# Echo AI Demo App
+# Echo Next.js Chat Template
+
+A full-featured chat application built with Next.js and Echo, showcasing AI billing, user management, and authentication.
+
+## Quick Start
+
+Use the Echo CLI to create a new project with this template:
+
+```bash
+npx echo-start@latest --template next-chat
+```
+
+You'll be prompted for your Echo App ID. Don't have one? Get it at [echo.merit.systems/new](https://echo.merit.systems/new).
+
+---
 
 This is a demonstration Next.js application showcasing the power and simplicity of [Echo](https://echo.merit.systems) - a platform that provides AI billing, user management, and authentication for AI applications.
 

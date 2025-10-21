@@ -1,6 +1,6 @@
 {
   "name": "@merit-systems/echo-react-sdk",
-  "version": "1.0.34",
+  "version": "1.0.38",
   "description": "React SDK for Echo OAuth2 + PKCE authentication and token management",
   "type": "module",
   "main": "./dist/index.cjs",

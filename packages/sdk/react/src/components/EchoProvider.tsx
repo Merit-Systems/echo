@@ -7,6 +7,7 @@ import {
   useAuth,
 } from 'react-oidc-context';
 import type { EchoClient } from '@merit-systems/echo-typescript-sdk';
+import { validateAppId } from '@merit-systems/echo-typescript-sdk';
 import { useEchoBalance } from '../hooks/useEchoBalance';
 import { useEchoClient } from '../hooks/useEchoClient';
 import { useEchoPayments } from '../hooks/useEchoPayments';
@@ -182,6 +183,8 @@ interface EchoProviderProps {
 
 // Main provider that wraps react-oidc-context
 export function EchoProvider({ config, children }: EchoProviderProps) {
+  validateAppId(config.appId, 'EchoProvider');
+
   const [isClient, setIsClient] = useState(false);
 
   // Handle client-side mounting for SSR compatibility

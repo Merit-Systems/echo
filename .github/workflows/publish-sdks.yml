@@ -20,6 +20,7 @@ jobs:
       typescript-published: ${{ steps.publish-typescript.outputs.published }}
       react-published: ${{ steps.publish-react.outputs.published }}
       next-published: ${{ steps.publish-next.outputs.published }}
+      aix402-published: ${{ steps.publish-aix402.outputs.published }}
       echo-start-published: ${{ steps.publish-echo-start.outputs.published }}
       version: ${{ steps.get-version.outputs.version }}
 
@@ -184,6 +185,50 @@ jobs:
             echo "✅ Successfully published $PACKAGE_NAME"
           fi
 
+      # AIx402 SDK
+      - name: Build AIx402 SDK
+        working-directory: ./packages/sdk/aix402
+        run: |
+          echo "🔨 Building AIx402 SDK..."
+          pnpm run build
+          echo "✅ AIx402 SDK built"
+
+      - name: Test AIx402 SDK
+        working-directory: ./packages/sdk/aix402
+        run: |
+          echo "🧪 Testing AIx402 SDK..."
+          pnpm run test
+          pnpm run type-check
+          echo "✅ AIx402 SDK tests passed"
+
+      - name: Check and publish AIx402 SDK
+        id: publish-aix402
+        working-directory: ./packages/sdk/aix402
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          FORCE_PUBLISH="${{ github.event.inputs.force_publish }}"
+
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
+            if [ "$FORCE_PUBLISH" = "true" ]; then
+              echo "⚠️  Version $PACKAGE_VERSION of $PACKAGE_NAME already exists on npm, but force_publish is enabled"
+              echo "🚀 Publishing $PACKAGE_NAME to npm..."
+              pnpm publish --access public --no-git-checks
+              echo "published=true" >> $GITHUB_OUTPUT
+              echo "✅ Successfully published $PACKAGE_NAME"
+            else
+              echo "❌ Version $PACKAGE_VERSION of $PACKAGE_NAME already exists on npm - skipping"
+              echo "published=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "🚀 Publishing $PACKAGE_NAME to npm..."
+            pnpm publish --access public --no-git-checks
+            echo "published=true" >> $GITHUB_OUTPUT
+            echo "✅ Successfully published $PACKAGE_NAME"
+          fi
+
       # Echo Start CLI
       - name: Build Echo Start CLI
         working-directory: ./packages/sdk/echo-start
@@ -232,7 +277,7 @@ jobs:
     name: Create version tag
     runs-on: ubuntu-latest
     needs: publish
-    if: (needs.publish.outputs.typescript-published == 'true' || needs.publish.outputs.react-published == 'true' || needs.publish.outputs.next-published == 'true' || needs.publish.outputs.echo-start-published == 'true') && github.ref == 'refs/heads/production' && !startsWith(github.ref, 'refs/tags/')
+    if: (needs.publish.outputs.typescript-published == 'true' || needs.publish.outputs.react-published == 'true' || needs.publish.outputs.next-published == 'true' || needs.publish.outputs.aix402-published == 'true' || needs.publish.outputs.echo-start-published == 'true') && github.ref == 'refs/heads/production' && !startsWith(github.ref, 'refs/tags/')
 
     steps:
       - name: Checkout code
@@ -293,6 +338,7 @@ jobs:
             - \`@merit-systems/echo-typescript-sdk\`
             - \`@merit-systems/echo-react-sdk\`
             - \`@merit-systems/echo-next-sdk\`
+            - \`@merit-systems/ai-x402\`
             - \`echo-start\` (CLI tool)
 
             ### Installation
@@ -300,6 +346,7 @@ jobs:
             npm install @merit-systems/echo-typescript-sdk
             npm install @merit-systems/echo-react-sdk
             npm install @merit-systems/echo-next-sdk
+            npm install @merit-systems/ai-x402
             npm install -g echo-start
             \`\`\`
 

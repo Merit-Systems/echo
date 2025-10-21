@@ -1,3 +1,11 @@
+// Load OpenTelemetry instrumentation before any other imports
+try {
+  require('@opentelemetry/auto-instrumentations-node/register');
+  console.log('✅ OpenTelemetry loaded');
+} catch (err: any) {
+  console.warn('⚠️ OpenTelemetry not available:', err.message);
+}
+
 import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -7,17 +15,22 @@ import { authenticateRequest } from './auth';
 import { HttpError } from './errors/http';
 import { PrismaClient } from './generated/prisma';
 import logger, { logMetric } from './logger';
-import { traceEnrichmentMiddleware } from './middleware/trace-enrichment-middleware';
+import {
+  traceLoggingMiddleware,
+  traceSetupMiddleware,
+} from './middleware/trace-enrichment-middleware';
 import {
   EscrowRequest,
   TransactionEscrowMiddleware,
 } from './middleware/transaction-escrow-middleware';
 import standardRouter from './routers/common';
 import inFlightMonitorRouter from './routers/in-flight-monitor';
-import { checkBalance } from './services/BalanceCheckService';
-import { modelRequestService } from './services/ModelRequestService';
+import { buildX402Response, isApiRequest, isX402Request } from './utils';
+import { handleX402Request, handleApiKeyRequest } from './handlers';
 import { initializeProvider } from './services/ProviderInitializationService';
-import { makeProxyPassthroughRequest } from './services/ProxyPassthroughService';
+import { getRequestMaxCost } from './services/PricingService';
+import { Decimal } from '@prisma/client/runtime/library';
+import resourceRouter from './routers/resource';
 
 dotenv.config();
 
@@ -43,7 +56,9 @@ export const prisma = new PrismaClient({
 // Initialize the transaction escrow middleware
 const transactionEscrowMiddleware = new TransactionEscrowMiddleware(prisma);
 
-app.use(traceEnrichmentMiddleware);
+// This ensures all logs (including body parsing errors) have requestId
+app.use(traceSetupMiddleware);
+
 // Add middleware
 app.use(
   cors({
@@ -56,9 +71,23 @@ app.use(
     optionsSuccessStatus: 200, // Return 200 for preflight OPTIONS requests
   })
 );
+
+// Preserve content-length before body parsing middleware removes it
+app.use((req: EscrowRequest, res, next) => {
+  // Capture Content-Length from raw request before any parsing
+  const rawContentLength = req.headers['content-length'];
+
+  if (rawContentLength) {
+    req.originalContentLength = rawContentLength;
+  }
+  next();
+});
+
 app.use(express.json({ limit: '100mb' }));
 app.use(upload.any()); // Handle multipart/form-data with any field names
 app.use(compression());
+
+app.use(traceLoggingMiddleware);
 
 // Use common router for utility routes
 app.use(standardRouter);
@@ -66,55 +95,62 @@ app.use(standardRouter);
 // Use in-flight monitor router for monitoring endpoints
 app.use(inFlightMonitorRouter);
 
-// Main route handler - handles authentication, escrow, and business logic
+// Use resource router for resource routes
+app.use('/resource', resourceRouter);
+
+// Main route handler
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
   try {
-    // Step 1: Authentication
+    const headers = req.headers as Record<string, string>;
+    const { provider, isStream, isPassthroughProxyRoute, is402Sniffer } =
+      await initializeProvider(req, res);
+    if (!provider || is402Sniffer) {
+      return buildX402Response(req, res, new Decimal(0));
+    }
+    const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
 
-    // VERIFY
-    const { processedHeaders, echoControlService } = await authenticateRequest(
-      req.headers as Record<string, string>,
-      prisma
-    );
-    const balanceCheckResult = await checkBalance(echoControlService);
-
-    // Step 2: Set up escrow context and apply escrow middleware logic
-    transactionEscrowMiddleware.setupEscrowContext(
-      req,
-      echoControlService.getUserId()!,
-      echoControlService.getEchoAppId()!,
-      balanceCheckResult.effectiveBalance ?? 0
-    );
-
-    // Apply escrow middleware logic inline
-    await transactionEscrowMiddleware.handleInFlightRequestIncrement(req, res);
-
-    // NEXT
-    const { provider, isStream, isPassthroughProxyRoute } =
-      await initializeProvider(req, res, echoControlService);
-
-    if (isPassthroughProxyRoute) {
-      return await makeProxyPassthroughRequest(
-        req,
-        res,
-        provider,
-        processedHeaders
-      );
+    if (
+      !isApiRequest(headers) &&
+      !isX402Request(headers) &&
+      !isPassthroughProxyRoute
+    ) {
+      return buildX402Response(req, res, maxCost);
     }
 
-    // Step 3: Execute business logic
-    const { transaction, data } = await modelRequestService.executeModelRequest(
-      req,
-      res,
-      processedHeaders,
-      provider,
-      isStream
-    );
+    if (isApiRequest(headers)) {
+      const { processedHeaders, echoControlService } =
+        await authenticateRequest(headers, prisma);
 
-    modelRequestService.handleResolveResponse(res, isStream, data);
+      provider.setEchoControlService(echoControlService);
 
-    // SETTLE
-    await echoControlService.createTransaction(transaction);
+      await handleApiKeyRequest({
+        req,
+        res,
+        headers: processedHeaders,
+        echoControlService,
+        isPassthroughProxyRoute,
+        provider,
+        isStream,
+        maxCost,
+      });
+      return;
+    }
+    if (isX402Request(headers) || isPassthroughProxyRoute) {
+      await handleX402Request({
+        req,
+        res,
+        headers,
+        maxCost,
+        isPassthroughProxyRoute,
+        provider,
+        isStream,
+      });
+      return;
+    }
+
+    return res.status(400).json({
+      error: 'No request type found',
+    });
   } catch (error) {
     return next(error);
   }
@@ -126,33 +162,41 @@ app.use((error: Error, req: Request, res: Response) => {
     `Error handling request: ${error.message} | Stack: ${error.stack}`
   );
 
+  // If response has already been sent, just log the error and return
+  if (res.headersSent) {
+    logger.warn('Response already sent, cannot send error response');
+    return;
+  }
+
   if (error instanceof HttpError) {
     logMetric('server.internal_error', 1, {
       error_type: 'http_error',
       error_message: error.message,
     });
-    res.status(error.statusCode).json({
+    logger.error('HTTP Error', error);
+    return res.status(error.statusCode).json({
       error: error.message,
     });
-  } else if (error instanceof Error) {
+  }
+
+  if (error instanceof Error) {
     logMetric('server.internal_error', 1, {
       error_type: error.name,
       error_message: error.message,
     });
-    // Handle other errors with a more specific message
     logger.error('Internal server error', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error.message || 'Internal Server Error',
     });
-  } else {
-    logMetric('server.internal_error', 1, {
-      error_type: 'unknown_error',
-    });
-    logger.error('Internal server error', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-    });
   }
+
+  logMetric('server.internal_error', 1, {
+    error_type: 'unknown_error',
+  });
+  logger.error('Internal server error', error);
+  return res.status(500).json({
+    error: 'Internal Server Error',
+  });
 });
 
 // Graceful shutdown handler
@@ -174,6 +218,34 @@ const gracefulShutdown = (signal: string) => {
       process.exit(1);
     });
 };
+
+// Global error handlers to prevent server crashes
+process.on(
+  'unhandledRejection',
+  (reason: unknown, promise: Promise<unknown>) => {
+    logger.error('Unhandled Promise Rejection', {
+      reason: reason instanceof Error ? reason.message : String(reason),
+      stack: reason instanceof Error ? reason.stack : undefined,
+      promise,
+    });
+    logMetric('server.unhandled_rejection', 1, {
+      reason: reason instanceof Error ? reason.message : 'unknown',
+    });
+    // Don't exit - log and continue
+  }
+);
+
+process.on('uncaughtException', (error: Error) => {
+  logger.error('Uncaught Exception', {
+    error: error.message,
+    stack: error.stack,
+  });
+  logMetric('server.uncaught_exception', 1, {
+    error_message: error.message,
+  });
+  // For uncaught exceptions, we should exit gracefully
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
+});
 
 // Register shutdown handlers
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

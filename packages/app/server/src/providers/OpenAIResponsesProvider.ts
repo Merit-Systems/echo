@@ -113,6 +113,9 @@ export class OpenAIResponsesProvider extends BaseProvider {
         output_tokens += parsed.usage?.output_tokens || 0;
         total_tokens += parsed.usage?.total_tokens || 0;
         providerId = parsed.id || 'null';
+        tool_cost = parsed.tools.reduce((acc, tool) => {
+          return acc.plus(calculateToolCost(tool));
+        }, new Decimal(0));
       }
 
       const metadata: LlmTransactionMetadata = {

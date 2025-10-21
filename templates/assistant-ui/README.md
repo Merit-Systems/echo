@@ -1,4 +1,18 @@
-# AI SDK v5 Example
+# Echo Assistant UI Template
+
+A full-featured chat application using `@assistant-ui/react` with AI SDK v5 and Echo integration.
+
+## Quick Start
+
+Use the Echo CLI to create a new project with this template:
+
+```bash
+npx echo-start@latest --template assistant-ui
+```
+
+You'll be prompted for your Echo App ID. Don't have one? Get it at [echo.merit.systems/new](https://echo.merit.systems/new).
+
+---
 
 This example demonstrates how to use `@assistant-ui/react-ai-sdk` with the Vercel AI SDK v5.
 

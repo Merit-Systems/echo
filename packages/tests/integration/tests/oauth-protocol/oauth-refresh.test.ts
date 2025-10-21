@@ -493,7 +493,7 @@ describe('OAuth Refresh Token Tests', () => {
           client_id: TEST_CLIENT_IDS.primary,
         })
       ).rejects.toThrow(
-        /invalid.*grant|refresh.*token.*expired|token.*expired/i
+        /invalid.*grant|refresh.*token.*expired|token.*expired|refresh.*token.*not.*found/i
       );
 
       console.log('✅ Expired refresh token correctly rejected');

@@ -1,6 +1,7 @@
 import { HttpClient } from '../http-client';
 import { ApiRoutes } from '../api-types';
 import { BaseResource } from '../utils/error-handling';
+import { validateAppId } from '../utils/validation';
 
 export class UsersResource extends BaseResource {
   constructor(http: HttpClient) {
@@ -24,6 +25,8 @@ export class UsersResource extends BaseResource {
    * @param code The referral code to register
    */
   async registerReferralCode(echoAppId: string, code: string) {
+    validateAppId(echoAppId, 'registerReferralCode');
+
     const request: ApiRoutes['POST /user/referral']['body'] = {
       echoAppId,
       code,

@@ -1,4 +1,18 @@
-# React + TypeScript + Vite
+# Echo React Template
+
+A minimal React application with Echo integration for AI billing and authentication, powered by Vite.
+
+## Quick Start
+
+Use the Echo CLI to create a new project with this template:
+
+```bash
+npx echo-start@latest --template vite
+```
+
+You'll be prompted for your Echo App ID. Don't have one? Get it at [echo.merit.systems/new](https://echo.merit.systems/new).
+
+---
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

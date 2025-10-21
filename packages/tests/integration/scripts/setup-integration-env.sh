@@ -223,7 +223,15 @@ else
     pnpm build
     
     # Start echo-data-server in background
-    ECHO_CONTROL_URL="http://localhost:3001" NODE_ENV=test PORT=3069 pnpm start &
+    ECHO_CONTROL_URL="http://localhost:3001" \
+    NODE_ENV=test \
+    PORT=3069 \
+    OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
+    ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
+    CDP_API_KEY_ID="${CDP_API_KEY_ID:-}" \
+    CDP_API_KEY_SECRET="${CDP_API_KEY_SECRET:-}" \
+    CDP_WALLET_SECRET="${CDP_WALLET_SECRET:-}" \
+    pnpm start &
     ECHO_DATA_SERVER_PID=$!
     echo "$ECHO_DATA_SERVER_PID" > /tmp/echo-data-server.pid
     

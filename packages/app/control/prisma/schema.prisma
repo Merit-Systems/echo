@@ -40,6 +40,7 @@ model User {
   latestFreeCreditsVersion Decimal?
   OutboundEmailSent        OutboundEmailSent[]
   creditGrantCodeUsages    CreditGrantCodeUsage[]
+  VideoGenerationX402     VideoGenerationX402[]
 
   @@map("users")
 }
@@ -107,6 +108,7 @@ model EchoApp {
   appSessions             AppSession[]
   payouts                 Payout[]
   OutboundEmailSent       OutboundEmailSent[]
+  VideoGenerationX402     VideoGenerationX402[]
 
   @@map("echo_apps")
 }
@@ -488,4 +490,19 @@ model OutboundEmailSent {
 
   @@index([emailCampaignId])
   @@map("outbound_emails_sent")
+}
+
+model VideoGenerationX402 {
+  videoId         String     @id
+  wallet          String?
+  userId          String?   @db.Uuid
+  echoAppId       String?   @db.Uuid
+  cost            Decimal
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  expiresAt       DateTime  @db.Timestamptz(6)
+  isFinal         Boolean   @default(false)
+
+  user    User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  echoApp EchoApp? @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  @@map("video_generation_x402")
 }

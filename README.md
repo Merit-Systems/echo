@@ -8,7 +8,7 @@
 
   <div align="center">
     
-  [![Discord](https://img.shields.io/discord/1382120201713352836?style=flat&logo=discord&logoColor=white&label=Discord)](https://discord.gg/JuKt7tPnNc) 
+  [![Discord](https://img.shields.io/discord/1382120201713352836?style=flat&logo=discord&logoColor=white&label=Discord)](https://discord.gg/merit) 
   ![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/merit_systems) 
   [![GitHub Repo stars](https://img.shields.io/github/stars/Merit-Systems/echo?style=social)](https://github.com/Merit-Systems/echo) 
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -21,7 +21,11 @@ Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usag
 
 [Read the docs](https://echo.merit.systems/docs) to get started or [read our announcement](https://www.merit.systems/blog/echo) to learn more.
 
-Consider giving a star on GitHub!
+## Getting started
+
+```bash
+npx echo-start@latest
+```
 
 ## Why Echo?
 

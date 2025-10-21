@@ -1,0 +1,69 @@
+name: Provider Smoke Tests
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'packages/tests/provider-smoke/**'
+      - 'packages/sdk/ts/**'
+      - 'packages/app/server/**'
+      - 'packages/app/control/**'
+      - '.github/workflows/provider-smoke-tests.yml'
+
+jobs:
+  provider-smoke-tests:
+    name: Run Provider Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Wait for Railway Deployment
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "Installing Railway CLI..."
+          npm install -g @railway/cli
+
+          echo "Waiting for Railway deployment to complete..."
+          railway status --service echo --environment staging || echo "Service status check failed, continuing..."
+
+          echo "Waiting for deployment to be ready..."
+          max_attempts=90
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -f -s -o /dev/null https://echo-staging.up.railway.app/health 2>/dev/null; then
+              echo "Deployment is ready!"
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "Attempt $attempt/$max_attempts: Deployment not ready yet, waiting 10 seconds..."
+            sleep 10
+          done
+
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Deployment did not become ready in time (waited 15 minutes)"
+            exit 1
+          fi
+
+      - name: Run Provider Smoke Tests
+        working-directory: ./packages/tests/provider-smoke
+        env:
+          ECHO_DATA_SERVER_URL: https://echo-staging.up.railway.app/
+          ECHO_API_KEY: ${{ secrets.ECHO_API_KEY }}
+          ECHO_APP_ID: a4e9b928-cac0-4952-9b4e-3be01aaff45b
+        run: pnpm run test

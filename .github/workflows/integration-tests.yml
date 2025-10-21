@@ -52,9 +52,14 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
-      # OAuth Configuration
-      OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 2592000
-      OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: 86400
+      # CDP Configuration
+      CDP_API_KEY_ID: ${{ secrets.CDP_API_KEY_ID }}
+      CDP_API_KEY_SECRET: ${{ secrets.CDP_API_KEY_SECRET }}
+      CDP_WALLET_SECRET: ${{ secrets.CDP_WALLET_SECRET }}
+
+      # OAuth Configuration (short expiry for fast integration tests)
+      OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 5
+      OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: 5
 
       # Environment Flags
       CI: true
@@ -139,6 +144,12 @@ jobs:
           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
 
+          # CDP Configuration
+          CDP_API_KEY_ID=${{ secrets.CDP_API_KEY_ID }}
+          CDP_API_KEY_SECRET=${{ secrets.CDP_API_KEY_SECRET }}
+          CDP_WALLET_SECRET=${{ secrets.CDP_WALLET_SECRET }}
+          WALLET_OWNER="integration-test-owner"
+
           # OAuth Configuration
           OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=5
           OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=5
@@ -169,19 +180,84 @@ jobs:
         working-directory: packages/app/control
         run: pnpm prisma:generate
 
-      - name: Setup integration test environment
+      - name: Run database migrations and seed data
+        working-directory: packages/app/control
+        run: |
+          echo "🗃️ Running database migrations..."
+          pnpm prisma:migrate-deploy
+          
+          echo "🌱 Seeding integration test database..."
+          cd ../../tests/integration
+          pnpm db:seed
+      
+      - name: Build and start echo-control
+        working-directory: packages/app/control
+        run: |
+          echo "🚀 Building echo-control..."
+          INTEGRATION_TEST_MODE=true pnpm build
+          
+          echo "🚀 Starting echo-control on port 3001..."
+          PORT=3001 \
+          NODE_ENV=test \
+          DATABASE_URL="${DATABASE_URL}" \
+          JWT_SECRET="${JWT_SECRET}" \
+          JWT_ISSUER="${JWT_ISSUER}" \
+          JWT_AUDIENCE="${JWT_AUDIENCE}" \
+          INTEGRATION_TEST_MODE=true \
+          OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS="${OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS}" \
+          OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS="${OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS}" \
+          nohup pnpm start > /tmp/echo-control.log 2>&1 &
+          
+          echo $! > /tmp/echo-control.pid
+          echo "✅ Started echo-control (PID: $(cat /tmp/echo-control.pid))"
+          
+          echo "⏳ Waiting for echo-control health check..."
+          timeout 60 bash -c 'until curl -f http://localhost:3001/api/health >/dev/null 2>&1; do sleep 2; done' || {
+            echo "❌ echo-control failed to start"
+            echo "📋 Logs:"
+            cat /tmp/echo-control.log
+            exit 1
+          }
+          echo "✅ echo-control is healthy"
+      
+      - name: Build and start echo-data-server
+        working-directory: packages/app/server
+        run: |
+          echo "🚀 Building echo-data-server..."
+          pnpm build
+          
+          echo "🚀 Starting echo-data-server on port 3069..."
+          DATABASE_URL="${DATABASE_URL}" \
+          NODE_ENV=test \
+          PORT=3069 \
+          OPENAI_API_KEY="${OPENAI_API_KEY}" \
+          ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}" \
+          CDP_API_KEY_ID="${CDP_API_KEY_ID}" \
+          CDP_API_KEY_SECRET="${CDP_API_KEY_SECRET}" \
+          CDP_WALLET_SECRET="${CDP_WALLET_SECRET}" \
+          WALLET_OWNER="integration-test-owner" \
+          nohup pnpm start > /tmp/echo-data-server.log 2>&1 &
+          
+          echo $! > /tmp/echo-data-server.pid
+          echo "✅ Started echo-data-server (PID: $(cat /tmp/echo-data-server.pid))"
+          
+          echo "⏳ Waiting for echo-data-server health check..."
+          timeout 60 bash -c 'until curl -f http://localhost:3069/health >/dev/null 2>&1; do sleep 2; done' || {
+            echo "❌ echo-data-server failed to start"
+            echo "📋 Logs:"
+            cat /tmp/echo-data-server.log
+            exit 1
+          }
+          echo "✅ echo-data-server is healthy"
+      
+      - name: Run integration tests
         working-directory: packages/tests/integration
         run: |
-          chmod +x scripts/setup-integration-env.sh
-          pnpm run env:setup
-
-      - name: Run Echo Data Server Tests
-        working-directory: packages/tests/integration
-        run: pnpm test:echo-data-server
-
-      - name: Run OAuth Protocol Tests
-        working-directory: packages/tests/integration
-        run: pnpm test:oauth-protocol
+          echo "🧪 Running Echo Data Server Tests..."
+          pnpm test:echo-data-server
+          
+          echo "🧪 Running OAuth Protocol Tests..."
+          pnpm test:oauth-protocol
 
       # TODO: Re-enable echo-server integration tests when properly configured
       # - name: Run Echo Server Integration Tests
@@ -197,12 +273,39 @@ jobs:
             packages/tests/integration/coverage/
           retention-days: 30
 
+      - name: Show server logs on failure
+        if: failure()
+        run: |
+          echo "📋 Echo Control Logs:"
+          cat /tmp/echo-control.log 2>/dev/null || echo "No echo-control logs found"
+          echo ""
+          echo "📋 Echo Data Server Logs:"
+          cat /tmp/echo-data-server.log 2>/dev/null || echo "No echo-data-server logs found"
+      
       - name: Cleanup integration environment
         if: always()
-        working-directory: packages/tests/integration
         run: |
-          chmod +x scripts/teardown-integration-env.sh
-          ./scripts/teardown-integration-env.sh
+          echo "🧹 Stopping background processes..."
+          
+          if [ -f /tmp/echo-control.pid ]; then
+            PID=$(cat /tmp/echo-control.pid)
+            kill $PID 2>/dev/null || true
+            kill -9 $PID 2>/dev/null || true
+          fi
+          
+          if [ -f /tmp/echo-data-server.pid ]; then
+            PID=$(cat /tmp/echo-data-server.pid)
+            kill $PID 2>/dev/null || true
+            kill -9 $PID 2>/dev/null || true
+          fi
+          
+          pkill -f "PORT=3001.*pnpm start" || true
+          pkill -f "PORT=3069.*pnpm start" || true
+          
+          rm -f /tmp/echo-control.pid /tmp/echo-data-server.pid
+          rm -f /tmp/echo-control.log /tmp/echo-data-server.log
+          
+          echo "✅ Cleanup complete"
 
   e2e-tests:
     name: End-to-End Tests
@@ -234,6 +337,11 @@ jobs:
       # API Keys for Echo Server
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # CDP Configuration
+      CDP_API_KEY_ID: ${{ secrets.CDP_API_KEY_ID }}
+      CDP_API_KEY_SECRET: ${{ secrets.CDP_API_KEY_SECRET }}
+      CDP_WALLET_SECRET: ${{ secrets.CDP_WALLET_SECRET }}
 
       # OAuth Configuration
       OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 2592000
@@ -286,6 +394,9 @@ jobs:
           INTEGRATION_TEST_JWT=${{ secrets.INTEGRATION_TEST_JWT }}
           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          CDP_API_KEY_ID=${{ secrets.CDP_API_KEY_ID }}
+          CDP_API_KEY_SECRET=${{ secrets.CDP_API_KEY_SECRET }}
+          CDP_WALLET_SECRET=${{ secrets.CDP_WALLET_SECRET }}
           OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=2592000
           CI=true
           NODE_ENV=test

@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
+import { OpenAIVideoProvider } from 'providers/OpenAIVideoProvider';
+import { isApiRequest, isX402Request } from 'utils';
 import { UnknownModelError } from '../errors/http';
 import logger from '../logger';
 import { BaseProvider } from '../providers/BaseProvider';
 import { GeminiVeoProvider } from '../providers/GeminiVeoProvider';
-import { VertexAIProvider } from '../providers/VertexAIProvider';
 import { getProvider } from '../providers/ProviderFactory';
+import { VertexAIProvider } from '../providers/VertexAIProvider';
 import {
   isValidImageModel,
   isValidModel,
   isValidVideoModel,
 } from './AccountingService';
-import { EchoControlService } from './EchoControlService';
 import { extractIsStream, extractModelName } from './RequestDataService';
 
 /**
@@ -20,10 +21,7 @@ import { extractIsStream, extractModelName } from './RequestDataService';
  *
  * @returns
  */
-export function detectPassthroughProxyRoute(
-  req: Request,
-  echoControlService: EchoControlService
-):
+export function detectPassthroughProxyRoute(req: Request):
   | {
       provider: BaseProvider;
       model: string;
@@ -33,35 +31,34 @@ export function detectPassthroughProxyRoute(
   // Check for Vertex AI proxy routes first
   const vertexAIProxy = VertexAIProvider.detectPassthroughProxy(
     req,
-    echoControlService,
     extractIsStream
   );
+  const openAIVideoProxy = OpenAIVideoProvider.detectPassthroughProxy(
+    req,
+    extractIsStream
+  );
+  if (openAIVideoProxy) {
+    return openAIVideoProxy;
+  }
   if (vertexAIProxy) {
     return vertexAIProxy;
   }
 
   // Then check for Gemini VEO proxy routes
-  return GeminiVeoProvider.detectPassthroughProxy(
-    req,
-    echoControlService,
-    extractIsStream
-  );
+  return GeminiVeoProvider.detectPassthroughProxy(req, extractIsStream);
 }
 
 export async function initializeProvider(
   req: Request,
-  res: Response,
-  echoControlService: EchoControlService
+  res: Response
 ): Promise<{
-  provider: BaseProvider;
   model: string;
   isStream: boolean;
   isPassthroughProxyRoute: boolean;
+  provider?: BaseProvider;
+  is402Sniffer?: boolean;
 }> {
-  const passthroughProxyRoute = detectPassthroughProxyRoute(
-    req,
-    echoControlService
-  );
+  const passthroughProxyRoute = detectPassthroughProxyRoute(req);
   if (passthroughProxyRoute)
     return { ...passthroughProxyRoute, isPassthroughProxyRoute: true };
 
@@ -72,18 +69,34 @@ export async function initializeProvider(
       !isValidImageModel(model) &&
       !isValidVideoModel(model))
   ) {
-    logger.error(`Invalid model: ${model}`);
-    res.status(422).json({
-      error: `Invalid model: ${model} Echo does not yet support this model.`,
-    });
-    throw new UnknownModelError('Invalid model');
+    logger.warn(`Invalid model: ${model}`);
+    // if auth or x402 header, return 422
+    if (
+      isApiRequest(req.headers as Record<string, string>) ||
+      isX402Request(req.headers as Record<string, string>)
+    ) {
+      res.status(422).json({
+        error: `Invalid model: ${model} Echo does not yet support this model.`,
+      });
+      throw new UnknownModelError('Invalid model');
+    } else {
+      logger.warn(
+        `No Model or Auth method detected, returning 402 Schema for model: ${model}`
+      );
+      return {
+        is402Sniffer: true,
+        model: '',
+        isStream: false,
+        isPassthroughProxyRoute: false,
+      };
+    }
   }
 
   // Extract stream flag
   const isStream = extractIsStream(req);
 
   // Get the appropriate provider
-  const provider = getProvider(model, echoControlService, isStream, req.path);
+  const provider = getProvider(model, isStream, req.path);
 
   return {
     provider,

@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma';
 import logger, { logMetric } from '../logger';
-import { getRequestId } from '../utils/trace';
 import { EchoControlService } from '../services/EchoControlService';
+import { getRequestId } from '../utils/trace';
 
 const MAX_IN_FLIGHT_REQUESTS = Number(process.env.MAX_IN_FLIGHT_REQUESTS) || 10;
 const ESTIMATED_COST_PER_TRANSACTION =
@@ -23,6 +23,8 @@ export interface EscrowRequest extends Request {
     processedHeaders: Record<string, string>;
     echoControlService: EchoControlService;
   };
+  // Preserve original content-length before body parsing middleware removes it
+  originalContentLength?: string;
 }
 
 export class TransactionEscrowMiddleware {
@@ -195,10 +197,10 @@ export class TransactionEscrowMiddleware {
     userId: string,
     echoAppId: string,
     requestId: string,
-    cleanupExecuted: boolean
+    cleanupState: { executed: boolean }
   ) => {
-    if (cleanupExecuted) return;
-    cleanupExecuted = true;
+    if (cleanupState.executed) return;
+    cleanupState.executed = true;
 
     // decrementInFlightRequests now handles its own errors gracefully
     await this.decrementInFlightRequests(userId, echoAppId);
@@ -213,21 +215,23 @@ export class TransactionEscrowMiddleware {
     echoAppId: string,
     requestId: string
   ) {
-    let cleanupExecuted = false;
+    // Use object to share state by reference across multiple event handlers
+    // This prevents duplicate cleanup execution when multiple events fire
+    const cleanupState = { executed: false };
 
     // Cleanup on response finish (normal case)
     res.on('finish', () =>
-      this.executeCleanup(userId, echoAppId, requestId, cleanupExecuted)
+      this.executeCleanup(userId, echoAppId, requestId, cleanupState)
     );
 
     // Cleanup on response close (client disconnect)
     res.on('close', () =>
-      this.executeCleanup(userId, echoAppId, requestId, cleanupExecuted)
+      this.executeCleanup(userId, echoAppId, requestId, cleanupState)
     );
 
     // Cleanup on error (if response errors out)
     res.on('error', () =>
-      this.executeCleanup(userId, echoAppId, requestId, cleanupExecuted)
+      this.executeCleanup(userId, echoAppId, requestId, cleanupState)
     );
   }
 
@@ -235,19 +239,37 @@ export class TransactionEscrowMiddleware {
    * Cleanup orphaned in-flight requests (requests that started but never finished)
    */
   private async cleanupOrphanedRequests(): Promise<void> {
-    const cutoffTime = new Date(Date.now() - REQUEST_TIMEOUT_MS);
+    try {
+      const cutoffTime = new Date(Date.now() - REQUEST_TIMEOUT_MS);
 
-    // Bulk update all orphaned requests
-    await this.db.inFlightRequest.updateMany({
-      where: {
-        numberInFlight: { gt: 0 },
-        updatedAt: { lt: cutoffTime },
-      },
-      data: {
-        numberInFlight: 0,
-        updatedAt: new Date(),
-      },
-    });
+      // Bulk update all orphaned requests
+      const result = await this.db.inFlightRequest.updateMany({
+        where: {
+          numberInFlight: { gt: 0 },
+          updatedAt: { lt: cutoffTime },
+        },
+        data: {
+          numberInFlight: 0,
+          updatedAt: new Date(),
+        },
+      });
+
+      if (result.count > 0) {
+        logger.info(`Cleaned up ${result.count} orphaned in-flight requests`, {
+          cutoffTime,
+          cleanedCount: result.count,
+        });
+        logMetric('escrow.orphaned_requests_cleaned', result.count);
+      }
+    } catch (error) {
+      logger.error('Failed to cleanup orphaned requests', {
+        error,
+      });
+      logMetric('escrow.cleanup_failed', 1, {
+        error_message: error instanceof Error ? error.message : 'unknown',
+      });
+      // Don't rethrow - we want the cleanup process to continue on next interval
+    }
   }
 
   /**

@@ -3,6 +3,7 @@ import {
   AnthropicModels,
   GeminiModels,
   OpenRouterModels,
+  GroqModels,
   OpenAIImageModels,
   SupportedOpenAIResponseToolPricing,
   SupportedModel,
@@ -17,6 +18,7 @@ import { logMetric } from '../logger';
 import {
   GeminiVideoModels,
   VertexAIVideoModels,
+  OpenAIVideoModels,
 } from '@merit-systems/echo-typescript-sdk';
 
 // Combine all supported chat models from the TypeScript SDK
@@ -25,6 +27,7 @@ export const ALL_SUPPORTED_MODELS: SupportedModel[] = [
   ...AnthropicModels,
   ...GeminiModels,
   ...OpenRouterModels,
+  ...GroqModels,
 ];
 
 // Handle image models separately since they have different pricing structure
@@ -34,6 +37,7 @@ export const ALL_SUPPORTED_IMAGE_MODELS: SupportedImageModel[] =
 export const ALL_SUPPORTED_VIDEO_MODELS: SupportedVideoModel[] = [
   ...GeminiVideoModels,
   ...VertexAIVideoModels,
+  ...OpenAIVideoModels,
 ];
 
 // Create a lookup map for O(1) model price retrieval
@@ -54,7 +58,7 @@ ALL_SUPPORTED_VIDEO_MODELS.forEach(model => {
   VIDEO_MODEL_MAP.set(model.model_id, model);
 });
 
-const getModelPrice = (model: string) => {
+export const getModelPrice = (model: string) => {
   const supportedModel = MODEL_PRICE_MAP.get(model);
 
   if (supportedModel) {
@@ -69,7 +73,7 @@ const getModelPrice = (model: string) => {
   return null;
 };
 
-const getImageModelPrice = (model: string) => {
+export const getImageModelPrice = (model: string) => {
   const imageModel = IMAGE_MODEL_MAP.get(model);
 
   if (imageModel) {
@@ -122,10 +126,22 @@ export const getCostPerToken = (
   if (!modelPrice) {
     throw new Error(`Pricing information not found for model: ${model}`);
   }
+  if (
+    modelPrice.input_cost_per_token < 0 ||
+    modelPrice.output_cost_per_token < 0
+  ) {
+    throw new Error(`Invalid pricing for model: ${model}`);
+  }
 
-  return new Decimal(modelPrice.input_cost_per_token)
+  const cost = new Decimal(modelPrice.input_cost_per_token)
     .mul(inputTokens)
     .plus(new Decimal(modelPrice.output_cost_per_token).mul(outputTokens));
+
+  if (cost.lessThan(0)) {
+    throw new Error(`Invalid cost for model: ${model}`);
+  }
+
+  return cost;
 };
 
 export const getImageModelCost = (

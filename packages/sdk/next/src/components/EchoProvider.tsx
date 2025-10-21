@@ -3,7 +3,7 @@
 import { ReactNode, useCallback, useMemo } from 'react';
 import type { EchoUser } from '@merit-systems/echo-react-sdk';
 import { EchoProviderRaw } from '@merit-systems/echo-react-sdk';
-import { EchoClient } from '@merit-systems/echo-typescript-sdk';
+import { EchoClient, validateAppId } from '@merit-systems/echo-typescript-sdk';
 import useSWR from 'swr';
 
 export interface EchoProxyConfig {
@@ -50,6 +50,8 @@ interface EchoProviderProps {
 }
 
 export function EchoProvider({ config, children }: EchoProviderProps) {
+  validateAppId(config.appId, 'EchoProvider');
+
   const basePath = config.basePath || '/api/echo';
   const session = useProxySession(basePath, config.initialSession);
 

@@ -8,9 +8,11 @@ export type AnthropicModel =
   | 'claude-3-7-sonnet-20250219'
   | 'claude-3-haiku-20240307'
   | 'claude-3-opus-20240229'
+  | 'claude-haiku-4-5-20251001'
   | 'claude-opus-4-1-20250805'
   | 'claude-opus-4-20250514'
-  | 'claude-sonnet-4-20250514';
+  | 'claude-sonnet-4-20250514'
+  | 'claude-sonnet-4-5-20250929';
 
 export const AnthropicModels: SupportedModel[] = [
   {
@@ -50,6 +52,12 @@ export const AnthropicModels: SupportedModel[] = [
     provider: 'Anthropic',
   },
   {
+    model_id: 'claude-haiku-4-5-20251001',
+    input_cost_per_token: 0.000001,
+    output_cost_per_token: 0.000005,
+    provider: 'Anthropic',
+  },
+  {
     model_id: 'claude-opus-4-1-20250805',
     input_cost_per_token: 0.000015,
     output_cost_per_token: 0.000075,
@@ -63,6 +71,12 @@ export const AnthropicModels: SupportedModel[] = [
   },
   {
     model_id: 'claude-sonnet-4-20250514',
+    input_cost_per_token: 0.000003,
+    output_cost_per_token: 0.000015,
+    provider: 'Anthropic',
+  },
+  {
+    model_id: 'claude-sonnet-4-5-20250929',
     input_cost_per_token: 0.000003,
     output_cost_per_token: 0.000015,
     provider: 'Anthropic',
