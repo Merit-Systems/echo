@@ -1,4 +1,9 @@
-import { BrainCircuit, Key, User } from 'lucide-react';
+import { BrainCircuit, Info, Key, User } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface Props {
   scopes: string[];
@@ -26,6 +31,18 @@ const Scope = ({ scope }: { scope: string }) => {
     >
       <data.icon className="size-4" />
       {data.name}
+      {data.description && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-xs text-muted-foreground cursor-pointer">
+              <Info className="size-4" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{data.description}</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
     </li>
   );
 };
@@ -35,15 +52,21 @@ const scopeData = {
     name: 'Make AI requests',
     icon: BrainCircuit,
     level: 'info',
+    description:
+      'You are allowing this app to make AI requests on your behalf.',
   },
   offline_access: {
     name: 'Connect your user profile',
     icon: User,
     level: 'info',
+    description:
+      'You are allowing this app to connect your user profile to your account.',
   },
   'api_key:create': {
     name: 'Create API keys',
     icon: Key,
     level: 'warn',
+    description:
+      'You are allowing this app to create a long lived access token, which can be revoked at any time in your Echo dashboard.',
   },
 };
