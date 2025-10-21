@@ -12,13 +12,19 @@ function AlertDialog({
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
 }
 
-// function AlertDialogTrigger({
-//   ...props
-// }: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
-//   return (
-//     <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
-//   );
-// }
+const AlertDialogTrigger = React.forwardRef<
+  React.ComponentRef<typeof AlertDialogPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Trigger>
+>(({ ...props }, ref) => {
+  return (
+    <AlertDialogPrimitive.Trigger
+      ref={ref}
+      data-slot="alert-dialog-trigger"
+      {...props}
+    />
+  );
+});
+AlertDialogTrigger.displayName = 'AlertDialogTrigger';
 
 function AlertDialogPortal({
   ...props
@@ -130,24 +136,28 @@ function AlertDialogAction({
   );
 }
 
-// function AlertDialogCancel({
-//   className,
-//   ...props
-// }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
-//   return (
-//     <AlertDialogPrimitive.Cancel
-//       className={cn(buttonVariants({ variant: 'outline' }), className)}
-//       {...props}
-//     />
-//   );
-// }
+const AlertDialogCancel = React.forwardRef<
+  React.ComponentRef<typeof AlertDialogPrimitive.Cancel>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel>
+>(({ className, ...props }, ref) => {
+  return (
+    <AlertDialogPrimitive.Cancel
+      ref={ref}
+      className={cn(buttonVariants({ variant: 'outline' }), className)}
+      {...props}
+    />
+  );
+});
+AlertDialogCancel.displayName = 'AlertDialogCancel';
 
 export {
   AlertDialog,
+  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogAction,
+  AlertDialogCancel,
 };
