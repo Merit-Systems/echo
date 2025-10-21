@@ -3,10 +3,10 @@ import { Transaction } from '../types';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import logger from '../logger';
-import { OpenAIAudioClient, AudioTranscriptionResponse } from '../clients/openai-audio-client';
+import OpenAI from 'openai';
 
 export class OpenAIAudioProvider extends BaseProvider {
-  private audioClient: OpenAIAudioClient;
+  private client: OpenAI;
 
   constructor(stream: boolean, model: string) {
     super(stream, model);
@@ -14,7 +14,7 @@ export class OpenAIAudioProvider extends BaseProvider {
     if (!apiKey) {
       throw new Error('OpenAI API key is required for audio provider');
     }
-    this.audioClient = new OpenAIAudioClient(apiKey);
+    this.client = new OpenAI({ apiKey });
   }
 
   getType(): ProviderType {
@@ -31,13 +31,14 @@ export class OpenAIAudioProvider extends BaseProvider {
 
   async handleBody(data: string): Promise<Transaction> {
     try {
-      const audioResponse: AudioTranscriptionResponse = JSON.parse(data);
+      const audioResponse = JSON.parse(data) as {
+        text: string;
+        duration?: number;
+        language?: string;
+      };
       
-     
-      const duration = audioResponse.duration || 0;
-      const durationMinutes = duration / 60;
-
-      // Cost per minute for Whisper models (as per OpenAI pricing)
+      const durationSeconds = audioResponse.duration || 0;
+      const durationMinutes = durationSeconds / 60;
       const costPerMinute = 0.006;
       const totalCost = new Decimal(durationMinutes * costPerMinute);
 
@@ -46,7 +47,7 @@ export class OpenAIAudioProvider extends BaseProvider {
           providerId: 'openai-audio',
           provider: 'openai',
           model: this.getModel(),
-          durationSeconds: durationMinutes * 60,
+          durationSeconds,
           generateAudio: false
         },
         rawTransactionCost: totalCost,
@@ -68,14 +69,14 @@ export class OpenAIAudioProvider extends BaseProvider {
   }
 
   override supportsStream(): boolean {
-    return false; // Audio transcription doesn't support streaming
+    // OpenAI supports streaming for audio with verbose_json response format
+    return true;
   }
 
   override ensureStreamUsage(
     reqBody: Record<string, unknown>,
     reqPath: string
   ): Record<string, unknown> {
-    // Audio endpoints don't support streaming
     return reqBody;
   }
 
@@ -83,7 +84,6 @@ export class OpenAIAudioProvider extends BaseProvider {
     reqBody: Record<string, unknown>,
     reqPath: string
   ): Record<string, unknown> {
-    // No transformation needed for audio requests
     return reqBody;
   }
 }

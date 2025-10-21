@@ -78,14 +78,14 @@ export default function AudioTranscription() {
       formData.append('model', model);
       formData.append('response_format', 'text');
 
-      const endpoint = mode === 'transcribe' ? '/v1/audio/transcriptions' : '/v1/audio/translations';
+      // Use the Next.js API proxy route
+      const endpoint = mode === 'transcribe' 
+        ? '/api/echo/v1/audio/transcriptions' 
+        : '/api/echo/v1/audio/translations';
       
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ECHO_API_KEY}`,
-        },
       });
 
       if (!response.ok) {
