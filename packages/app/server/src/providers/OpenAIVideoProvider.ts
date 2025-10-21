@@ -228,7 +228,9 @@ export class OpenAIVideoProvider extends BaseProvider {
       }
       if (video.userId) {
         // Proccess the refund to the user. There is some level of complexity here since there is a markup. Not as simple as just credit grant.
-        logger.info(`Refunding video generation ${video.videoId} to user ${video.userId} on app ${video.echoAppId}`);
+        logger.info(
+          `Refunding video generation ${video.videoId} to user ${video.userId} on app ${video.echoAppId}`
+        );
       }
       await tx.videoGenerationX402.update({
         where: {

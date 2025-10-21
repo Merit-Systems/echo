@@ -157,7 +157,6 @@ export async function handleX402Request({
     );
     const transaction = transactionResult.transaction;
 
-
     if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
       await prisma.videoGenerationX402.create({
         data: {
@@ -226,17 +225,18 @@ export async function handleApiKeyRequest({
     isStream
   );
 
-  
-
   // There is no actual refund, this logs if we underestimate the raw cost
   calculateRefundAmount(maxCost, transaction.rawTransactionCost);
 
   modelRequestService.handleResolveResponse(res, isStream, data);
 
   await echoControlService.createTransaction(transaction, maxCost);
-  
+
   if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
-    const transactionCost = await echoControlService.computeTransactionCosts(transaction, null);
+    const transactionCost = await echoControlService.computeTransactionCosts(
+      transaction,
+      null
+    );
     await prisma.videoGenerationX402.create({
       data: {
         videoId: transaction.metadata.providerId,

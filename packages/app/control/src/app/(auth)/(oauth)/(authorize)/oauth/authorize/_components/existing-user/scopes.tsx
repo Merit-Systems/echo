@@ -20,9 +20,10 @@ const Scope = ({ scope }: { scope: string }) => {
   if (!data) {
     return null;
   }
-
   return (
-    <li className="flex items-center gap-2 text-sm">
+    <li
+      className={`flex items-center gap-2 text-sm ${data.level === 'warn' ? 'text-yellow-500' : ''}`}
+    >
       <data.icon className="size-4" />
       {data.name}
     </li>
@@ -33,13 +34,16 @@ const scopeData = {
   'llm:invoke': {
     name: 'Make AI requests',
     icon: BrainCircuit,
+    level: 'info',
   },
   offline_access: {
     name: 'Connect your user profile',
     icon: User,
+    level: 'info',
   },
   'api_key:create': {
     name: 'Create API keys',
     icon: Key,
+    level: 'warn',
   },
 };
