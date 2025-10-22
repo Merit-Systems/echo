@@ -12,6 +12,7 @@ import { AppName } from './name';
 import { AppDescription } from './description';
 import { AppProfilePicture } from './profile-picture';
 import { AppHomepage } from './homepage';
+import { AppHideOwnerName } from './hide-owner-name';
 
 import type { updateAppSchema } from '@/services/db/apps/lib/schemas';
 
@@ -107,6 +108,20 @@ export const GeneralAppSettings: React.FC<Props> = async ({ appId }) => {
           description="Whether your app is available in the app store."
         >
           <AppVisibility />
+        </FormCard>
+      </AppDetailsFormProvider>
+
+      <AppDetailsFormProvider
+        fields={['hideOwnerName']}
+        title="Hide Owner Name"
+        action={updateApp}
+        defaultValues={{ hideOwnerName: app.hideOwnerName ?? false }}
+      >
+        <FormCard
+          title="Hide Owner Name on Authorization"
+          description="When enabled, your name will not be displayed on the OAuth authorization page. Users will only see the app name."
+        >
+          <AppHideOwnerName />
         </FormCard>
       </AppDetailsFormProvider>
 

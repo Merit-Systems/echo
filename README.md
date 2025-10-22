@@ -25,11 +25,11 @@ Skip the hard choice between fronting API costs, high-friction BYOK flows, or bu
 
 Building AI apps forces you to pick your poison:
 
-| Approach | Developer Cost | User Experience | Revenue Model |
-|----------|---------------|-----------------|---------------|
-| **BYOK** | None (but no revenue) | Complex key management | None |
-| **Dev API Key** | Unpredictable burn rate | Simple | Need metering + billing |
-| **Bill End Users** | Weeks building infra | Simple | Auth + Stripe + metering |
+| Approach           | Developer Cost          | User Experience        | Revenue Model            |
+| ------------------ | ----------------------- | ---------------------- | ------------------------ |
+| **BYOK**           | None (but no revenue)   | Complex key management | None                     |
+| **Dev API Key**    | Unpredictable burn rate | Simple                 | Need metering + billing  |
+| **Bill End Users** | Weeks building infra    | Simple                 | Auth + Stripe + metering |
 
 Echo eliminates all three problems.
 
@@ -38,6 +38,7 @@ Echo eliminates all three problems.
 Replace your AI SDK imports with Echo. Users authenticate once, get a balance, and pay for their own usage. You set a markup and earn revenue automatically.
 
 **Before:**
+
 ```typescript
 // Option 1: Front costs yourself
 import { openai } from '@ai-sdk/openai';
@@ -51,15 +52,16 @@ const response = await generateText({
 ```
 
 **After:**
+
 ```typescript
 // Users pay, you earn markup, zero infrastructure
 import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
 import { generateText } from 'ai';
 
 const { openai } = useEchoModelProviders();
-const response = await generateText({ 
-  model: openai('gpt-5'), 
-  prompt: '...'
+const response = await generateText({
+  model: openai('gpt-5'),
+  prompt: '...',
 });
 ```
 

@@ -8,6 +8,7 @@ export const appSelect = {
   bannerImageUrl: true,
   homepageUrl: true,
   isPublic: true,
+  hideOwnerName: true,
   createdAt: true,
   updatedAt: true,
   authorizedCallbackUrls: true,

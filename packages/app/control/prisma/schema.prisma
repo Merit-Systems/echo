@@ -89,6 +89,7 @@ model EchoApp {
   bannerImageUrl         String?
   homepageUrl            String?
   isPublic               Boolean?
+  hideOwnerName          Boolean?  @default(false)
   isArchived             Boolean   @default(false)
   archivedAt             DateTime? @db.Timestamptz
   createdAt              DateTime  @default(now()) @db.Timestamptz
