@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     default: 'Echo',
     template: '%s | Echo',
   },
-  description: 'Monetize AI Apps in Minutes',
+  description: 'User Pays AI SDK',
   appleWebApp: {
     title: 'Echo',
     statusBarStyle: 'black-translucent',

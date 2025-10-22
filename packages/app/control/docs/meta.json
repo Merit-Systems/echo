@@ -2,12 +2,13 @@
   "title": "Echo Documentation",
   "pages": [
     "index",
+    "why-echo",
     "getting-started",
-    "money",
     "react-sdk",
     "next-sdk",
     "typescript-sdk",
     "providers",
+    "money",
     "advanced",
     "cookbook",
     "x402"

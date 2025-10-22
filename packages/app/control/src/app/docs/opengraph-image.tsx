@@ -6,6 +6,6 @@ export const { alt, size, contentType } = ogExports('My Apps');
 export default async function Image() {
   return staticPage({
     title: 'Docs',
-    description: 'Monetize your AI App in Minutes',
+    description: 'User Pays AI SDK - Production Ready in Minutes',
   });
 }

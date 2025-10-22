@@ -4,9 +4,10 @@ export const FeatureCard = ({ children }: { children: React.ReactNode }) => {
   return (
     <div
       className={cn(
-        'h-full gap-4 p-4 pt-8 md:pt-4 flex flex-col',
+        'gap-4 p-4 pt-8 md:pt-4 flex flex-col',
         'border-b last:border-b-0',
-        'md:border-b-0 md:border-r md:last:border-r-0',
+        'md:border-r md:[&:nth-child(2n)]:border-r-0',
+        'md:[&:nth-child(n+3)]:border-b-0',
         'border-dashed border-border'
       )}
     >
@@ -21,7 +22,11 @@ export const FeatureCardComponent = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className={cn('flex w-full flex-1 items-center justify-start')}>
+    <div
+      className={cn(
+        'flex w-full flex-1 items-center justify-start overflow-hidden'
+      )}
+    >
       {children}
     </div>
   );

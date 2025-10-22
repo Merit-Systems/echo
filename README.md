@@ -15,27 +15,71 @@
 
   </div>
 
-From Vercel AI SDK to Revenue in 5 Lines
+**User-pays AI infrastructure. Drop in Echo, users pay for their own usage—you never front costs.**
 
-Replace your OpenAI import with Echo. Get instant OAuth, user accounts, and usage billing.
+Skip the hard choice between fronting API costs, high-friction BYOK flows, or building billing from scratch.
 
-[Read the docs](https://echo.merit.systems/docs) to get started or [read our announcement](https://www.merit.systems/blog/echo) to learn more.
+[Read the docs](https://echo.merit.systems/docs) | [Live demo](https://echo-next-image.vercel.app/) | [Read our announcement](https://www.merit.systems/blog/echo)
 
-## Getting started
+## The Problem
+
+Building AI apps forces you to pick your poison:
+
+| Approach | Developer Cost | User Experience | Revenue Model |
+|----------|---------------|-----------------|---------------|
+| **BYOK** | None (but no revenue) | Complex key management | None |
+| **Dev API Key** | Unpredictable burn rate | Simple | Need metering + billing |
+| **Bill End Users** | Weeks building infra | Simple | Auth + Stripe + metering |
+
+Echo eliminates all three problems.
+
+## How Echo Works
+
+Replace your AI SDK imports with Echo. Users authenticate once, get a balance, and pay for their own usage. You set a markup and earn revenue automatically.
+
+**Before:**
+```typescript
+// Option 1: Front costs yourself
+import { openai } from '@ai-sdk/openai';
+import { generateText } from 'ai';
+const response = await generateText({
+  model: openai('gpt-5'),
+  'YOUR-API-KEY',
+  prompt: '...'
+});
+
+```
+
+**After:**
+```typescript
+// Users pay, you earn markup, zero infrastructure
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { generateText } from 'ai';
+
+const { openai } = useEchoModelProviders();
+const response = await generateText({ 
+  model: openai('gpt-5'), 
+  prompt: '...'
+});
+```
+
+## Quick Start
 
 ```bash
-npx echo-start@latest
+pnpx echo-start@latest
 ```
+
+Creates a new app with Echo pre-configured. Live in 2 minutes.
 
 ## Why Echo?
 
-**Skip the complexity** - No API keys to manage, no auth flows to build, no payment processing to set up. Go live in minutes.
+**No hosting costs** - Users pay providers directly through Echo. You never proxy requests or front bills.
 
-**OAuth magic** - Users sign in once, get a universal balance that works across all Echo apps.
+**Better UX** - One OAuth login replaces complex BYOK flows. Users get a universal balance across all Echo apps.
 
-**Universal balance** - Your users' credits work across every Echo-powered app they use.
+**Instant revenue** - Set a markup percentage. Every token generates profit automatically.
 
-**Simplified payouts** - Revenue hits your GitHub account directly. No Stripe dashboard, no merchant accounts. [Learn more](https://www.merit.systems/docs).
+**Zero infrastructure** - No payment processing, no usage tracking, no key validation. Echo handles it all.
 
 ## Core
 
@@ -58,7 +102,7 @@ npx echo-start@latest
 Get started quickly with `echo-start`:
 
 ```bash
-npx echo-start my-app
+pnpx echo-start gen-ai-app
 ```
 
 Available templates:

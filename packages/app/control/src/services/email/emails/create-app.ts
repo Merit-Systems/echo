@@ -39,9 +39,9 @@ export async function scheduleCreateAppFollowUpEmail(
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <p style="margin-bottom: 16px;">Hi ${user.name}, thanks for starting the process of launching ${appName} with Echo! We're excited to have you on board.</p>
 
-      <p style="margin-bottom: 16px;">Echo was designed for monetizing your AI applications. We're here to help you get started and grow your business.</p>
+      <p style="margin-bottom: 16px;">Echo is a User Pays AI SDK - your users pay as they go, and you never front the bill. We're here to help you get started and grow your business.</p>
 
-      <p style="margin-bottom: 16px;">If you haven't already, finish setting up your app to start earning money.</p>
+      <p style="margin-bottom: 16px;">If you haven't already, finish setting up your app to start earning revenue.</p>
 
       <p style="margin-bottom: 16px;">Here's a link to the docs: <a href="https://echo.merit.systems/docs" target="_blank" style="color: #5865F2; text-decoration: none; font-weight: 500;">https://echo.merit.systems/docs</a></p>
 

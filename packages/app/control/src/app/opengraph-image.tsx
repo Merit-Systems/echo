@@ -93,7 +93,7 @@ export default async function Image() {
             opacity: 0.7,
           }}
         >
-          Monetize AI Apps in Minutes
+          User Pays AI SDK
         </h2>
         <h3 tw="m-0 text-2xl">
           <span style={{ fontWeight: 500 }}> Merit</span>
