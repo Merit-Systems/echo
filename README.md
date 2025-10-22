@@ -25,11 +25,11 @@ Skip the hard choice between fronting API costs, high-friction BYOK flows, or bu
 
 Building AI apps forces you to pick your poison:
 
-| Approach | Developer Cost | User Experience | Revenue Model |
-|----------|---------------|-----------------|---------------|
-| **BYOK** | None (but no revenue) | Complex key management | None |
-| **Dev API Key** | Unpredictable burn rate | Simple | Need metering + billing |
-| **Bill End Users** | Weeks building infra | Simple | Auth + Stripe + metering |
+| Approach           | Developer Cost          | User Experience        | Revenue Model            |
+| ------------------ | ----------------------- | ---------------------- | ------------------------ |
+| **BYOK**           | None (but no revenue)   | Complex key management | None                     |
+| **Dev API Key**    | Unpredictable burn rate | Simple                 | Need metering + billing  |
+| **Bill End Users** | Weeks building infra    | Simple                 | Auth + Stripe + metering |
 
 Echo eliminates all three problems.
 
@@ -38,6 +38,7 @@ Echo eliminates all three problems.
 Replace your AI SDK imports with Echo. Users authenticate once, get a balance, and pay for their own usage. You set a markup and earn revenue automatically.
 
 **Before:**
+
 ```typescript
 // Option 1: Front costs yourself
 import { openai } from '@ai-sdk/openai';
@@ -51,15 +52,16 @@ const response = await generateText({
 ```
 
 **After:**
+
 ```typescript
 // Users pay, you earn markup, zero infrastructure
 import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
 import { generateText } from 'ai';
 
 const { openai } = useEchoModelProviders();
-const response = await generateText({ 
-  model: openai('gpt-5'), 
-  prompt: '...'
+const response = await generateText({
+  model: openai('gpt-5'),
+  prompt: '...',
 });
 ```
 
@@ -116,7 +118,58 @@ Or run `npx echo-start my-app` to choose interactively.
 
 # Development
 
-Fill out `packages/app/control/.env` and `packages/app/server/.env`. Then...
+## Prerequisites
 
-- `pnpm i`
-- `pnpm dev`
+Before running Echo locally, make sure you have:
+
+- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **pnpm** - Will be installed automatically by the setup script
+- **Docker Desktop** - [Download here](https://www.docker.com/products/docker-desktop/)
+
+## Quick Setup
+
+```bash
+git clone https://github.com/Merit-Systems/echo.git
+cd echo
+./setup.sh
+pnpm dev
+```
+
+The setup script handles environment configuration and dependency installation.
+
+## Manual Setup
+
+1. Install dependencies:
+
+   ```bash
+   npm install -g pnpm
+   pnpm install
+   ```
+
+2. Start Docker Desktop
+
+3. Create `.env` files with required variables (see `packages/app/control/src/env.ts` for full list)
+
+4. Run `pnpm dev`
+
+## Services
+
+- Echo Control: http://localhost:3000
+- Echo Server: http://localhost:3070
+- PostgreSQL: localhost:5469
+
+## Troubleshooting
+
+**Docker not running**: Start Docker Desktop
+
+**Port conflicts**: Change ports in `.env` files
+
+**Database issues**: Reset with `docker-compose -f packages/app/control/docker-local-db.yml down -v`
+
+## Development Commands
+
+```bash
+pnpm dev          # Start all services
+pnpm test:unit    # Run unit tests  
+pnpm format       # Format all code
+```
