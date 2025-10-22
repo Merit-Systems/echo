@@ -8,6 +8,7 @@
     "next-sdk",
     "typescript-sdk",
     "providers",
+    "components",
     "advanced",
     "cookbook",
     "x402"

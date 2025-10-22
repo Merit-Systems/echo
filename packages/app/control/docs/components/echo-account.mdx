@@ -1,0 +1,266 @@
+---
+title: Echo Account Component
+description: Complete guide to the Echo Account component
+---
+
+# Echo Account Component
+
+The Echo Account component is a comprehensive user account management interface that provides everything you need for user authentication, balance display, and account management in your Echo applications.
+
+## Overview
+
+The Echo Account component includes:
+
+- **User authentication status** - Shows login/logout functionality
+- **Balance display** - Real-time user balance with currency formatting
+- **Top-up functionality** - Easy way for users to add funds
+- **User profile management** - Avatar, name, and account details
+- **Responsive design** - Works on desktop and mobile devices
+
+## Installation
+
+### React Version
+
+```bash
+pnpm dlx shadcn@latest add https://echo-components.com/r/echo-account-react.json
+```
+
+### Next.js Version
+
+```bash
+pnpm dlx shadcn@latest add https://echo-components.com/r/echo-account-next.json
+```
+
+## Basic Usage
+
+### React
+
+```tsx
+import { EchoAccount } from '@/components/echo-account-react';
+
+export default function MyApp() {
+  return (
+    <div>
+      <h1>My Echo App</h1>
+      <EchoAccount />
+    </div>
+  );
+}
+```
+
+### Next.js
+
+```tsx
+import { EchoAccount } from '@/components/echo-account-next';
+
+export default function MyApp() {
+  return (
+    <div>
+      <h1>My Echo App</h1>
+      <EchoAccount />
+    </div>
+  );
+}
+```
+
+## Component Structure
+
+The Echo Account component is composed of several sub-components:
+
+### EchoAccountButton
+
+The main button that triggers the account popover:
+
+```tsx
+import { EchoAccountButton } from '@/components/echo-account-button/echo-account';
+
+// Usage with Echo context
+const echo = useEcho();
+return <EchoAccountButton echo={echo} />;
+```
+
+### EchoPopover
+
+The popover container that holds the account interface:
+
+```tsx
+import { EchoPopover } from '@/components/echo-account-button/echo-popover';
+```
+
+### Balance Component
+
+Displays the user's current balance:
+
+```tsx
+import { Balance } from '@/components/echo-account-button/balance';
+```
+
+### TopUpButton
+
+Handles adding funds to the user's account:
+
+```tsx
+import { TopUpButton } from '@/components/echo-account-button/top-up-button';
+```
+
+## Customization
+
+### Styling
+
+You can customize the appearance using Tailwind classes:
+
+```tsx
+<EchoAccount className="custom-account-styles" />
+```
+
+### Custom Props
+
+The component accepts various props for customization:
+
+```tsx
+interface EchoAccountProps {
+  className?: string;
+  showBalance?: boolean;
+  showTopUp?: boolean;
+  variant?: 'default' | 'compact' | 'minimal';
+}
+```
+
+### Example with Custom Props
+
+```tsx
+<EchoAccount 
+  className="my-custom-styles"
+  showBalance={true}
+  showTopUp={true}
+  variant="compact"
+/>
+```
+
+## Advanced Usage
+
+### Custom Account Button
+
+You can create a custom account button with your own styling:
+
+```tsx
+import { EchoAccountButton } from '@/components/echo-account-button/echo-account';
+import { useEcho } from '@merit-systems/echo-react-sdk';
+
+function CustomAccountButton() {
+  const echo = useEcho();
+  
+  return (
+    <EchoAccountButton 
+      echo={echo}
+      className="bg-custom-primary text-white rounded-lg px-4 py-2"
+    />
+  );
+}
+```
+
+### Standalone Components
+
+You can use individual components for custom layouts:
+
+```tsx
+import { Balance } from '@/components/echo-account-button/balance';
+import { TopUpButton } from '@/components/echo-account-button/top-up-button';
+
+function CustomAccountLayout() {
+  return (
+    <div className="flex items-center gap-4">
+      <Balance />
+      <TopUpButton />
+    </div>
+  );
+}
+```
+
+## Integration with Echo SDK
+
+The Echo Account component automatically integrates with the Echo SDK:
+
+### Authentication
+
+- Automatically detects user login status
+- Shows login button when user is not authenticated
+- Displays user information when authenticated
+
+### Balance Management
+
+- Real-time balance updates
+- Currency formatting
+- Balance history (if available)
+
+### Payment Processing
+
+- Integrated top-up functionality
+- Secure payment processing
+- Transaction history
+
+## Responsive Design
+
+The Echo Account component is fully responsive:
+
+- **Desktop**: Full popover with all account details
+- **Tablet**: Optimized layout for touch interfaces
+- **Mobile**: Compact design with essential features
+
+## Accessibility
+
+The component includes comprehensive accessibility features:
+
+- **Keyboard navigation** - Full keyboard support
+- **Screen reader support** - Proper ARIA labels and descriptions
+- **Focus management** - Proper focus handling for popovers
+- **Color contrast** - Meets WCAG guidelines
+
+## Best Practices
+
+### Performance
+
+- The component uses React.memo for optimal re-rendering
+- Balance updates are debounced to prevent excessive API calls
+- Lazy loading for non-critical components
+
+### Security
+
+- All user data is handled securely through the Echo SDK
+- No sensitive information is stored in component state
+- Proper error handling for failed operations
+
+### User Experience
+
+- Clear visual feedback for all user actions
+- Loading states for async operations
+- Error states with helpful messages
+
+## Troubleshooting
+
+### Common Issues
+
+**Component not rendering:**
+- Ensure Echo provider is properly configured
+- Check that user is authenticated
+- Verify all required dependencies are installed
+
+**Balance not updating:**
+- Check Echo SDK configuration
+- Verify API endpoints are accessible
+- Check browser console for errors
+
+**Styling issues:**
+- Ensure Tailwind CSS is properly configured
+- Check that component CSS is loaded
+- Verify custom styles don't conflict
+
+### Debug Mode
+
+Enable debug mode to see detailed logging:
+
+```tsx
+<EchoAccount debug={true} />
+```
+
+This will log component state changes and API calls to the browser console.

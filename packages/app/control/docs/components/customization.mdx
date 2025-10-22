@@ -1,0 +1,471 @@
+---
+title: Customization
+description: How to customize and theme Echo Components
+---
+
+# Customization
+
+Echo Components are designed to be highly customizable while maintaining consistency with the Echo design system. This guide covers various ways to customize components to match your application's needs.
+
+## Styling Approaches
+
+### 1. CSS Classes
+
+The most common way to customize Echo Components is through CSS classes:
+
+```tsx
+import { Button } from '@/components/echo-button';
+
+// Custom styling with Tailwind classes
+<Button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3">
+  Custom Button
+</Button>
+```
+
+### 2. CSS Variables
+
+Override CSS variables for global theming:
+
+```css
+:root {
+  --primary: 220 100% 50%; /* Custom primary color */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 220 9% 46%;
+}
+```
+
+### 3. Component Props
+
+Many components accept styling props:
+
+```tsx
+import { MoneyInput } from '@/components/money-input';
+
+<MoneyInput
+  className="border-2 border-blue-500"
+  inputClassName="text-lg font-bold"
+  prefixClassName="bg-blue-100"
+  setAmount={setAmount}
+/>
+```
+
+## Theme Customization
+
+### Light and Dark Themes
+
+Echo Components support both light and dark themes out of the box:
+
+```css
+/* Light theme */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+}
+
+/* Dark theme */
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+}
+```
+
+### Custom Color Schemes
+
+Create your own color schemes:
+
+```css
+/* Brand colors */
+.brand-theme {
+  --primary: 142 76% 36%; /* Green primary */
+  --primary-foreground: 355 7% 97%;
+  --secondary: 142 76% 36%;
+  --secondary-foreground: 355 7% 97%;
+}
+
+/* Corporate theme */
+.corporate-theme {
+  --primary: 221 83% 53%; /* Blue primary */
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+}
+```
+
+## Component-Specific Customization
+
+### Echo Button Customization
+
+```tsx
+import { Button, buttonVariants } from '@/components/echo-button';
+import { cn } from '@/lib/utils';
+
+// Custom variant
+const customButtonVariants = cva(
+  buttonVariants.base,
+  {
+    variants: {
+      variant: {
+        ...buttonVariants.variants.variant,
+        custom: "bg-gradient-to-r from-purple-500 to-pink-500 text-white",
+      },
+    },
+  }
+);
+
+// Usage
+<Button variant="custom">Custom Button</Button>
+```
+
+### Money Input Customization
+
+```tsx
+import { MoneyInput } from '@/components/money-input';
+
+function CustomMoneyInput() {
+  return (
+    <MoneyInput
+      setAmount={setAmount}
+      className="border-2 border-green-500 rounded-lg"
+      inputClassName="text-xl font-mono"
+      prefixClassName="bg-green-100 text-green-800"
+      hideDollarSign={false}
+      decimalPlaces={4}
+      placeholder="Enter custom amount"
+    />
+  );
+}
+```
+
+### Echo Account Customization
+
+```tsx
+import { EchoAccount } from '@/components/echo-account-react';
+
+function CustomEchoAccount() {
+  return (
+    <EchoAccount
+      className="shadow-lg border-2 border-blue-200"
+      showBalance={true}
+      showTopUp={true}
+      variant="compact"
+    />
+  );
+}
+```
+
+## Advanced Customization
+
+### Creating Custom Components
+
+You can extend Echo Components to create your own:
+
+```tsx
+import { Button } from '@/components/echo-button';
+import { cn } from '@/lib/utils';
+
+interface CustomButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  loading?: boolean;
+  icon?: React.ReactNode;
+}
+
+export function CustomButton({ 
+  loading, 
+  icon, 
+  children, 
+  className, 
+  ...props 
+}: CustomButtonProps) {
+  return (
+    <Button
+      className={cn("relative", className)}
+      disabled={loading}
+      {...props}
+    >
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+        </div>
+      )}
+      <span className={cn(loading && "opacity-0")}>
+        {icon && <span className="mr-2">{icon}</span>}
+        {children}
+      </span>
+    </Button>
+  );
+}
+```
+
+### Custom Hooks
+
+Create custom hooks for component logic:
+
+```tsx
+import { useState, useEffect } from 'react';
+import { useEcho } from '@merit-systems/echo-react-sdk';
+
+export function useEchoAccount() {
+  const echo = useEcho();
+  const [balance, setBalance] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (echo?.user) {
+      // Fetch balance
+      setLoading(false);
+    }
+  }, [echo?.user]);
+
+  return {
+    balance,
+    loading,
+    user: echo?.user,
+    isAuthenticated: !!echo?.user,
+  };
+}
+```
+
+## Responsive Design
+
+### Mobile-First Approach
+
+Design components to work well on all screen sizes:
+
+```tsx
+import { Button } from '@/components/echo-button';
+
+function ResponsiveButton() {
+  return (
+    <Button
+      className="
+        w-full sm:w-auto
+        text-sm sm:text-base
+        px-4 sm:px-6
+        py-2 sm:py-3
+      "
+    >
+      Responsive Button
+    </Button>
+  );
+}
+```
+
+### Breakpoint-Specific Styling
+
+```tsx
+import { EchoAccount } from '@/components/echo-account-react';
+
+function ResponsiveEchoAccount() {
+  return (
+    <EchoAccount
+      className="
+        hidden md:block
+        lg:shadow-lg
+        xl:border-2
+      "
+    />
+  );
+}
+```
+
+## Performance Optimization
+
+### Memoization
+
+Use React.memo for components that don't need frequent re-renders:
+
+```tsx
+import { memo } from 'react';
+import { Button } from '@/components/echo-button';
+
+export const MemoizedButton = memo(Button);
+```
+
+### Lazy Loading
+
+Lazy load heavy components:
+
+```tsx
+import { lazy, Suspense } from 'react';
+
+const EchoAccount = lazy(() => import('@/components/echo-account-react'));
+
+function App() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EchoAccount />
+    </Suspense>
+  );
+}
+```
+
+## Testing Customizations
+
+### Unit Tests
+
+Test your customizations with unit tests:
+
+```tsx
+import { render, screen } from '@testing-library/react';
+import { CustomButton } from './CustomButton';
+
+test('renders custom button with loading state', () => {
+  render(<CustomButton loading>Click me</CustomButton>);
+  
+  expect(screen.getByRole('button')).toBeDisabled();
+  expect(screen.getByText('Click me')).toHaveClass('opacity-0');
+});
+```
+
+### Visual Regression Tests
+
+Use tools like Chromatic or Percy to catch visual regressions:
+
+```tsx
+import { CustomButton } from './CustomButton';
+
+export const LoadingState = () => (
+  <CustomButton loading>Loading...</CustomButton>
+);
+
+export const WithIcon = () => (
+  <CustomButton icon={<span>🚀</span>}>Launch</CustomButton>
+);
+```
+
+## Best Practices
+
+### Consistency
+
+- Maintain consistent spacing and typography
+- Use the same color palette throughout your app
+- Follow established patterns for similar components
+
+### Accessibility
+
+- Ensure custom colors meet contrast requirements
+- Test with keyboard navigation
+- Provide proper ARIA labels for custom components
+
+### Performance
+
+- Avoid unnecessary re-renders
+- Use CSS classes instead of inline styles when possible
+- Optimize images and assets
+
+### Maintenance
+
+- Document your customizations
+- Use version control for component modifications
+- Keep track of breaking changes in updates
+
+## Migration Guide
+
+### Updating Components
+
+When updating Echo Components:
+
+1. **Backup your customizations** - Save your custom code
+2. **Check changelog** - Review what changed in the new version
+3. **Test thoroughly** - Ensure your customizations still work
+4. **Update gradually** - Update one component at a time
+
+### Breaking Changes
+
+Common breaking changes to watch for:
+
+- **Prop changes** - New required props or removed props
+- **CSS class changes** - Updated class names
+- **API changes** - Modified component interfaces
+
+### Rollback Strategy
+
+Have a rollback plan ready:
+
+```bash
+# Keep previous versions
+git tag v1.0.0
+git tag v1.1.0
+
+# Rollback if needed
+git checkout v1.0.0
+```
+
+## Examples
+
+### Complete Custom Theme
+
+```css
+/* custom-theme.css */
+:root {
+  /* Brand colors */
+  --primary: 142 76% 36%;
+  --primary-foreground: 355 7% 97%;
+  --secondary: 142 76% 36%;
+  --secondary-foreground: 355 7% 97%;
+  
+  /* Custom spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  
+  /* Custom shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+```
+
+### Custom Component Library
+
+```tsx
+// components/custom/Button.tsx
+import { Button as EchoButton } from '@/components/echo-button';
+import { cn } from '@/lib/utils';
+
+interface CustomButtonProps {
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  loading?: boolean;
+}
+
+export function CustomButton({ 
+  variant = 'primary', 
+  size = 'md',
+  loading = false,
+  className,
+  children,
+  ...props 
+}: CustomButtonProps) {
+  return (
+    <EchoButton
+      className={cn(
+        // Custom variants
+        {
+          'bg-green-500 hover:bg-green-600': variant === 'primary',
+          'bg-gray-500 hover:bg-gray-600': variant === 'secondary',
+          'bg-red-500 hover:bg-red-600': variant === 'danger',
+        },
+        // Custom sizes
+        {
+          'px-3 py-1 text-sm': size === 'sm',
+          'px-4 py-2 text-base': size === 'md',
+          'px-6 py-3 text-lg': size === 'lg',
+        },
+        // Loading state
+        loading && 'opacity-50 cursor-not-allowed',
+        className
+      )}
+      disabled={loading}
+      {...props}
+    >
+      {loading ? 'Loading...' : children}
+    </EchoButton>
+  );
+}
+```

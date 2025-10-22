@@ -1,0 +1,325 @@
+---
+title: UI Components
+description: Available UI components in the Echo Components registry
+---
+
+# UI Components
+
+Echo Components includes a comprehensive set of UI components designed specifically for Echo applications. These components provide consistent design patterns and integrate seamlessly with the Echo ecosystem.
+
+## Available Components
+
+### Echo Button
+
+Enhanced button component with Echo-specific variants and styling.
+
+```tsx
+import { Button } from '@/components/echo-button';
+
+// Basic usage
+<Button>Click me</Button>
+
+// With variants
+<Button variant="turbo">Turbo Button</Button>
+<Button variant="primaryOutline">Outline Button</Button>
+```
+
+#### Variants
+
+- `default` - Standard button styling
+- `destructive` - For dangerous actions
+- `outline` - Outlined button
+- `primaryOutline` - Primary color outline
+- `destructiveOutline` - Destructive outline
+- `secondary` - Secondary styling
+- `ghost` - Minimal styling
+- `primaryGhost` - Primary ghost variant
+- `link` - Link-style button
+- `success` - Success state styling
+- `turbo` - Special gradient styling
+- `turboSecondary` - Secondary turbo variant
+- `unstyled` - No default styling
+
+#### Sizes
+
+- `default` - Standard size
+- `xs` - Extra small
+- `sm` - Small
+- `lg` - Large
+- `icon` - Icon button size
+- `navbar` - Navbar-specific sizing
+
+### Money Input
+
+Specialized input component for handling monetary values with proper formatting and validation.
+
+```tsx
+import { MoneyInput } from '@/components/money-input';
+
+function PaymentForm() {
+  const [amount, setAmount] = useState(0);
+  
+  return (
+    <MoneyInput
+      setAmount={setAmount}
+      placeholder="Enter amount"
+      initialAmount={0}
+    />
+  );
+}
+```
+
+#### Features
+
+- **Auto-formatting** - Automatic number formatting with commas
+- **Currency symbols** - Built-in dollar sign display
+- **Decimal places** - Configurable decimal precision
+- **Validation** - Built-in min/max value validation
+- **Accessibility** - Full keyboard navigation support
+
+#### Props
+
+```tsx
+interface MoneyInputProps {
+  setAmount: (amount: number) => void;
+  initialAmount?: number;
+  placeholder?: string;
+  prefixClassName?: string;
+  className?: string;
+  inputClassName?: string;
+  hideDollarSign?: boolean;
+  decimalPlaces?: number;
+}
+```
+
+### Echo Logo
+
+Branded logo component with light and dark mode support.
+
+```tsx
+import { EchoLogo } from '@/components/logo';
+
+// Basic usage
+<EchoLogo />
+
+// With custom styling
+<EchoLogo className="w-32 h-8" />
+```
+
+#### Features
+
+- **Theme support** - Automatic light/dark mode switching
+- **Responsive** - Scales appropriately for different screen sizes
+- **Customizable** - Easy to style with Tailwind classes
+
+## Component Registry Structure
+
+The Echo Components registry is organized as follows:
+
+```
+registry/
+├── echo/
+│   ├── blocks/
+│   │   ├── echo-account-button/
+│   │   │   ├── echo-account-react.tsx
+│   │   │   ├── echo-account-next.tsx
+│   │   │   ├── echo-account.tsx
+│   │   │   ├── echo-popover.tsx
+│   │   │   ├── balance.tsx
+│   │   │   └── top-up-button.tsx
+│   │   └── lib/
+│   │       └── currency-utils.ts
+│   └── ui/
+│       ├── echo-button.tsx
+│       ├── money-input.tsx
+│       └── logo.tsx
+└── public/
+    └── logo/
+        ├── light.svg
+        └── dark.svg
+```
+
+## Installation
+
+### Individual Components
+
+You can install individual components using the Shadcn CLI:
+
+```bash
+# Install specific components
+npx shadcn@latest add https://echo-components.com/r/echo-button.json
+npx shadcn@latest add https://echo-components.com/r/money-input.json
+npx shadcn@latest add https://echo-components.com/r/logo.json
+```
+
+### Full Registry
+
+Install the complete Echo Components registry:
+
+```bash
+# Install all Echo components
+npx shadcn@latest add https://echo-components.com/r/echo-account-react.json
+```
+
+## Dependencies
+
+### Required Dependencies
+
+All Echo UI components require these base dependencies:
+
+```json
+{
+  "@radix-ui/react-slot": "^1.0.2",
+  "class-variance-authority": "^0.7.0",
+  "clsx": "^2.0.0",
+  "tailwind-merge": "^2.0.0"
+}
+```
+
+### Component-Specific Dependencies
+
+Some components have additional requirements:
+
+**Money Input:**
+```json
+{
+  "autonumeric": "^4.6.0"
+}
+```
+
+**Echo Account:**
+```json
+{
+  "@radix-ui/react-popover": "^1.0.7",
+  "@radix-ui/react-skeleton": "^1.0.3",
+  "@radix-ui/react-avatar": "^1.0.4",
+  "@radix-ui/react-tooltip": "^1.0.7"
+}
+```
+
+## Styling and Theming
+
+### CSS Variables
+
+Echo Components use CSS variables for theming:
+
+```css
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 47.4% 11.2%;
+  --radius: 0.5rem;
+}
+```
+
+### Custom Themes
+
+You can create custom themes by overriding CSS variables:
+
+```css
+.dark-theme {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  /* ... other variables */
+}
+```
+
+## Best Practices
+
+### Performance
+
+- Use `React.memo` for components that don't need frequent re-renders
+- Implement proper loading states for async operations
+- Use `useCallback` and `useMemo` for expensive computations
+
+### Accessibility
+
+- Always provide proper ARIA labels
+- Ensure keyboard navigation works correctly
+- Test with screen readers
+- Maintain proper color contrast ratios
+
+### Integration
+
+- Use Echo Components consistently across your app
+- Follow the established design patterns
+- Customize components through props rather than modifying source code
+- Keep components up to date with the latest registry versions
+
+## Examples
+
+### Complete Form with Echo Components
+
+```tsx
+import { Button } from '@/components/echo-button';
+import { MoneyInput } from '@/components/money-input';
+import { EchoAccount } from '@/components/echo-account-react';
+
+function PaymentForm() {
+  const [amount, setAmount] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async () => {
+    setIsProcessing(true);
+    // Process payment
+    setIsProcessing(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <EchoAccount />
+      
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Payment Amount
+        </label>
+        <MoneyInput
+          setAmount={setAmount}
+          placeholder="Enter amount"
+        />
+      </div>
+      
+      <Button
+        onClick={handleSubmit}
+        disabled={isProcessing || amount <= 0}
+        variant="turbo"
+        className="w-full"
+      >
+        {isProcessing ? 'Processing...' : 'Submit Payment'}
+      </Button>
+    </div>
+  );
+}
+```
+
+### Custom Button Variants
+
+```tsx
+import { Button } from '@/components/echo-button';
+
+function CustomButtons() {
+  return (
+    <div className="space-x-4">
+      <Button variant="default">Default</Button>
+      <Button variant="turbo">Turbo</Button>
+      <Button variant="primaryOutline">Outline</Button>
+      <Button variant="ghost">Ghost</Button>
+      <Button variant="destructive">Delete</Button>
+    </div>
+  );
+}
+```
