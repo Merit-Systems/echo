@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Echo',
     short_name: 'Echo',
-    description: 'Monetize AI Apps in Minutes',
+    description: 'User Pays AI SDK',
     start_url: '/',
     display: 'standalone',
     theme_color: '#ffffff',

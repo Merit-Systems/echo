@@ -39,11 +39,10 @@ import { EchoProvider } from '@merit-systems/echo-react-sdk';
 </EchoProvider>
 
 // chat.tsx
-
 import { streamText } from '@merit-systems/echo-react';
 
 const response = await streamText({
-    model: "gpt-4o-mini",
+    model: "gpt-5",
     prompt: "Hello, how are you?",
 })`,
   },

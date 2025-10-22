@@ -11,6 +11,7 @@ export type GetAppsByIdResponse = {
   bannerImageUrl: string | null;
   homepageUrl: string | null;
   isPublic: boolean | null;
+  hideOwnerName: boolean | null;
   createdAt: string;
   updatedAt: string;
   authorizedCallbackUrls: string[];
@@ -27,6 +28,7 @@ export type GetAppsResponse = {
     bannerImageUrl: string | null;
     homepageUrl: string | null;
     isPublic: boolean | null;
+    hideOwnerName: boolean | null;
     createdAt: string;
     updatedAt: string;
     authorizedCallbackUrls: string[];

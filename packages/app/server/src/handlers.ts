@@ -25,6 +25,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import logger from 'logger';
 import { Request, Response } from 'express';
 import { ProviderType } from 'providers/ProviderType';
+import { safeFundRepo } from 'services/fund-repo/fundRepoService';
 
 export async function refund(
   paymentAmountDecimal: Decimal,
@@ -157,7 +158,6 @@ export async function handleX402Request({
     );
     const transaction = transactionResult.transaction;
 
-
     if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
       await prisma.videoGenerationX402.create({
         data: {
@@ -180,6 +180,8 @@ export async function handleX402Request({
       transactionResult.transaction,
       payload
     );
+
+    await safeFundRepo(paymentAmountDecimal.toNumber());
   } catch (error) {
     await refund(paymentAmountDecimal, payload);
   }
@@ -226,17 +228,18 @@ export async function handleApiKeyRequest({
     isStream
   );
 
-  
-
   // There is no actual refund, this logs if we underestimate the raw cost
   calculateRefundAmount(maxCost, transaction.rawTransactionCost);
 
   modelRequestService.handleResolveResponse(res, isStream, data);
 
   await echoControlService.createTransaction(transaction, maxCost);
-  
+
   if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
-    const transactionCost = await echoControlService.computeTransactionCosts(transaction, null);
+    const transactionCost = await echoControlService.computeTransactionCosts(
+      transaction,
+      null
+    );
     await prisma.videoGenerationX402.create({
       data: {
         videoId: transaction.metadata.providerId,

@@ -1,0 +1,36 @@
+---
+title: Providers
+description: AI model providers supported by Echo
+---
+
+# AI Providers
+
+Echo supports 100+ models from leading AI providers through the Vercel AI SDK interface.
+
+## Supported Providers
+
+- **[OpenAI](/docs/providers/openai)** - GPT models, image generation with GPT-image-1
+- **[Anthropic](/docs/providers/anthropic)** - Claude models (all versions)
+- **[Google Gemini](/docs/providers/gemini)** - Gemini models
+
+All providers work identically through Echo's unified interface—just swap the provider name in your code.
+
+## Usage Pattern
+
+```typescript
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+
+const { openai, anthropic, google } = useEchoModelProviders();
+
+// Same interface, different providers
+const openaiResult = await generateText({ model: openai('gpt-5'), ... });
+const claudeResult = await generateText({ model: anthropic('claude-opus-4'), ... });
+const geminiResult = await generateText({ model: google('gemini-2.0-flash-exp'), ... });
+```
+
+## Framework-Specific Setup
+
+For detailed integration guides, see:
+- [React SDK](/docs/react-sdk/llm-integration) - Client-side LLM calls
+- [Next.js SDK](/docs/next-sdk/llm-integration) - Server-side integration
+- [TypeScript SDK](/docs/typescript-sdk) - Direct API access

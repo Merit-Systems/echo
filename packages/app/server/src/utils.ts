@@ -169,8 +169,7 @@ export async function buildX402Response(
         nonce: generateRandomNonce(),
         scheme: X402_SCHEME,
         resource: resourceUrl,
-        description:
-          getDescriptionForRoute(req.path) ?? ECHO_DESCRIPTION,
+        description: getDescriptionForRoute(req.path) ?? ECHO_DESCRIPTION,
         mimeType: MIME_TYPE,
         maxTimeoutSeconds: MAX_TIMEOUT_SECONDS,
         discoverable: DISCOVERABLE,

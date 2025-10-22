@@ -9,44 +9,59 @@ import {
 
 import { AnyModel } from './features/any-model';
 import { Billing } from './features/billing';
-import { UniversalBalance } from './features/universal-balance';
+import { FreeOss } from './features/free-oss';
 
 import { cn } from '@/lib/utils';
+import { Login } from './features/login';
 
 export const Features = () => {
   return (
     <Section id="features">
-      <div className={cn('grid md:grid-cols-3')}>
+      <div className={cn('grid grid-cols-1 md:grid-cols-2')}>
+        <FeatureCard>
+          <FeatureCardComponent>
+            <Login />
+          </FeatureCardComponent>
+          <FeatureCardFooter>
+            <FeatureCardTitle>Managed Auth</FeatureCardTitle>
+            <FeatureCardDescription>
+              Drop-in auth components with login, balance and top-ups
+            </FeatureCardDescription>
+          </FeatureCardFooter>
+        </FeatureCard>
+
         <FeatureCard>
           <FeatureCardComponent>
             <Billing />
           </FeatureCardComponent>
           <FeatureCardFooter>
-            <FeatureCardTitle>Billing in a Box</FeatureCardTitle>
+            <FeatureCardTitle>Zero-cost Infra</FeatureCardTitle>
             <FeatureCardDescription>
-              Every token your users consume is profit in your pocket
+              Users pay usage, Echo settles costs and returns your share
             </FeatureCardDescription>
           </FeatureCardFooter>
         </FeatureCard>
-        <FeatureCard>
-          <FeatureCardComponent>
-            <UniversalBalance />
-          </FeatureCardComponent>
-          <FeatureCardFooter>
-            <FeatureCardTitle>Universal Balance</FeatureCardTitle>
-            <FeatureCardDescription>
-              Echo credits can be used on any app in our network
-            </FeatureCardDescription>
-          </FeatureCardFooter>
-        </FeatureCard>
+
         <FeatureCard>
           <FeatureCardComponent>
             <AnyModel />
           </FeatureCardComponent>
           <FeatureCardFooter>
-            <FeatureCardTitle>Any Model Provider</FeatureCardTitle>
+            <FeatureCardTitle>Unified Gateway</FeatureCardTitle>
             <FeatureCardDescription>
-              Serve any model with maximum rate limits and minimum latency
+              Echo SDK serves all frontier models behind a single gateway
+            </FeatureCardDescription>
+          </FeatureCardFooter>
+        </FeatureCard>
+
+        <FeatureCard>
+          <FeatureCardComponent>
+            <FreeOss />
+          </FeatureCardComponent>
+          <FeatureCardFooter>
+            <FeatureCardTitle>Free & OSS</FeatureCardTitle>
+            <FeatureCardDescription>
+              No fees by default. 2.5% fees on profits
             </FeatureCardDescription>
           </FeatureCardFooter>
         </FeatureCard>

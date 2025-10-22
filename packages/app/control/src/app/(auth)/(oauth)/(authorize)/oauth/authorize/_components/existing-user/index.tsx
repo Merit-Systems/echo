@@ -16,6 +16,7 @@ interface Props {
   profilePictureUrl: string | null;
   userImage: string | null;
   ownerName: string;
+  hideOwnerName: boolean;
   scopes: string[];
   authParams: AuthorizeParams;
 }
@@ -25,6 +26,7 @@ export const ExistingUserAuthorize: React.FC<Props> = ({
   profilePictureUrl,
   userImage,
   ownerName,
+  hideOwnerName,
   scopes,
   authParams,
 }) => {
@@ -39,8 +41,14 @@ export const ExistingUserAuthorize: React.FC<Props> = ({
           {/* App Information */}
           <CardHeader className="p-4 border-b">
             <h2 className="text-lg text-foreground font-light">
-              <span className="font-bold">{name}</span> by{' '}
-              <span className="font-bold">{ownerName}</span> wants to:
+              <span className="font-bold">{name}</span>
+              {!hideOwnerName && (
+                <>
+                  {' '}
+                  by <span className="font-bold">{ownerName}</span>
+                </>
+              )}{' '}
+              wants to:
             </h2>
           </CardHeader>
           <CardContent className="p-4 border-b">
