@@ -112,11 +112,7 @@ export async function fundRepo(
   }
 }
 
-
-
-export async function safeFundRepo(
-  amount: number,
-): Promise<void> {
+export async function safeFundRepo(amount: number): Promise<void> {
   try {
     const repoId = process.env.MERIT_REPO_ID;
     if (!repoId) {
@@ -124,6 +120,8 @@ export async function safeFundRepo(
     }
     await fundRepo(amount, Number(repoId));
   } catch (error) {
-    logger.error(`Error in safe funding repo: ${error instanceof Error ? error.message : 'Unknown error'} | Amount: ${amount}`);
+    logger.error(
+      `Error in safe funding repo: ${error instanceof Error ? error.message : 'Unknown error'} | Amount: ${amount}`
+    );
   }
 }

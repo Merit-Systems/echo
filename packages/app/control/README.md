@@ -139,6 +139,14 @@ API_KEY_PREFIX="echo_"
 pnpm test
 ```
 
+### Scripts
+
+To run scripts, you should do:
+
+```bash
+SKIP_ENV_VALIDATION=1 ./scripts/<name-of-script.sh>
+```
+
 ### Database Operations
 
 ```bash
