@@ -41,53 +41,21 @@ A comprehensive Next.js application for managing Echo applications, API keys, an
 - **Payments**: Stripe (mocked)
 - **TypeScript**: Full type safety
 
-## Setup Instructions
+## Quick Setup
 
-### Prerequisites
+From the root directory:
 
-- Node.js 18+
-- PostgreSQL database
-- pnpm
+```bash
+./setup.sh
+pnpm dev
+```
 
-### Installation
+## Manual Setup
 
-1. **Clone and navigate to the project**:
-
-   ```bash
-   cd echo-control
-   ```
-
-2. **Install dependencies**:
-
-   ```bash
-   pnpm install
-   ```
-
-3. **Set up the database**:
-
-   ```bash
-   # Copy the example environment file
-   cp .env.example .env
-
-   # Update DATABASE_URL in .env with your PostgreSQL connection string
-   # Example: DATABASE_URL="postgresql://username:password@localhost:5469/echo_control"
-   ```
-
-4. **Run database migrations**:
-
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
-
-5. **Start the development server**:
-
-   ```bash
-   pnpm run dev
-   ```
-
-6. **Open the application**:
-   Visit [http://localhost:3000](http://localhost:3000)
+1. Install dependencies: `pnpm install`
+2. Start Docker Desktop
+3. Create `.env` file with required variables (see `src/env.ts`)
+4. Run `pnpm dev`
 
 ## Environment Variables
 
@@ -106,30 +74,6 @@ STRIPE_WEBHOOK_SECRET="mock_webhook_secret"
 NEXTAUTH_URL="http://localhost:3000"
 API_KEY_PREFIX="echo_"
 ```
-
-## Features Overview
-
-### Dashboard
-
-- View all Echo applications
-- Quick balance overview
-- Create new applications
-- Generate payment links
-
-### App Details
-
-- Comprehensive usage analytics
-- API key management
-- Transaction history
-- Model-specific usage breakdown
-- Direct Stripe integration
-
-### Balance Management
-
-- Real-time balance calculation
-- Payment history
-- Admin controls for balance adjustments
-- Stripe payment integration
 
 ## Development
 
@@ -167,14 +111,4 @@ pnpm run build
 pnpm start
 ```
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
+Visit [http://localhost:3000](http://localhost:3000)
