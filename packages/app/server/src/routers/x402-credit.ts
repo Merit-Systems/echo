@@ -12,7 +12,7 @@ import { EchoDbService } from 'services/DbService';
 
 const x402Router: Router = Router();
 
-x402Router.post('/', async (req: EscrowRequest, res: ExpressResponse) => {
+x402Router.all('/', async (req: EscrowRequest, res: ExpressResponse) => {
   try {
     const headers = req.headers as Record<string, string>;
     const { processedHeaders, echoControlService } = await authenticateRequest(
@@ -56,18 +56,33 @@ export async function handleApiX402CreditRequest({
       balanceCheckResult.effectiveBalance || 0
     );
 
-    const x402RequestPrice =
+    const x402RequestPriceRaw =
       await handleX402CreditRequestService.getX402RequestPrice();
+    const x402RequestPrice =
+      handleX402CreditRequestService.convertUsdcToDecimal(x402RequestPriceRaw);
+    logger.info('X402 pricing check', {
+      x402RequestPriceRaw: x402RequestPriceRaw.toString(),
+      x402RequestPrice: x402RequestPrice.toString(),
+      balanceCheckDecimal: balanceCheckDecimal.toString(),
+    });
     if (x402RequestPrice.gt(balanceCheckDecimal)) {
       return res.status(402).json({ error: 'Insufficient balance' });
     }
 
+    const proxyUrl = handleX402CreditRequestService.getRequestUrl();
+    const resourcePath = proxyUrl.origin + proxyUrl.pathname;
+    const queryParams: Record<string, string> = {};
+    proxyUrl.searchParams.forEach((value, key) => {
+      queryParams[key] = value;
+    });
+
+    const resourceArgs =
+      req.method === 'GET' ? queryParams : { queryParams, body: req.body };
+
     const transaction: Transaction = {
       metadata: {
-        resourcePath: req.body.resourcePath,
-        resourceArgs: req.body.resourceArgs,
-        resourceResponse: req.body.resourceResponse,
-        resourceError: req.body.resourceError,
+        resourcePath,
+        resourceArgs,
       },
       rawTransactionCost: x402RequestPrice,
       status: 'success',
@@ -81,8 +96,8 @@ export async function handleApiX402CreditRequest({
       await handleX402CreditRequestService.executeX402RequestAndUpdateMetadata(
         createdTransaction
       );
-
-    return res.status(response.status).json(response.body);
+    const body = await response.json();
+    return res.status(response.status).json(body);
   } catch (error) {
     logger.error('Failed to handle X402 credit request', error);
     return res.status(500).json({ error: 'Internal server error' });

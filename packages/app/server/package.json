@@ -24,6 +24,7 @@
     "sora-2-client": "npx tsx src/clients/sora-2-client.ts",
     "openrouter-client": "npx tsx src/clients/openrouter-client.ts",
     "openai-image-formdata-client": "npx tsx src/clients/openai-image-formdata-client.ts",
+    "echo-credit-client": "npx tsx src/clients/echo-credit-client.ts",
     "test": "vitest run",
     "test:integration": "vitest run",
     "test:watch": "vitest",
