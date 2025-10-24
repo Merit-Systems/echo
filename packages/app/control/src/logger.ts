@@ -125,38 +125,47 @@ class ConsoleLogProcessor implements LogRecordProcessor {
 
 // --- Setup function ---
 export function setupLoggerProvider() {
-  const logExporter = new OTLPLogExporter({
-    url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/logs`,
-    headers: SIGNOZ_INGESTION_KEY
-      ? {
-          'signoz-access-token': SIGNOZ_INGESTION_KEY,
-        }
-      : {},
-  });
+  // Check if telemetry config is properly set
+  const isTelemetryConfigured =
+    OTEL_EXPORTER_OTLP_ENDPOINT &&
+    OTEL_EXPORTER_OTLP_ENDPOINT !== 'undefined' &&
+    SIGNOZ_SERVICE_NAME &&
+    SIGNOZ_SERVICE_NAME !== 'undefined';
 
   const resource = new Resource({
-    'service.name': SIGNOZ_SERVICE_NAME,
+    'service.name': SIGNOZ_SERVICE_NAME || 'echo-control-local',
     'service.environment': NODE_ENV,
   });
 
   const loggerProvider = new LoggerProvider({ resource });
-  const batchProcessor = new BatchLogRecordProcessor(logExporter);
 
-  // Add the OTLP processor with trace context injection
-  loggerProvider.addLogRecordProcessor(
-    new TraceContextLogProcessor(batchProcessor)
-  );
+  // Only set up OTLP exporter if telemetry is properly configured
+  if (isTelemetryConfigured) {
+    const logExporter = new OTLPLogExporter({
+      url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/logs`,
+      headers: SIGNOZ_INGESTION_KEY
+        ? {
+            'signoz-access-token': SIGNOZ_INGESTION_KEY,
+          }
+        : {},
+    });
 
-  // Add console processor for local development and debugging
-  // You can control this with an environment variable if needed
+    const batchProcessor = new BatchLogRecordProcessor(logExporter);
 
+    // Add the OTLP processor with trace context injection
+    loggerProvider.addLogRecordProcessor(
+      new TraceContextLogProcessor(batchProcessor)
+    );
+  }
+
+  // Always add console processor for local development and debugging
   loggerProvider.addLogRecordProcessor(
     new TraceContextLogProcessor(new ConsoleLogProcessor())
   );
 
   logs.setGlobalLoggerProvider(loggerProvider);
 
-  return logs.getLogger(SIGNOZ_SERVICE_NAME); // handy to export directly
+  return logs.getLogger(SIGNOZ_SERVICE_NAME || 'echo-control-local');
 }
 
 export const logger = setupLoggerProvider();

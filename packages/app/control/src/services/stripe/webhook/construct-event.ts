@@ -6,6 +6,10 @@ import { logger } from '@/logger';
 import type { NextRequest } from 'next/server';
 
 export const constructStripeEvent = (request: NextRequest, body: string) => {
+  if (!stripe || !env.STRIPE_WEBHOOK_SECRET) {
+    throw new Error('Stripe is not configured for this environment');
+  }
+
   const signature = request.headers.get('stripe-signature');
 
   if (!signature) {

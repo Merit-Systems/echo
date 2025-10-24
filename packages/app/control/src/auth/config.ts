@@ -27,8 +27,23 @@ declare module 'next-auth/jwt' {
 
 const IS_TEST_MODE = env.INTEGRATION_TEST_MODE;
 
+const IS_LOCAL_MODE = env.NODE_ENV === 'development';
+
+// Determine which providers to use based on environment
+const getProviders = () => {
+  if (IS_TEST_MODE) {
+    return testProviders;
+  }
+
+  if (IS_LOCAL_MODE) {
+    return [...testProviders, ...oauthProviders];
+  }
+
+  return oauthProviders;
+};
+
 export const authConfig = {
-  providers: IS_TEST_MODE ? testProviders : oauthProviders,
+  providers: getProviders(),
   // Only allow skipCSRFCheck in test mode
   skipCSRFCheck: IS_TEST_MODE ? skipCSRFCheck : undefined,
   pages: {

@@ -6,6 +6,7 @@
   "packageManager": "pnpm@10.11.0",
   "scripts": {
     "dev": "turbo run dev --filter=echo-control --filter=echo-server",
+    "local-setup": "turbo run local-setup --filter=echo-control",
     "build": "turbo run build --env-mode=loose",
     "prepare": "SKIP_ENV_VALIDATION=true turbo run build --env-mode=loose --filter=./packages/sdk/* --filter=!echo-next-example --filter=!echo-vite-example --filter=!registry",
     "test:unit": "pnpm -C packages/sdk/ts run build && pnpm -r --filter=!packages/app/server run test:unit",

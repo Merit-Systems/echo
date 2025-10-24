@@ -22,6 +22,10 @@ export const createPaymentLink = async (
   userId: string,
   parameters: z.infer<typeof createPaymentLinkSchema>
 ) => {
+  if (!stripe) {
+    throw new Error('Stripe is not configured for this environment');
+  }
+
   const { amount, name, description, successUrl, metadata } =
     createPaymentLinkSchema.parse(parameters);
 

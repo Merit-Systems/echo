@@ -63,14 +63,11 @@ A comprehensive Next.js application for managing Echo applications, API keys, an
    pnpm install
    ```
 
-3. **Set up the database**:
+3. **Create .env file**:
 
    ```bash
-   # Copy the example environment file
-   cp .env.example .env
-
-   # Update DATABASE_URL in .env with your PostgreSQL connection string
-   # Example: DATABASE_URL="postgresql://username:password@localhost:5469/echo_control"
+   # Generate .env file
+   pnpm local-setup
    ```
 
 4. **Run database migrations**:
@@ -88,24 +85,6 @@ A comprehensive Next.js application for managing Echo applications, API keys, an
 
 6. **Open the application**:
    Visit [http://localhost:3000](http://localhost:3000)
-
-## Environment Variables
-
-Create a `.env` file with the following variables:
-
-```env
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5469/echo_control"
-
-# Stripe (Mocked)
-STRIPE_SECRET_KEY="mock_stripe_secret_key"
-STRIPE_PUBLISHABLE_KEY="mock_stripe_publishable_key"
-STRIPE_WEBHOOK_SECRET="mock_webhook_secret"
-
-# Application
-NEXTAUTH_URL="http://localhost:3000"
-API_KEY_PREFIX="echo_"
-```
 
 ## Features Overview
 

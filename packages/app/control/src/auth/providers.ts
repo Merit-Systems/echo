@@ -132,4 +132,35 @@ export const testProviders: Provider[] = [
       };
     },
   }),
+  Credentials({
+    id: 'local-user',
+    name: 'Local User',
+    credentials: {},
+    authorize: async () => {
+      const existingUser = await getUserByEmail('local@example.com');
+
+      if (existingUser) {
+        return {
+          id: existingUser.id,
+          name: existingUser.name,
+          email: existingUser.email,
+          image: existingUser.image,
+        };
+      }
+
+      const user = await createUser({
+        id: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+        name: 'Local User',
+        email: 'local@example.com',
+        image: 'http://echo.merit.systems/logo/light.svg',
+      });
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      };
+    },
+  }),
 ];

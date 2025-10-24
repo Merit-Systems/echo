@@ -27,6 +27,11 @@ export const emailJobSchema = z.discriminatedUnion('campaign', [
 ]);
 
 export const queueJob = async (body: z.infer<typeof emailJobSchema>) => {
+  // Skip queueing in local development mode
+  if (env.NODE_ENV === 'development' || !env.RESEND_FLOW_CONTROL_KEY) {
+    return;
+  }
+
   await queueClient.publishJSON({
     url: `${env.NEXT_PUBLIC_APP_URL}/api/jobs`,
     body: {
