@@ -4,7 +4,7 @@ import {
   X402ChallengeParams,
 } from 'types';
 import { Request, Response } from 'express';
-import { CdpClient, EvmSmartAccount } from '@coinbase/cdp-sdk';
+import { CdpClient, EvmSmartAccount, EvmServerAccount } from '@coinbase/cdp-sdk';
 import {
   WALLET_SMART_ACCOUNT,
   DOMAIN_NAME,
@@ -202,6 +202,7 @@ export function isX402Request(headers: Record<string, string>): boolean {
 
 export async function getSmartAccount(): Promise<{
   smartAccount: EvmSmartAccount;
+  owner: EvmServerAccount;
 }> {
   try {
     const cdp = new CdpClient({
@@ -219,7 +220,7 @@ export async function getSmartAccount(): Promise<{
       owner,
     });
 
-    return { smartAccount };
+    return { smartAccount, owner };
   } catch (error) {
     logger.error('Failed to get smart account', { error });
     throw new Error(

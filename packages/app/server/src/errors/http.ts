@@ -32,3 +32,19 @@ export class UnknownModelError extends HttpError {
     super(400, message);
   }
 }
+
+export class MissingProxyError extends HttpError {
+  constructor(
+    message: string = 'Missing proxy parameter: Query must be passed with ?proxy="<proxy_url>"'
+  ) {
+    super(400, message);
+  }
+}
+
+export class InvalidProxyError extends HttpError {
+  constructor(
+    message: string = 'Invalid proxy URL: Proxy must be a valid URL. Example: ?proxy="https://proxy.example.com"'
+  ) {
+    super(400, message);
+  }
+}

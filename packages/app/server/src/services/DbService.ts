@@ -5,6 +5,10 @@ import {
   TransactionRequest,
   isLlmTransactionMetadata,
   isVeoTransactionMetadata,
+  isX402TransactionMetadata,
+  X402TransactionMetadata,
+  LlmTransactionMetadata,
+  VeoTransactionMetadata,
 } from '../types';
 import { createHmac } from 'crypto';
 import { jwtVerify } from 'jose';
@@ -14,7 +18,11 @@ import {
   Transaction,
   UserSpendPoolUsage,
 } from '../generated/prisma';
-import { Decimal } from '@prisma/client/runtime/library';
+import {
+  Decimal,
+  JsonValue,
+  InputJsonValue,
+} from '@prisma/client/runtime/library';
 import logger from '../logger';
 /**
  * Secret key for deterministic API key hashing (should match echo-control)
@@ -283,6 +291,70 @@ export class EchoDbService {
     });
   }
 
+  private async createX402TransactionMetadata(
+    tx: Prisma.TransactionClient,
+    metadata:
+      | LlmTransactionMetadata
+      | VeoTransactionMetadata
+      | X402TransactionMetadata
+  ) {
+    if (!isX402TransactionMetadata(metadata)) {
+      return null;
+    }
+
+    return await tx.x402TransactionMetadata.create({
+      data: {
+        resourcePath: metadata.resourcePath,
+        resourceArgs: metadata.resourceArgs,
+        resourceResponse: metadata.resourceResponse ?? Prisma.JsonNull,
+        resourceError: metadata.resourceError ?? Prisma.JsonNull,
+      },
+    });
+  }
+
+  private async createTransactionMetadata(
+    tx: Prisma.TransactionClient,
+    metadata:
+      | LlmTransactionMetadata
+      | VeoTransactionMetadata
+      | X402TransactionMetadata
+  ) {
+    if (
+      !isLlmTransactionMetadata(metadata) &&
+      !isVeoTransactionMetadata(metadata)
+    ) {
+      return null;
+    }
+
+    return await tx.transactionMetadata.create({
+      data: {
+        providerId: metadata.providerId,
+        provider: metadata.provider,
+        model: metadata.model,
+        // LLM-specific fields
+        inputTokens: isLlmTransactionMetadata(metadata)
+          ? metadata.inputTokens
+          : null,
+        outputTokens: isLlmTransactionMetadata(metadata)
+          ? metadata.outputTokens
+          : null,
+        totalTokens: isLlmTransactionMetadata(metadata)
+          ? metadata.totalTokens
+          : null,
+        prompt: isLlmTransactionMetadata(metadata)
+          ? metadata.prompt || null
+          : null,
+        // Veo-specific fields
+        durationSeconds: isVeoTransactionMetadata(metadata)
+          ? metadata.durationSeconds
+          : null,
+        generateAudio: isVeoTransactionMetadata(metadata)
+          ? metadata.generateAudio
+          : null,
+      },
+    });
+  }
+
   /**
    * Create a new transaction record
    * @param tx - Prisma transaction client
@@ -292,34 +364,17 @@ export class EchoDbService {
     tx: Prisma.TransactionClient,
     transaction: TransactionRequest
   ): Promise<Transaction> {
-    // First create the transaction metadata record
-    const transactionMetadata = await tx.transactionMetadata.create({
-      data: {
-        providerId: transaction.metadata.providerId,
-        provider: transaction.metadata.provider,
-        model: transaction.metadata.model,
-        // LLM-specific fields
-        inputTokens: isLlmTransactionMetadata(transaction.metadata)
-          ? transaction.metadata.inputTokens
-          : null,
-        outputTokens: isLlmTransactionMetadata(transaction.metadata)
-          ? transaction.metadata.outputTokens
-          : null,
-        totalTokens: isLlmTransactionMetadata(transaction.metadata)
-          ? transaction.metadata.totalTokens
-          : null,
-        prompt: isLlmTransactionMetadata(transaction.metadata)
-          ? transaction.metadata.prompt || null
-          : null,
-        // Veo-specific fields
-        durationSeconds: isVeoTransactionMetadata(transaction.metadata)
-          ? transaction.metadata.durationSeconds
-          : null,
-        generateAudio: isVeoTransactionMetadata(transaction.metadata)
-          ? transaction.metadata.generateAudio
-          : null,
-      },
-    });
+    // Handle X402 transactions separately
+
+    const x402TransactionMetadata = await this.createX402TransactionMetadata(
+      tx,
+      transaction.metadata
+    );
+
+    const transactionMetadata = await this.createTransactionMetadata(
+      tx,
+      transaction.metadata
+    );
 
     // Then create the transaction record with the linked metadata ID
     return await tx.transaction.create({
@@ -335,7 +390,8 @@ export class EchoDbService {
         apiKeyId: transaction.apiKeyId || null,
         markUpId: transaction.markUpId || null,
         spendPoolId: transaction.spendPoolId || null,
-        transactionMetadataId: transactionMetadata.id,
+        transactionMetadataId: transactionMetadata?.id || null,
+        x402TransactionMetadataId: x402TransactionMetadata?.id || null,
         referralCodeId: transaction.referralCodeId || null,
         referrerRewardId: transaction.referrerRewardId || null,
       },
@@ -428,7 +484,7 @@ export class EchoDbService {
       });
 
       logger.info(
-        `Created transaction for model ${transaction.metadata.model}: $${transaction.totalCost}, updated user totalSpent`,
+        `Created transaction: $${transaction.totalCost}, updated user totalSpent`,
         result.id
       );
       return result;
@@ -490,7 +546,7 @@ export class EchoDbService {
         );
 
         logger.info(
-          `Created free tier transaction for model ${transactionData.metadata.model}: $${transactionData.totalCost}`,
+          `Created free tier transaction: $${transactionData.totalCost}`,
           transaction.id
         );
 
@@ -521,5 +577,19 @@ export class EchoDbService {
     );
 
     return !!transaction;
+  }
+
+  async upsertX402TransactionMetadata(
+    metadataId: string,
+    resourceResponse: InputJsonValue | null,
+    resourceError: InputJsonValue | null
+  ): Promise<void> {
+    await this.db.x402TransactionMetadata.update({
+      where: { id: metadataId },
+      data: {
+        resourceResponse: resourceResponse ?? Prisma.JsonNull,
+        resourceError: resourceError ?? Prisma.JsonNull,
+      },
+    });
   }
 }
