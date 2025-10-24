@@ -10,30 +10,28 @@ import { prisma } from 'server';
 import { Response as ExpressResponse } from 'express';
 import { EchoDbService } from 'services/DbService';
 import { getSmartAccount } from 'utils';
+import { PaymentRequiredError, UnauthorizedError } from 'errors/http';
 
 const x402Router: Router = Router();
 
 x402Router.all('/', async (req: EscrowRequest, res: ExpressResponse) => {
-  try {
-    const headers = req.headers as Record<string, string>;
-    const { processedHeaders, echoControlService } = await authenticateRequest(
-      headers,
-      prisma
-    );
+  const headers = req.headers as Record<string, string>;
+  const { processedHeaders, echoControlService } = await authenticateRequest(
+    headers,
+    prisma
+  );
+  const dbService = new EchoDbService(prisma);
 
-    const dbService = new EchoDbService(prisma);
-
-    return handleApiX402CreditRequest({
-      req,
-      res,
-      headers: processedHeaders,
-      echoControlService,
-      dbService,
-    });
-  } catch (error) {
+  return handleApiX402CreditRequest({
+    req,
+    res,
+    headers: processedHeaders,
+    echoControlService,
+    dbService,
+  }).catch(error => {
     logger.error('Failed to handle X402 credit request', error);
     return res.status(500).json({ error: 'Internal server error' });
-  }
+  });
 });
 
 export async function handleApiX402CreditRequest({
@@ -108,6 +106,12 @@ export async function handleApiX402CreditRequest({
     const body = await response.json();
     return res.status(response.status).json(body);
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return res.status(401).json({ error: error.message });
+    }
+    if (error instanceof PaymentRequiredError) {
+      return res.status(402).json({ error: error.message });
+    }
     logger.error('Failed to handle X402 credit request', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
