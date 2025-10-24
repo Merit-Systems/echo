@@ -8,6 +8,7 @@ import { createEchoGoogle } from 'ai-providers/google';
 import { createEchoOpenAI } from 'ai-providers/openai';
 import { createEchoOpenRouter } from 'ai-providers/openrouter';
 import { createEchoGroq } from 'ai-providers/groq';
+import { createEchoXAI } from 'ai-providers/xai';
 
 import {
   CreateOauthTokenResponse,
@@ -116,5 +117,6 @@ export default function Echo(config: EchoConfig): EchoResult {
     google: createEchoGoogle(config),
     groq: createEchoGroq(config),
     openrouter: createEchoOpenRouter(config),
+    xai: createEchoXAI(config),
   };
 }

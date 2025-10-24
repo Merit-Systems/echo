@@ -4,6 +4,7 @@ import {
   createEchoGroq,
   createEchoOpenAI,
   createEchoOpenRouter,
+  createEchoXAI,
 } from '@merit-systems/echo-typescript-sdk';
 import { useMemo } from 'react';
 import { useEcho } from './useEcho';
@@ -29,6 +30,7 @@ export const useEchoModelProviders = () => {
         onInsufficientFunds
       ),
       groq: createEchoGroq(baseConfig, getToken, onInsufficientFunds),
+      xai: createEchoXAI(baseConfig, getToken, onInsufficientFunds),
     };
   }, [getToken, config.appId, config.baseRouterUrl, setIsInsufficientFunds]);
 };

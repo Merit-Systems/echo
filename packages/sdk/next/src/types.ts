@@ -5,6 +5,7 @@ import {
   CreateOauthTokenResponse,
   GroqProvider,
   OpenRouterProvider,
+  XaiProvider,
 } from '@merit-systems/echo-typescript-sdk';
 import { NextRequest } from 'next/server';
 
@@ -50,4 +51,5 @@ export type EchoResult = {
   google: GoogleGenerativeAIProvider;
   groq: GroqProvider;
   openrouter: OpenRouterProvider;
+  xai: XaiProvider;
 };
