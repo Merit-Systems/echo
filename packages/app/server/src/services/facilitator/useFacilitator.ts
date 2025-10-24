@@ -30,7 +30,7 @@ export function useFacilitator() {
 
     const jwt = await generateCdpJwt({
       requestMethod: 'POST',
-      requestPath: `/${FACILITATOR_METHOD_PREFIX}/verify`,
+      requestPath: `${FACILITATOR_METHOD_PREFIX}/verify`,
     });
 
     let headers = {
@@ -44,7 +44,7 @@ export function useFacilitator() {
       paymentRequirements: toJsonSafe(paymentRequirements),
     };
 
-    const res = await fetch(`${url}/${FACILITATOR_METHOD_PREFIX}/verify`, {
+    const res = await fetch(`${url}${FACILITATOR_METHOD_PREFIX}/verify`, {
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
@@ -78,7 +78,7 @@ export function useFacilitator() {
 
     const jwt = await generateCdpJwt({
       requestMethod: 'POST',
-      requestPath: `/${FACILITATOR_METHOD_PREFIX}/settle`,
+      requestPath: `${FACILITATOR_METHOD_PREFIX}/settle`,
     });
 
     let headers = {
@@ -92,7 +92,7 @@ export function useFacilitator() {
       paymentRequirements: toJsonSafe(paymentRequirements),
     };
 
-    const res = await fetch(`${url}/${FACILITATOR_METHOD_PREFIX}/settle`, {
+    const res = await fetch(`${url}${FACILITATOR_METHOD_PREFIX}/settle`, {
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
