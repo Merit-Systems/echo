@@ -84,6 +84,10 @@ export class OpenAIAudioProvider extends BaseProvider {
     reqBody: Record<string, unknown>,
     reqPath: string
   ): Record<string, unknown> {
-    return reqBody;
+    // Force verbose_json format to get duration field for cost calculation
+    return {
+      ...reqBody,
+      response_format: 'verbose_json'
+    };
   }
 }
