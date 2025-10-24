@@ -1,24 +1,29 @@
 import { EscrowRequest } from 'middleware/transaction-escrow-middleware';
-import { X402CreditHandlerInput } from 'types';
+import { X402CreditServiceInput } from 'types';
 import { InvalidProxyError, MissingProxyError } from 'errors/http';
 import { createPaymentHeader, selectPaymentRequirements } from 'x402/client';
 import { toAccount } from 'viem/accounts';
-import { getSmartAccount } from 'utils';
 import { x402ResponseSchema } from './facilitator/x402-types';
 import { Decimal, InputJsonValue } from 'generated/prisma/runtime/library';
 import { EchoDbService } from './DbService';
 import { Transaction, UserSpendPoolUsage } from 'generated/prisma';
-import logger from 'logger';
+import logger, { logMetric } from 'logger';
+import { createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+import { ERC20_CONTRACT_ABI, USDC_ADDRESS } from 'services/fund-repo/constants';
+import { EvmServerAccount } from '@coinbase/cdp-sdk';
 
 export class X402CreditRequestService {
   private req: EscrowRequest;
   private headers: Record<string, string>;
   private dbService: EchoDbService;
+  private owner: EvmServerAccount;
 
-  constructor({ req, headers, dbService }: X402CreditHandlerInput) {
+  constructor({ req, headers, dbService, owner }: X402CreditServiceInput) {
     this.req = req;
     this.headers = headers;
     this.dbService = dbService;
+    this.owner = owner;
   }
 
   getRequestUrl(): URL {
@@ -98,15 +103,7 @@ export class X402CreditRequestService {
     return await fetch(this.getRequestUrl(), fetchOptions);
   }
 
-  async getPaymentHeaderFromBody(): Promise<string> {
-    const { owner } = await getSmartAccount();
-
-    const { createPublicClient, http } = await import('viem');
-    const { base } = await import('viem/chains');
-    const { ERC20_CONTRACT_ABI, USDC_ADDRESS } = await import(
-      'services/fund-repo/constants'
-    );
-
+  async checkOwnerWalletBalance(): Promise<boolean> {
     const publicClient = createPublicClient({
       chain: base,
       transport: http(),
@@ -116,17 +113,36 @@ export class X402CreditRequestService {
       address: USDC_ADDRESS,
       abi: ERC20_CONTRACT_ABI,
       functionName: 'balanceOf',
-      args: [owner.address],
+      args: [this.owner.address],
     });
 
+    const usdcBalanceFormatted = Number(usdcBalance) / 1e6;
+
     logger.info('USDC Balance on Base for wallet:', {
-      address: owner.address,
+      address: this.owner.address,
       balance: usdcBalance.toString(),
-      rawUnits: Number(usdcBalance) / 1e6,
-      usdc: Number(usdcBalance) / 1e6,
+      rawUnits: usdcBalanceFormatted,
+      usdc: usdcBalanceFormatted,
       function: 'getPaymentHeaderFromBody',
     });
 
+    const enoughBalance = usdcBalance > 0;
+    const enoughBalanceWithSafetyBuffer = usdcBalanceFormatted > 5;
+
+    if (!enoughBalanceWithSafetyBuffer) {
+      logMetric('x402_credit_insufficient_balance_with_safety_buffer', 1, {
+        address: this.owner.address,
+        balance: usdcBalance.toString(),
+        rawUnits: usdcBalanceFormatted,
+        usdc: usdcBalanceFormatted,
+        function: 'getPaymentHeaderFromBody',
+      });
+    }
+
+    return enoughBalance;
+  }
+
+  async getPaymentHeaderFromBody(): Promise<string> {
     // Get x402 response to extract payment requirements
     const response = await this.makeX402Request();
     if (response.status !== 402) {
@@ -142,7 +158,7 @@ export class X402CreditRequestService {
       );
     }
 
-    const ownerAccount = toAccount(owner);
+    const ownerAccount = toAccount(this.owner);
     const x402Version = x402Response.data.x402Version;
     const accepts = x402Response.data.accepts;
 

@@ -5,6 +5,7 @@ import { Response } from 'express';
 import { BaseProvider } from 'providers/BaseProvider';
 import { Hex } from 'viem';
 import { EchoDbService } from 'services/DbService';
+import { EvmServerAccount } from '@coinbase/cdp-sdk';
 
 export interface EchoApp {
   id: string;
@@ -238,6 +239,13 @@ export type TransferWithAuthorization = Omit<
   ExactEvmPayloadAuthorization,
   'from'
 >;
+
+export type X402CreditServiceInput = {
+  req: EscrowRequest;
+  headers: Record<string, string>;
+  dbService: EchoDbService;
+  owner: EvmServerAccount;
+}
 
 export type X402CreditHandlerInput = {
   req: EscrowRequest;

@@ -9,6 +9,7 @@ import { EscrowRequest } from 'middleware/transaction-escrow-middleware';
 import { prisma } from 'server';
 import { Response as ExpressResponse } from 'express';
 import { EchoDbService } from 'services/DbService';
+import { getSmartAccount } from 'utils';
 
 const x402Router: Router = Router();
 
@@ -43,12 +44,12 @@ export async function handleApiX402CreditRequest({
   dbService,
 }: X402CreditHandlerInput) {
   try {
+    const { owner } = await getSmartAccount();
     const handleX402CreditRequestService = new X402CreditRequestService({
       req,
-      res,
       headers,
-      echoControlService,
       dbService,
+      owner,
     });
 
     const balanceCheckResult = await checkBalance(echoControlService);
@@ -65,6 +66,7 @@ export async function handleApiX402CreditRequest({
       x402RequestPrice: x402RequestPrice.toString(),
       balanceCheckDecimal: balanceCheckDecimal.toString(),
     });
+
     if (x402RequestPrice.gt(balanceCheckDecimal)) {
       return res.status(402).json({ error: 'Insufficient balance' });
     }
@@ -92,6 +94,13 @@ export async function handleApiX402CreditRequest({
       transaction,
       x402RequestPrice
     );
+
+    void handleX402CreditRequestService
+      .checkOwnerWalletBalance()
+      .catch(error => {
+        logger.error('Failed to check owner wallet balance', error);
+      });
+
     const response =
       await handleX402CreditRequestService.executeX402RequestAndUpdateMetadata(
         createdTransaction
