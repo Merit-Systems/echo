@@ -1,9 +1,10 @@
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal, InputJsonValue } from '@prisma/client/runtime/library';
 import { EscrowRequest } from 'middleware/transaction-escrow-middleware';
 import { EchoControlService } from 'services/EchoControlService';
 import { Response } from 'express';
 import { BaseProvider } from 'providers/BaseProvider';
 import { Hex } from 'viem';
+import { EchoDbService } from 'services/DbService';
 
 export interface EchoApp {
   id: string;
@@ -70,8 +71,15 @@ export interface VeoTransactionMetadata extends TransactionMetadata {
   generateAudio: boolean;
 }
 
+export interface X402TransactionMetadata {
+  resourcePath: string;
+  resourceArgs: InputJsonValue;
+  resourceResponse?: InputJsonValue;
+  resourceError?: InputJsonValue;
+}
+
 export interface Transaction {
-  metadata: LlmTransactionMetadata | VeoTransactionMetadata;
+  metadata: LlmTransactionMetadata | VeoTransactionMetadata | X402TransactionMetadata;
   rawTransactionCost: Decimal;
   status: string;
 }
@@ -113,15 +121,21 @@ export interface EchoAccessJwtPayload {
 
 // Type guard functions for transaction metadata
 export function isLlmTransactionMetadata(
-  metadata: LlmTransactionMetadata | VeoTransactionMetadata
+  metadata: LlmTransactionMetadata | VeoTransactionMetadata | X402TransactionMetadata
 ): metadata is LlmTransactionMetadata {
   return 'inputTokens' in metadata;
 }
 
 export function isVeoTransactionMetadata(
-  metadata: LlmTransactionMetadata | VeoTransactionMetadata
+  metadata: LlmTransactionMetadata | VeoTransactionMetadata | X402TransactionMetadata
 ): metadata is VeoTransactionMetadata {
   return 'durationSeconds' in metadata;
+}
+
+export function isX402TransactionMetadata(
+  metadata: LlmTransactionMetadata | VeoTransactionMetadata | X402TransactionMetadata
+): metadata is X402TransactionMetadata {
+  return 'resourcePath' in metadata;
 }
 
 export enum Network {
@@ -224,6 +238,14 @@ export type TransferWithAuthorization = Omit<
   ExactEvmPayloadAuthorization,
   'from'
 >;
+
+export type X402CreditHandlerInput = {
+  req: EscrowRequest;
+  res: Response;
+  headers: Record<string, string>;
+  echoControlService: EchoControlService;
+  dbService: EchoDbService;
+};
 
 export type HandlerInput = {
   req: EscrowRequest;
