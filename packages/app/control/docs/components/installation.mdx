@@ -1,0 +1,165 @@
+---
+title: Installation
+description: How to install and set up Echo Components
+---
+
+# Installation
+
+This guide will walk you through installing Echo Components in your project using the Shadcn CLI.
+
+## Prerequisites
+
+Before installing Echo Components, make sure you have:
+
+- A React or Next.js project
+- [Shadcn CLI](https://ui.shadcn.com/docs/installation) installed
+- Echo SDK already set up in your project
+
+## Installing Components
+
+### Using Shadcn CLI
+
+Echo Components are distributed through our custom registry at [echo-components.com](https://echo-components.com/). You can install them using the Shadcn CLI:
+
+```bash
+# Install Echo Account component for React
+pnpm dlx shadcn@latest add https://echo-components.com/r/echo-account-react.json
+
+# Install Echo Account component for Next.js
+pnpm dlx shadcn@latest add https://echo-components.com/r/echo-account-next.json
+```
+
+### Manual Installation
+
+If you prefer to install components manually, you can:
+
+1. Visit [echo-components.com](https://echo-components.com/)
+2. Browse the available components
+3. Copy the component code directly into your project
+4. Install any required dependencies
+
+## Dependencies
+
+Echo Components require several dependencies that will be automatically installed:
+
+### Required Dependencies
+
+- `@radix-ui/react-popover` - For popover functionality
+- `@radix-ui/react-skeleton` - For loading states
+- `@radix-ui/react-avatar` - For user avatars
+- `@radix-ui/react-tooltip` - For tooltips
+- `autonumeric` - For money input formatting
+
+### Echo SDK Dependencies
+
+Make sure you have the appropriate Echo SDK installed:
+
+```bash
+# For React projects
+npm install @merit-systems/echo-react-sdk
+
+# For Next.js projects
+npm install @merit-systems/echo-next-sdk
+```
+
+## Project Setup
+
+### 1. Configure Shadcn
+
+If you haven't already, initialize Shadcn in your project:
+
+```bash
+npx shadcn@latest init
+```
+
+### 2. Install Base Dependencies
+
+Echo Components build on top of Shadcn's base components. Make sure you have the required base components:
+
+```bash
+# Install required base components
+npx shadcn@latest add popover
+npx shadcn@latest add skeleton
+npx shadcn@latest add avatar
+npx shadcn@latest add input
+npx shadcn@latest add tooltip
+```
+
+### 3. Set Up Echo Provider
+
+Make sure your Echo provider is properly configured in your app:
+
+```tsx
+// For React apps
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <EchoProvider>
+      {/* Your app content */}
+    </EchoProvider>
+  );
+}
+```
+
+```tsx
+// For Next.js apps
+import { EchoProvider } from '@merit-systems/echo-next-sdk';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <EchoProvider>
+          {children}
+        </EchoProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+## Verification
+
+After installation, you can verify that Echo Components are working by adding a simple Echo Account component to your app:
+
+```tsx
+import { EchoAccount } from '@/components/echo-account-react';
+
+export default function MyApp() {
+  return (
+    <div>
+      <h1>My Echo App</h1>
+      <EchoAccount />
+    </div>
+  );
+}
+```
+
+If the component renders without errors and shows the Echo account interface, your installation is successful!
+
+## Troubleshooting
+
+### Common Issues
+
+**Component not found errors:**
+- Make sure you've installed the Echo SDK
+- Verify that the Echo provider is wrapping your app
+- Check that all required base components are installed
+
+**Styling issues:**
+- Ensure Tailwind CSS is properly configured
+- Check that your `tailwind.config.js` includes the component paths
+- Verify that CSS variables for theming are set up
+
+**TypeScript errors:**
+- Make sure TypeScript is configured to resolve the component paths
+- Check that all type definitions are properly imported
+
+### Getting Help
+
+If you encounter issues:
+
+1. Check the [Echo Components Registry](https://echo-components.com/) for the latest component versions
+2. Review the [Shadcn documentation](https://ui.shadcn.com/docs) for base component setup
+3. Join our [Discord community](https://discord.gg/merit) for support
