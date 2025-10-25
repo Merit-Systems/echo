@@ -1,12 +1,8 @@
-![Echo Header](./imgs/header_gif.gif)
+<p align="center">
+  <img src="./imgs/header_gif.gif" alt="Echo Header" width="100%">
+</p>
 
-<div align="center">
-  
-# Echo
-
-</div>
-
-  <div align="center">
+<h1 align="center">Echo</h1>
     
   [![Discord](https://img.shields.io/discord/1382120201713352836?style=flat&logo=discord&logoColor=white&label=Discord)](https://discord.gg/merit) 
   ![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/merit_systems) 
