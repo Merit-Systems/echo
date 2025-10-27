@@ -118,7 +118,58 @@ Or run `npx echo-start my-app` to choose interactively.
 
 # Development
 
-Fill out `packages/app/control/.env` and `packages/app/server/.env`. Then...
+## Prerequisites
 
-- `pnpm i`
-- `pnpm dev`
+Before running Echo locally, make sure you have:
+
+- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **pnpm** - Will be installed automatically by the setup script
+- **Docker Desktop** - [Download here](https://www.docker.com/products/docker-desktop/)
+
+## Quick Setup
+
+```bash
+git clone https://github.com/Merit-Systems/echo.git
+cd echo
+./setup.sh
+pnpm dev
+```
+
+The setup script handles environment configuration and dependency installation.
+
+## Manual Setup
+
+1. Install dependencies:
+
+   ```bash
+   npm install -g pnpm
+   pnpm install
+   ```
+
+2. Start Docker Desktop
+
+3. Create `.env` files with required variables (see `packages/app/control/src/env.ts` for full list)
+
+4. Run `pnpm dev`
+
+## Services
+
+- Echo Control: http://localhost:3000
+- Echo Server: http://localhost:3070
+- PostgreSQL: localhost:5469
+
+## Troubleshooting
+
+**Docker not running**: Start Docker Desktop
+
+**Port conflicts**: Change ports in `.env` files
+
+**Database issues**: Reset with `docker-compose -f packages/app/control/docker-local-db.yml down -v`
+
+## Development Commands
+
+```bash
+pnpm dev          # Start all services
+pnpm test:unit    # Run unit tests  
+pnpm format       # Format all code
+```
