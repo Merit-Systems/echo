@@ -3,6 +3,7 @@ import { PrismaClient } from '../generated/prisma';
 import logger, { logMetric } from '../logger';
 import { EchoControlService } from '../services/EchoControlService';
 import { getRequestId } from '../utils/trace';
+import { ResultAsync, fromPromise } from 'neverthrow';
 
 const MAX_IN_FLIGHT_REQUESTS = Number(process.env.MAX_IN_FLIGHT_REQUESTS) || 10;
 const ESTIMATED_COST_PER_TRANSACTION =
@@ -150,12 +151,12 @@ export class TransactionEscrowMiddleware {
   /**
    * Decrement in-flight requests safely
    */
-  private async decrementInFlightRequests(
+  private decrementInFlightRequests(
     userId: string,
     echoAppId: string
-  ): Promise<void> {
-    try {
-      await this.db.$transaction(async tx => {
+  ): ResultAsync<void, Error> {
+    return fromPromise(
+      this.db.$transaction(async tx => {
         const inFlightRequest = await tx.inFlightRequest.findUnique({
           where: {
             userId_echoAppId: {
@@ -185,12 +186,14 @@ export class TransactionEscrowMiddleware {
             updatedAt: new Date(),
           },
         });
-      });
-    } catch (error) {
+      }),
+      error => (error instanceof Error ? error : new Error(String(error)))
+    ).mapErr(error => {
       logger.warn(
         `Failed to decrement in-flight requests for ${userId}/${echoAppId}: ${error}. This may be due to concurrent cleanup operations.`
       );
-    }
+      return error;
+    });
   }
 
   private executeCleanup = async (
@@ -203,7 +206,14 @@ export class TransactionEscrowMiddleware {
     cleanupState.executed = true;
 
     // decrementInFlightRequests now handles its own errors gracefully
-    await this.decrementInFlightRequests(userId, echoAppId);
+    this.decrementInFlightRequests(userId, echoAppId).match(
+      () => {
+        // Success - no action needed
+      },
+      error => {
+        // Error already logged in decrementInFlightRequests
+      }
+    );
   };
 
   /**
@@ -238,30 +248,36 @@ export class TransactionEscrowMiddleware {
   /**
    * Cleanup orphaned in-flight requests (requests that started but never finished)
    */
-  private async cleanupOrphanedRequests(): Promise<void> {
-    try {
-      const cutoffTime = new Date(Date.now() - REQUEST_TIMEOUT_MS);
+  private cleanupOrphanedRequests(): ResultAsync<void, Error> {
+    return fromPromise(
+      (async () => {
+        const cutoffTime = new Date(Date.now() - REQUEST_TIMEOUT_MS);
 
-      // Bulk update all orphaned requests
-      const result = await this.db.inFlightRequest.updateMany({
-        where: {
-          numberInFlight: { gt: 0 },
-          updatedAt: { lt: cutoffTime },
-        },
-        data: {
-          numberInFlight: 0,
-          updatedAt: new Date(),
-        },
-      });
-
-      if (result.count > 0) {
-        logger.info(`Cleaned up ${result.count} orphaned in-flight requests`, {
-          cutoffTime,
-          cleanedCount: result.count,
+        // Bulk update all orphaned requests
+        const result = await this.db.inFlightRequest.updateMany({
+          where: {
+            numberInFlight: { gt: 0 },
+            updatedAt: { lt: cutoffTime },
+          },
+          data: {
+            numberInFlight: 0,
+            updatedAt: new Date(),
+          },
         });
-        logMetric('escrow.orphaned_requests_cleaned', result.count);
-      }
-    } catch (error) {
+
+        if (result.count > 0) {
+          logger.info(
+            `Cleaned up ${result.count} orphaned in-flight requests`,
+            {
+              cutoffTime,
+              cleanedCount: result.count,
+            }
+          );
+          logMetric('escrow.orphaned_requests_cleaned', result.count);
+        }
+      })(),
+      error => (error instanceof Error ? error : new Error(String(error)))
+    ).mapErr(error => {
       logger.error('Failed to cleanup orphaned requests', {
         error,
       });
@@ -269,7 +285,8 @@ export class TransactionEscrowMiddleware {
         error_message: error instanceof Error ? error.message : 'unknown',
       });
       // Don't rethrow - we want the cleanup process to continue on next interval
-    }
+      return error;
+    });
   }
 
   /**
@@ -277,7 +294,14 @@ export class TransactionEscrowMiddleware {
    */
   private startCleanupProcess(): void {
     this.cleanupInterval = setInterval(async () => {
-      await this.cleanupOrphanedRequests();
+      this.cleanupOrphanedRequests().match(
+        () => {
+          // Success - no action needed
+        },
+        error => {
+          // Error already logged in cleanupOrphanedRequests
+        }
+      );
     }, CLEANUP_INTERVAL_MS);
   }
 
