@@ -4,10 +4,11 @@ import type { LlmTransactionMetadata, Transaction } from '../types';
 import { GPTProvider } from './GPTProvider';
 import { ProviderType } from './ProviderType';
 import logger from '../logger';
+import { Result, ok, err } from 'neverthrow';
 
 export const parseSSEAnthropicGPTFormat = (
   data: string
-): StreamingChunkBody[] => {
+): Result<StreamingChunkBody[], Error> => {
   // Split by double newlines to separate events
   const events = data.split('\n\n');
   const chunks: StreamingChunkBody[] = [];
@@ -27,24 +28,25 @@ export const parseSSEAnthropicGPTFormat = (
     // Skip ping events
     if (trimmed.includes('"type": "ping"')) continue;
 
-    try {
-      const parsed = JSON.parse(trimmed);
-      // Only add valid chunks that have the expected structure
-      if (
-        parsed !== null &&
-        typeof parsed === 'object' &&
-        'choices' in parsed
-      ) {
-        chunks.push(parsed);
-      }
-    } catch (error) {
+    const parseResult = Result.fromThrowable(
+      () => JSON.parse(trimmed),
+      error => new Error(`Error parsing SSE chunk: ${error}`)
+    )();
+
+    if (parseResult.isErr()) {
       // Log error but continue processing other events
-      logger.warn(`Error parsing SSE chunk: ${error}`);
+      logger.warn(parseResult.error.message);
       continue;
+    }
+
+    const parsed = parseResult.value;
+    // Only add valid chunks that have the expected structure
+    if (parsed !== null && typeof parsed === 'object' && 'choices' in parsed) {
+      chunks.push(parsed);
     }
   }
 
-  return chunks;
+  return ok(chunks);
 };
 
 export class AnthropicGPTProvider extends GPTProvider {
@@ -63,55 +65,67 @@ export class AnthropicGPTProvider extends GPTProvider {
   }
 
   override async handleBody(data: string): Promise<Transaction> {
-    try {
-      let prompt_tokens = 0;
-      let completion_tokens = 0;
-      let total_tokens = 0;
-      let providerId = 'null';
+    let prompt_tokens = 0;
+    let completion_tokens = 0;
+    let total_tokens = 0;
+    let providerId = 'null';
 
-      if (this.getIsStream()) {
-        const chunks = parseSSEAnthropicGPTFormat(data);
+    if (this.getIsStream()) {
+      const chunksResult = parseSSEAnthropicGPTFormat(data);
 
-        for (const chunk of chunks) {
-          if (chunk.usage) {
-            prompt_tokens += chunk.usage.prompt_tokens;
-            completion_tokens += chunk.usage.completion_tokens;
-            total_tokens += chunk.usage.total_tokens;
-          }
-          providerId = chunk.id;
-        }
-      } else {
-        const parsed = JSON.parse(data) as CompletionStateBody;
-        prompt_tokens += parsed.usage.prompt_tokens;
-        completion_tokens += parsed.usage.completion_tokens;
-        total_tokens += parsed.usage.total_tokens;
-        providerId = parsed.id;
+      if (chunksResult.isErr()) {
+        logger.error(`Error parsing SSE data: ${chunksResult.error.message}`);
+        throw chunksResult.error;
       }
 
-      const cost = getCostPerToken(
-        this.getModel(),
-        prompt_tokens,
-        completion_tokens
-      );
-      const metadata: LlmTransactionMetadata = {
-        providerId: providerId,
-        provider: this.getType(),
-        model: this.getModel(),
-        inputTokens: prompt_tokens,
-        outputTokens: completion_tokens,
-        totalTokens: total_tokens,
-      };
+      const chunks = chunksResult.value;
 
-      const transaction: Transaction = {
-        rawTransactionCost: cost,
-        metadata: metadata,
-        status: 'success',
-      };
+      for (const chunk of chunks) {
+        if (chunk.usage) {
+          prompt_tokens += chunk.usage.prompt_tokens;
+          completion_tokens += chunk.usage.completion_tokens;
+          total_tokens += chunk.usage.total_tokens;
+        }
+        providerId = chunk.id;
+      }
+    } else {
+      const parseResult = Result.fromThrowable(
+        () => JSON.parse(data) as CompletionStateBody,
+        error => new Error(`Error parsing completion data: ${error}`)
+      )();
 
-      return transaction;
-    } catch (error) {
-      logger.error(`Error processing data: ${error}`);
-      throw error;
+      if (parseResult.isErr()) {
+        logger.error(`Error processing data: ${parseResult.error.message}`);
+        throw parseResult.error;
+      }
+
+      const parsed = parseResult.value;
+      prompt_tokens += parsed.usage.prompt_tokens;
+      completion_tokens += parsed.usage.completion_tokens;
+      total_tokens += parsed.usage.total_tokens;
+      providerId = parsed.id;
     }
+
+    const cost = getCostPerToken(
+      this.getModel(),
+      prompt_tokens,
+      completion_tokens
+    );
+    const metadata: LlmTransactionMetadata = {
+      providerId: providerId,
+      provider: this.getType(),
+      model: this.getModel(),
+      inputTokens: prompt_tokens,
+      outputTokens: completion_tokens,
+      totalTokens: total_tokens,
+    };
+
+    const transaction: Transaction = {
+      rawTransactionCost: cost,
+      metadata: metadata,
+      status: 'success',
+    };
+
+    return transaction;
   }
 }

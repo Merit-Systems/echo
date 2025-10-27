@@ -3,6 +3,7 @@ import { getCostPerToken } from '../services/AccountingService';
 import { LlmTransactionMetadata, Transaction } from '../types';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
+import { Result, ok } from 'neverthrow';
 
 export interface GeminiUsage {
   promptTokenCount: number;
@@ -24,10 +25,17 @@ export interface GeminiResponse {
   usageMetadata: GeminiUsage;
 }
 
-export const parseSSEGeminiFormat = (data: string): GeminiUsage | null => {
-  try {
-    // First, try to parse as a JSON array (actual Gemini streaming format)
-    const parsed = JSON.parse(data);
+export const parseSSEGeminiFormat = (
+  data: string
+): Result<GeminiUsage | null, Error> => {
+  // First, try to parse as a JSON array (actual Gemini streaming format)
+  const parseResult = Result.fromThrowable(
+    () => JSON.parse(data),
+    error => new Error(`Error parsing JSON data: ${error}`)
+  )();
+
+  if (parseResult.isOk()) {
+    const parsed = parseResult.value;
 
     if (Array.isArray(parsed)) {
       // Handle JSON array format
@@ -43,50 +51,53 @@ export const parseSSEGeminiFormat = (data: string): GeminiUsage | null => {
         }
       }
 
-      return finalUsage;
+      return ok(finalUsage);
     } else if (parsed?.usageMetadata) {
       // Handle single object format
-      return {
+      return ok({
         promptTokenCount: parsed.usageMetadata.promptTokenCount || 0,
         candidatesTokenCount: parsed.usageMetadata.candidatesTokenCount || 0,
         totalTokenCount: parsed.usageMetadata.totalTokenCount || 0,
-      };
+      });
     }
-  } catch {
-    // Fallback to SSE format parsing if JSON parsing fails
-    const lines = data.split('\n');
-    let finalUsage: GeminiUsage | null = null;
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) continue;
-
-      // Handle data: lines
-      if (trimmedLine.startsWith('data: ')) {
-        const jsonStr = trimmedLine.slice(6); // Remove 'data: ' prefix
-
-        try {
-          const parsed = JSON.parse(jsonStr) as GeminiResponse;
-
-          // Store usage metadata if present
-          if (parsed.usageMetadata) {
-            finalUsage = {
-              promptTokenCount: parsed.usageMetadata.promptTokenCount || 0,
-              candidatesTokenCount:
-                parsed.usageMetadata.candidatesTokenCount || 0,
-              totalTokenCount: parsed.usageMetadata.totalTokenCount || 0,
-            };
-          }
-        } catch (error) {
-          logger.error(`Error parsing Gemini SSE chunk: ${error}`);
-        }
-      }
-    }
-
-    return finalUsage;
   }
 
-  return null;
+  // Fallback to SSE format parsing if JSON parsing fails
+  const lines = data.split('\n');
+  let finalUsage: GeminiUsage | null = null;
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+
+    // Handle data: lines
+    if (trimmedLine.startsWith('data: ')) {
+      const jsonStr = trimmedLine.slice(6); // Remove 'data: ' prefix
+
+      const chunkParseResult = Result.fromThrowable(
+        () => JSON.parse(jsonStr) as GeminiResponse,
+        error => new Error(`Error parsing Gemini SSE chunk: ${error}`)
+      )();
+
+      if (chunkParseResult.isOk()) {
+        const parsed = chunkParseResult.value;
+
+        // Store usage metadata if present
+        if (parsed.usageMetadata) {
+          finalUsage = {
+            promptTokenCount: parsed.usageMetadata.promptTokenCount || 0,
+            candidatesTokenCount:
+              parsed.usageMetadata.candidatesTokenCount || 0,
+            totalTokenCount: parsed.usageMetadata.totalTokenCount || 0,
+          };
+        }
+      } else {
+        logger.error(chunkParseResult.error.message);
+      }
+    }
+  }
+
+  return ok(finalUsage);
 };
 
 export class GeminiProvider extends BaseProvider {
@@ -125,68 +136,80 @@ export class GeminiProvider extends BaseProvider {
   }
 
   async handleBody(data: string): Promise<Transaction> {
-    try {
-      let promptTokens = 0;
-      let candidatesTokens = 0;
-      let totalTokens = 0;
-      let providerId = 'gemini-response';
+    let promptTokens = 0;
+    let candidatesTokens = 0;
+    let totalTokens = 0;
+    let providerId = 'gemini-response';
 
-      if (this.getIsStream()) {
-        const usage = parseSSEGeminiFormat(data);
+    if (this.getIsStream()) {
+      const usageResult = parseSSEGeminiFormat(data);
 
-        if (!usage) {
-          console.error('No usage data found in streaming response');
-          throw new Error('No usage data found in streaming response');
-        }
-
-        promptTokens = usage.promptTokenCount;
-        candidatesTokens = usage.candidatesTokenCount;
-        totalTokens = usage.totalTokenCount;
-      } else {
-        const parsed = JSON.parse(data) as GeminiResponse;
-
-        if (parsed?.usageMetadata) {
-          promptTokens = parsed.usageMetadata.promptTokenCount || 0;
-          candidatesTokens = parsed.usageMetadata.candidatesTokenCount || 0;
-          totalTokens = parsed.usageMetadata.totalTokenCount || 0;
-        }
-
-        // Try to get a unique identifier from the response
-        // Gemini doesn't return an ID like OpenAI, so we'll generate one based on content
-        if (parsed?.candidates && parsed.candidates.length > 0) {
-          const content = parsed.candidates[0]?.content?.parts?.[0]?.text || '';
-          providerId = `gemini-${Date.now()}-${content.substring(0, 10).replace(/\s/g, '')}`;
-        }
+      if (usageResult.isErr()) {
+        logger.error(`Error parsing SSE data: ${usageResult.error.message}`);
+        throw usageResult.error;
       }
 
-      logger.info(
-        `Gemini usage tokens (prompt/candidates/total): ${promptTokens}/${candidatesTokens}/${totalTokens}`
-      );
+      const usage = usageResult.value;
 
-      const metadata: LlmTransactionMetadata = {
-        model: this.getModel(),
-        providerId: providerId,
-        provider: this.getType(),
-        inputTokens: promptTokens,
-        outputTokens: candidatesTokens,
-        totalTokens: totalTokens,
-      };
+      if (!usage) {
+        console.error('No usage data found in streaming response');
+        throw new Error('No usage data found in streaming response');
+      }
 
-      const transaction: Transaction = {
-        metadata: metadata,
-        rawTransactionCost: getCostPerToken(
-          this.getModel(),
-          promptTokens,
-          candidatesTokens
-        ),
-        status: 'success',
-      };
+      promptTokens = usage.promptTokenCount;
+      candidatesTokens = usage.candidatesTokenCount;
+      totalTokens = usage.totalTokenCount;
+    } else {
+      const parseResult = Result.fromThrowable(
+        () => JSON.parse(data) as GeminiResponse,
+        error => new Error(`Error parsing completion data: ${error}`)
+      )();
 
-      return transaction;
-    } catch (error) {
-      logger.error(`Error processing Gemini response data: ${error}`);
-      throw error;
+      if (parseResult.isErr()) {
+        logger.error(`Error processing data: ${parseResult.error.message}`);
+        throw parseResult.error;
+      }
+
+      const parsed = parseResult.value;
+
+      if (parsed?.usageMetadata) {
+        promptTokens = parsed.usageMetadata.promptTokenCount || 0;
+        candidatesTokens = parsed.usageMetadata.candidatesTokenCount || 0;
+        totalTokens = parsed.usageMetadata.totalTokenCount || 0;
+      }
+
+      // Try to get a unique identifier from the response
+      // Gemini doesn't return an ID like OpenAI, so we'll generate one based on content
+      if (parsed?.candidates && parsed.candidates.length > 0) {
+        const content = parsed.candidates[0]?.content?.parts?.[0]?.text || '';
+        providerId = `gemini-${Date.now()}-${content.substring(0, 10).replace(/\s/g, '')}`;
+      }
     }
+
+    logger.info(
+      `Gemini usage tokens (prompt/candidates/total): ${promptTokens}/${candidatesTokens}/${totalTokens}`
+    );
+
+    const metadata: LlmTransactionMetadata = {
+      model: this.getModel(),
+      providerId: providerId,
+      provider: this.getType(),
+      inputTokens: promptTokens,
+      outputTokens: candidatesTokens,
+      totalTokens: totalTokens,
+    };
+
+    const transaction: Transaction = {
+      metadata: metadata,
+      rawTransactionCost: getCostPerToken(
+        this.getModel(),
+        promptTokens,
+        candidatesTokens
+      ),
+      status: 'success',
+    };
+
+    return transaction;
   }
 
   override ensureStreamUsage(

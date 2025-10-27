@@ -3,6 +3,7 @@ import { getCostPerToken } from '../services/AccountingService';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import logger from '../logger';
+import { Result, ok, err } from 'neverthrow';
 
 export interface AnthropicUsage {
   input_tokens: number;
@@ -13,7 +14,7 @@ export interface AnthropicUsage {
 
 export const parseSSEAnthropicFormat = (
   data: string
-): AnthropicUsage | null => {
+): Result<AnthropicUsage | null, Error> => {
   // Split by lines to process each SSE event
   const lines = data.split('\n');
   let currentEvent = '';
@@ -31,61 +32,67 @@ export const parseSSEAnthropicFormat = (
     } else if (line.startsWith('data: ')) {
       currentData = line.substring(6); // Remove 'data: ' prefix
 
-      try {
-        const parsed = JSON.parse(currentData);
+      const parseResult = Result.fromThrowable(
+        () => JSON.parse(currentData),
+        error => new Error(`Error parsing Anthropic SSE chunk: ${error}`)
+      )();
 
-        // Handle message_start event - contains initial usage and model info
-        if (parsed.type === 'message_start' && parsed.message) {
-          const message = parsed.message;
-          if (message.usage && message.id && message.model) {
-            messageStartUsage = {
-              input_tokens: message.usage.input_tokens || 0,
-              output_tokens: message.usage.output_tokens || 0,
-              id: message.id,
-              model: message.model,
-            };
-          }
-        }
+      if (parseResult.isErr()) {
+        logger.error(parseResult.error.message);
+        continue;
+      }
 
-        // Handle message_delta event - contains final output token count
-        if (parsed.type === 'message_delta' && parsed.usage) {
-          messageDeltaUsage = {
-            output_tokens: parsed.usage.output_tokens || 0,
+      const parsed = parseResult.value;
+
+      // Handle message_start event - contains initial usage and model info
+      if (parsed.type === 'message_start' && parsed.message) {
+        const message = parsed.message;
+        if (message.usage && message.id && message.model) {
+          messageStartUsage = {
+            input_tokens: message.usage.input_tokens || 0,
+            output_tokens: message.usage.output_tokens || 0,
+            id: message.id,
+            model: message.model,
           };
         }
+      }
 
-        // Also handle complete message responses (non-streaming)
-        if (
-          parsed.type === 'message' &&
-          parsed.usage &&
-          parsed.id &&
-          parsed.model
-        ) {
-          return {
-            input_tokens: parsed.usage.input_tokens || 0,
-            output_tokens: parsed.usage.output_tokens || 0,
-            id: parsed.id,
-            model: parsed.model,
-          };
-        }
-      } catch (error) {
-        logger.error(`Error parsing Anthropic SSE chunk: ${error}`);
+      // Handle message_delta event - contains final output token count
+      if (parsed.type === 'message_delta' && parsed.usage) {
+        messageDeltaUsage = {
+          output_tokens: parsed.usage.output_tokens || 0,
+        };
+      }
+
+      // Also handle complete message responses (non-streaming)
+      if (
+        parsed.type === 'message' &&
+        parsed.usage &&
+        parsed.id &&
+        parsed.model
+      ) {
+        return ok({
+          input_tokens: parsed.usage.input_tokens || 0,
+          output_tokens: parsed.usage.output_tokens || 0,
+          id: parsed.id,
+          model: parsed.model,
+        });
       }
     }
   }
 
   // Combine usage data from message_start and message_delta
   if (messageStartUsage.id && messageStartUsage.model) {
-    return {
+    return ok({
       input_tokens: messageStartUsage.input_tokens || 0,
       output_tokens:
         messageDeltaUsage.output_tokens || messageStartUsage.output_tokens || 0,
       id: messageStartUsage.id,
       model: messageStartUsage.model,
-    };
+    });
   }
 
-  return null;
+  return ok(null);
 };
 
 export class AnthropicNativeProvider extends BaseProvider {
@@ -119,74 +126,86 @@ export class AnthropicNativeProvider extends BaseProvider {
   }
 
   override async handleBody(data: string): Promise<Transaction> {
-    try {
-      if (this.getIsStream()) {
-        const usage = parseSSEAnthropicFormat(data);
+    if (this.getIsStream()) {
+      const usageResult = parseSSEAnthropicFormat(data);
 
-        if (!usage) {
-          logger.error('No usage data found');
-          throw new Error('No usage data found');
-        }
-
-        const model = this.getModel();
-        const metadata: LlmTransactionMetadata = {
-          model: model,
-          providerId: usage.id,
-          provider: this.getType(),
-          inputTokens: usage.input_tokens,
-          outputTokens: usage.output_tokens,
-          totalTokens: usage.input_tokens + usage.output_tokens,
-        };
-        const transaction: Transaction = {
-          metadata: metadata,
-          rawTransactionCost: getCostPerToken(
-            model,
-            usage.input_tokens,
-            usage.output_tokens
-          ),
-          status: 'success',
-        };
-
-        return transaction;
-      } else {
-        const parsed = JSON.parse(data);
-
-        const inputTokens = parsed.usage.input_tokens || 0;
-        const outputTokens = parsed.usage.output_tokens || 0;
-        const totalTokens = inputTokens + outputTokens;
-
-        logger.info(
-          'Usage tokens (input/output/total): ',
-          inputTokens,
-          outputTokens,
-          totalTokens
-        );
-        logger.info(`Message ID: ${parsed.id}`);
-
-        const metadata: LlmTransactionMetadata = {
-          model: this.getModel(),
-          providerId: parsed.id,
-          provider: this.getType(),
-          inputTokens: inputTokens,
-          outputTokens: outputTokens,
-          totalTokens: totalTokens,
-        };
-
-        const transaction: Transaction = {
-          metadata: metadata,
-          rawTransactionCost: getCostPerToken(
-            this.getModel(),
-            inputTokens,
-            outputTokens
-          ),
-          status: 'success',
-        };
-
-        return transaction;
+      if (usageResult.isErr()) {
+        logger.error(`Error parsing SSE data: ${usageResult.error.message}`);
+        throw usageResult.error;
       }
-    } catch (error) {
-      logger.error(`Error processing data: ${error}`);
-      throw error;
+
+      const usage = usageResult.value;
+
+      if (!usage) {
+        logger.error('No usage data found');
+        throw new Error('No usage data found');
+      }
+
+      const model = this.getModel();
+      const metadata: LlmTransactionMetadata = {
+        model: model,
+        providerId: usage.id,
+        provider: this.getType(),
+        inputTokens: usage.input_tokens,
+        outputTokens: usage.output_tokens,
+        totalTokens: usage.input_tokens + usage.output_tokens,
+      };
+      const transaction: Transaction = {
+        metadata: metadata,
+        rawTransactionCost: getCostPerToken(
+          model,
+          usage.input_tokens,
+          usage.output_tokens
+        ),
+        status: 'success',
+      };
+
+      return transaction;
+    } else {
+      const parseResult = Result.fromThrowable(
+        () => JSON.parse(data),
+        error => new Error(`Error parsing JSON data: ${error}`)
+      )();
+
+      if (parseResult.isErr()) {
+        logger.error(`Error processing data: ${parseResult.error.message}`);
+        throw parseResult.error;
+      }
+
+      const parsed = parseResult.value;
+
+      const inputTokens = parsed.usage.input_tokens || 0;
+      const outputTokens = parsed.usage.output_tokens || 0;
+      const totalTokens = inputTokens + outputTokens;
+
+      logger.info(
+        'Usage tokens (input/output/total): ',
+        inputTokens,
+        outputTokens,
+        totalTokens
+      );
+      logger.info(`Message ID: ${parsed.id}`);
+
+      const metadata: LlmTransactionMetadata = {
+        model: this.getModel(),
+        providerId: parsed.id,
+        provider: this.getType(),
+        inputTokens: inputTokens,
+        outputTokens: outputTokens,
+        totalTokens: totalTokens,
+      };
+
+      const transaction: Transaction = {
+        metadata: metadata,
+        rawTransactionCost: getCostPerToken(
+          this.getModel(),
+          inputTokens,
+          outputTokens
+        ),
+        status: 'success',
+      };
+
+      return transaction;
     }
   }
 

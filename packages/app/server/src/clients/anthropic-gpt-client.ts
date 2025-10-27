@@ -53,7 +53,6 @@ function makeRequest(useStreaming: boolean = false): ResultAsync<void, Error> {
       }
     })(),
     error => {
-      console.error('Error making request:', error);
       return error instanceof Error ? error : new Error(String(error));
     }
   );

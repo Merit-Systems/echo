@@ -68,10 +68,7 @@ function makeRequest(useStreaming: boolean = false): ResultAsync<void, Error> {
     })(),
     (error: unknown) =>
       error instanceof Error ? error : new Error(String(error))
-  ).mapErr((error: Error) => {
-    console.error('Error making request:', error);
-    return error;
-  });
+  );
 }
 
 makeRequest(true).match(
