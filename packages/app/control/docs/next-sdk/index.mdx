@@ -1,12 +1,81 @@
 ---
 title: Overview
-description: Echo Next.js SDK overview.
+description: Server-side Echo integration for Next.js App Router
 ---
 
-Echo's Next.js SDK handles authentication between your web app and Echo.
+# Next.js SDK
 
-Get started quickly with the Next.js [quickstart guide](https://echo.merit.systems/docs/getting-started/next-js).
+Server-side Echo integration for Next.js App Router with automatic session management.
 
-- [Server](./next-sdk/server): Next.js App Router server routes and authentication logic.
-- [Client](./next-sdk/client): Client-side utilities for Echo authentication.
+The Next.js SDK handles OAuth authentication server-side, managing tokens automatically across your API routes and server components. Users authenticate once, and Echo handles billing for all subsequent AI calls.
+
+**Key features:**
+- Server-side authentication with automatic token refresh
+- Type-safe API route helpers
+- Seamless integration with Vercel AI SDK
+- Zero client-side API key exposure
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash
+    npm install @merit-systems/echo-next-sdk ai
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @merit-systems/echo-next-sdk ai
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @merit-systems/echo-next-sdk ai
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @merit-systems/echo-next-sdk ai
+    ```
+  </Tab>
+</Tabs>
+
+## Quick Start
+
+Set up Echo in your Next.js app:
+
+```typescript title="src/echo/index.ts"
+import Echo from "@merit-systems/echo-next-sdk";
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: "your-echo-app-id",
+});
+```
+
+Create the API route:
+
+```typescript title="src/app/api/echo/[...echo]/route.ts"
+import { handlers } from "@/echo";
+export const { GET, POST } = handlers;
+```
+
+Use in your app:
+
+```tsx title="app/page.tsx"
+import { signIn, isSignedIn } from "@merit-systems/echo-next-sdk/client";
+
+export default function Home() {
+  if (!isSignedIn()) {
+    return <button onClick={() => signIn()}>Sign In</button>;
+  }
+  return <div>Ready to build!</div>;
+}
+```
+
+## Documentation Sections
+
+- **[Server](./next-sdk/server)** - Server-side authentication and API routes
+- **[Client](./next-sdk/client)** - Client-side utilities for Echo authentication
+
+For a complete walkthrough, see the [Next.js quickstart guide](/docs/getting-started/next-js).
 

@@ -11,6 +11,7 @@ import {
   SupportedImageModel,
   SupportedVideoModel,
   SupportedAudioModel,
+  XAIModels,
 } from '@merit-systems/echo-typescript-sdk';
 
 import { Decimal } from '@prisma/client/runtime/library';
@@ -30,6 +31,7 @@ export const ALL_SUPPORTED_MODELS: SupportedModel[] = [
   ...GeminiModels,
   ...OpenRouterModels,
   ...GroqModels,
+  ...XAIModels,
 ];
 
 // Handle image models separately since they have different pricing structure

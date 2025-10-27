@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
+import { OpenMailButton } from './open-mail-button';
 
 export default async function VerifyEmailPage() {
   return (
@@ -13,6 +14,7 @@ export default async function VerifyEmailPage() {
           We sent you an email with a link to verify your email address.
         </p>
       </div>
+      <OpenMailButton />
       <Link href="/login">
         <Button variant="outline">Back to Login</Button>
       </Link>

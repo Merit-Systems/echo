@@ -130,6 +130,36 @@ export async function handleCallback(
   const { origin } = req.nextUrl;
   const basePath = config.basePath || '/api/echo';
 
+  // Check for OAuth error parameters first (e.g., when user cancels authorization)
+  const error = req.nextUrl.searchParams.get('error');
+  const errorDescription = req.nextUrl.searchParams.get('error_description');
+
+  if (error) {
+    // User cancelled or authorization failed - redirect back to app with error info
+    const redirectUrl = new URL(origin);
+    redirectUrl.searchParams.set('auth_error', error);
+    if (errorDescription) {
+      redirectUrl.searchParams.set('auth_error_description', errorDescription);
+    }
+
+    const response = NextResponse.redirect(redirectUrl.toString());
+
+    // Clear the code verifier cookie
+    response.cookies.set(
+      namespacedCookie(ECHO_COOKIE.CODE_VERIFIER, config.appId),
+      '',
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0, // Expire immediately
+        path: '/',
+      }
+    );
+
+    return response;
+  }
+
   const code = req.nextUrl.searchParams.get('code');
   const state = req.nextUrl.searchParams.get('state');
 

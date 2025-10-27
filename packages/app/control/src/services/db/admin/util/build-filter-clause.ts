@@ -13,6 +13,7 @@ type BuildFilterConfig = {
   numericColumns?: string[];
   dateColumns?: string[];
   uuidColumns?: string[];
+  enumColumns?: string[];
   initialParameters?: SQLParameter[];
 };
 
@@ -31,6 +32,7 @@ export const buildFilterClauses = (
     numericColumns = [],
     dateColumns = [],
     uuidColumns = [],
+    enumColumns = [],
     initialParameters = [],
   } = config;
 
@@ -55,6 +57,10 @@ export const buildFilterClauses = (
     let condition = '';
     const isDateColumn = dateColumns.includes(filter.column);
     const isUuidColumn = uuidColumns.includes(filter.column);
+    const isEnumColumn = enumColumns.includes(filter.column);
+
+    // For text-based operators on enum columns, cast to text
+    const columnForTextOp = isEnumColumn ? `${sqlColumn}::text` : sqlColumn;
 
     switch (filter.operator) {
       case 'equals':
@@ -86,19 +92,19 @@ export const buildFilterClauses = (
         );
         break;
       case 'contains':
-        condition = `${sqlColumn} ILIKE $${paramIndex}`;
+        condition = `${columnForTextOp} ILIKE $${paramIndex}`;
         parameters.push(`%${filter.value}%`);
         break;
       case 'not_contains':
-        condition = `${sqlColumn} NOT ILIKE $${paramIndex}`;
+        condition = `${columnForTextOp} NOT ILIKE $${paramIndex}`;
         parameters.push(`%${filter.value}%`);
         break;
       case 'starts_with':
-        condition = `${sqlColumn} ILIKE $${paramIndex}`;
+        condition = `${columnForTextOp} ILIKE $${paramIndex}`;
         parameters.push(`${filter.value}%`);
         break;
       case 'ends_with':
-        condition = `${sqlColumn} ILIKE $${paramIndex}`;
+        condition = `${columnForTextOp} ILIKE $${paramIndex}`;
         parameters.push(`%${filter.value}`);
         break;
       case 'greater_than':

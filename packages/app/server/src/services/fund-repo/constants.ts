@@ -85,3 +85,4 @@ export const ERC3009_ABI = [
 export const MERIT_CONTRACT_ADDRESS = process.env
   .MERIT_CONTRACT_ADDRESS as `0x${string}`;
 export const USDC_ADDRESS = process.env.USDC_ADDRESS as `0x${string}`;
+export const ETH_ADDRESS = process.env.ETH_ADDRESS as `0x${string}`;

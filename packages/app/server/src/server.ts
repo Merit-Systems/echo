@@ -28,7 +28,7 @@ import inFlightMonitorRouter from './routers/in-flight-monitor';
 import { buildX402Response, isApiRequest, isX402Request } from './utils';
 import { handleX402Request, handleApiKeyRequest } from './handlers';
 import { initializeProvider } from './services/ProviderInitializationService';
-import { getRequestMaxCost } from './services/PricingService';
+import { applyMaxCostMarkup, getRequestMaxCost } from './services/PricingService';
 import { Decimal } from '@prisma/client/runtime/library';
 import resourceRouter from './routers/resource';
 
@@ -108,13 +108,15 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
       return buildX402Response(req, res, new Decimal(0));
     }
     const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
+    const maxCostWithMarkup = applyMaxCostMarkup(maxCost);
+
 
     if (
       !isApiRequest(headers) &&
       !isX402Request(headers) &&
       !isPassthroughProxyRoute
     ) {
-      return buildX402Response(req, res, maxCost);
+      return buildX402Response(req, res, maxCostWithMarkup);
     }
 
     if (isApiRequest(headers)) {
@@ -140,7 +142,7 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
         req,
         res,
         headers,
-        maxCost,
+        maxCost: maxCostWithMarkup,
         isPassthroughProxyRoute,
         provider,
         isStream,

@@ -29,7 +29,10 @@ export const emailJobSchema = z.discriminatedUnion('campaign', [
 export const queueJob = async (body: z.infer<typeof emailJobSchema>) => {
   await queueClient.publishJSON({
     url: `${env.NEXT_PUBLIC_APP_URL}/api/jobs`,
-    body,
+    body: {
+      type: 'email',
+      job: body,
+    },
     flowControl: {
       key: env.RESEND_FLOW_CONTROL_KEY,
       rate: 2,

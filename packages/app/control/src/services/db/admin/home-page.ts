@@ -1,6 +1,9 @@
 import type { ChartItem } from '@/services/db/admin/type/chart';
 import type { ChartConfig } from '@/components/ui/chart';
 import { db } from '@/services/db/client';
+import { queryRaw } from '@/services/db/_lib/query-raw';
+import { Prisma } from '@/generated/prisma';
+import { z } from 'zod';
 
 interface GetHomePageChartInput {
   startDate?: Date;
@@ -8,6 +11,14 @@ interface GetHomePageChartInput {
   numBuckets?: number; // default 30 (daily buckets over last 30 days)
   isCumulative?: boolean;
 }
+
+// Zod schemas for raw query results
+const cumulativeBucketSchema = z.object({
+  timestamp: z.string(),
+  value: z.bigint().transform(val => Number(val)),
+});
+
+const cumulativeResultSchema = z.array(cumulativeBucketSchema);
 
 /**
  * Updates chart descriptions for cumulative mode
@@ -50,8 +61,8 @@ export const getHomePageChart = async (
   const numBuckets = input?.numBuckets ?? 30;
   const isCumulative = input?.isCumulative ?? false;
 
-  // For non-cumulative mode, we need to fetch data in the date range for bucketing
-  // For cumulative mode, we'll query directly per bucket
+  // For non-cumulative mode, fetch data in the date range for bucketing
+  // For cumulative mode, we use window functions in SQL queries
   let transactions: {
     createdAt: Date;
     transactionMetadata: { totalTokens: number | null } | null;
@@ -124,43 +135,161 @@ export const getHomePageChart = async (
       >;
     });
 
-  // Tokens per bucket
+  // Declare data arrays
   let tokensData: Array<{ timestamp: string; tokens: number }>;
+  let signupsData: Array<{ timestamp: string; signups: number }>;
+  let appsData: Array<{ timestamp: string; apps: number }>;
+  let refreshTokensData: Array<{ timestamp: string; refreshTokens: number }>;
 
+  // For cumulative mode, run all queries in parallel for better performance
   if (isCumulative) {
-    // For cumulative, get total tokens from beginning of time up to each bucket
-    const tokenBuckets = makeBuckets();
-    const tokensDataPromises = tokenBuckets.map(async bucket => {
-      const transactions = await db.transaction.findMany({
-        where: {
-          createdAt: {
-            lte: new Date(bucket.timestamp.getTime() + bucketSizeMs),
-          },
-          isArchived: false,
-        },
-        select: {
-          transactionMetadata: {
-            select: {
-              totalTokens: true,
-            },
-          },
-        },
-      });
+    const bucketInterval = `${bucketSizeMs} milliseconds`;
 
-      const totalTokens = transactions.reduce((sum, t) => {
-        return sum + Number(t.transactionMetadata?.totalTokens ?? 0);
-      }, 0);
+    // Run all 4 cumulative queries in parallel
+    const [tokensResult, signupsResult, appsResult, refreshTokensResult] =
+      await Promise.all([
+        // Tokens query
+        queryRaw(
+          Prisma.sql`
+          WITH buckets AS (
+            SELECT generate_series(
+              ${startDate}::timestamp,
+              ${endDate}::timestamp - interval '1 millisecond',
+              ${bucketInterval}::interval
+            ) AS bucket_time
+          ),
+          cumulative_tokens AS (
+            SELECT 
+              b.bucket_time,
+              COALESCE(
+                SUM(COALESCE(tm."totalTokens"::numeric, 0))
+              , 0) AS cumulative_value
+            FROM buckets b
+            LEFT JOIN transactions t 
+              ON t."createdAt" <= b.bucket_time 
+              AND t."isArchived" = false
+            LEFT JOIN transaction_metadata tm 
+              ON t."transactionMetadataId" = tm.id
+            GROUP BY b.bucket_time
+            ORDER BY b.bucket_time
+          )
+          SELECT 
+            to_char(bucket_time, 'YYYY-MM-DD"T"HH24:MI') as timestamp,
+            cumulative_value::bigint as value
+          FROM cumulative_tokens
+        `,
+          cumulativeResultSchema
+        ),
+        // User signups query
+        queryRaw(
+          Prisma.sql`
+          WITH buckets AS (
+            SELECT generate_series(
+              ${startDate}::timestamp,
+              ${endDate}::timestamp - interval '1 millisecond',
+              ${bucketInterval}::interval
+            ) AS bucket_time
+          ),
+          cumulative_users AS (
+            SELECT 
+              b.bucket_time,
+              COUNT(u.id) AS cumulative_value
+            FROM buckets b
+            LEFT JOIN users u 
+              ON u."createdAt" <= b.bucket_time 
+              AND u."isArchived" = false
+            GROUP BY b.bucket_time
+            ORDER BY b.bucket_time
+          )
+          SELECT 
+            to_char(bucket_time, 'YYYY-MM-DD"T"HH24:MI') as timestamp,
+            cumulative_value::bigint as value
+          FROM cumulative_users
+        `,
+          cumulativeResultSchema
+        ),
+        // Apps query
+        queryRaw(
+          Prisma.sql`
+          WITH buckets AS (
+            SELECT generate_series(
+              ${startDate}::timestamp,
+              ${endDate}::timestamp - interval '1 millisecond',
+              ${bucketInterval}::interval
+            ) AS bucket_time
+          ),
+          cumulative_apps AS (
+            SELECT 
+              b.bucket_time,
+              COUNT(a.id) AS cumulative_value
+            FROM buckets b
+            LEFT JOIN echo_apps a 
+              ON a."createdAt" <= b.bucket_time 
+              AND a."isArchived" = false
+            GROUP BY b.bucket_time
+            ORDER BY b.bucket_time
+          )
+          SELECT 
+            to_char(bucket_time, 'YYYY-MM-DD"T"HH24:MI') as timestamp,
+            cumulative_value::bigint as value
+          FROM cumulative_apps
+        `,
+          cumulativeResultSchema
+        ),
+        // Refresh tokens query
+        queryRaw(
+          Prisma.sql`
+          WITH buckets AS (
+            SELECT generate_series(
+              ${startDate}::timestamp,
+              ${endDate}::timestamp - interval '1 millisecond',
+              ${bucketInterval}::interval
+            ) AS bucket_time
+          ),
+          cumulative_refresh_tokens AS (
+            SELECT 
+              b.bucket_time,
+              COUNT(rt.token) AS cumulative_value
+            FROM buckets b
+            LEFT JOIN refresh_tokens rt 
+              ON rt."createdAt" <= b.bucket_time 
+              AND rt."isArchived" = false
+            GROUP BY b.bucket_time
+            ORDER BY b.bucket_time
+          )
+          SELECT 
+            to_char(bucket_time, 'YYYY-MM-DD"T"HH24:MI') as timestamp,
+            cumulative_value::bigint as value
+          FROM cumulative_refresh_tokens
+        `,
+          cumulativeResultSchema
+        ),
+      ]);
 
-      return {
-        timestamp: bucket.timestamp.toISOString().slice(0, 16),
-        tokens: totalTokens,
-      };
-    });
-
-    tokensData = await Promise.all(tokensDataPromises);
+    tokensData = tokensResult.map(r => ({
+      timestamp: r.timestamp,
+      tokens: r.value,
+    }));
+    signupsData = signupsResult.map(r => ({
+      timestamp: r.timestamp,
+      signups: r.value,
+    }));
+    appsData = appsResult.map(r => ({
+      timestamp: r.timestamp,
+      apps: r.value,
+    }));
+    refreshTokensData = refreshTokensResult.map(r => ({
+      timestamp: r.timestamp,
+      refreshTokens: r.value,
+    }));
   } else {
-    // For non-cumulative, use the existing bucketing logic
+    // Non-cumulative mode - fetch and bucket data
     const tokenBuckets = makeBuckets().map(b => ({ ...b, tokens: 0 }));
+    const signupBuckets = makeBuckets().map(b => ({ ...b, signups: 0 }));
+    const appBuckets = makeBuckets().map(b => ({ ...b, apps: 0 }));
+    const rtBuckets = makeBuckets().map(b => ({ ...b, refreshTokens: 0 }));
+
+    // Bucket tokens
     for (const t of transactions) {
       const idx = Math.floor(
         (t.createdAt.getTime() - startDate.getTime()) / bucketSizeMs
@@ -170,38 +299,8 @@ export const getHomePageChart = async (
         tokenBuckets[idx].tokens += amt;
       }
     }
-    tokensData = tokenBuckets.map(b => ({
-      timestamp: b.timestamp.toISOString().slice(0, 16),
-      tokens: Number(b.tokens || 0),
-    }));
-  }
 
-  // User signups per bucket
-  let signupsData: Array<{ timestamp: string; signups: number }>;
-
-  if (isCumulative) {
-    // For cumulative, get total users from beginning of time up to each bucket
-    const signupBuckets = makeBuckets();
-    const signupsDataPromises = signupBuckets.map(async bucket => {
-      const totalUsers = await db.user.count({
-        where: {
-          createdAt: {
-            lte: new Date(bucket.timestamp.getTime() + bucketSizeMs),
-          },
-          isArchived: false,
-        },
-      });
-
-      return {
-        timestamp: bucket.timestamp.toISOString().slice(0, 16),
-        signups: totalUsers,
-      };
-    });
-
-    signupsData = await Promise.all(signupsDataPromises);
-  } else {
-    // For non-cumulative, use the existing bucketing logic
-    const signupBuckets = makeBuckets().map(b => ({ ...b, signups: 0 }));
+    // Bucket users
     for (const u of users) {
       const idx = Math.floor(
         (u.createdAt.getTime() - startDate.getTime()) / bucketSizeMs
@@ -210,38 +309,8 @@ export const getHomePageChart = async (
         signupBuckets[idx].signups += 1;
       }
     }
-    signupsData = signupBuckets.map(b => ({
-      timestamp: b.timestamp.toISOString().slice(0, 16),
-      signups: Number(b.signups || 0),
-    }));
-  }
 
-  // App creations per bucket
-  let appsData: Array<{ timestamp: string; apps: number }>;
-
-  if (isCumulative) {
-    // For cumulative, get total apps from beginning of time up to each bucket
-    const appBuckets = makeBuckets();
-    const appsDataPromises = appBuckets.map(async bucket => {
-      const totalApps = await db.echoApp.count({
-        where: {
-          createdAt: {
-            lte: new Date(bucket.timestamp.getTime() + bucketSizeMs),
-          },
-          isArchived: false,
-        },
-      });
-
-      return {
-        timestamp: bucket.timestamp.toISOString().slice(0, 16),
-        apps: totalApps,
-      };
-    });
-
-    appsData = await Promise.all(appsDataPromises);
-  } else {
-    // For non-cumulative, use the existing bucketing logic
-    const appBuckets = makeBuckets().map(b => ({ ...b, apps: 0 }));
+    // Bucket apps
     for (const a of apps) {
       const idx = Math.floor(
         (a.createdAt.getTime() - startDate.getTime()) / bucketSizeMs
@@ -250,38 +319,8 @@ export const getHomePageChart = async (
         appBuckets[idx].apps += 1;
       }
     }
-    appsData = appBuckets.map(b => ({
-      timestamp: b.timestamp.toISOString().slice(0, 16),
-      apps: Number(b.apps || 0),
-    }));
-  }
 
-  // Refresh tokens created per bucket
-  let refreshTokensData: Array<{ timestamp: string; refreshTokens: number }>;
-
-  if (isCumulative) {
-    // For cumulative, get total refresh tokens from beginning of time up to each bucket
-    const rtBuckets = makeBuckets();
-    const refreshTokensDataPromises = rtBuckets.map(async bucket => {
-      const totalRefreshTokens = await db.refreshToken.count({
-        where: {
-          createdAt: {
-            lte: new Date(bucket.timestamp.getTime() + bucketSizeMs),
-          },
-          isArchived: false,
-        },
-      });
-
-      return {
-        timestamp: bucket.timestamp.toISOString().slice(0, 16),
-        refreshTokens: totalRefreshTokens,
-      };
-    });
-
-    refreshTokensData = await Promise.all(refreshTokensDataPromises);
-  } else {
-    // For non-cumulative, use the existing bucketing logic
-    const rtBuckets = makeBuckets().map(b => ({ ...b, refreshTokens: 0 }));
+    // Bucket refresh tokens
     for (const rt of refreshTokens) {
       const idx = Math.floor(
         (rt.createdAt.getTime() - startDate.getTime()) / bucketSizeMs
@@ -290,13 +329,26 @@ export const getHomePageChart = async (
         rtBuckets[idx].refreshTokens += 1;
       }
     }
+
+    tokensData = tokenBuckets.map(b => ({
+      timestamp: b.timestamp.toISOString().slice(0, 16),
+      tokens: Number(b.tokens || 0),
+    }));
+    signupsData = signupBuckets.map(b => ({
+      timestamp: b.timestamp.toISOString().slice(0, 16),
+      signups: Number(b.signups || 0),
+    }));
+    appsData = appBuckets.map(b => ({
+      timestamp: b.timestamp.toISOString().slice(0, 16),
+      apps: Number(b.apps || 0),
+    }));
     refreshTokensData = rtBuckets.map(b => ({
       timestamp: b.timestamp.toISOString().slice(0, 16),
       refreshTokens: Number(b.refreshTokens || 0),
     }));
   }
 
-  // Chart configs
+  // Chart configs (moved outside the if/else for clarity)
   const tokensConfig: ChartConfig = {
     tokens: { label: 'Tokens', color: '#7c3aed' },
   };
@@ -310,6 +362,7 @@ export const getHomePageChart = async (
     refreshTokens: { label: 'Refresh Tokens', color: '#2563eb' },
   };
 
+  // Skip the individual metric sections below and jump to chart creation
   const charts: ChartItem[] = [
     {
       id: 'total-tokens-over-time',

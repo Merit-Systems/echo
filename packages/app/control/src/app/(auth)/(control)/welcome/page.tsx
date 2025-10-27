@@ -12,7 +12,7 @@ import { env } from '@/env';
 
 export const metadata: Metadata = {
   title: 'Welcome',
-  description: 'The Easiest Way to Monetize AI Apps',
+  description: 'User Pays AI SDK',
 };
 
 export default async function WelcomePage(props: PageProps<'/welcome'>) {
@@ -95,7 +95,7 @@ export default async function WelcomePage(props: PageProps<'/welcome'>) {
           <h2 className="font-medium opacity-90 text-lg">
             {isAppAuthorize
               ? 'Your Global Account for AI Access'
-              : 'The Easiest Way to Monetize AI Apps'}
+              : 'User Pays AI SDK'}
           </h2>
         </div>
       </div>

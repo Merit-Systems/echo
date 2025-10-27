@@ -1,12 +1,13 @@
-import { CdpClient } from '@coinbase/cdp-sdk';
-import { encodeFunctionData, Abi } from 'viem';
+import { encodeFunctionData, Abi, formatUnits, parseUnits } from 'viem';
 import {
   MERIT_ABI,
   MERIT_CONTRACT_ADDRESS,
   USDC_ADDRESS,
   ERC20_CONTRACT_ABI,
+  ETH_ADDRESS,
 } from './constants';
-import logger from '../../logger';
+import logger, { logMetric } from '../../logger';
+import { getSmartAccount } from 'utils';
 
 export interface FundRepoResult {
   success: boolean;
@@ -16,11 +17,6 @@ export interface FundRepoResult {
   repoId: string;
   tokenAddress: string;
 }
-
-const API_KEY_ID = process.env.CDP_API_KEY_ID || 'your-api-key-id';
-const API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || 'your-api-key-secret';
-const WALLET_SECRET = process.env.CDP_WALLET_SECRET || 'your-wallet-secret';
-
 export async function fundRepo(
   amount: number,
   repoId: number
@@ -41,24 +37,10 @@ export async function fundRepo(
     // Use Math.ceil for defensive rounding to avoid undercharging
     const amountBigInt = BigInt(Math.ceil(amount * 10 ** 6));
 
-    // CDP wallets
-    const cdp = new CdpClient({
-      apiKeyId: API_KEY_ID,
-      apiKeySecret: API_KEY_SECRET,
-      walletSecret: WALLET_SECRET,
-    });
-    const owner = await cdp.evm.getOrCreateAccount({
-      name: 'echo-fund-owner',
-    });
-    const smartAccount = await cdp.evm.getOrCreateSmartAccount({
-      name: 'echo-fund-smart-account',
-      owner,
-    });
-    logger.info(`Smart account address: ${smartAccount.address}`);
+    const { smartAccount } = await getSmartAccount();
 
     // Send user operation to fund the repo
-    const result = await cdp.evm.sendUserOperation({
-      smartAccount,
+    const result = await smartAccount.sendUserOperation({
       network: 'base',
       calls: [
         {
@@ -89,10 +71,10 @@ export async function fundRepo(
     });
 
     // Wait for the user operation to be processed
-    await cdp.evm.waitForUserOperation({
-      smartAccountAddress: smartAccount.address,
+    await smartAccount.waitForUserOperation({
       userOpHash: result.userOpHash,
     });
+    
     logger.info('User operation processed successfully');
 
     return {
@@ -110,4 +92,88 @@ export async function fundRepo(
 
     throw error;
   }
+}
+
+export async function safeFundRepo(amount: number): Promise<void> {
+  try {
+    const repoId = process.env.MERIT_REPO_ID;
+    if (!repoId) {
+      throw new Error('Missing required environment variables');
+    }
+    await fundRepo(amount, Number(repoId));
+  } catch (error) {
+    logger.error(
+      `Error in safe funding repo: ${error instanceof Error ? error.message : 'Unknown error'} | Amount: ${amount}`
+    );
+  }
+}
+
+
+export async function safeFundRepoIfWorthwhile(): Promise<void> {
+  const repoId = process.env.MERIT_REPO_ID;
+  if (!repoId) {
+    throw new Error('Missing required environment variables');
+  }
+
+  // check balance of wallet. If it is > 100 USD, send all of the USD to the repo.
+
+  const { smartAccount } = await getSmartAccount();
+  const balances = await smartAccount.listTokenBalances({
+    network: 'base',
+  });
+  const baseUsdcBalance = balances.balances.find((balance) => balance.token.contractAddress === USDC_ADDRESS);
+
+
+  const ethereumBalance = balances.balances.find((balance) => balance.token.contractAddress === ETH_ADDRESS);
+
+  if (!ethereumBalance) {
+    logger.info('No Ethereum balance found, skipping fundRepo event');
+    return;
+  }
+
+  if (!baseUsdcBalance) {
+    logger.info('No base USDC balance found, skipping fundRepo event');
+    return;
+  }
+
+  const ethereumBalanceAmount = ethereumBalance.amount.amount;
+  const ethBalanceFormatted = formatUnits(ethereumBalanceAmount, ethereumBalance.amount.decimals);
+  logger.info(`Ethereum balance is ${ethBalanceFormatted} ETH`, {
+    amount: ethBalanceFormatted,
+    address: smartAccount.address,
+  });
+  
+  const baseUsdcBalanceAmount = baseUsdcBalance.amount.amount;
+  const usdcBalanceFormatted = formatUnits(baseUsdcBalanceAmount, baseUsdcBalance.amount.decimals);
+  logger.info(`Base USDC balance is ${usdcBalanceFormatted} USD`, {
+    amount: usdcBalanceFormatted,
+    address: smartAccount.address,
+  });
+
+  const ETH_WARNING_THRESHOLD = parseUnits(
+    String(process.env.ETH_WARNING_THRESHOLD || '0.0001'), 
+    ethereumBalance.amount.decimals
+  );
+  const BASE_USDC_WARNING_THRESHOLD = parseUnits(
+    String(process.env.BASE_USDC_TRANSFER_THRESHOLD || '5'),
+    baseUsdcBalance.amount.decimals
+  );
+
+  if (ethereumBalanceAmount < ETH_WARNING_THRESHOLD) {
+    const readableEthWarningThreshold = formatUnits(ETH_WARNING_THRESHOLD, ethereumBalance.amount.decimals);
+    logger.error(`[Critical] Ethereum balance is less than ${readableEthWarningThreshold} ETH, skipping fundRepo event`);
+    logMetric('fund_repo.ethereum_balance_running_low', 1, {
+      amount: ethBalanceFormatted,
+      address: smartAccount.address,
+    });
+    return;
+  }
+
+  if (baseUsdcBalanceAmount < BASE_USDC_WARNING_THRESHOLD) {
+    logger.info('Base USDC balance is less than threshold, skipping fundRepo event');
+    return;
+  }
+  logger.info(`Base USDC balance is ${usdcBalanceFormatted} USD, funding repo`);
+
+  await safeFundRepo(Number(usdcBalanceFormatted));
 }

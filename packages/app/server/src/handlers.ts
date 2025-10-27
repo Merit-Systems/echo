@@ -25,6 +25,8 @@ import { Decimal } from '@prisma/client/runtime/library';
 import logger from 'logger';
 import { Request, Response } from 'express';
 import { ProviderType } from 'providers/ProviderType';
+import { safeFundRepoIfWorthwhile } from 'services/fund-repo/fundRepoService';
+import { applyMaxCostMarkup } from 'services/PricingService';
 
 export async function refund(
   paymentAmountDecimal: Decimal,
@@ -115,15 +117,41 @@ export async function finalize(
   transaction: Transaction,
   payload: ExactEvmPayload
 ) {
+
+  const transactionCostWithMarkup = applyMaxCostMarkup(transaction.rawTransactionCost);
+
+  // rawTransactionCost is what we pay to OpenAI
+  // transactionCostWithMarkup is what we charge the user
+  // markup is the difference between the two, and is sent with fundRepo (not every time, just when it is worthwhile to send a payment)
+
+  // The user should be refunded paymentAmountDecimal - transactionCostWithMarkup\
+
+
   const refundAmount = calculateRefundAmount(
     paymentAmountDecimal,
-    transaction.rawTransactionCost
+    transactionCostWithMarkup
   );
+  logger.info(`Payment amount decimal: ${paymentAmountDecimal.toNumber()} USD`)
+  logger.info(`Refunding ${refundAmount.toNumber()} USD`)
+  logger.info(`Transaction cost with markup: ${transactionCostWithMarkup.toNumber()} USD`)
+  logger.info(`Transaction cost: ${transaction.rawTransactionCost.toNumber()} USD`)
+
 
   if (!refundAmount.equals(0) && refundAmount.greaterThan(0)) {
     const refundAmountUsdcBigInt = decimalToUsdcBigInt(refundAmount);
     const authPayload = payload.authorization;
     await transfer(authPayload.from as `0x${string}`, refundAmountUsdcBigInt);
+  }
+
+  const markUpAmount = transactionCostWithMarkup.minus(transaction.rawTransactionCost);
+  if (markUpAmount.greaterThan(0)) {
+    logger.info(`PROFIT RECEIVED: ${markUpAmount.toNumber()} USD, checking for a repo send operation`);
+    try {
+      await safeFundRepoIfWorthwhile();
+    } catch (error) {
+      logger.error('Failed to fund repo', error);
+      // Don't re-throw - repo funding is not critical to the transaction
+    }
   }
 }
 
@@ -157,7 +185,6 @@ export async function handleX402Request({
     );
     const transaction = transactionResult.transaction;
 
-
     if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
       await prisma.videoGenerationX402.create({
         data: {
@@ -180,6 +207,7 @@ export async function handleX402Request({
       transactionResult.transaction,
       payload
     );
+
   } catch (error) {
     await refund(paymentAmountDecimal, payload);
   }
@@ -226,17 +254,18 @@ export async function handleApiKeyRequest({
     isStream
   );
 
-  
-
   // There is no actual refund, this logs if we underestimate the raw cost
   calculateRefundAmount(maxCost, transaction.rawTransactionCost);
 
   modelRequestService.handleResolveResponse(res, isStream, data);
 
   await echoControlService.createTransaction(transaction, maxCost);
-  
+
   if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
-    const transactionCost = await echoControlService.computeTransactionCosts(transaction, null);
+    const transactionCost = await echoControlService.computeTransactionCosts(
+      transaction,
+      null
+    );
     await prisma.videoGenerationX402.create({
       data: {
         videoId: transaction.metadata.providerId,

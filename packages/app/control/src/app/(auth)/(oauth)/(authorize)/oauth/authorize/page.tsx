@@ -110,6 +110,7 @@ export default async function OAuthAuthorizePage(
       profilePictureUrl={profilePictureUrl}
       userImage={user.image ?? null}
       ownerName={owner.name ?? ''}
+      hideOwnerName={appDetails.hideOwnerName ?? false}
       scopes={scopes}
       authParams={authParams}
     />

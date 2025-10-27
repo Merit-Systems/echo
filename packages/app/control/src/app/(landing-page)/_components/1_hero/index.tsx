@@ -1,10 +1,10 @@
-import { HeroGraphic } from './graphic';
 import { AuroraText } from '@/components/magicui/aurora-text';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Section } from '../lib/section';
 import Link from 'next/link';
 import type { Route } from 'next';
+import { AppDemos } from './app-demos/index';
 
 const dashedBorder = 'border-dashed border-border';
 
@@ -26,11 +26,17 @@ export const Hero = () => {
               dashedBorder
             )}
           >
-            Monetize AI Apps in Minutes
+            User Pays AI SDK
           </h1>
         </div>
+        {/* <p className={cn('text-center max-w-sm', dashedBorder)}>
+          $0 down. Production ready in minutes.
+        </p>
         <p className={cn('text-center max-w-sm', dashedBorder)}>
-          You set the markup, we handle the rest.
+          No API keys. Never front API costs.
+        </p> */}
+        <p className={cn('text-center max-w-sm', dashedBorder)}>
+          Your users pay as they go. You never front the bill.
         </p>
         <div className={cn('flex justify-center gap-2')}>
           <Link href="/login?redirect_url=/new">
@@ -44,8 +50,11 @@ export const Hero = () => {
             </Button>
           </Link>
         </div>
-        <div className="mt-8 flex justify-center w-full">
+        {/* <div className="mt-8 flex justify-center w-full">
           <HeroGraphic />
+        </div> */}
+        <div className="mt-8 w-full">
+          <AppDemos />
         </div>
       </div>
     </Section>

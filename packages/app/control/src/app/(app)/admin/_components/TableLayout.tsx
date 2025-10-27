@@ -12,7 +12,7 @@ export default function TableLayout({
   children,
 }: TableLayoutProps) {
   return (
-    <div className="container mx-auto space-y-8">
+    <div className="container mx-auto space-y-8 w-[80%]">
       <div>
         <h1 className="text-3xl font-bold">{title}</h1>
         {description ? (
