@@ -3,6 +3,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import type { Request } from 'express';
 import { Response } from 'express';
 import { GoogleAuth } from 'google-auth-library';
+import { Result, ResultAsync, fromPromise, ok, err } from 'neverthrow';
 import { HttpError, UnknownModelError } from '../errors/http';
 import logger from '../logger';
 import { EscrowRequest } from '../middleware/transaction-escrow-middleware';
@@ -209,7 +210,14 @@ export class VertexAIProvider extends BaseProvider {
       return this.authCache.token;
     }
 
-    const credentials = this.getServiceAccountCredentials();
+    const credentialsResult = this.getServiceAccountCredentials();
+    if (credentialsResult.isErr()) {
+      throw new Error(
+        `Failed to get service account credentials: ${credentialsResult.error.message}`
+      );
+    }
+
+    const credentials = credentialsResult.value;
     const auth = new GoogleAuth({
       credentials,
       scopes: ['https://www.googleapis.com/auth/cloud-platform'],
@@ -277,12 +285,12 @@ export class VertexAIProvider extends BaseProvider {
   }
 
   private initializeStorage(): Storage | null {
-    const credentials = this.getServiceAccountCredentials();
-    if (!credentials) {
+    const credentialsResult = this.getServiceAccountCredentials();
+    if (credentialsResult.isErr() || !credentialsResult.value) {
       return null;
     }
 
-    return new Storage({ credentials });
+    return new Storage({ credentials: credentialsResult.value });
   }
 
   private async transformVideoUri(video: any, storage: Storage): Promise<void> {
@@ -297,41 +305,45 @@ export class VertexAIProvider extends BaseProvider {
       return;
     }
 
-    try {
-      const { signedUrl, expiresAt } = await this.generateSignedUrl(
-        storage,
-        gcsUri
-      );
+    const result = await this.generateSignedUrl(storage, gcsUri);
 
-      if (videoObj.gcsUri) {
-        videoObj.gcsUri = signedUrl;
-      } else {
-        videoObj.uri = signedUrl;
-      }
-      videoObj.expiresAt = expiresAt;
-    } catch (error) {
-      logger.error(`Failed to generate signed URL for ${gcsUri}:`, error);
+    if (result.isErr()) {
+      logger.error(
+        `Failed to generate signed URL for ${gcsUri}:`,
+        result.error
+      );
+      return;
     }
+
+    const { signedUrl, expiresAt } = result.value;
+
+    if (videoObj.gcsUri) {
+      videoObj.gcsUri = signedUrl;
+    } else {
+      videoObj.uri = signedUrl;
+    }
+    videoObj.expiresAt = expiresAt;
   }
 
-  private async generateSignedUrl(
+  private generateSignedUrl(
     storage: Storage,
     gcsUri: string
-  ): Promise<{ signedUrl: string; expiresAt: string }> {
+  ): ResultAsync<{ signedUrl: string; expiresAt: string }, Error> {
     const { bucket: bucketName, path: filePath } = this.parseGcsUri(gcsUri);
     const bucket = storage.bucket(bucketName);
     const file = bucket.file(filePath);
     const expirationTime = Date.now() + SIGNED_URL_EXPIRY_MS;
 
-    const [signedUrl] = await file.getSignedUrl({
-      action: 'read',
-      expires: expirationTime,
-    });
-
-    return {
+    return fromPromise(
+      file.getSignedUrl({
+        action: 'read',
+        expires: expirationTime,
+      }),
+      error => new Error(`Failed to generate signed URL: ${error}`)
+    ).map(([signedUrl]) => ({
       signedUrl,
       expiresAt: new Date(expirationTime).toISOString(),
-    };
+    }));
   }
 
   private parseGcsUri(gcsUri: string): { bucket: string; path: string } {
@@ -394,17 +406,22 @@ export class VertexAIProvider extends BaseProvider {
   ): Promise<never> {
     let errorMessage = `${response.status} ${response.statusText}`;
 
-    try {
-      const errorBody = await response.text();
+    const textResult = await fromPromise(
+      response.text(),
+      error => new Error(`Failed to read response text: ${error}`)
+    );
+
+    if (textResult.isOk()) {
+      const errorBody = textResult.value;
       logger.error(
         `Vertex AI request failed. URL: ${url}, Status: ${response.status}, Body:`,
         errorBody
       );
       errorMessage = errorBody || errorMessage;
-    } catch (e) {
+    } else {
       logger.error(
         `Vertex AI request failed. URL: ${url}, Status: ${response.status}`,
-        e
+        textResult.error
       );
     }
 
@@ -415,19 +432,32 @@ export class VertexAIProvider extends BaseProvider {
 
   private async verifyAccessControl(operationId: string): Promise<void> {
     const userId = this.getRequiredUserId();
-    const hasAccess = await this.confirmAccessControl(userId, operationId);
+    const hasAccessResult = await this.confirmAccessControl(
+      userId,
+      operationId
+    );
 
-    if (!hasAccess) {
+    if (hasAccessResult.isErr()) {
+      throw new HttpError(
+        500,
+        `Failed to verify access control: ${hasAccessResult.error.message}`
+      );
+    }
+
+    if (!hasAccessResult.value) {
       throw new HttpError(403, 'Access denied');
     }
   }
 
-  async confirmAccessControl(
+  confirmAccessControl(
     userId: string,
     providerId: string
-  ): Promise<boolean> {
+  ): ResultAsync<boolean, Error> {
     const dbService = new EchoDbService(prisma);
-    return await dbService.confirmAccessControl(userId, providerId);
+    return fromPromise(
+      dbService.confirmAccessControl(userId, providerId),
+      error => new Error(`Failed to confirm access control: ${error}`)
+    );
   }
 
   // ========== Response Parsing ==========
@@ -470,18 +500,26 @@ export class VertexAIProvider extends BaseProvider {
     return value;
   }
 
-  private getServiceAccountCredentials(): any {
+  private getServiceAccountCredentials(): Result<any, Error> {
     const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
     if (!serviceAccountKey) {
-      return null;
+      return ok(null);
     }
 
-    try {
-      return JSON.parse(serviceAccountKey);
-    } catch (error) {
-      logger.error('Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY', error);
-      return null;
+    const parseResult = Result.fromThrowable(
+      () => JSON.parse(serviceAccountKey),
+      error => new Error(`Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY: ${error}`)
+    )();
+
+    if (parseResult.isErr()) {
+      logger.error(
+        'Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY',
+        parseResult.error
+      );
+      return ok(null);
     }
+
+    return parseResult;
   }
 
   private isVeo3Model(): boolean {

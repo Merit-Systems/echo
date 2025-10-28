@@ -12,7 +12,7 @@ import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from '../logger';
-import { Result, ok, err } from 'neverthrow';
+import { Result, ok, } from 'neverthrow';
 
 export const parseSSEResponsesFormat = (
   data: string
