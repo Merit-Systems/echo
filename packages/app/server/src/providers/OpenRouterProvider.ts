@@ -53,8 +53,9 @@ export const parseSSEGPTFormat = (
       )();
 
       if (parseResult.isErr()) {
+        // Log error but continue processing other events
         logger.error(parseResult.error.message);
-        return err(parseResult.error);
+        continue;
       }
 
       chunks.push(parseResult.value);
