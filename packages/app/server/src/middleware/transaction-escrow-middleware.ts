@@ -294,7 +294,7 @@ export class TransactionEscrowMiddleware {
    */
   private startCleanupProcess(): void {
     this.cleanupInterval = setInterval(async () => {
-      this.cleanupOrphanedRequests().match(
+      await this.cleanupOrphanedRequests().match(
         () => {
           // Success - no action needed
         },
