@@ -28,7 +28,7 @@ export async function handleGoogleEdit(
     ];
 
     const result = await generateText({
-      model: google('gemini-2.5-flash-image-preview'),
+      model: google('gemini-2.5-flash-image'),
       prompt: [
         {
           role: 'user',

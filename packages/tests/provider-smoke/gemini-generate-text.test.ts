@@ -15,7 +15,6 @@ import {
 beforeAll(assertEnv);
 
 export const BLACKLISTED_MODELS = new Set([
-  'gemini-2.0-flash-preview-image-generation',
   'veo-3.0-fast-generate',
   'gemini-2.0-flash-exp',
   'gemini-2.0-flash-thinking-exp-1219',

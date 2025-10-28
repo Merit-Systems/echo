@@ -12,7 +12,7 @@ import { ERROR_MESSAGES } from '@/lib/constants';
 export async function handleGoogleGenerate(prompt: string): Promise<Response> {
   try {
     const result = await generateText({
-      model: google('gemini-2.5-flash-image-preview'),
+      model: google('gemini-2.5-flash-image'),
       prompt,
     });
 
