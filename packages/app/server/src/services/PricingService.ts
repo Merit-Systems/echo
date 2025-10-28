@@ -15,6 +15,11 @@ import { ProviderType } from 'providers/ProviderType';
 import { Tool } from 'openai/resources/responses/responses';
 import { SupportedVideoModel } from '@merit-systems/echo-typescript-sdk';
 
+export function applyMaxCostMarkup(maxCost: Decimal): Decimal {
+  const markup = process.env.MAX_COST_MARKUP || '1.25';
+  return maxCost.mul(new Decimal(markup));
+}
+
 export function getRequestMaxCost(
   req: EscrowRequest,
   provider: BaseProvider,

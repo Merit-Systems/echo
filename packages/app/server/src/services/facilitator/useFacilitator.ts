@@ -24,7 +24,11 @@ export function useFacilitator() {
     payload: PaymentPayload,
     paymentRequirements: PaymentRequirements
   ): Promise<VerifyResponse> {
-    return facilitatorWithRetry<VerifyResponse>('verify', payload, paymentRequirements);
+    return facilitatorWithRetry<VerifyResponse>(
+      'verify',
+      payload,
+      paymentRequirements
+    );
   }
 
   /**
@@ -39,7 +43,11 @@ export function useFacilitator() {
     payload: PaymentPayload,
     paymentRequirements: PaymentRequirements
   ): Promise<SettleResponse> {
-    return facilitatorWithRetry<SettleResponse>('settle', payload, paymentRequirements);
+    return facilitatorWithRetry<SettleResponse>(
+      'settle',
+      payload,
+      paymentRequirements
+    );
   }
 
   return { verify, settle };

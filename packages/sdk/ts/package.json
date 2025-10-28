@@ -1,6 +1,6 @@
 {
   "name": "@merit-systems/echo-typescript-sdk",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "TypeScript SDK for Echo platform",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -61,6 +61,7 @@
     "@ai-sdk/google": "2.0.14",
     "@ai-sdk/groq": "2.0.17",
     "@ai-sdk/openai": "2.0.32",
+    "@ai-sdk/xai": "2.0.16",
     "@openrouter/ai-sdk-provider": "1.2.0",
     "ai": "5.0.47"
   }

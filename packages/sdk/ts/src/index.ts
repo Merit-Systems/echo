@@ -10,6 +10,7 @@ export * from './api-types';
 export * from './utils/error-handling';
 export * from './utils/validation';
 export * from './providers';
+export { createEchoXAI } from './providers/xai';
 
 // Export tool-related types and utilities
 export type {
@@ -46,6 +47,8 @@ export { OpenRouterModels } from './supported-models/chat/openrouter';
 export type { OpenRouterModel } from './supported-models/chat/openrouter';
 export { GroqModels } from './supported-models/chat/groq';
 export type { GroqModel } from './supported-models/chat/groq';
+export { XAIModels } from './supported-models/chat/xai';
+export type { XAIModel } from './supported-models/chat/xai';
 export { OpenAIImageModels } from './supported-models/image/openai';
 export type { OpenAIImageModel } from './supported-models/image/openai';
 export { GeminiVideoModels } from './supported-models/video/gemini';

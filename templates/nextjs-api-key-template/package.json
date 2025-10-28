@@ -19,8 +19,8 @@
   "dependencies": {
     "@ai-sdk/openai": "2.0.16",
     "@ai-sdk/react": "2.0.17",
-    "@merit-systems/echo-next-sdk": "0.0.24",
-    "@merit-systems/echo-react-sdk": "1.0.33",
+    "@merit-systems/echo-next-sdk": "latest",
+    "@merit-systems/echo-react-sdk": "latest",
     "@merit-systems/echo-typescript-sdk": "^1.0.17",
     "@prisma/client": "^6.16.2",
     "@radix-ui/react-avatar": "^1.1.10",

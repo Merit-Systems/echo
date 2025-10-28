@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@merit-systems/echo-react-sdk": "^1.0.33",
+    "@merit-systems/echo-react-sdk": "latest",
     "ai": "5.0.19",
     "@ai-sdk/react": "2.0.17",
     "react": "^19.1.1",

@@ -11,14 +11,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-
-
 const COINBASE_FACILITATOR_BASE_URL = process.env.COINBASE_FACILITATOR_BASE_URL;
-const COINBASE_FACILITATOR_METHOD_PREFIX = process.env.COINBASE_FACILITATOR_METHOD_PREFIX;
+const COINBASE_FACILITATOR_METHOD_PREFIX =
+  process.env.COINBASE_FACILITATOR_METHOD_PREFIX;
 const X402RS_FACILITATOR_BASE_URL = process.env.X402RS_FACILITATOR_BASE_URL;
-const X402RS_FACILITATOR_METHOD_PREFIX = process.env.X402RS_FACILITATOR_METHOD_PREFIX;
+const X402RS_FACILITATOR_METHOD_PREFIX =
+  process.env.X402RS_FACILITATOR_METHOD_PREFIX;
 const PAYAI_FACILITATOR_BASE_URL = process.env.PAYAI_FACILITATOR_BASE_URL;
-const PAYAI_FACILITATOR_METHOD_PREFIX = process.env.PAYAI_FACILITATOR_METHOD_PREFIX;
+const PAYAI_FACILITATOR_METHOD_PREFIX =
+  process.env.PAYAI_FACILITATOR_METHOD_PREFIX;
 
 type FacilitatorMethod = 'verify' | 'settle';
 
@@ -55,12 +56,13 @@ const facilitators: FacilitatorConfig[] = [
  * @returns A promise that resolves to the facilitator response
  * @throws Error if all facilitators fail
  */
-export async function facilitatorWithRetry<T extends VerifyResponse | SettleResponse>(
+export async function facilitatorWithRetry<
+  T extends VerifyResponse | SettleResponse,
+>(
   method: FacilitatorMethod,
   payload: PaymentPayload,
   paymentRequirements: PaymentRequirements
 ): Promise<T> {
-
   const errors: Array<{ facilitator: string; error: string }> = [];
 
   for (const facilitator of facilitators) {
@@ -83,21 +85,27 @@ export async function facilitatorWithRetry<T extends VerifyResponse | SettleResp
         paymentRequirements: toJsonSafe(paymentRequirements),
       };
 
-      const res = await fetch(`${facilitator.url}${facilitator.methodPrefix}/${method}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestBody),
-      });
+      const res = await fetch(
+        `${facilitator.url}${facilitator.methodPrefix}/${method}`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       if (res.status !== 200) {
         const errorBody = await res.text();
         const errorMsg = `${res.status} ${res.statusText} - ${errorBody}`;
-        logger.error(`${facilitator.name} facilitator ${method} failed - Status: ${res.status}`, {
-          facilitator: facilitator.name,
-          method,
-          status: res.status,
-          errorBody,
-        });
+        logger.error(
+          `${facilitator.name} facilitator ${method} failed - Status: ${res.status}`,
+          {
+            facilitator: facilitator.name,
+            method,
+            status: res.status,
+            errorBody,
+          }
+        );
         logMetric('facilitator_failure', 1, {
           facilitator: facilitator.name,
           method,
@@ -115,11 +123,14 @@ export async function facilitatorWithRetry<T extends VerifyResponse | SettleResp
       return data as T;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.error(`${facilitator.name} facilitator ${method} threw exception`, {
-        facilitator: facilitator.name,
-        method,
-        error: errorMsg,
-      });
+      logger.error(
+        `${facilitator.name} facilitator ${method} threw exception`,
+        {
+          facilitator: facilitator.name,
+          method,
+          error: errorMsg,
+        }
+      );
       logMetric('facilitator_failure', 1, {
         facilitator: facilitator.name,
         method,
@@ -130,9 +141,8 @@ export async function facilitatorWithRetry<T extends VerifyResponse | SettleResp
     }
   }
 
-  const errorDetails = errors.map(e => `${e.facilitator}: ${e.error}`).join('; ');
-  throw new Error(
-    `All facilitators failed for ${method}: ${errorDetails}`
-  );
+  const errorDetails = errors
+    .map(e => `${e.facilitator}: ${e.error}`)
+    .join('; ');
+  throw new Error(`All facilitators failed for ${method}: ${errorDetails}`);
 }
-

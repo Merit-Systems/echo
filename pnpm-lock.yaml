@@ -1206,6 +1206,9 @@ importers:
       '@ai-sdk/openai':
         specifier: 2.0.32
         version: 2.0.32(zod@4.1.11)
+      '@ai-sdk/xai':
+        specifier: 2.0.16
+        version: 2.0.16(zod@4.1.11)
       '@openrouter/ai-sdk-provider':
         specifier: 1.2.0
         version: 1.2.0(ai@5.0.47(zod@4.1.11))(zod@4.1.11)
@@ -1425,6 +1428,12 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4
 
+  '@ai-sdk/openai-compatible@1.0.15':
+    resolution: {integrity: sha512-i4TzohCxuFzBSdRNPa9eNFW6AYDZ5itbxz+rJa2kpNTMYqHgqKPGzet3X6eLIUVntA10icrqhWT+hUhxXZIS9Q==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+
   '@ai-sdk/openai@2.0.32':
     resolution: {integrity: sha512-p7giSkCs66Q1qYO/NPYI41CrSg65mcm8R2uAdF86+Y1D1/q4mUrWMyf5UTOJ0bx/z4jIPiNgGDCg2Kabi5zrKQ==}
     engines: {node: '>=18'}
@@ -1472,6 +1481,12 @@ packages:
     peerDependenciesMeta:
       zod:
         optional: true
+
+  '@ai-sdk/xai@2.0.16':
+    resolution: {integrity: sha512-t/Ohnn5OExgXZe+yhlpqOFZoixIXpaSBycWnvWfJ7JrpiNdg4WZEjWH+298zUXvqAT5wZvM93h1Ba4TkoYSyZg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -12006,6 +12021,12 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.8(zod@4.1.11)
       zod: 4.1.11
 
+  '@ai-sdk/openai-compatible@1.0.15(zod@4.1.11)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.8(zod@4.1.11)
+      zod: 4.1.11
+
   '@ai-sdk/openai@2.0.32(zod@4.1.11)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
@@ -12076,6 +12097,13 @@ snapshots:
       swr: 2.3.6(react@19.1.1)
       throttleit: 2.1.0
     optionalDependencies:
+      zod: 4.1.11
+
+  '@ai-sdk/xai@2.0.16(zod@4.1.11)':
+    dependencies:
+      '@ai-sdk/openai-compatible': 1.0.15(zod@4.1.11)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.8(zod@4.1.11)
       zod: 4.1.11
 
   '@alloc/quick-lru@5.2.0': {}

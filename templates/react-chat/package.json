@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "2.0.17",
-    "@merit-systems/echo-react-sdk": "1.0.33",
+    "@merit-systems/echo-react-sdk": "latest",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-hover-card": "^1.1.15",

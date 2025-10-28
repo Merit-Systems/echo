@@ -14,6 +14,9 @@
       "dependsOn": ["build"]
     },
     "lint": {},
-    "type-check": {}
+    "type-check": {},
+    "local-setup": {
+      "cache": false
+    }
   }
 }

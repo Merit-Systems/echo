@@ -23,7 +23,7 @@ export default async function WelcomePage(props: PageProps<'/welcome'>) {
   const callbackUrl =
     searchParams.callbackUrl && typeof searchParams.callbackUrl === 'string'
       ? searchParams.callbackUrl
-      : '/';
+      : `${env.NEXT_PUBLIC_APP_URL}/dashboard`;
 
   const redirectUrl = new URL(callbackUrl);
   if (redirectUrl.pathname === '/') {

@@ -21,6 +21,7 @@ import { OpenAIImageProvider } from './OpenAIImageProvider';
 import { OpenAIResponsesProvider } from './OpenAIResponsesProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { ProviderType } from './ProviderType';
+import { XAIProvider } from './XAIProvider';
 import {
   VertexAIProvider,
   PROXY_PASSTHROUGH_ONLY_MODEL as VertexAIProxyPassthroughOnlyModel,
@@ -51,6 +52,11 @@ const createChatModelToProviderMapping = (): Record<string, ProviderType> => {
           break;
         case 'Groq':
           mapping[modelConfig.model_id] = ProviderType.GROQ;
+          break;
+        case 'xAI':
+        case 'XAI':
+        case 'Xai':
+          mapping[modelConfig.model_id] = ProviderType.XAI;
           break;
         // Add other providers as needed
         default:
@@ -184,6 +190,8 @@ export const getProvider = (
       return new OpenAIVideoProvider(stream, model);
     case ProviderType.GROQ:
       return new GroqProvider(stream, model);
+    case ProviderType.XAI:
+      return new XAIProvider(stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }
