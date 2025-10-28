@@ -1,52 +1,33 @@
 {
-  "name": "@merit-systems/echo-cli",
+  "name": "echo-cli",
   "version": "0.1.0",
-  "description": "Terminal chat interface for Echo AI",
+  "description": "CLI chat for Echo - pay per use AI with OAuth authentication",
+  "main": "src/index.ts",
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "echo-cli": "dist/index.js"
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "scripts": {
-    "dev": "tsup --watch",
-    "build": "tsup",
-    "start": "node dist/index.js",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "start": "tsx src/index.ts",
+    "dev": "tsx src/index.ts"
   },
   "dependencies": {
-    "@merit-systems/echo-typescript-sdk": "workspace:*",
-    "@merit-systems/ai-x402": "workspace:*",
+    "ora": "^8.1.0",
     "chalk": "^5.3.0",
-    "commander": "^12.1.0",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.2",
-    "open": "^10.1.0",
-    "ora": "^8.1.1",
-    "viem": "^2.21.25"
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
-    "@types/node": "^22.5.4",
-    "tsup": "^8.5.0",
+    "@types/node": "^22.7.4",
+    "tsx": "^4.19.2",
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "pnpm": ">=10.0.0"
   },
   "keywords": [
     "echo",
     "ai",
     "cli",
     "chat",
-    "terminal",
-    "x402"
+    "oauth"
   ],
-  "author": "Merit Systems",
   "license": "MIT"
 }
