@@ -11,5 +11,6 @@ export enum ProviderType {
   OPENAI_IMAGES = 'OPENAI_IMAGES',
   OPENAI_VIDEOS = 'OPENAI_VIDEOS',
   GROQ = 'GROQ',
+  OPENAI_AUDIO = 'OPENAI_AUDIO',
   XAI = 'XAI',
 }

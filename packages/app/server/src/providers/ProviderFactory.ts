@@ -3,6 +3,7 @@ import {
   ALL_SUPPORTED_IMAGE_MODELS,
   ALL_SUPPORTED_MODELS,
   ALL_SUPPORTED_VIDEO_MODELS,
+  ALL_SUPPORTED_AUDIO_MODELS,
 } from '../services/AccountingService';
 import type { EchoControlService } from '../services/EchoControlService';
 import { AnthropicGPTProvider } from './AnthropicGPTProvider';
@@ -17,6 +18,7 @@ import {
   PROXY_PASSTHROUGH_ONLY_MODEL as GeminiVeoProxyPassthroughOnlyModel,
 } from './GeminiVeoProvider';
 import { GPTProvider } from './GPTProvider';
+import { OpenAIAudioProvider } from './OpenAIAudioProvider';
 import { OpenAIImageProvider } from './OpenAIImageProvider';
 import { OpenAIResponsesProvider } from './OpenAIResponsesProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
@@ -97,6 +99,19 @@ const createVideoModelToProviderMapping = (): Record<string, ProviderType> => {
   return mapping;
 };
 
+
+const createAudioModelToProviderMapping = (): Record<string, ProviderType> => {
+  const mapping: Record<string, ProviderType> = {};
+  
+  for (const modelConfig of ALL_SUPPORTED_AUDIO_MODELS) {
+    if (modelConfig.provider === 'OpenAI') {
+      mapping[modelConfig.model_id] = ProviderType.OPENAI_AUDIO;
+    }
+  }
+  
+  return mapping;
+};
+
 /**
  * Model-to-provider mapping loaded from model_prices_and_context_window.json
  * This replaces the previous hardcoded mapping and automatically includes all
@@ -110,6 +125,9 @@ export const IMAGE_MODEL_TO_PROVIDER: Record<string, ProviderType> =
 
 export const VIDEO_MODEL_TO_PROVIDER: Record<string, ProviderType> =
   createVideoModelToProviderMapping();
+
+export const AUDIO_MODEL_TO_PROVIDER: Record<string, ProviderType> =
+  createAudioModelToProviderMapping();
 
 export const getProvider = (
   model: string,
@@ -127,6 +145,11 @@ export const getProvider = (
   const videoType = VIDEO_MODEL_TO_PROVIDER[model];
   if (videoType) {
     type = videoType;
+  }
+
+  const audioType = AUDIO_MODEL_TO_PROVIDER[model];
+  if (audioType) {
+    type = audioType;
   }
 
   if (model === GeminiVeoProxyPassthroughOnlyModel) {
@@ -149,6 +172,11 @@ export const getProvider = (
 
   if (completionPath.includes('images/generations')) {
     type = ProviderType.OPENAI_IMAGES;
+  }
+
+  // Check if this is an audio transcription or translation endpoint
+  if (completionPath.includes('audio/transcriptions') || completionPath.includes('audio/translations')) {
+    type = ProviderType.OPENAI_AUDIO;
   }
 
   // We select for Anthropic Native if the completionPath includes "messages"
@@ -190,6 +218,8 @@ export const getProvider = (
       return new OpenAIVideoProvider(stream, model);
     case ProviderType.GROQ:
       return new GroqProvider(stream, model);
+    case ProviderType.OPENAI_AUDIO:
+      return new OpenAIAudioProvider(stream, model);
     case ProviderType.XAI:
       return new XAIProvider(stream, model);
     default:

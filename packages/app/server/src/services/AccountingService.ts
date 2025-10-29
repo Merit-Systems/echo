@@ -5,10 +5,12 @@ import {
   OpenRouterModels,
   GroqModels,
   OpenAIImageModels,
+  OpenAIAudioModels,
   SupportedOpenAIResponseToolPricing,
   SupportedModel,
   SupportedImageModel,
   SupportedVideoModel,
+  SupportedAudioModel,
   XAIModels,
 } from '@merit-systems/echo-typescript-sdk';
 
@@ -42,6 +44,10 @@ export const ALL_SUPPORTED_VIDEO_MODELS: SupportedVideoModel[] = [
   ...OpenAIVideoModels,
 ];
 
+export const ALL_SUPPORTED_AUDIO_MODELS: SupportedAudioModel[] = [
+  ...OpenAIAudioModels,
+];
+
 // Create a lookup map for O(1) model price retrieval
 const MODEL_PRICE_MAP = new Map<string, SupportedModel>();
 ALL_SUPPORTED_MODELS.forEach(model => {
@@ -58,6 +64,12 @@ ALL_SUPPORTED_IMAGE_MODELS.forEach(model => {
 const VIDEO_MODEL_MAP = new Map();
 ALL_SUPPORTED_VIDEO_MODELS.forEach(model => {
   VIDEO_MODEL_MAP.set(model.model_id, model);
+});
+
+// Create a separate map for audio models
+const AUDIO_MODEL_MAP = new Map<string, SupportedAudioModel>();
+ALL_SUPPORTED_AUDIO_MODELS.forEach(model => {
+  AUDIO_MODEL_MAP.set(model.model_id, model);
 });
 
 export const getModelPrice = (model: string) => {
@@ -112,6 +124,10 @@ export const isValidImageModel = (model: string) => {
 
 export const isValidVideoModel = (model: string) => {
   return VIDEO_MODEL_MAP.has(model);
+};
+
+export const isValidAudioModel = (model: string) => {
+  return AUDIO_MODEL_MAP.has(model);
 };
 
 export const getCostPerToken = (

@@ -5,6 +5,7 @@ import {
   getVideoModelPrice,
   isValidImageModel,
   isValidVideoModel,
+  isValidAudioModel,
   calculateToolCost,
   getImageModelPrice,
 } from './AccountingService';
@@ -25,8 +26,11 @@ export function getRequestMaxCost(
   provider: BaseProvider,
   isPassthroughProxyRoute: boolean
 ): Decimal {
-  // Need to switch between language/image/video for different pricing models.
-  if (isValidVideoModel(provider.getModel())) {
+  if (isValidAudioModel(provider.getModel())) {
+    const fileSizeBytes = Number(req.originalContentLength) || 1024 * 1024;
+    const estimatedMinutes = Math.max(1, fileSizeBytes / (1024 * 1024));
+    return new Decimal(estimatedMinutes * 0.006);
+  } else if (isValidVideoModel(provider.getModel())) {
     const videoModelWithPricing = getVideoModelPrice(provider.getModel());
     if (!videoModelWithPricing) {
       throw new UnknownModelError(

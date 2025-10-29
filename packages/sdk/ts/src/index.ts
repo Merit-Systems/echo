@@ -18,6 +18,7 @@ export type {
   SupportedToolType,
   SupportedModel,
   SupportedImageModel,
+  SupportedAudioModel,
   ImageGenerationQuality,
   ImageDimensions,
   WebSearchModel,
@@ -57,3 +58,5 @@ export { VertexAIVideoModels } from './supported-models/video/vertex-ai';
 export type { VertexAIVideoModel } from './supported-models/video/vertex-ai';
 export { OpenAIVideoModels } from './supported-models/video/open-ai';
 export type { OpenAIVideoModel } from './supported-models/video/open-ai';
+export { OpenAIAudioModels } from './supported-models/audio/openai';
+export type { OpenAIAudioModel } from './supported-models/audio/openai';
