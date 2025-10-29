@@ -224,7 +224,16 @@ export class OpenAIVideoProvider extends BaseProvider {
       }
       if (video.wallet) {
         const refundAmount = decimalToUsdcBigInt(video.cost);
-        await transfer(video.wallet as `0x${string}`, refundAmount);
+        const transferResult = await transfer(
+          video.wallet as `0x${string}`,
+          refundAmount
+        );
+        if (transferResult.isErr()) {
+          logger.error(
+            'Failed to refund video generation',
+            transferResult.error
+          );
+        }
       }
       if (video.userId) {
         // Proccess the refund to the user. There is some level of complexity here since there is a markup. Not as simple as just credit grant.
@@ -304,9 +313,14 @@ export class OpenAIVideoProvider extends BaseProvider {
   private async verifyVideoAccess(videoId: string): Promise<void> {
     const userId = this.getRequiredUserId();
     const dbService = new EchoDbService(prisma);
-    const hasAccess = await dbService.confirmAccessControl(userId, videoId);
+    const result = await dbService.confirmAccessControl(userId, videoId);
 
-    if (!hasAccess) {
+    if (result.isErr()) {
+      logger.error(`Error confirming access control: ${result.error}`);
+      throw new HttpError(403, 'Access denied to this video');
+    }
+
+    if (!result.value) {
       throw new HttpError(403, 'Access denied to this video');
     }
   }

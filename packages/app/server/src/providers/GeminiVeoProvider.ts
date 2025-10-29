@@ -230,7 +230,14 @@ export class GeminiVeoProvider extends BaseProvider {
     providerId: string
   ): Promise<boolean> {
     const dbService = new EchoDbService(prisma);
-    return await dbService.confirmAccessControl(userId, providerId);
+    const result = await dbService.confirmAccessControl(userId, providerId);
+
+    if (result.isErr()) {
+      logger.error(`Error confirming access control: ${result.error}`);
+      return false;
+    }
+
+    return result.value;
   }
 
   parseProviderIdFromResponseBody(data: unknown): string {

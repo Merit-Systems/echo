@@ -1,10 +1,33 @@
 // Load OpenTelemetry instrumentation before any other imports
-try {
-  require('@opentelemetry/auto-instrumentations-node/register');
-  console.log('✅ OpenTelemetry loaded');
-} catch (err: any) {
-  console.warn('⚠️ OpenTelemetry not available:', err.message);
-}
+import { ResultAsync, ok, err, Result } from 'neverthrow';
+
+// Use neverthrow Result for synchronous operations
+const loadOpenTelemetry = (): Result<void, Error> => {
+  const modulePath = '@opentelemetry/auto-instrumentations-node/register';
+
+  // Check if module is already loaded in cache
+  const isModuleLoaded = () => {
+    const moduleKeys = Object.keys(require.cache);
+    return moduleKeys.some(key => key.includes('opentelemetry'));
+  };
+
+  if (isModuleLoaded()) {
+    // Module is already loaded
+    return ok(undefined);
+  } else {
+    // Module not available
+    return err(new Error('OpenTelemetry module not available'));
+  }
+};
+
+loadOpenTelemetry().match(
+  () => {
+    console.log('✅ OpenTelemetry loaded');
+  },
+  error => {
+    console.warn('⚠️ OpenTelemetry not available:', error.message);
+  }
+);
 
 import compression from 'compression';
 import cors from 'cors';
@@ -103,61 +126,71 @@ app.use('/resource', resourceRouter);
 
 // Main route handler
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
-  try {
-    const headers = req.headers as Record<string, string>;
-    const { provider, isStream, isPassthroughProxyRoute, is402Sniffer } =
-      await initializeProvider(req, res);
-    if (!provider || is402Sniffer) {
-      return buildX402Response(req, res, new Decimal(0));
-    }
-    const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
-    const maxCostWithMarkup = applyMaxCostMarkup(maxCost);
+  const result = await ResultAsync.fromPromise(
+    (async () => {
+      const headers = req.headers as Record<string, string>;
+      const { provider, isStream, isPassthroughProxyRoute, is402Sniffer } =
+        await initializeProvider(req, res);
+      if (!provider || is402Sniffer) {
+        return buildX402Response(req, res, new Decimal(0));
+      }
+      const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
+      const maxCostWithMarkup = applyMaxCostMarkup(maxCost);
 
-    if (
-      !isApiRequest(headers) &&
-      !isX402Request(headers) &&
-      !isPassthroughProxyRoute
-    ) {
-      return buildX402Response(req, res, maxCostWithMarkup);
-    }
+      if (
+        !isApiRequest(headers) &&
+        !isX402Request(headers) &&
+        !isPassthroughProxyRoute
+      ) {
+        return buildX402Response(req, res, maxCostWithMarkup);
+      }
 
-    if (isApiRequest(headers)) {
-      const { processedHeaders, echoControlService } =
-        await authenticateRequest(headers, prisma);
+      if (isApiRequest(headers)) {
+        const { processedHeaders, echoControlService } =
+          await authenticateRequest(headers, prisma);
 
-      provider.setEchoControlService(echoControlService);
+        provider.setEchoControlService(echoControlService);
 
-      await handleApiKeyRequest({
-        req,
-        res,
-        headers: processedHeaders,
-        echoControlService,
-        isPassthroughProxyRoute,
-        provider,
-        isStream,
-        maxCost,
+        await handleApiKeyRequest({
+          req,
+          res,
+          headers: processedHeaders,
+          echoControlService,
+          isPassthroughProxyRoute,
+          provider,
+          isStream,
+          maxCost,
+        });
+        return;
+      }
+      if (isX402Request(headers) || isPassthroughProxyRoute) {
+        await handleX402Request({
+          req,
+          res,
+          headers,
+          maxCost: maxCostWithMarkup,
+          isPassthroughProxyRoute,
+          provider,
+          isStream,
+        });
+        return;
+      }
+
+      return res.status(400).json({
+        error: 'No request type found',
       });
-      return;
-    }
-    if (isX402Request(headers) || isPassthroughProxyRoute) {
-      await handleX402Request({
-        req,
-        res,
-        headers,
-        maxCost: maxCostWithMarkup,
-        isPassthroughProxyRoute,
-        provider,
-        isStream,
-      });
-      return;
-    }
+    })(),
+    error => error as Error
+  );
 
-    return res.status(400).json({
-      error: 'No request type found',
-    });
-  } catch (error) {
-    return next(error);
-  }
+  result.match(
+    () => {
+      // Success case - response already sent
+    },
+    error => {
+      return next(error);
+    }
+  );
 });
 
 // Error handling middleware
@@ -211,16 +244,16 @@ const gracefulShutdown = (signal: string) => {
   transactionEscrowMiddleware.stopCleanupProcess();
 
   // Close database connections
-  prisma
-    .$disconnect()
-    .then(() => {
+  ResultAsync.fromPromise(prisma.$disconnect(), error => error as Error).match(
+    () => {
       logger.info('Database connections closed');
       process.exit(0);
-    })
-    .catch(error => {
+    },
+    error => {
       logger.error('Error during graceful shutdown:', error);
       process.exit(1);
-    });
+    }
+  );
 };
 
 // Global error handlers to prevent server crashes

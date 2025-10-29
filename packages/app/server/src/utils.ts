@@ -5,6 +5,7 @@ import {
 } from 'types';
 import { Request, Response } from 'express';
 import { CdpClient, EvmSmartAccount } from '@coinbase/cdp-sdk';
+import { Result, ResultAsync, ok, err } from 'neverthrow';
 import {
   WALLET_SMART_ACCOUNT,
   DOMAIN_NAME,
@@ -110,82 +111,91 @@ function buildX402Challenge(params: X402ChallengeParams): string {
   return `X-402 realm="${esc(params.realm)}", link="${esc(params.link)}", network="${esc(params.network)}"`;
 }
 
-export async function buildX402Response(
+export function buildX402Response(
   req: Request,
   res: Response,
   maxCost: Decimal
-) {
+): ResultAsync<Response, Error> {
   const network = process.env.NETWORK as Network;
   const maxCostBigInt = decimalToUsdcBigInt(maxCost);
   const paymentUrl = req.path;
   const host = process.env.ECHO_ROUTER_BASE_URL;
   const resourceUrl = `${host}${req.url}`;
 
-  let recipient: string;
-  try {
-    recipient = (await getSmartAccount()).smartAccount.address;
-  } catch (error) {
-    logger.error('Failed to get smart account for X402 response', { error });
-    throw error;
-  }
+  return getSmartAccount()
+    .andThen(({ smartAccount }) => {
+      const recipient = smartAccount.address;
 
-  res.setHeader(
-    'WWW-Authenticate',
-    buildX402Challenge({
-      realm: X402_REALM,
-      link: paymentUrl,
-      network,
+      res.setHeader(
+        'WWW-Authenticate',
+        buildX402Challenge({
+          realm: X402_REALM,
+          link: paymentUrl,
+          network,
+        })
+      );
+
+      let outputSchema;
+      const schemaResult = Result.fromThrowable(
+        () => getSchemaForRoute(req.path),
+        error =>
+          new Error(
+            `Failed to generate schema for route: ${error instanceof Error ? error.message : 'Unknown error'}`
+          )
+      )();
+
+      if (schemaResult.isOk()) {
+        outputSchema = schemaResult.value;
+        logger.info('Schema generated for route', {
+          path: req.path,
+          hasSchema: !!outputSchema,
+        });
+      } else {
+        logger.error('Failed to generate schema for route', {
+          path: req.path,
+          error: schemaResult.error,
+        });
+        outputSchema = undefined;
+      }
+
+      const resBody = {
+        x402Version: 1,
+        error: X402_ERROR_MESSAGE,
+        accepts: [
+          {
+            type: X402_TYPE,
+            version: X402_VERSION,
+            network,
+            maxAmountRequired: maxCostBigInt.toString(),
+            recipient: recipient,
+            currency: USDC_ADDRESS,
+            to: recipient,
+            url: resourceUrl,
+            nonce: generateRandomNonce(),
+            scheme: X402_SCHEME,
+            resource: resourceUrl,
+            description: getDescriptionForRoute(req.path) ?? ECHO_DESCRIPTION,
+            mimeType: MIME_TYPE,
+            maxTimeoutSeconds: MAX_TIMEOUT_SECONDS,
+            discoverable: DISCOVERABLE,
+            payTo: recipient,
+            asset: USDC_ADDRESS,
+            extra: {
+              name: DOMAIN_NAME,
+              version: DOMAIN_VERSION,
+            },
+            ...(outputSchema ? { outputSchema: outputSchema } : {}),
+          },
+        ],
+      };
+
+      logger.info('Sending 402 response', { path: req.path });
+      return ok(res.status(402).json(resBody));
     })
-  );
-
-  let outputSchema;
-  try {
-    outputSchema = getSchemaForRoute(req.path);
-    logger.info('Schema generated for route', {
-      path: req.path,
-      hasSchema: !!outputSchema,
+    .mapErr(error => {
+      logger.error('Failed to get smart account for X402 response', { error });
+      return error;
     });
-  } catch (error) {
-    logger.error('Failed to generate schema for route', {
-      path: req.path,
-      error,
-    });
-    outputSchema = undefined;
-  }
-
-  const resBody = {
-    x402Version: 1,
-    error: X402_ERROR_MESSAGE,
-    accepts: [
-      {
-        type: X402_TYPE,
-        version: X402_VERSION,
-        network,
-        maxAmountRequired: maxCostBigInt.toString(),
-        recipient: recipient,
-        currency: USDC_ADDRESS,
-        to: recipient,
-        url: resourceUrl,
-        nonce: generateRandomNonce(),
-        scheme: X402_SCHEME,
-        resource: resourceUrl,
-        description: getDescriptionForRoute(req.path) ?? ECHO_DESCRIPTION,
-        mimeType: MIME_TYPE,
-        maxTimeoutSeconds: MAX_TIMEOUT_SECONDS,
-        discoverable: DISCOVERABLE,
-        payTo: recipient,
-        asset: USDC_ADDRESS,
-        extra: {
-          name: DOMAIN_NAME,
-          version: DOMAIN_VERSION,
-        },
-        ...(outputSchema ? { outputSchema: outputSchema } : {}),
-      },
-    ],
-  };
-
-  logger.info('Sending 402 response', { path: req.path });
-  return res.status(402).json(resBody);
 }
 
 export function isApiRequest(headers: Record<string, string>): boolean {
@@ -200,45 +210,61 @@ export function isX402Request(headers: Record<string, string>): boolean {
   return headers[X402_PAYMENT_HEADER] !== undefined;
 }
 
-export async function getSmartAccount(): Promise<{
-  smartAccount: EvmSmartAccount;
-}> {
-  try {
-    const cdp = new CdpClient({
-      apiKeyId: API_KEY_ID,
-      apiKeySecret: API_KEY_SECRET,
-      walletSecret: WALLET_SECRET,
-    });
+export function getSmartAccount(): ResultAsync<
+  {
+    smartAccount: EvmSmartAccount;
+  },
+  Error
+> {
+  return ResultAsync.fromPromise(
+    (async () => {
+      const cdp = new CdpClient({
+        apiKeyId: API_KEY_ID,
+        apiKeySecret: API_KEY_SECRET,
+        walletSecret: WALLET_SECRET,
+      });
 
-    const owner = await cdp.evm.getOrCreateAccount({
-      name: WALLET_OWNER,
-    });
+      const owner = await cdp.evm.getOrCreateAccount({
+        name: WALLET_OWNER,
+      });
 
-    const smartAccount = await cdp.evm.getOrCreateSmartAccount({
-      name: WALLET_SMART_ACCOUNT,
-      owner,
-    });
+      const smartAccount = await cdp.evm.getOrCreateSmartAccount({
+        name: WALLET_SMART_ACCOUNT,
+        owner,
+      });
 
-    return { smartAccount };
-  } catch (error) {
-    logger.error('Failed to get smart account', { error });
-    throw new Error(
-      `CDP authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
+      return { smartAccount };
+    })(),
+    error => {
+      logger.error('Failed to get smart account', { error });
+      return new Error(
+        `CDP authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  );
 }
 
 export function validateXPaymentHeader(
   processedHeaders: Record<string, string>,
   req: Request
-): PaymentPayload {
+): Result<PaymentPayload, Error> {
   const xPaymentHeader =
     processedHeaders[X402_PAYMENT_HEADER] || req.headers[X402_PAYMENT_HEADER];
   if (!xPaymentHeader) {
-    throw new Error('x-payment header missing after validation');
+    return err(new Error('x-payment header missing after validation'));
   }
-  const xPaymentData = JSON.parse(
-    Buffer.from(xPaymentHeader as string, 'base64').toString()
-  );
-  return PaymentPayloadSchema.parse(xPaymentData);
+
+  try {
+    const xPaymentData = JSON.parse(
+      Buffer.from(xPaymentHeader as string, 'base64').toString()
+    );
+    const parsedData = PaymentPayloadSchema.parse(xPaymentData);
+    return ok(parsedData);
+  } catch (error) {
+    return err(
+      new Error(
+        `Failed to parse x-payment header: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    );
+  }
 }

@@ -1,6 +1,6 @@
-import { USDC_ADDRESS } from "services/fund-repo/constants";
-import { base, baseSepolia } from "viem/chains";
-import { Address } from "viem";
+import { USDC_ADDRESS } from './services/fund-repo/constants';
+import { base, baseSepolia } from 'viem/chains';
+import { Address } from 'viem';
 
 export const WALLET_OWNER = process.env.WALLET_OWNER
   ? `${process.env.WALLET_OWNER}`
@@ -37,8 +37,6 @@ export const X402_ERROR_MESSAGE = 'Payment Required';
 export const X402_PAYMENT_HEADER = 'x-payment';
 export const X402_REALM = 'echo';
 
-
-
 // Chain IDs
 const BASE_CHAIN_ID = 8453;
 const BASE_SEPOLIA_CHAIN_ID = 84532;
@@ -48,19 +46,19 @@ const POLYGON_CHAIN_ID = 137;
 const POLYGON_AMOY_CHAIN_ID = 80002;
 
 export const NETWORK_TO_CHAIN_ID: Record<string, number> = {
-  'base': BASE_CHAIN_ID,
+  base: BASE_CHAIN_ID,
   'base-sepolia': BASE_SEPOLIA_CHAIN_ID,
   'avalanche-fuji': AVALANCHE_FUJI_CHAIN_ID,
-  'avalanche': AVALANCHE_CHAIN_ID,
-  'polygon': POLYGON_CHAIN_ID,
+  avalanche: AVALANCHE_CHAIN_ID,
+  polygon: POLYGON_CHAIN_ID,
   'polygon-amoy': POLYGON_AMOY_CHAIN_ID,
 };
 
 export const NETWORK_TO_CHAIN = {
-  'base': base,
+  base: base,
   'base-sepolia': baseSepolia,
 };
 
 export const USDC_ADDRESS_BY_NETWORK: Record<string, Address> = {
-  'base': USDC_ADDRESS,
+  base: USDC_ADDRESS,
 };

@@ -1,6 +1,7 @@
 import { Response as ExpressResponse, Request } from 'express';
 import { BaseProvider } from '../providers/BaseProvider';
 import { Transaction } from '../types';
+import { ResultAsync, fromPromise, err } from 'neverthrow';
 
 export class HandleNonStreamingService {
   /**
@@ -10,35 +11,44 @@ export class HandleNonStreamingService {
    * @param provider - The provider instance for handling the response
    * @param res - Express response object to send data to the client
    */
-  async handleNonStreaming(
+  handleNonStreaming(
     response: Response,
     provider: BaseProvider,
     req: Request,
     res: ExpressResponse
-  ): Promise<{ transaction: Transaction; data: unknown }> {
+  ): ResultAsync<{ transaction: Transaction; data: unknown }, Error> {
     // Parse the JSON response with error handling
-    let data;
-    try {
-      data = await response.json();
-    } catch (jsonError) {
-      // If JSON parsing fails, get the text response instead
-      const text = await response.text();
-      throw new Error(`Failed to parse JSON response: ${text}`);
-    }
+    return fromPromise(
+      response.json(),
+      error => new Error(`Failed to parse JSON response: ${error}`)
+    )
+      .orElse(jsonError => {
+        // If JSON parsing fails, get the text response instead
+        return fromPromise(
+          response.text(),
+          error => new Error(`Failed to read response text: ${error}`)
+        ).andThen(text => {
+          return err(new Error(`Failed to parse JSON response: ${text}`));
+        });
+      })
+      .andThen(data => {
+        // Apply provider-specific response transformations (e.g., signed URLs)
+        return fromPromise(
+          provider.transformResponse(data),
+          error => new Error(`Failed to transform response: ${error}`)
+        ).andThen(transformedData => {
+          // Process the response body for accounting/transaction creation
+          return fromPromise(
+            provider.handleBody(JSON.stringify(transformedData), req.body),
+            error => new Error(`Failed to handle body: ${error}`)
+          ).map(transaction => {
+            // Set the appropriate content type
+            res.setHeader('content-type', 'application/json');
 
-    // Apply provider-specific response transformations (e.g., signed URLs)
-    data = await provider.transformResponse(data);
-
-    // Process the response body for accounting/transaction creation
-    const transaction = await provider.handleBody(
-      JSON.stringify(data),
-      req.body
-    );
-
-    // Set the appropriate content type
-    res.setHeader('content-type', 'application/json');
-
-    return { transaction, data };
+            return { transaction, data: transformedData };
+          });
+        });
+      });
   }
 }
 

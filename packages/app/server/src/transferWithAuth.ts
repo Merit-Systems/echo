@@ -5,33 +5,33 @@ import {
 import { Abi, encodeFunctionData } from 'viem';
 import { SendUserOperationReturnType } from './types';
 import { getSmartAccount } from './utils';
+import { ResultAsync, fromPromise } from 'neverthrow';
 
-export async function transfer(
+export function transfer(
   to: string,
   value: BigInt
-): Promise<SendUserOperationReturnType> {
-  try {
-    const { smartAccount } = await getSmartAccount();
-
-    const result = await smartAccount.sendUserOperation({
-      network: 'base',
-      calls: [
-        {
-          to: USDC_ADDRESS,
-          value: 0n,
-          data: encodeFunctionData({
-            abi: ERC20_CONTRACT_ABI as Abi,
-            functionName: 'transfer',
-            args: [to, value.toString()],
-          }),
-        },
-      ],
-    });
-
-    return result;
-  } catch (error) {
-    throw new Error(
-      `Transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+): ResultAsync<SendUserOperationReturnType, Error> {
+  return getSmartAccount().andThen(({ smartAccount }) => {
+    return fromPromise(
+      smartAccount.sendUserOperation({
+        network: 'base',
+        calls: [
+          {
+            to: USDC_ADDRESS,
+            value: 0n,
+            data: encodeFunctionData({
+              abi: ERC20_CONTRACT_ABI as Abi,
+              functionName: 'transfer',
+              args: [to, value.toString()],
+            }),
+          },
+        ],
+      }),
+      (error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+        return new Error(`Transfer failed: ${errorMessage}`);
+      }
     );
-  }
+  });
 }

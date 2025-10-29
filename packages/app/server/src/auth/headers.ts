@@ -45,14 +45,16 @@ export const verifyUserHeaderCheck = async (
   const apiKey = authorization ?? xApiKey ?? xGoogleApiKey;
   const cleanApiKey = apiKey?.replace('Bearer ', '') ?? '';
   const echoControlService = new EchoControlService(prisma, cleanApiKey);
-  const authResult = await echoControlService.verifyApiKey();
+  const authResultResponse = await echoControlService.verifyApiKey();
 
-  if (!authResult) {
+  if (authResultResponse.isErr() || !authResultResponse.value) {
     throw new UnauthorizedError('Authentication failed.');
   }
 
+  const authResult = authResultResponse.value;
+
   const span = trace.getSpan(context.active());
-  if (span) {
+  if (span && authResult.echoApp && authResult.user) {
     span.setAttribute('echo.app.id', authResult.echoApp.id);
     span.setAttribute('echo.app.name', authResult.echoApp.name);
     span.setAttribute('echo.user.id', authResult.user.id);
