@@ -3,6 +3,7 @@ import { prisma } from '../server';
 import { authenticateRequest } from '../auth';
 import logger from '../logger';
 import { UnauthorizedError } from '../errors/http';
+import { ResultAsync, err } from 'neverthrow';
 
 const inFlightMonitorRouter: Router = Router();
 
@@ -27,46 +28,50 @@ const inFlightMonitorRouter: Router = Router();
 inFlightMonitorRouter.get(
   '/in-flight-requests',
   async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      // Authenticate the request using the same flow as the main server
-      const { echoControlService } = await authenticateRequest(
-        req.headers as Record<string, string>,
-        prisma
-      );
+    const headers = req.headers as Record<string, string>;
 
+    const result = await ResultAsync.fromPromise(
+      authenticateRequest(headers, prisma),
+      e => e as unknown
+    ).andThen(({ echoControlService }) => {
       const userId = echoControlService.getUserId();
       const echoAppId = echoControlService.getEchoAppId();
 
       if (!userId || !echoAppId) {
-        throw new UnauthorizedError('Unauthorized Access');
+        return err(new UnauthorizedError('Unauthorized Access'));
       }
 
-      // Fetch the current in-flight request count
-      const inFlightRequest = await prisma.inFlightRequest.findUnique({
-        where: {
-          userId_echoAppId: {
-            userId,
-            echoAppId,
+      return ResultAsync.fromPromise(
+        prisma.inFlightRequest.findUnique({
+          where: {
+            userId_echoAppId: {
+              userId,
+              echoAppId,
+            },
           },
-        },
+        }),
+        e => e as unknown
+      ).map(inFlightRequest => {
+        const response = {
+          userId,
+          echoAppId,
+          numberInFlight: inFlightRequest?.numberInFlight ?? 0,
+          lastUpdated: inFlightRequest?.updatedAt ?? null,
+          maxAllowed: Number(process.env.MAX_IN_FLIGHT_REQUESTS) || 10,
+        };
+
+        logger.info(
+          `Retrieved in-flight requests for user ${userId} and app ${echoAppId}: ${response.numberInFlight}`
+        );
+
+        return response;
       });
+    });
 
-      const response = {
-        userId,
-        echoAppId,
-        numberInFlight: inFlightRequest?.numberInFlight ?? 0,
-        lastUpdated: inFlightRequest?.updatedAt ?? null,
-        maxAllowed: Number(process.env.MAX_IN_FLIGHT_REQUESTS) || 10,
-      };
-
-      logger.info(
-        `Retrieved in-flight requests for user ${userId} and app ${echoAppId}: ${response.numberInFlight}`
-      );
-
-      res.status(200).json(response);
-    } catch (error) {
-      return next(error);
-    }
+    result.match(
+      response => res.status(200).json(response),
+      error => next(error as Error)
+    );
   }
 );
 
