@@ -15,6 +15,7 @@ import { PrismaClient, SpendPool } from '../generated/prisma';
 import logger from '../logger';
 import { EarningsService } from './EarningsService';
 import FreeTierService from './FreeTierService';
+import { Result, fromPromise, ok, err } from 'neverthrow';
 
 export class EchoControlService {
   private readonly db: PrismaClient;
@@ -48,16 +49,35 @@ export class EchoControlService {
   }
 
   /**
+   * Static factory method to create EchoControlService with error handling
+   */
+  static create(
+    db: PrismaClient,
+    apiKey: string
+  ): Result<EchoControlService, Error> {
+    try {
+      const service = new EchoControlService(db, apiKey);
+      return ok(service);
+    } catch (error) {
+      return err(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  /**
    * Verify API key against the database and cache the authentication result
    * Uses centralized logic from EchoDbService
    */
-  async verifyApiKey(): Promise<ApiKeyValidationResult | null> {
-    try {
-      this.authResult = await this.dbService.validateApiKey(this.apiKey);
-    } catch (error) {
-      logger.error(`Error verifying API key: ${error}`);
-      return null;
+  async verifyApiKey(): Promise<Result<ApiKeyValidationResult | null, Error>> {
+    const validateApiKeyResult = await this.dbService.validateApiKey(
+      this.apiKey
+    );
+
+    if (validateApiKeyResult.isErr()) {
+      logger.error(`Error verifying API key: ${validateApiKeyResult.error}`);
+      return ok(null);
     }
+
+    this.authResult = validateApiKeyResult.value;
 
     const markupData = await this.earningsService.getEarningsData(
       this.authResult,
@@ -72,13 +92,17 @@ export class EchoControlService {
     const userId = this.authResult?.userId;
 
     if (echoAppId && userId) {
-      this.referralCodeId = await this.dbService.getReferralCodeForUser(
+      const referralCodeResult = await this.dbService.getReferralCodeForUser(
         userId,
         echoAppId
       );
+
+      if (referralCodeResult.isOk()) {
+        this.referralCodeId = referralCodeResult.value;
+      }
     }
 
-    return this.authResult;
+    return ok(this.authResult);
   }
 
   /**
@@ -120,21 +144,21 @@ export class EchoControlService {
    * Get balance for the authenticated user directly from the database
    * Uses centralized logic from EchoDbService
    */
-  async getBalance(): Promise<number> {
-    try {
-      if (!this.authResult) {
-        logger.error('No authentication result available');
-        return 0;
-      }
-
-      const { userId } = this.authResult;
-      const balance = await this.dbService.getBalance(userId);
-
-      return balance.balance;
-    } catch (error) {
-      logger.error(`Error fetching balance: ${error}`);
-      return 0;
+  async getBalance(): Promise<Result<number, Error>> {
+    if (!this.authResult) {
+      logger.error('No authentication result available');
+      return ok(0);
     }
+
+    const { userId } = this.authResult;
+    const balanceResult = await this.dbService.getBalance(userId);
+
+    if (balanceResult.isErr()) {
+      logger.error(`Error fetching balance: ${balanceResult.error}`);
+      return ok(0);
+    }
+
+    return ok(balanceResult.value.balance);
   }
 
   /**
@@ -144,27 +168,21 @@ export class EchoControlService {
   async createTransaction(
     transaction: Transaction,
     maxCost: Decimal
-  ): Promise<void> {
-    try {
-      if (!this.authResult) {
-        logger.error('No authentication result available');
-        return;
-      }
+  ): Promise<Result<void, Error>> {
+    if (!this.authResult) {
+      logger.error('No authentication result available');
+      return ok(undefined);
+    }
 
-      if (!this.markUpAmount) {
-        logger.error('Error Fetching Markup Amount');
-        return;
-      }
+    if (!this.markUpAmount) {
+      logger.error('Error Fetching Markup Amount');
+      return ok(undefined);
+    }
 
-      if (this.freeTierSpendPool) {
-        await this.createFreeTierTransaction(transaction);
-        return;
-      } else {
-        await this.createPaidTransaction(transaction, maxCost);
-        return;
-      }
-    } catch (error) {
-      logger.error(`Error creating transaction: ${error}`);
+    if (this.freeTierSpendPool) {
+      return await this.createFreeTierTransaction(transaction);
+    } else {
+      return await this.createPaidTransaction(transaction, maxCost);
     }
   }
 
@@ -242,21 +260,25 @@ export class EchoControlService {
       markUpProfit: markUpProfitDecimal,
     };
   }
-  async createFreeTierTransaction(transaction: Transaction): Promise<void> {
+  async createFreeTierTransaction(
+    transaction: Transaction
+  ): Promise<Result<void, Error>> {
     if (!this.authResult) {
       logger.error('No authentication result available');
-      throw new UnauthorizedError('No authentication result available');
+      return err(new UnauthorizedError('No authentication result available'));
     }
 
     if (!this.freeTierSpendPool) {
       logger.error('No free tier spend pool available');
-      throw new PaymentRequiredError('No free tier spend pool available');
+      return err(new PaymentRequiredError('No free tier spend pool available'));
     }
 
     const { userId, echoAppId, apiKeyId } = this.authResult;
     if (!userId || !echoAppId) {
       logger.error('Missing required user or app information');
-      throw new UnauthorizedError('Missing required user or app information');
+      return err(
+        new UnauthorizedError('Missing required user or app information')
+      );
     }
 
     const {
@@ -286,19 +308,28 @@ export class EchoControlService {
       ...(this.referrerRewardId && { referrerRewardId: this.referrerRewardId }),
     };
 
-    await this.freeTierService.createFreeTierTransaction(
-      transactionData,
-      this.freeTierSpendPool.id
+    const createTransactionResult = await fromPromise(
+      this.freeTierService.createFreeTierTransaction(
+        transactionData,
+        this.freeTierSpendPool.id
+      ),
+      error => (error instanceof Error ? error : new Error(String(error)))
     );
+
+    if (createTransactionResult.isErr()) {
+      return err(createTransactionResult.error);
+    }
+
+    return ok(undefined);
   }
 
   async createPaidTransaction(
     transaction: Transaction,
     maxCost: Decimal
-  ): Promise<void> {
+  ): Promise<Result<void, Error>> {
     if (!this.authResult) {
       logger.error('No authentication result available');
-      throw new UnauthorizedError('No authentication result available');
+      return err(new UnauthorizedError('No authentication result available'));
     }
 
     const {
@@ -334,6 +365,15 @@ export class EchoControlService {
       ...(this.referrerRewardId && { referrerRewardId: this.referrerRewardId }),
     };
 
-    await this.dbService.createPaidTransaction(transactionData);
+    const createTransactionResult = await fromPromise(
+      this.dbService.createPaidTransaction(transactionData),
+      error => (error instanceof Error ? error : new Error(String(error)))
+    );
+
+    if (createTransactionResult.isErr()) {
+      return err(createTransactionResult.error);
+    }
+
+    return ok(undefined);
   }
 }

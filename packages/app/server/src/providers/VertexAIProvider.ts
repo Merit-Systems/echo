@@ -454,10 +454,7 @@ export class VertexAIProvider extends BaseProvider {
     providerId: string
   ): ResultAsync<boolean, Error> {
     const dbService = new EchoDbService(prisma);
-    return fromPromise(
-      dbService.confirmAccessControl(userId, providerId),
-      error => new Error(`Failed to confirm access control: ${error}`)
-    ).andThen(result => result);
+    return dbService.confirmAccessControl(userId, providerId);
   }
 
   // ========== Response Parsing ==========

@@ -69,10 +69,10 @@ export async function settle(
   }
 
   const parseResult = ExactEvmPayloadSchema.safeParse(xPaymentData.payload);
-  
+
   if (!parseResult.success) {
-    logger.error('Invalid EVM payload', { 
-      error: parseResult.error.format() 
+    logger.error('Invalid EVM payload', {
+      error: parseResult.error.format(),
     });
     buildX402Response(req, res, maxCost);
     return undefined;
@@ -170,7 +170,9 @@ export async function finalize(
     transaction.rawTransactionCost
   );
   if (markUpAmount.greaterThan(0)) {
-    logger.info(`PROFIT RECEIVED: ${markUpAmount.toNumber()} USD, checking for a repo send operation`);
+    logger.info(
+      `PROFIT RECEIVED: ${markUpAmount.toNumber()} USD, checking for a repo send operation`
+    );
     try {
       await safeFundRepoIfWorthwhile();
     } catch (error) {
@@ -200,41 +202,45 @@ export async function handleX402Request({
 
   const { payload, paymentAmountDecimal } = settleResult;
 
-  try {
-    const transactionResult = await modelRequestService.executeModelRequest(
-      req,
-      res,
-      headers,
-      provider,
-      isStream
-    );
-    const transaction = transactionResult.transaction;
+  const transactionResult = await modelRequestService.executeModelRequest(
+    req,
+    res,
+    headers,
+    provider,
+    isStream
+  );
 
-    if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
-      await prisma.videoGenerationX402.create({
-        data: {
-          videoId: transaction.metadata.providerId,
-          wallet: payload.authorization.from,
-          cost: transaction.rawTransactionCost,
-          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 1),
-        },
-      });
-    }
-
-    modelRequestService.handleResolveResponse(
-      res,
-      isStream,
-      transactionResult.data
-    );
-
-    await finalize(
-      paymentAmountDecimal,
-      transactionResult.transaction,
-      payload
-    );
-  } catch (error) {
+  if (transactionResult.isErr()) {
     await refund(paymentAmountDecimal, payload);
+    return;
   }
+
+  const transaction = transactionResult.value.transaction;
+
+  if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
+    await prisma.videoGenerationX402.create({
+      data: {
+        videoId: transaction.metadata.providerId,
+        wallet: payload.authorization.from,
+        cost: transaction.rawTransactionCost,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 1),
+      },
+    });
+  }
+
+  modelRequestService.handleResolveResponse(
+    res,
+    isStream,
+    transactionResult.value.data
+  );
+
+  await finalize(
+    paymentAmountDecimal,
+    transactionResult.value.transaction,
+    payload
+  );
+
+  await refund(paymentAmountDecimal, payload);
 }
 
 export async function handleApiKeyRequest({
@@ -270,13 +276,19 @@ export async function handleApiKeyRequest({
   }
 
   // Step 3: Execute business logic
-  const { transaction, data } = await modelRequestService.executeModelRequest(
+  const transactionResult = await modelRequestService.executeModelRequest(
     req,
     res,
     headers,
     provider,
     isStream
   );
+
+  if (transactionResult.isErr()) {
+    return;
+  }
+
+  const { transaction, data } = transactionResult.value;
 
   // There is no actual refund, this logs if we underestimate the raw cost
   calculateRefundAmount(maxCost, transaction.rawTransactionCost);

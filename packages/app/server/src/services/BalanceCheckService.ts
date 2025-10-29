@@ -37,7 +37,13 @@ export async function checkBalance(
   }
 
   // If no free tier, check regular balance
-  const balance = await echoControlService.getBalance();
+  const balanceResult = await echoControlService.getBalance();
+
+  if (balanceResult.isErr()) {
+    throw new PaymentRequiredError('Failed to check balance');
+  }
+
+  const balance = balanceResult.value;
 
   if (balance > MINIMUM_SPEND_AMOUNT_SAFETY_BUFFER) {
     return {

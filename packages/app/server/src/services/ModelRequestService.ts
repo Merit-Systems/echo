@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { ResultAsync, fromPromise, err, ok } from 'neverthrow';
 import { HttpError } from '../errors/http';
 import logger from '../logger';
 import { BaseProvider } from '../providers/BaseProvider';
@@ -17,85 +18,107 @@ export class ModelRequestService {
    * @param forwardingPath - Path to forward the request to
    * @returns Promise<void> - Handles the response directly
    */
-  async executeModelRequest(
+  executeModelRequest(
     req: Request,
     res: Response,
     processedHeaders: Record<string, string>,
     provider: BaseProvider,
     isStream: boolean
-  ): Promise<{
-    transaction: Transaction;
-    data: unknown;
-  }> {
-    // Format authentication headers
-    const authenticatedHeaders =
-      await provider.formatAuthHeaders(processedHeaders);
+  ): ResultAsync<
+    {
+      transaction: Transaction;
+      data: unknown;
+    },
+    HttpError
+  > {
+    return fromPromise(
+      provider.formatAuthHeaders(processedHeaders),
+      error => new HttpError(500, `Failed to format auth headers: ${error}`)
+    ).andThen(authenticatedHeaders => {
+      logger.info(
+        `New outbound request: ${req.method} ${provider.getBaseUrl(req.path)}${req.path}`
+      );
 
-    logger.info(
-      `New outbound request: ${req.method} ${provider.getBaseUrl(req.path)}${req.path}`
-    );
+      // Ensure stream usage is set correctly (OpenAI Format)
+      req.body = provider.ensureStreamUsage(req.body, req.path);
 
-    // Ensure stream usage is set correctly (OpenAI Format)
-    req.body = provider.ensureStreamUsage(req.body, req.path);
+      // Apply provider-specific request body transformations
+      req.body = provider.transformRequestBody(req.body, req.path);
 
-    // Apply provider-specific request body transformations
-    req.body = provider.transformRequestBody(req.body, req.path);
+      // Format request body and headers based on content type
+      const { requestBody, headers: formattedHeaders } = this.formatRequestBody(
+        req,
+        authenticatedHeaders
+      );
 
-    // Format request body and headers based on content type
-    const { requestBody, headers: formattedHeaders } = this.formatRequestBody(
-      req,
-      authenticatedHeaders
-    );
+      // this rewrites the base url to the provider's base url and retains the rest
+      const upstreamUrl = formatUpstreamUrl(provider, req);
 
-    // this rewrites the base url to the provider's base url and retains the rest
-    const upstreamUrl = formatUpstreamUrl(provider, req);
+      // Forward the request to the provider's API
+      return fromPromise(
+        fetch(upstreamUrl, {
+          method: req.method,
+          headers: formattedHeaders,
+          ...(requestBody && { body: requestBody }),
+        }),
+        error => new HttpError(500, `Failed to fetch from upstream: ${error}`)
+      ).andThen(response => {
+        // Handle non-200 responses
+        if (response.status !== 200) {
+          const errorMessage = `${response.status} ${response.statusText}`;
+          logger.error(`Error response: ${errorMessage}`);
 
-    // Forward the request to the provider's API
-    const response = await fetch(upstreamUrl, {
-      method: req.method,
-      headers: formattedHeaders,
-      ...(requestBody && { body: requestBody }),
+          return fromPromise(
+            response.text(),
+            () =>
+              new HttpError(response.status, 'Failed to read error response')
+          )
+            .orElse(() => {
+              return ok('');
+            })
+            .andThen(errorBody => {
+              const error = this.parseErrorResponse(errorBody, response.status);
+              logger.error(`Error details: ${JSON.stringify(error)}`);
+              res.status(response.status).json({ error });
+              return err(new HttpError(response.status, JSON.stringify(error)));
+            });
+        }
+
+        // Handle the successful response based on stream type
+        if (isStream) {
+          return fromPromise(
+            handleStreamService.handleStream(response, provider, req, res),
+            error => new HttpError(500, `Stream handling failed: ${error}`)
+          ).andThen(result => {
+            if (result.isErr()) {
+              return err(new HttpError(500, result.error.message));
+            }
+
+            return ok({
+              transaction: result.value,
+              data: null,
+            });
+          });
+        } else {
+          return fromPromise(
+            handleNonStreamingService.handleNonStreaming(
+              response,
+              provider,
+              req,
+              res
+            ),
+            error =>
+              new HttpError(500, `Non-streaming handling failed: ${error}`)
+          ).andThen(result => {
+            if (result.isErr()) {
+              return err(result.error as HttpError);
+            }
+
+            return ok(result.value);
+          });
+        }
+      });
     });
-
-    // Handle non-200 responses
-    if (response.status !== 200) {
-      const errorMessage = `${response.status} ${response.statusText}`;
-      logger.error(`Error response: ${errorMessage}`);
-
-      const errorBody = await response.text().catch(() => '');
-      const error = this.parseErrorResponse(errorBody, response.status);
-
-      logger.error(`Error details: ${JSON.stringify(error)}`);
-      res.status(response.status).json({ error });
-      throw new HttpError(response.status, JSON.stringify(error));
-    }
-
-    // Handle the successful response based on stream type
-    if (isStream) {
-      const transaction = await handleStreamService.handleStream(
-        response,
-        provider,
-        req,
-        res
-      );
-      return {
-        transaction,
-        data: null,
-      };
-    } else {
-      const result = await handleNonStreamingService.handleNonStreaming(
-        response,
-        provider,
-        req,
-        res
-      );
-
-      if (result.isErr()) {
-        throw result.error;
-      }
-
-      return result.value;
-    }
   }
 
   handleResolveResponse(res: Response, isStream: boolean, data: unknown): void {
@@ -170,11 +193,13 @@ export class ModelRequestService {
       return { message: `HTTP ${status} error` };
     }
 
-    try {
-      return JSON.parse(errorBody);
-    } catch {
-      return { message: errorBody };
-    }
+    return fromPromise(
+      Promise.resolve(JSON.parse(errorBody)),
+      () => new Error('JSON parse failed')
+    ).match(
+      parsed => parsed,
+      () => ({ message: errorBody })
+    );
   }
 }
 

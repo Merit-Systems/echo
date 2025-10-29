@@ -48,9 +48,9 @@ export class EchoDbService {
    * Validate an API key and return user/app information
    * Centralized logic previously duplicated in echo-control and echo-server
    */
-  async validateApiKey(
+  validateApiKey(
     apiKey: string
-  ): Promise<ResultAsync<ApiKeyValidationResult | null, Error>> {
+  ): ResultAsync<ApiKeyValidationResult | null, Error> {
     return ResultAsync.fromPromise(
       (async () => {
         // Remove Bearer prefix if present
@@ -184,10 +184,10 @@ export class EchoDbService {
     );
   }
 
-  async getReferralCodeForUser(
+  getReferralCodeForUser(
     userId: string,
     echoAppId: string
-  ): Promise<ResultAsync<string | null, Error>> {
+  ): ResultAsync<string | null, Error> {
     return ResultAsync.fromPromise(
       (async () => {
         const appMembership = await this.db.appMembership.findUnique({
@@ -218,7 +218,7 @@ export class EchoDbService {
    * Calculate total balance for a user across all apps
    * Uses User.totalPaid and User.totalSpent for consistent balance calculation
    */
-  async getBalance(userId: string): Promise<ResultAsync<Balance, Error>> {
+  getBalance(userId: string): ResultAsync<Balance, Error> {
     return ResultAsync.fromPromise(
       (async () => {
         const user = await this.db.user.findUnique({
@@ -413,9 +413,9 @@ export class EchoDbService {
    * Create an LLM transaction record and atomically update user's totalSpent
    * Centralized logic for transaction creation with atomic balance updates
    */
-  async createPaidTransaction(
+  createPaidTransaction(
     transaction: TransactionRequest
-  ): Promise<ResultAsync<Transaction | null, Error>> {
+  ): ResultAsync<Transaction | null, Error> {
     return ResultAsync.fromPromise(
       (async () => {
         // Use a database transaction to atomically create the LLM transaction and update user balance
@@ -462,17 +462,15 @@ export class EchoDbService {
    * @param spendPoolId - The spend pool ID
    * @param transactionData - The transaction data to create
    */
-  async createFreeTierTransaction(
+  createFreeTierTransaction(
     transactionData: TransactionRequest,
     spendPoolId: string
-  ): Promise<
-    ResultAsync<
-      {
-        transaction: Transaction;
-        userSpendPoolUsage: UserSpendPoolUsage;
-      },
-      Error
-    >
+  ): ResultAsync<
+    {
+      transaction: Transaction;
+      userSpendPoolUsage: UserSpendPoolUsage;
+    },
+    Error
   > {
     return ResultAsync.fromPromise(
       (async () => {
@@ -531,10 +529,10 @@ export class EchoDbService {
     );
   }
 
-  async confirmAccessControl(
+  confirmAccessControl(
     userId: string,
     providerId: string
-  ): Promise<ResultAsync<boolean, Error>> {
+  ): ResultAsync<boolean, Error> {
     return ResultAsync.fromPromise(
       (async () => {
         const transaction: Transaction | null =

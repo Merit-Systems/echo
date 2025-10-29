@@ -304,9 +304,14 @@ export class OpenAIVideoProvider extends BaseProvider {
   private async verifyVideoAccess(videoId: string): Promise<void> {
     const userId = this.getRequiredUserId();
     const dbService = new EchoDbService(prisma);
-    const hasAccess = await dbService.confirmAccessControl(userId, videoId);
+    const result = await dbService.confirmAccessControl(userId, videoId);
 
-    if (!hasAccess) {
+    if (result.isErr()) {
+      logger.error(`Error confirming access control: ${result.error}`);
+      throw new HttpError(403, 'Access denied to this video');
+    }
+
+    if (!result.value) {
       throw new HttpError(403, 'Access denied to this video');
     }
   }
