@@ -5,6 +5,7 @@ import {
   VerifyResponse,
 } from './x402-types';
 import { facilitatorWithRetry } from './facilitatorRetry';
+import { ResultAsync } from 'neverthrow';
 
 /**
  * Creates a facilitator client for interacting with the X402 payment facilitator service
@@ -18,13 +19,17 @@ export function useFacilitator() {
    *
    * @param payload - The payment payload to verify
    * @param paymentRequirements - The payment requirements to verify against
-   * @returns A promise that resolves to the verification response
+   * @returns A ResultAsync that resolves to the verification response or an error
    */
-  async function verify(
+  function verify(
     payload: PaymentPayload,
     paymentRequirements: PaymentRequirements
-  ): Promise<VerifyResponse> {
-    return facilitatorWithRetry<VerifyResponse>('verify', payload, paymentRequirements);
+  ): ResultAsync<VerifyResponse, Error> {
+    return facilitatorWithRetry<VerifyResponse>(
+      'verify',
+      payload,
+      paymentRequirements
+    );
   }
 
   /**
@@ -33,13 +38,17 @@ export function useFacilitator() {
    *
    * @param payload - The payment payload to settle
    * @param paymentRequirements - The payment requirements for the settlement
-   * @returns A promise that resolves to the settlement response
+   * @returns A ResultAsync that resolves to the settlement response or an error
    */
-  async function settle(
+  function settle(
     payload: PaymentPayload,
     paymentRequirements: PaymentRequirements
-  ): Promise<SettleResponse> {
-    return facilitatorWithRetry<SettleResponse>('settle', payload, paymentRequirements);
+  ): ResultAsync<SettleResponse, Error> {
+    return facilitatorWithRetry<SettleResponse>(
+      'settle',
+      payload,
+      paymentRequirements
+    );
   }
 
   return { verify, settle };

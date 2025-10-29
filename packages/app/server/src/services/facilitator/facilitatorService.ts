@@ -6,6 +6,7 @@ import {
 } from './x402-types';
 import { generateJwt } from '@coinbase/cdp-sdk/auth';
 import { useFacilitator } from './useFacilitator';
+import { ResultAsync } from 'neverthrow';
 
 interface GenerateCdpJwtInput {
   requestMethod: 'POST' | 'GET' | 'PUT' | 'DELETE';
@@ -31,19 +32,17 @@ export const generateCdpJwt = async ({
 };
 
 export class FacilitatorClient {
-  async verify(request: VerifyRequest): Promise<VerifyResponse> {
-    const result = await useFacilitator().verify(
+  verify(request: VerifyRequest): ResultAsync<VerifyResponse, Error> {
+    return useFacilitator().verify(
       request.paymentPayload,
       request.paymentRequirements
     );
-    return result;
   }
 
-  async settle(request: SettleRequest): Promise<SettleResponse> {
-    const result = await useFacilitator().settle(
+  settle(request: SettleRequest): ResultAsync<SettleResponse, Error> {
+    return useFacilitator().settle(
       request.paymentPayload,
       request.paymentRequirements
     );
-    return result;
   }
 }

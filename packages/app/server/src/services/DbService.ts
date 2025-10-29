@@ -16,6 +16,7 @@ import {
 } from '../generated/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from '../logger';
+import { ResultAsync } from 'neverthrow';
 /**
  * Secret key for deterministic API key hashing (should match echo-control)
  */
@@ -47,37 +48,181 @@ export class EchoDbService {
    * Validate an API key and return user/app information
    * Centralized logic previously duplicated in echo-control and echo-server
    */
-  async validateApiKey(apiKey: string): Promise<ApiKeyValidationResult | null> {
-    try {
-      // Remove Bearer prefix if present
-      const cleanApiKey = apiKey.replace('Bearer ', '');
+  async validateApiKey(
+    apiKey: string
+  ): Promise<ResultAsync<ApiKeyValidationResult | null, Error>> {
+    return ResultAsync.fromPromise(
+      (async () => {
+        // Remove Bearer prefix if present
+        const cleanApiKey = apiKey.replace('Bearer ', '');
 
-      const isJWT = cleanApiKey.split('.').length === 3;
+        const isJWT = cleanApiKey.split('.').length === 3;
 
-      if (isJWT) {
-        const verifyResult = await jwtVerify(cleanApiKey, this.apiJwtSecret);
-        const payload = verifyResult.payload as unknown as EchoAccessJwtPayload;
+        if (isJWT) {
+          const verifyResult = await jwtVerify(cleanApiKey, this.apiJwtSecret);
+          const payload =
+            verifyResult.payload as unknown as EchoAccessJwtPayload;
 
-        if (!payload) {
-          return null;
+          if (!payload) {
+            return null;
+          }
+
+          // Validate required fields exist
+          if (!payload.user_id || !payload.app_id) {
+            logger.error(
+              `JWT missing required fields: user_id=${payload.user_id}, app_id=${payload.app_id}`
+            );
+            return null;
+          }
+
+          if (payload.exp && payload.exp < Date.now() / 1000) {
+            return null;
+          }
+
+          const user = await this.db.user.findUnique({
+            where: {
+              id: payload.user_id,
+            },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              createdAt: true,
+              updatedAt: true,
+              totalPaid: true,
+              totalSpent: true,
+            },
+          });
+
+          const app = await this.db.echoApp.findUnique({
+            where: {
+              id: payload.app_id,
+            },
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              isArchived: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          });
+
+          if (!user || !app) {
+            return null;
+          }
+
+          return {
+            userId: payload.user_id,
+            echoAppId: payload.app_id,
+            user: {
+              id: user.id,
+              email: user.email,
+              ...(user.name && { name: user.name }),
+              createdAt: user.createdAt.toISOString(),
+              updatedAt: user.updatedAt.toISOString(),
+            },
+            echoApp: {
+              id: app.id,
+              name: app.name,
+              ...(app.description && { description: app.description }),
+              createdAt: app.createdAt.toISOString(),
+              updatedAt: app.updatedAt.toISOString(),
+            },
+          };
         }
+        // Hash the provided API key for direct O(1) lookup
+        const keyHash = hashApiKey(cleanApiKey);
 
-        // Validate required fields exist
-        if (!payload.user_id || !payload.app_id) {
-          logger.error(
-            `JWT missing required fields: user_id=${payload.user_id}, app_id=${payload.app_id}`
-          );
-          return null;
-        }
-
-        if (payload.exp && payload.exp < Date.now() / 1000) {
-          return null;
-        }
-
-        const user = await this.db.user.findUnique({
+        // Direct lookup by keyHash - O(1) operation!
+        const apiKeyRecord = await this.db.apiKey.findUnique({
           where: {
-            id: payload.user_id,
+            keyHash,
           },
+          include: {
+            user: true,
+            echoApp: true,
+          },
+        });
+
+        // Verify the API key is valid and all related entities are active
+        if (
+          !apiKeyRecord ||
+          apiKeyRecord.isArchived ||
+          apiKeyRecord.user.isArchived ||
+          apiKeyRecord.echoApp.isArchived
+        ) {
+          return null;
+        }
+
+        return {
+          userId: apiKeyRecord.userId,
+          echoAppId: apiKeyRecord.echoAppId,
+          user: {
+            id: apiKeyRecord.user.id,
+            email: apiKeyRecord.user.email,
+            ...(apiKeyRecord.user.name && { name: apiKeyRecord.user.name }),
+            createdAt: apiKeyRecord.user.createdAt.toISOString(),
+            updatedAt: apiKeyRecord.user.updatedAt.toISOString(),
+          },
+          echoApp: {
+            id: apiKeyRecord.echoApp.id,
+            name: apiKeyRecord.echoApp.name,
+            ...(apiKeyRecord.echoApp.description && {
+              description: apiKeyRecord.echoApp.description,
+            }),
+            createdAt: apiKeyRecord.echoApp.createdAt.toISOString(),
+            updatedAt: apiKeyRecord.echoApp.updatedAt.toISOString(),
+          },
+          apiKeyId: apiKeyRecord.id,
+        };
+      })(),
+      error => {
+        logger.error(`Error validating API key: ${error}`);
+        return error instanceof Error ? error : new Error(String(error));
+      }
+    );
+  }
+
+  async getReferralCodeForUser(
+    userId: string,
+    echoAppId: string
+  ): Promise<ResultAsync<string | null, Error>> {
+    return ResultAsync.fromPromise(
+      (async () => {
+        const appMembership = await this.db.appMembership.findUnique({
+          where: {
+            userId_echoAppId: {
+              userId,
+              echoAppId,
+            },
+          },
+          select: {
+            referrerId: true,
+          },
+        });
+
+        if (!appMembership) {
+          return null;
+        }
+
+        return appMembership.referrerId;
+      })(),
+      error => {
+        return error instanceof Error ? error : new Error(String(error));
+      }
+    );
+  }
+
+  /**
+   * Calculate total balance for a user across all apps
+   * Uses User.totalPaid and User.totalSpent for consistent balance calculation
+   */
+  async getBalance(userId: string): Promise<ResultAsync<Balance, Error>> {
+    return ResultAsync.fromPromise(
+      (async () => {
+        const user = await this.db.user.findUnique({
+          where: { id: userId },
           select: {
             id: true,
             email: true,
@@ -89,162 +234,30 @@ export class EchoDbService {
           },
         });
 
-        const app = await this.db.echoApp.findUnique({
-          where: {
-            id: payload.app_id,
-          },
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            isArchived: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        });
-
-        if (!user || !app) {
-          return null;
+        if (!user) {
+          logger.error(`User not found: ${userId}`);
+          return {
+            balance: 0,
+            totalPaid: 0,
+            totalSpent: 0,
+          };
         }
 
+        const totalPaid = Number(user.totalPaid);
+        const totalSpent = Number(user.totalSpent);
+        const balance = totalPaid - totalSpent;
+
         return {
-          userId: payload.user_id,
-          echoAppId: payload.app_id,
-          user: {
-            id: user.id,
-            email: user.email,
-            ...(user.name && { name: user.name }),
-            createdAt: user.createdAt.toISOString(),
-            updatedAt: user.updatedAt.toISOString(),
-          },
-          echoApp: {
-            id: app.id,
-            name: app.name,
-            ...(app.description && { description: app.description }),
-            createdAt: app.createdAt.toISOString(),
-            updatedAt: app.updatedAt.toISOString(),
-          },
+          balance,
+          totalPaid,
+          totalSpent,
         };
+      })(),
+      error => {
+        logger.error(`Error fetching balance: ${error}`);
+        return error instanceof Error ? error : new Error(String(error));
       }
-      // Hash the provided API key for direct O(1) lookup
-      const keyHash = hashApiKey(cleanApiKey);
-
-      // Direct lookup by keyHash - O(1) operation!
-      const apiKeyRecord = await this.db.apiKey.findUnique({
-        where: {
-          keyHash,
-        },
-        include: {
-          user: true,
-          echoApp: true,
-        },
-      });
-
-      // Verify the API key is valid and all related entities are active
-      if (
-        !apiKeyRecord ||
-        apiKeyRecord.isArchived ||
-        apiKeyRecord.user.isArchived ||
-        apiKeyRecord.echoApp.isArchived
-      ) {
-        return null;
-      }
-
-      return {
-        userId: apiKeyRecord.userId,
-        echoAppId: apiKeyRecord.echoAppId,
-        user: {
-          id: apiKeyRecord.user.id,
-          email: apiKeyRecord.user.email,
-          ...(apiKeyRecord.user.name && { name: apiKeyRecord.user.name }),
-          createdAt: apiKeyRecord.user.createdAt.toISOString(),
-          updatedAt: apiKeyRecord.user.updatedAt.toISOString(),
-        },
-        echoApp: {
-          id: apiKeyRecord.echoApp.id,
-          name: apiKeyRecord.echoApp.name,
-          ...(apiKeyRecord.echoApp.description && {
-            description: apiKeyRecord.echoApp.description,
-          }),
-          createdAt: apiKeyRecord.echoApp.createdAt.toISOString(),
-          updatedAt: apiKeyRecord.echoApp.updatedAt.toISOString(),
-        },
-        apiKeyId: apiKeyRecord.id,
-      };
-    } catch (error) {
-      logger.error(`Error validating API key: ${error}`);
-      return null;
-    }
-  }
-
-  async getReferralCodeForUser(
-    userId: string,
-    echoAppId: string
-  ): Promise<string | null> {
-    const appMembership = await this.db.appMembership.findUnique({
-      where: {
-        userId_echoAppId: {
-          userId,
-          echoAppId,
-        },
-      },
-      select: {
-        referrerId: true,
-      },
-    });
-
-    if (!appMembership) {
-      return null;
-    }
-
-    return appMembership.referrerId;
-  }
-
-  /**
-   * Calculate total balance for a user across all apps
-   * Uses User.totalPaid and User.totalSpent for consistent balance calculation
-   */
-  async getBalance(userId: string): Promise<Balance> {
-    try {
-      const user = await this.db.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          createdAt: true,
-          updatedAt: true,
-          totalPaid: true,
-          totalSpent: true,
-        },
-      });
-
-      if (!user) {
-        logger.error(`User not found: ${userId}`);
-        return {
-          balance: 0,
-          totalPaid: 0,
-          totalSpent: 0,
-        };
-      }
-
-      const totalPaid = Number(user.totalPaid);
-      const totalSpent = Number(user.totalSpent);
-      const balance = totalPaid - totalSpent;
-
-      return {
-        balance,
-        totalPaid,
-        totalSpent,
-      };
-    } catch (error) {
-      logger.error(`Error fetching balance: ${error}`);
-      return {
-        balance: 0,
-        totalPaid: 0,
-        totalSpent: 0,
-      };
-    }
+    );
   }
 
   /**
@@ -402,40 +415,45 @@ export class EchoDbService {
    */
   async createPaidTransaction(
     transaction: TransactionRequest
-  ): Promise<Transaction | null> {
-    try {
-      // Use a database transaction to atomically create the LLM transaction and update user balance
-      const result = await this.db.$transaction(async tx => {
-        // Create the LLM transaction record
-        const dbTransaction = await this.createTransactionRecord(
-          tx,
-          transaction
+  ): Promise<ResultAsync<Transaction | null, Error>> {
+    return ResultAsync.fromPromise(
+      (async () => {
+        // Use a database transaction to atomically create the LLM transaction and update user balance
+        const result = await this.db.$transaction(async tx => {
+          // Create the LLM transaction record
+          const dbTransaction = await this.createTransactionRecord(
+            tx,
+            transaction
+          );
+
+          // Update user's total spent amount
+          await this.updateUserTotalSpent(
+            tx,
+            transaction.userId,
+            transaction.totalCost
+          );
+
+          // Update API key's last used timestamp if provided
+          if (transaction.apiKeyId) {
+            await this.updateApiKeyLastUsed(tx, transaction.apiKeyId);
+          }
+
+          return dbTransaction;
+        });
+
+        logger.info(
+          `Created transaction for model ${transaction.metadata.model}: $${transaction.totalCost}, updated user totalSpent`,
+          result.id
         );
-
-        // Update user's total spent amount
-        await this.updateUserTotalSpent(
-          tx,
-          transaction.userId,
-          transaction.totalCost
+        return result;
+      })(),
+      error => {
+        logger.error(
+          `Error creating transaction and updating balance: ${error}`
         );
-
-        // Update API key's last used timestamp if provided
-        if (transaction.apiKeyId) {
-          await this.updateApiKeyLastUsed(tx, transaction.apiKeyId);
-        }
-
-        return dbTransaction;
-      });
-
-      logger.info(
-        `Created transaction for model ${transaction.metadata.model}: $${transaction.totalCost}, updated user totalSpent`,
-        result.id
-      );
-      return result;
-    } catch (error) {
-      logger.error(`Error creating transaction and updating balance: ${error}`);
-      return null;
-    }
+        return error instanceof Error ? error : new Error(String(error));
+      }
+    );
   }
 
   /**
@@ -447,79 +465,93 @@ export class EchoDbService {
   async createFreeTierTransaction(
     transactionData: TransactionRequest,
     spendPoolId: string
-  ): Promise<{
-    transaction: Transaction;
-    userSpendPoolUsage: UserSpendPoolUsage;
-  }> {
-    try {
-      return await this.db.$transaction(async tx => {
-        // 1. Verify the spend pool exists
-        const spendPool = await tx.spendPool.findUnique({
-          where: { id: spendPoolId },
-          select: { perUserSpendLimit: true },
+  ): Promise<
+    ResultAsync<
+      {
+        transaction: Transaction;
+        userSpendPoolUsage: UserSpendPoolUsage;
+      },
+      Error
+    >
+  > {
+    return ResultAsync.fromPromise(
+      (async () => {
+        return await this.db.$transaction(async tx => {
+          // 1. Verify the spend pool exists
+          const spendPool = await tx.spendPool.findUnique({
+            where: { id: spendPoolId },
+            select: { perUserSpendLimit: true },
+          });
+
+          if (!spendPool) {
+            throw new Error('Spend pool not found');
+          }
+
+          // 2. Upsert UserSpendPoolUsage record using helper
+          const userSpendPoolUsage = await this.upsertUserSpendPoolUsage(
+            tx,
+            transactionData.userId,
+            spendPoolId,
+            transactionData.totalCost
+          );
+
+          // 3. Create the transaction record
+          const transaction = await this.createTransactionRecord(
+            tx,
+            transactionData
+          );
+
+          // 4. Update API key lastUsed if apiKeyId is provided
+          if (transactionData.apiKeyId) {
+            await this.updateApiKeyLastUsed(tx, transactionData.apiKeyId);
+          }
+
+          // 5. Update totalSpent on the SpendPool using helper
+          await this.updateSpendPoolTotalSpent(
+            tx,
+            spendPoolId,
+            transactionData.totalCost
+          );
+
+          logger.info(
+            `Created free tier transaction for model ${transactionData.metadata.model}: $${transactionData.totalCost}`,
+            transaction.id
+          );
+
+          return {
+            transaction,
+            userSpendPoolUsage,
+          };
         });
-
-        if (!spendPool) {
-          throw new Error('Spend pool not found');
-        }
-
-        // 2. Upsert UserSpendPoolUsage record using helper
-        const userSpendPoolUsage = await this.upsertUserSpendPoolUsage(
-          tx,
-          transactionData.userId,
-          spendPoolId,
-          transactionData.totalCost
-        );
-
-        // 3. Create the transaction record
-        const transaction = await this.createTransactionRecord(
-          tx,
-          transactionData
-        );
-
-        // 4. Update API key lastUsed if apiKeyId is provided
-        if (transactionData.apiKeyId) {
-          await this.updateApiKeyLastUsed(tx, transactionData.apiKeyId);
-        }
-
-        // 5. Update totalSpent on the SpendPool using helper
-        await this.updateSpendPoolTotalSpent(
-          tx,
-          spendPoolId,
-          transactionData.totalCost
-        );
-
-        logger.info(
-          `Created free tier transaction for model ${transactionData.metadata.model}: $${transactionData.totalCost}`,
-          transaction.id
-        );
-
-        return {
-          transaction,
-          userSpendPoolUsage,
-        };
-      });
-    } catch (error) {
-      logger.error(`Error creating free tier transaction: ${error}`);
-      throw error;
-    }
+      })(),
+      error => {
+        logger.error(`Error creating free tier transaction: ${error}`);
+        return error instanceof Error ? error : new Error(String(error));
+      }
+    );
   }
 
   async confirmAccessControl(
     userId: string,
     providerId: string
-  ): Promise<boolean> {
-    const transaction: Transaction | null = await this.db.transaction.findFirst(
-      {
-        where: {
-          userId,
-          transactionMetadata: {
-            providerId,
-          },
-        },
+  ): Promise<ResultAsync<boolean, Error>> {
+    return ResultAsync.fromPromise(
+      (async () => {
+        const transaction: Transaction | null =
+          await this.db.transaction.findFirst({
+            where: {
+              userId,
+              transactionMetadata: {
+                providerId,
+              },
+            },
+          });
+
+        return !!transaction;
+      })(),
+      error => {
+        return error instanceof Error ? error : new Error(String(error));
       }
     );
-
-    return !!transaction;
   }
 }

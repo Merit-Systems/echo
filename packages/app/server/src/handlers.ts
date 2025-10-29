@@ -103,7 +103,16 @@ export async function settle(
 
   const settleResult = await facilitatorClient.settle(settleRequest);
 
-  if (!settleResult.success || !settleResult.transaction) {
+  if (settleResult.isErr()) {
+    logger.error('Facilitator settle failed', {
+      error: settleResult.error.message,
+    });
+    buildX402Response(req, res, maxCost);
+    return undefined;
+  }
+
+  const settleData = settleResult.value;
+  if (!settleData.success || !settleData.transaction) {
     buildX402Response(req, res, maxCost);
     return undefined;
   }
