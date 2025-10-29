@@ -3,7 +3,7 @@ import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import { getCostPerToken } from '../services/AccountingService';
 import logger from '../logger';
-import { Result, ok, err } from 'neverthrow';
+import { Result, ok} from 'neverthrow';
 
 export interface CompletionStateBody {
   id: string;

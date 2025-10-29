@@ -457,7 +457,7 @@ export class VertexAIProvider extends BaseProvider {
     return fromPromise(
       dbService.confirmAccessControl(userId, providerId),
       error => new Error(`Failed to confirm access control: ${error}`)
-    );
+    ).andThen(result => result);
   }
 
   // ========== Response Parsing ==========
