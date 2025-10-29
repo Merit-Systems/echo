@@ -20,6 +20,7 @@ import {
   PaymentPayload,
   PaymentRequirementsSchema,
   SettleRequestSchema,
+  ExactEvmPayloadSchema,
 } from 'services/facilitator/x402-types';
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from 'logger';
@@ -67,7 +68,17 @@ export async function settle(
     return undefined;
   }
 
-  const payload = xPaymentData.payload as ExactEvmPayload;
+  const parseResult = ExactEvmPayloadSchema.safeParse(xPaymentData.payload);
+  
+  if (!parseResult.success) {
+    logger.error('Invalid EVM payload', { 
+      error: parseResult.error.format() 
+    });
+    buildX402Response(req, res, maxCost);
+    return undefined;
+  }
+
+  const payload = parseResult.data;
   logger.info(`Payment payload: ${JSON.stringify(payload)}`);
 
   const paymentAmount = payload.authorization.value;

@@ -83,7 +83,7 @@ function upsertEnvVar(filePath: string, varName: string, value: string) {
     const content = readFileSync(filePath, 'utf-8');
     const re = new RegExp(`^(${escapeRegExp(varName)}\\s*=\\s*).+$`, 'm');
     const updated = re.test(content)
-      ? content.replace(re, `$1${value}`)
+      ? content.replace(re, (match, group1) => group1 + value)
       : content.endsWith('\n')
         ? content + line + '\n'
         : content + '\n' + line + '\n';

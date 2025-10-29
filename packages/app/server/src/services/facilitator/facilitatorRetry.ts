@@ -8,6 +8,7 @@ import {
 import { generateCdpJwt } from './facilitatorService';
 import logger, { logMetric } from '../../logger';
 import dotenv from 'dotenv';
+import { localFacilitator } from './localFacilitator';
 
 dotenv.config();
 
@@ -45,6 +46,11 @@ const facilitators: FacilitatorConfig[] = [
     methodPrefix: PAYAI_FACILITATOR_METHOD_PREFIX!,
     name: 'PayAI',
   },
+  {
+    url: '',
+    methodPrefix: '',
+    name: 'Local',
+  },
 ];
 
 /**
@@ -65,8 +71,20 @@ export async function facilitatorWithRetry<
 ): Promise<T> {
   const errors: Array<{ facilitator: string; error: string }> = [];
 
+  logMetric('facilitator_attempt', 1, {
+    method,
+  });
+
   for (const facilitator of facilitators) {
     try {
+      if (facilitator.name === 'Local') {
+        const result = await localFacilitator[method]({
+          paymentPayload: payload,
+          paymentRequirements: paymentRequirements,
+        });
+        return result as T;
+      }
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };

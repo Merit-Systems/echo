@@ -175,7 +175,7 @@ export async function safeFundRepoIfWorthwhile(): Promise<void> {
     logger.error(
       `[Critical] Ethereum balance is less than ${readableEthWarningThreshold} ETH, skipping fundRepo event`
     );
-    logMetric('fund_repo.ethereum_balance_running_low', 1, {
+    logMetric('server_wallet.ethereum_balance_running_low', 1, {
       amount: ethBalanceFormatted,
       address: smartAccount.address,
     });
