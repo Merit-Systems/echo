@@ -25,6 +25,7 @@ import { getApp } from '@/services/db/apps/get';
 import { createAppMembership } from '@/services/db/apps/membership';
 
 import { issueOAuthToken } from '@/services/db/auth/oauth-token';
+import { createApiKey } from '@/services/db/api-keys';
 
 import type { TokenMetadata } from '@/types/token-metadata';
 
@@ -178,12 +179,57 @@ export async function handleIssueToken(
     }
   }
 
+  /* 🔟 Check if api_key:create scope is present */
+  const scopes = scope.split(' ');
+  const shouldCreateApiKey = scopes.includes('api_key:create');
+
   const { session, refreshToken } = await issueOAuthToken({
     userId: user.id,
     appId: app.id,
     scope,
     metadata,
   });
+
+  if (shouldCreateApiKey) {
+    logger.emit({
+      severityText: 'INFO',
+      body: 'Creating API key for user with api_key:create scope',
+      attributes: {
+        userId: user.id,
+        echoAppId: app.id,
+        function: 'handleInitialTokenIssuance',
+      },
+    });
+
+    /* Generate an API key instead of a temporary JWT token */
+    const apiKey = await createApiKey(user.id, {
+      echoAppId: app.id,
+      name: 'OAuth Generated API Key',
+    });
+
+    logger.emit({
+      severityText: 'INFO',
+      body: 'API key generated for OAuth flow',
+      attributes: {
+        userId: user.id,
+        echoAppId: app.id,
+        apiKeyId: apiKey.id,
+        function: 'handleInitialTokenIssuance',
+      },
+    });
+
+    /* Return API key as access token with a very long expiration (100 years) */
+    return tokenResponse({
+      accessToken: {
+        access_token: apiKey.key,
+        scope,
+        access_token_expiry: new Date(
+          Date.now() + 100 * 365 * 24 * 60 * 60 * 1000
+        ), // 100 years
+      },
+      refreshToken,
+    });
+  }
 
   const accessToken = await createEchoAccessJwt({
     user_id: user.id,
