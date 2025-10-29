@@ -150,7 +150,9 @@ export async function finalize(
     transaction.rawTransactionCost
   );
   if (markUpAmount.greaterThan(0)) {
-    logger.info(`PROFIT RECEIVED: ${markUpAmount.toNumber()} USD, checking for a repo send operation`);
+    logger.info(
+      `PROFIT RECEIVED: ${markUpAmount.toNumber()} USD, checking for a repo send operation`
+    );
     try {
       await safeFundRepoIfWorthwhile();
     } catch (error) {

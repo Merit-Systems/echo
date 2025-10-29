@@ -53,6 +53,18 @@
       "@ai-sdk/google": "2.0.14",
       "@openrouter/ai-sdk-provider": "1.2.0"
     },
-    "engine-strict": true
+    "engine-strict": true,
+    "onlyBuiltDependencies": [
+      "@coinbase/x402",
+      "@tailwindcss/oxide",
+      "@vercel/speed-insights",
+      "bigint-buffer",
+      "bufferutil",
+      "core-js",
+      "keccak",
+      "oxc-resolver",
+      "protobufjs",
+      "utf-8-validate"
+    ]
   }
 }
