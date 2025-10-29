@@ -71,6 +71,10 @@ export async function facilitatorWithRetry<
 ): Promise<T> {
   const errors: Array<{ facilitator: string; error: string }> = [];
 
+  logMetric('facilitator_attempt', 1, {
+    method,
+  });
+
   for (const facilitator of facilitators) {
     try {
       if (facilitator.name === 'Local') {
