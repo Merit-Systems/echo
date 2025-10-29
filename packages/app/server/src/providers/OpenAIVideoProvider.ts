@@ -224,7 +224,16 @@ export class OpenAIVideoProvider extends BaseProvider {
       }
       if (video.wallet) {
         const refundAmount = decimalToUsdcBigInt(video.cost);
-        await transfer(video.wallet as `0x${string}`, refundAmount);
+        const transferResult = await transfer(
+          video.wallet as `0x${string}`,
+          refundAmount
+        );
+        if (transferResult.isErr()) {
+          logger.error(
+            'Failed to refund video generation',
+            transferResult.error
+          );
+        }
       }
       if (video.userId) {
         // Proccess the refund to the user. There is some level of complexity here since there is a markup. Not as simple as just credit grant.

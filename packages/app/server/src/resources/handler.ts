@@ -54,14 +54,8 @@ function handle402Request<TInput, TOutput>(
 ): ResultAsync<TOutput, Error> {
   const { executeResource, calculateActualCost, createTransaction } = config;
 
-  return fromPromise(
-    settle(req, res, headers, safeMaxCost),
-    error => error as Error
-  )
+  return settle(req, res, headers, safeMaxCost)
     .andThen(settleResult => {
-      if (!settleResult) {
-        return err(new PaymentRequiredError('Payment required, settle failed'));
-      }
       return ok(settleResult);
     })
     .andThen(({ payload, paymentAmountDecimal }) =>
@@ -74,7 +68,7 @@ function handle402Request<TInput, TOutput>(
         const actualCost = calculateActualCost(parsedBody, output);
         const transaction = createTransaction(parsedBody, output, actualCost);
 
-        finalize(paymentAmountDecimal, transaction, payload).catch(error => {
+        finalize(paymentAmountDecimal, transaction, payload).mapErr(error => {
           logger.error('Failed to finalize transaction', error);
         });
 

@@ -1,6 +1,12 @@
 import { TransactionEscrowMiddleware } from 'middleware/transaction-escrow-middleware';
 import { modelRequestService } from 'services/ModelRequestService';
-import { HandlerInput, Network, Transaction, X402HandlerInput } from 'types';
+import {
+  HandlerInput,
+  Network,
+  Transaction,
+  X402HandlerInput,
+  SendUserOperationReturnType,
+} from 'types';
 import {
   usdcBigIntToDecimal,
   decimalToUsdcBigInt,
@@ -28,115 +34,137 @@ import { Request, Response } from 'express';
 import { ProviderType } from 'providers/ProviderType';
 import { safeFundRepoIfWorthwhile } from 'services/fund-repo/fundRepoService';
 import { applyMaxCostMarkup } from 'services/PricingService';
+import { ResultAsync, fromPromise, ok } from 'neverthrow';
 
-export async function refund(
+export function refund(
   paymentAmountDecimal: Decimal,
   payload: ExactEvmPayload
-) {
-  try {
-    const refundAmountUsdcBigInt = decimalToUsdcBigInt(paymentAmountDecimal);
-    const authPayload = payload.authorization;
-    await transfer(authPayload.from as `0x${string}`, refundAmountUsdcBigInt);
-  } catch (error) {
+): ResultAsync<SendUserOperationReturnType, Error> {
+  const refundAmountUsdcBigInt = decimalToUsdcBigInt(paymentAmountDecimal);
+  const authPayload = payload.authorization;
+
+  return transfer(
+    authPayload.from as `0x${string}`,
+    refundAmountUsdcBigInt
+  ).mapErr(error => {
     logger.error('Failed to refund', error);
-  }
+    return error;
+  });
 }
 
-export async function settle(
+export function settle(
   req: Request,
   res: Response,
   headers: Record<string, string>,
   maxCost: Decimal
-): Promise<
-  { payload: ExactEvmPayload; paymentAmountDecimal: Decimal } | undefined
+): ResultAsync<
+  { payload: ExactEvmPayload; paymentAmountDecimal: Decimal },
+  Error
 > {
   const network = process.env.NETWORK as Network;
 
-  let recipient: string;
-  try {
-    recipient = (await getSmartAccount()).smartAccount.address;
-  } catch (error) {
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
+  return getSmartAccount()
+    .andThen(smartAccount => {
+      const recipient = smartAccount.smartAccount.address;
 
-  let xPaymentData: PaymentPayload;
-  try {
-    xPaymentData = validateXPaymentHeader(headers, req);
-  } catch (error) {
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
+      return validateXPaymentHeader(headers, req).asyncAndThen(xPaymentData => {
+        const parseResult = ExactEvmPayloadSchema.safeParse(
+          xPaymentData.payload
+        );
 
-  const parseResult = ExactEvmPayloadSchema.safeParse(xPaymentData.payload);
+        if (!parseResult.success) {
+          logger.error('Invalid EVM payload', {
+            error: parseResult.error.format(),
+          });
+          return buildX402Response(req, res, maxCost).andThen(() =>
+            ResultAsync.fromSafePromise(
+              Promise.reject(new Error('Invalid EVM payload'))
+            )
+          );
+        }
 
-  if (!parseResult.success) {
-    logger.error('Invalid EVM payload', {
-      error: parseResult.error.format(),
+        const payload = parseResult.data;
+        logger.info(`Payment payload: ${JSON.stringify(payload)}`);
+
+        const paymentAmount = payload.authorization.value;
+        const paymentAmountDecimal = usdcBigIntToDecimal(paymentAmount);
+
+        // Note(shafu, alvaro): Edge case where client sends the x402-challenge
+        // but the payment amount is less than what we returned in the first response
+        if (BigInt(paymentAmount) < decimalToUsdcBigInt(maxCost)) {
+          return buildX402Response(req, res, maxCost).andThen(() =>
+            ResultAsync.fromSafePromise(
+              Promise.reject(new Error('Payment amount less than required'))
+            )
+          );
+        }
+
+        const facilitatorClient = new FacilitatorClient();
+        const paymentRequirements = PaymentRequirementsSchema.parse({
+          scheme: 'exact',
+          network,
+          maxAmountRequired: paymentAmount,
+          resource: `${req.protocol}://${req.get('host')}${req.url}`,
+          description: 'Echo x402',
+          mimeType: 'application/json',
+          payTo: recipient,
+          maxTimeoutSeconds: 60,
+          asset: USDC_ADDRESS,
+          extra: {
+            name: 'USD Coin',
+            version: '2',
+          },
+        });
+
+        const settleRequest = SettleRequestSchema.parse({
+          paymentPayload: xPaymentData,
+          paymentRequirements,
+        });
+
+        return fromPromise(facilitatorClient.settle(settleRequest), error => {
+          logger.error('Facilitator settle failed', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          return error instanceof Error ? error : new Error(String(error));
+        }).andThen(settleResult => {
+          if (settleResult.isErr()) {
+            logger.error('Facilitator settle failed', {
+              error: settleResult.error.message,
+            });
+            return buildX402Response(req, res, maxCost).andThen(() =>
+              ResultAsync.fromSafePromise(
+                Promise.reject(new Error('Facilitator settle failed'))
+              )
+            );
+          }
+
+          const settleData = settleResult.value;
+          if (!settleData.success || !settleData.transaction) {
+            return buildX402Response(req, res, maxCost).andThen(() =>
+              ResultAsync.fromSafePromise(
+                Promise.reject(new Error('Settle data invalid'))
+              )
+            );
+          }
+
+          return ResultAsync.fromSafePromise(
+            Promise.resolve({ payload, paymentAmountDecimal })
+          );
+        });
+      });
+    })
+    .mapErr(error => {
+      // Note: buildX402Response is async but we can't await here
+      // The error will be handled by the caller
+      return error;
     });
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
-
-  const payload = parseResult.data;
-  logger.info(`Payment payload: ${JSON.stringify(payload)}`);
-
-  const paymentAmount = payload.authorization.value;
-  const paymentAmountDecimal = usdcBigIntToDecimal(paymentAmount);
-
-  // Note(shafu, alvaro): Edge case where client sends the x402-challenge
-  // but the payment amount is less than what we returned in the first response
-  if (BigInt(paymentAmount) < decimalToUsdcBigInt(maxCost)) {
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
-
-  const facilitatorClient = new FacilitatorClient();
-  const paymentRequirements = PaymentRequirementsSchema.parse({
-    scheme: 'exact',
-    network,
-    maxAmountRequired: paymentAmount,
-    resource: `${req.protocol}://${req.get('host')}${req.url}`,
-    description: 'Echo x402',
-    mimeType: 'application/json',
-    payTo: recipient,
-    maxTimeoutSeconds: 60,
-    asset: USDC_ADDRESS,
-    extra: {
-      name: 'USD Coin',
-      version: '2',
-    },
-  });
-
-  const settleRequest = SettleRequestSchema.parse({
-    paymentPayload: xPaymentData,
-    paymentRequirements,
-  });
-
-  const settleResult = await facilitatorClient.settle(settleRequest);
-
-  if (settleResult.isErr()) {
-    logger.error('Facilitator settle failed', {
-      error: settleResult.error.message,
-    });
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
-
-  const settleData = settleResult.value;
-  if (!settleData.success || !settleData.transaction) {
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
-
-  return { payload, paymentAmountDecimal };
 }
 
-export async function finalize(
+export function finalize(
   paymentAmountDecimal: Decimal,
   transaction: Transaction,
   payload: ExactEvmPayload
-) {
+): ResultAsync<void, Error> {
   const transactionCostWithMarkup = applyMaxCostMarkup(
     transaction.rawTransactionCost
   );
@@ -163,23 +191,49 @@ export async function finalize(
   if (!refundAmount.equals(0) && refundAmount.greaterThan(0)) {
     const refundAmountUsdcBigInt = decimalToUsdcBigInt(refundAmount);
     const authPayload = payload.authorization;
-    await transfer(authPayload.from as `0x${string}`, refundAmountUsdcBigInt);
+
+    return transfer(
+      authPayload.from as `0x${string}`,
+      refundAmountUsdcBigInt
+    ).andThen(() => {
+      const markUpAmount = transactionCostWithMarkup.minus(
+        transaction.rawTransactionCost
+      );
+
+      if (markUpAmount.greaterThan(0)) {
+        logger.info(
+          `PROFIT RECEIVED: ${markUpAmount.toNumber()} USD, checking for a repo send operation`
+        );
+
+        return fromPromise(safeFundRepoIfWorthwhile(), error => {
+          logger.error('Failed to fund repo', error);
+          // Don't re-throw - repo funding is not critical to the transaction
+          return error instanceof Error ? error : new Error(String(error));
+        }).map(() => undefined);
+      }
+
+      return ok(undefined);
+    });
   }
 
+  // No refund needed, just handle markup
   const markUpAmount = transactionCostWithMarkup.minus(
     transaction.rawTransactionCost
   );
+
   if (markUpAmount.greaterThan(0)) {
     logger.info(
       `PROFIT RECEIVED: ${markUpAmount.toNumber()} USD, checking for a repo send operation`
     );
-    try {
-      await safeFundRepoIfWorthwhile();
-    } catch (error) {
+
+    return fromPromise(safeFundRepoIfWorthwhile(), error => {
       logger.error('Failed to fund repo', error);
       // Don't re-throw - repo funding is not critical to the transaction
-    }
+      return error instanceof Error ? error : new Error(String(error));
+    }).map(() => undefined);
   }
+
+  return ResultAsync.fromSafePromise(Promise.resolve(undefined));
 }
 
 export async function handleX402Request({
@@ -196,11 +250,11 @@ export async function handleX402Request({
   }
 
   const settleResult = await settle(req, res, headers, maxCost);
-  if (!settleResult) {
+  if (settleResult.isErr()) {
     return;
   }
 
-  const { payload, paymentAmountDecimal } = settleResult;
+  const { payload, paymentAmountDecimal } = settleResult.value;
 
   const transactionResult = await modelRequestService.executeModelRequest(
     req,
@@ -211,7 +265,13 @@ export async function handleX402Request({
   );
 
   if (transactionResult.isErr()) {
-    await refund(paymentAmountDecimal, payload);
+    const refundResult = await refund(paymentAmountDecimal, payload);
+    if (refundResult.isErr()) {
+      logger.error(
+        'Failed to refund after transaction error',
+        refundResult.error
+      );
+    }
     return;
   }
 
@@ -234,13 +294,19 @@ export async function handleX402Request({
     transactionResult.value.data
   );
 
-  await finalize(
+  const finalizeResult = await finalize(
     paymentAmountDecimal,
     transactionResult.value.transaction,
     payload
   );
+  if (finalizeResult.isErr()) {
+    logger.error('Failed to finalize transaction', finalizeResult.error);
+  }
 
-  await refund(paymentAmountDecimal, payload);
+  const refundResult = await refund(paymentAmountDecimal, payload);
+  if (refundResult.isErr()) {
+    logger.error('Failed to refund after finalization', refundResult.error);
+  }
 }
 
 export async function handleApiKeyRequest({
