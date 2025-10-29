@@ -55,12 +55,10 @@ export class EchoControlService {
     db: PrismaClient,
     apiKey: string
   ): Result<EchoControlService, Error> {
-    try {
-      const service = new EchoControlService(db, apiKey);
-      return ok(service);
-    } catch (error) {
-      return err(error instanceof Error ? error : new Error(String(error)));
-    }
+    return Result.fromThrowable(
+      () => new EchoControlService(db, apiKey),
+      error => (error instanceof Error ? error : new Error(String(error)))
+    )();
   }
 
   /**
