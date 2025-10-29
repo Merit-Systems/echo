@@ -83,14 +83,18 @@ export class ModelRequestService {
         data: null,
       };
     } else {
-      const { transaction, data } =
-        await handleNonStreamingService.handleNonStreaming(
-          response,
-          provider,
-          req,
-          res
-        );
-      return { transaction, data };
+      const result = await handleNonStreamingService.handleNonStreaming(
+        response,
+        provider,
+        req,
+        res
+      );
+
+      if (result.isErr()) {
+        throw result.error;
+      }
+
+      return result.value;
     }
   }
 
