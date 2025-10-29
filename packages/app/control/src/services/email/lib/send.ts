@@ -12,6 +12,18 @@ export function sendEmailWithRetry(
   options?: CreateEmailRequestOptions,
   config?: Partial<RetryConfig>
 ) {
+  // Skip email sending if not in production environment
+  if (!emailClient || !env.AUTH_RESEND_FROM_EMAIL) {
+    console.log(
+      '[Email Skipped - Not in Production] Would have sent email:',
+      payload
+    );
+    return Promise.resolve({
+      data: { id: 'skipped-not-in-production' },
+      error: null,
+    } as ResendResult<{ id: string }>);
+  }
+
   const idempotencyKey = options?.idempotencyKey ?? randomUUID();
   const stableOptions: CreateEmailRequestOptions = {
     ...options,
@@ -19,10 +31,11 @@ export function sendEmailWithRetry(
   };
 
   const fromEmail = env.AUTH_RESEND_FROM_EMAIL;
+  const client = emailClient; // TypeScript refinement
 
   return resendRetry(
     () =>
-      emailClient.emails.send(
+      client.emails.send(
         {
           ...payload,
           from: `Sam Ragsdale <${fromEmail}>` as const,

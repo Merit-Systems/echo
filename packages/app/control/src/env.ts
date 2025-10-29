@@ -33,44 +33,38 @@ export const env = createEnv({
       : z
           .url()
           .default(
-            'postgresql://echo_user:echo_password@localhost:5469/echo_control?schema=public'
+            'postgresql://echo_user:echo_password@localhost:5469/echo_control_v2?schema=public'
           ),
 
     // auth
 
     AUTH_SECRET: z.string(),
 
-    AUTH_GOOGLE_ID: !IS_INTEGRATION_TEST
+    AUTH_GOOGLE_ID: IS_STRICT
       ? z.string()
       : z.string().default('get-a-google-id-for-production'),
-    AUTH_GOOGLE_SECRET: !IS_INTEGRATION_TEST
+    AUTH_GOOGLE_SECRET: IS_STRICT
       ? z.string()
       : z.string().default('auth-google-secret-change-in-production'),
 
-    AUTH_GITHUB_ID: !IS_INTEGRATION_TEST
+    AUTH_GITHUB_ID: IS_STRICT
       ? z.string()
       : z.string().default('get-a-github-id-for-production'),
-    AUTH_GITHUB_SECRET: !IS_INTEGRATION_TEST
+    AUTH_GITHUB_SECRET: IS_STRICT
       ? z.string()
       : z.string().default('auth-github-secret-change-in-production'),
 
     // email
 
-    AUTH_RESEND_KEY: !IS_INTEGRATION_TEST
-      ? z.string()
-      : z.string().default('auth-resend-key-change-in-production'),
-    AUTH_RESEND_FROM_EMAIL: !IS_INTEGRATION_TEST
-      ? z.email()
-      : z.string().default('john@doe.com'),
-    RESEND_FLOW_CONTROL_KEY: IS_STRICT
-      ? z.string()
-      : z.string().default('resend-flow-control-key'),
+    AUTH_RESEND_KEY: IS_STRICT ? z.string() : z.string().optional(),
+    AUTH_RESEND_FROM_EMAIL: IS_STRICT ? z.email() : z.string().optional(),
+    RESEND_FLOW_CONTROL_KEY: IS_STRICT ? z.string() : z.string().optional(),
 
     // stripe
 
-    STRIPE_SECRET_KEY: z.string(),
-    STRIPE_PUBLISHABLE_KEY: z.string(),
-    STRIPE_WEBHOOK_SECRET: z.string(),
+    STRIPE_SECRET_KEY: IS_STRICT ? z.string() : z.string().optional(),
+    STRIPE_PUBLISHABLE_KEY: IS_STRICT ? z.string() : z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: IS_STRICT ? z.string() : z.string().optional(),
     WEBHOOK_URL: IS_STRICT
       ? z.url()
       : z.url().default('http://localhost:3000/stripe/webhook'),

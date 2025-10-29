@@ -13,6 +13,9 @@ import { oauthProviders } from '@/auth/providers';
 
 import { cn } from '@/lib/utils';
 import type { Route } from 'next';
+import { env } from '@/env';
+
+const IS_LOCAL_MODE = env.NODE_ENV === 'development';
 
 export default async function SignInPage({
   searchParams,
@@ -120,6 +123,32 @@ export default async function SignInPage({
           </Button>
         </div>
       </form>
+      {IS_LOCAL_MODE && (
+        <>
+          <div className="flex items-center gap-4 w-full opacity-60">
+            <Separator className="flex-1" />
+            <span className="text-muted-foreground text-sm">dev only</span>
+            <Separator className="flex-1" />
+          </div>
+          <form
+            action={async () => {
+              'use server';
+              await signIn('local-user', {
+                redirectTo: '/welcome',
+              });
+            }}
+            className="w-full"
+          >
+            <Button
+              type="submit"
+              className="border-2 border-border rounded-xl size-fit px-5 py-3 font-bold w-full"
+              variant="outline"
+            >
+              Sign in as Test User
+            </Button>
+          </form>
+        </>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@
   "scripts": {
     "predev": "docker compose -f docker-local-db.yml up -d && sleep 3 && prisma generate && prisma migrate deploy",
     "dev": "next dev --turbopack",
+    "local-setup": "./scripts/setup.sh",
     "prebuild": "prisma generate",
     "build": "next build",
     "generate-api-types": "tsx scripts/generate-api-types.ts",

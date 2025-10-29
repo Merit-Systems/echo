@@ -46,6 +46,11 @@ const facilitators: FacilitatorConfig[] = [
     methodPrefix: PAYAI_FACILITATOR_METHOD_PREFIX!,
     name: 'PayAI',
   },
+  {
+    url: '',
+    methodPrefix: '',
+    name: 'Local',
+  },
 ];
 
 /**

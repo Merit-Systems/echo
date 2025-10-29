@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@merit-systems/echo-next-sdk": "0.0.24",
-    "@merit-systems/echo-react-sdk": "1.0.33",
+    "@merit-systems/echo-next-sdk": "latest",
+    "@merit-systems/echo-react-sdk": "latest",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.20.0",
-    "@merit-systems/echo-next-sdk": "0.0.25",
-    "@merit-systems/echo-react-sdk": "1.0.34",
+    "@merit-systems/echo-next-sdk": "latest",
+    "@merit-systems/echo-react-sdk": "latest",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

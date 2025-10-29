@@ -164,9 +164,71 @@ async function runInstall(
 }
 
 interface CreateAppOptions {
-  template?: TemplateName;
+  template?: string;
   appId?: string;
   skipInstall?: boolean;
+}
+
+function isExternalTemplate(template: string): boolean {
+  return (
+    template.startsWith('https://github.com/') ||
+    template.startsWith('http://github.com/')
+  );
+}
+
+function resolveTemplateRepo(template: string): string {
+  let repo = template;
+
+  if (repo.startsWith('https://github.com/') || repo.startsWith('http://github.com/')) {
+    repo = repo.replace(/^https?:\/\/github\.com\//, '');
+  }
+
+  if (repo.endsWith('.git')) {
+    repo = repo.slice(0, -4);
+  }
+
+  return repo;
+}
+
+function detectEnvVarName(projectPath: string): string | null {
+  const envFiles = ['.env.local', '.env.example', '.env'];
+  
+  for (const fileName of envFiles) {
+    const filePath = path.join(projectPath, fileName);
+    if (existsSync(filePath)) {
+      const content = readFileSync(filePath, 'utf-8');
+      const match = content.match(/(NEXT_PUBLIC_|VITE_|REACT_APP_)?ECHO_APP_ID/);
+      if (match) {
+        return match[0];
+      }
+    }
+  }
+  
+  return null;
+}
+
+function detectFrameworkEnvVarName(projectPath: string): string {
+  const packageJsonPath = path.join(projectPath, 'package.json');
+  
+  if (existsSync(packageJsonPath)) {
+    try {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+      
+      if (deps['next']) {
+        return 'NEXT_PUBLIC_ECHO_APP_ID';
+      } else if (deps['vite']) {
+        return 'VITE_ECHO_APP_ID';
+      } else if (deps['react-scripts']) {
+        return 'REACT_APP_ECHO_APP_ID';
+      }
+    } catch (e) {
+      // Fall through to default
+      console.error(e);
+    }
+  }
+  
+  return 'NEXT_PUBLIC_ECHO_APP_ID';
 }
 
 async function createApp(projectDir: string, options: CreateAppOptions) {
@@ -196,10 +258,17 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       process.exit(1);
     }
 
-    template = selectedTemplate as TemplateName;
+    template = selectedTemplate as string;
   }
 
-  log.step(`Selected template: ${DEFAULT_TEMPLATES[template].title}`);
+  const isExternal = isExternalTemplate(template);
+  
+  if (isExternal) {
+    log.step(`Using external template: ${template}`);
+  } else {
+    const templateName = template as TemplateName;
+    log.step(`Selected template: ${DEFAULT_TEMPLATES[templateName].title}`);
+  }
 
   // If no app ID specified, prompt for it
   if (!appId) {
@@ -236,12 +305,17 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     const s = spinner();
     s.start('Downloading template files');
 
-    // Use degit to download the template
-    const templateConfig = DEFAULT_TEMPLATES[template];
-    const repoPath =
-      'repo' in templateConfig
-        ? `${templateConfig.repo}#production`
-        : `Merit-Systems/echo/templates/${template}#production`;
+    let repoPath: string;
+    
+    if (isExternal) {
+      repoPath = resolveTemplateRepo(template);
+    } else {
+      const templateConfig = DEFAULT_TEMPLATES[template as TemplateName];
+      repoPath =
+        'repo' in templateConfig
+          ? `${templateConfig.repo}#production`
+          : `Merit-Systems/echo/templates/${template}#production`;
+    }
 
     const emitter = degit(repoPath);
 
@@ -297,7 +371,7 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       try {
         const envContent = readFileSync(envPath, 'utf-8');
 
-        // Replace the environment variable value - specifically targeting the *EHO_APP_ID placeholder
+        // Replace the environment variable value - specifically targeting the *ECHO_APP_ID placeholder
         // Find the line with *ECHO_APP_ID and replace the value after the = sign
         const updatedContent = envContent.replace(
           /^(.*ECHO_APP_ID\s*=\s*).+$/gm,
@@ -314,6 +388,12 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       } catch {
         log.warning('Could not update .env.local file');
       }
+    } else if (isExternal) {
+      const detectedVarName = detectEnvVarName(absoluteProjectPath);
+      const envVarName = detectedVarName || detectFrameworkEnvVarName(absoluteProjectPath);
+      const envContent = `${envVarName}=${appId}\n`;
+      writeFileSync(envPath, envContent);
+      log.message(`Created .env.local with ${envVarName}`);
     }
 
     log.step('Project setup completed successfully');
@@ -358,13 +438,25 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('could not find commit hash')) {
-        cancel(
-          `Template "${template}" not found in repository.\n\nThe template might not exist yet. Please check:\nhttps://github.com/Merit-Systems/echo/tree/master/templates`
-        );
+        if (isExternal) {
+          cancel(
+            `External template "${template}" not found.\n\nPlease verify the repository exists and is accessible.`
+          );
+        } else {
+          cancel(
+            `Template "${template}" not found in repository.\n\nThe template might not exist yet. Please check:\nhttps://github.com/Merit-Systems/echo/tree/master/templates`
+          );
+        }
       } else if (error.message.includes('Repository does not exist')) {
-        cancel(
-          'Repository not accessible.\n\nMake sure you have access to the Merit-Systems/echo repository.'
-        );
+        if (isExternal) {
+          cancel(
+            `Repository "${template}" does not exist or is not accessible.\n\nPlease check the repository URL.`
+          );
+        } else {
+          cancel(
+            'Repository not accessible.\n\nMake sure you have access to the Merit-Systems/echo repository.'
+          );
+        }
       } else {
         cancel(`Failed to create app: ${error.message}`);
       }
@@ -384,7 +476,7 @@ async function main() {
     .argument('[directory]', 'Directory to create the app in')
     .option(
       '-t, --template <template>',
-      `Template to use (${Object.keys(DEFAULT_TEMPLATES).join(', ')})`
+      `Template to use. Can be a preset (${Object.keys(DEFAULT_TEMPLATES).join(', ')}) or a GitHub repository URL (https://github.com/user/repo)`
     )
     .option('-a, --app-id <appId>', 'Echo App ID to use in the project')
     .option('--skip-install', 'Skip automatic dependency installation')

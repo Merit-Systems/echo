@@ -1,11 +1,12 @@
-import { encodeFunctionData, Abi } from 'viem';
+import { encodeFunctionData, Abi, formatUnits, parseUnits } from 'viem';
 import {
   MERIT_ABI,
   MERIT_CONTRACT_ADDRESS,
   USDC_ADDRESS,
   ERC20_CONTRACT_ABI,
+  ETH_ADDRESS,
 } from './constants';
-import logger from '../../logger';
+import logger, { logMetric } from '../../logger';
 import { getSmartAccount } from 'utils';
 import { ResultAsync, fromPromise } from 'neverthrow';
 
@@ -122,4 +123,89 @@ export function safeFundRepo(amount: number): ResultAsync<void, Error> {
       );
       return error;
     });
+}
+
+export async function safeFundRepoIfWorthwhile(): Promise<void> {
+  const repoId = process.env.MERIT_REPO_ID;
+  if (!repoId) {
+    throw new Error('Missing required environment variables');
+  }
+
+  // check balance of wallet. If it is > 100 USD, send all of the USD to the repo.
+
+  const { smartAccount } = await getSmartAccount();
+  const balances = await smartAccount.listTokenBalances({
+    network: 'base',
+  });
+  const baseUsdcBalance = balances.balances.find(
+    balance => balance.token.contractAddress === USDC_ADDRESS
+  );
+
+  const ethereumBalance = balances.balances.find(
+    balance => balance.token.contractAddress === ETH_ADDRESS
+  );
+
+  if (!ethereumBalance) {
+    logger.info('No Ethereum balance found, skipping fundRepo event');
+    return;
+  }
+
+  if (!baseUsdcBalance) {
+    logger.info('No base USDC balance found, skipping fundRepo event');
+    return;
+  }
+
+  const ethereumBalanceAmount = ethereumBalance.amount.amount;
+  const ethBalanceFormatted = formatUnits(
+    ethereumBalanceAmount,
+    ethereumBalance.amount.decimals
+  );
+  logger.info(`Ethereum balance is ${ethBalanceFormatted} ETH`, {
+    amount: ethBalanceFormatted,
+    address: smartAccount.address,
+  });
+
+  const baseUsdcBalanceAmount = baseUsdcBalance.amount.amount;
+  const usdcBalanceFormatted = formatUnits(
+    baseUsdcBalanceAmount,
+    baseUsdcBalance.amount.decimals
+  );
+  logger.info(`Base USDC balance is ${usdcBalanceFormatted} USD`, {
+    amount: usdcBalanceFormatted,
+    address: smartAccount.address,
+  });
+
+  const ETH_WARNING_THRESHOLD = parseUnits(
+    String(process.env.ETH_WARNING_THRESHOLD || '0.0001'),
+    ethereumBalance.amount.decimals
+  );
+  const BASE_USDC_WARNING_THRESHOLD = parseUnits(
+    String(process.env.BASE_USDC_TRANSFER_THRESHOLD || '5'),
+    baseUsdcBalance.amount.decimals
+  );
+
+  if (ethereumBalanceAmount < ETH_WARNING_THRESHOLD) {
+    const readableEthWarningThreshold = formatUnits(
+      ETH_WARNING_THRESHOLD,
+      ethereumBalance.amount.decimals
+    );
+    logger.error(
+      `[Critical] Ethereum balance is less than ${readableEthWarningThreshold} ETH, skipping fundRepo event`
+    );
+    logMetric('server_wallet.ethereum_balance_running_low', 1, {
+      amount: ethBalanceFormatted,
+      address: smartAccount.address,
+    });
+    return;
+  }
+
+  if (baseUsdcBalanceAmount < BASE_USDC_WARNING_THRESHOLD) {
+    logger.info(
+      'Base USDC balance is less than threshold, skipping fundRepo event'
+    );
+    return;
+  }
+  logger.info(`Base USDC balance is ${usdcBalanceFormatted} USD, funding repo`);
+
+  await safeFundRepo(Number(usdcBalanceFormatted));
 }
