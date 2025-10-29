@@ -5,6 +5,7 @@ import { DEFAULT_VCPU_COUNT, PRICE_PER_VCPU_PER_SECOND } from './prices';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Transaction } from '../../types';
 import { HttpError } from 'errors/http';
+import { ResultAsync } from 'neverthrow';
 dotenv.config();
 
 export const calculateE2BExecuteCost = (): Decimal => {
@@ -40,34 +41,54 @@ export const e2bExecutePythonSnippet = async (
   if (!process.env.E2B_API_KEY) {
     throw new Error('E2B_API_KEY environment variable is required but not set');
   }
-  try {
-    const startTime = performance.now();
-    const sandbox = await Sandbox.create({
+  const startTime = performance.now();
+
+  const result = await ResultAsync.fromPromise(
+    Sandbox.create({
       apiKey: process.env.E2B_API_KEY,
-    });
-    const { results, logs, error, executionCount } = await sandbox.runCode(
-      snippet,
-      {
+    }),
+    error => {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return new HttpError(400, `E2B API request failed: ${message}`);
+    }
+  ).andThen((sandbox: Sandbox) => {
+    const sandboxId = sandbox.sandboxId;
+    return ResultAsync.fromPromise<
+      { results: any; logs: any; error?: any; executionCount?: any },
+      HttpError
+    >(
+      sandbox.runCode(snippet, {
         timeoutMs: 10000,
         requestTimeoutMs: 15000,
+      }),
+      error => {
+        const message =
+          error instanceof Error ? error.message : 'Unknown error';
+        return new HttpError(400, `E2B API request failed: ${message}`);
       }
-    );
-    await sandbox.kill();
-    const endTime = performance.now();
-    const durationMs = endTime - startTime;
-    const duration = durationMs / 1000;
-    const cost = duration * PRICE_PER_VCPU_PER_SECOND * DEFAULT_VCPU_COUNT;
-    return {
-      results: results,
-      logs: logs,
-      error: error,
-      executionCount: executionCount,
-      cost: cost,
-      sandboxId: sandbox.sandboxId,
-      duration: duration,
-    };
-  } catch (error) {
-    const errorText = error instanceof Error ? error.message : 'Unknown error';
-    throw new HttpError(400, `E2B API request failed: ${errorText}`);
-  }
+    ).map(({ results, logs, error, executionCount }) => {
+      const endTime = performance.now();
+      const durationMs = endTime - startTime;
+      const duration = durationMs / 1000;
+      const cost = duration * PRICE_PER_VCPU_PER_SECOND * DEFAULT_VCPU_COUNT;
+      // Ensure sandbox is killed; ignore any errors during kill
+      void sandbox.kill().catch(() => undefined);
+      return {
+        results,
+        logs,
+        error,
+        executionCount,
+        cost,
+        sandboxId,
+        duration,
+      } as E2BExecuteOutput;
+    });
+  });
+
+  return result.match(
+    (value: E2BExecuteOutput) => value,
+    (error: HttpError) => {
+      throw error;
+    }
+  );
 };
