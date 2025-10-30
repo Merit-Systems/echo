@@ -34,6 +34,7 @@ import {
 } from './services/PricingService';
 import { Decimal } from '@prisma/client/runtime/library';
 import resourceRouter from './routers/resource';
+import { x402Router } from 'routers/x402-credit';
 
 dotenv.config();
 
@@ -100,6 +101,8 @@ app.use(inFlightMonitorRouter);
 
 // Use resource router for resource routes
 app.use('/resource', resourceRouter);
+
+app.use('/x402', x402Router);
 
 // Main route handler
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {

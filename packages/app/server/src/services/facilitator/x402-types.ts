@@ -16,7 +16,6 @@ export const NetworkSchema = z.enum([
   'sei-testnet',
   'polygon',
   'polygon-amoy',
-  'peaq',
 ]);
 export type Network = z.infer<typeof NetworkSchema>;
 // Constants
@@ -141,7 +140,7 @@ export type UnsignedPaymentPayload = Omit<PaymentPayload, 'payload'> & {
 // x402 Resource Server Response
 export const x402ResponseSchema = z.object({
   x402Version: z.number().refine(val => x402Versions.includes(val as 1)),
-  error: z.enum(ErrorReasons).optional(),
+  error: z.string().optional(),
   accepts: z.array(PaymentRequirementsSchema).optional(),
   payer: z.string().regex(MixedAddressRegex).optional(),
 });

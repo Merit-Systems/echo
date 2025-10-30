@@ -40,7 +40,7 @@ model User {
   latestFreeCreditsVersion Decimal?
   OutboundEmailSent        OutboundEmailSent[]
   creditGrantCodeUsages    CreditGrantCodeUsage[]
-  VideoGenerationX402     VideoGenerationX402[]
+  VideoGenerationX402      VideoGenerationX402[]
 
   @@map("users")
 }
@@ -103,9 +103,9 @@ model EchoApp {
   markUp                  MarkUp? // The markup rate for this app (one-to-one)
   githubLink              GithubLink? // The GitHub link for this app (one-to-one)
   spendPools              SpendPool[] // Spend pools associated with this app
-  currentReferralRewardId String?             @db.Uuid // Reference to current active referral reward
-  currentReferralReward   ReferralReward?     @relation("CurrentReferralReward", fields: [currentReferralRewardId], references: [id])
-  ReferralRewards         ReferralReward[]    @relation("AppReferralRewards") // All referral rewards for this app
+  currentReferralRewardId String?               @db.Uuid // Reference to current active referral reward
+  currentReferralReward   ReferralReward?       @relation("CurrentReferralReward", fields: [currentReferralRewardId], references: [id])
+  ReferralRewards         ReferralReward[]      @relation("AppReferralRewards") // All referral rewards for this app
   appSessions             AppSession[]
   payouts                 Payout[]
   OutboundEmailSent       OutboundEmailSent[]
@@ -234,23 +234,23 @@ enum EnumPayoutType {
 }
 
 model Payout {
-  id                    String      @id @default(uuid()) @db.Uuid
-  amount                Decimal     @db.Decimal(65, 14)
+  id                    String           @id @default(uuid()) @db.Uuid
+  amount                Decimal          @db.Decimal(65, 14)
   status                EnumPayoutStatus
-  payoutBatchId         String?     @db.Uuid
+  payoutBatchId         String?          @db.Uuid
   type                  EnumPayoutType
-  createdAt             DateTime    @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime    @updatedAt @db.Timestamptz(6)
+  createdAt             DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime         @updatedAt @db.Timestamptz(6)
   description           String?
   transactionId         String?
   senderAddress         String?
-  recipientGithubLinkId String?     @db.Uuid
+  recipientGithubLinkId String?          @db.Uuid
   recipientAddress      String?
-  userId                String?     @db.Uuid // User ID if type is "referral"
-  echoAppId             String?     @db.Uuid // App ID if type is "markup"
-  recipientGithubLink   GithubLink? @relation(fields: [recipientGithubLinkId], references: [id])
-  user                  User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  echoApp               EchoApp?    @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+  userId                String?          @db.Uuid // User ID if type is "referral"
+  echoAppId             String?          @db.Uuid // App ID if type is "markup"
+  recipientGithubLink   GithubLink?      @relation(fields: [recipientGithubLinkId], references: [id])
+  user                  User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  echoApp               EchoApp?         @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
 
   @@map("payouts")
 }
@@ -302,34 +302,36 @@ enum EnumPaymentSource {
 }
 
 model Transaction {
-  id                    String               @id @default(uuid()) @db.Uuid
-  transactionMetadataId String?              @db.Uuid
-  totalCost             Decimal              @default(0.0) @db.Decimal(65, 14)
-  appProfit             Decimal              @default(0.0) @db.Decimal(65, 14)
-  markUpProfit          Decimal              @default(0.0) @db.Decimal(65, 14)
-  referralProfit        Decimal              @default(0.0) @db.Decimal(65, 14)
-  rawTransactionCost    Decimal              @default(0.0) @db.Decimal(65, 14)
-  status                String?
-  isArchived            Boolean              @default(false)
-  archivedAt            DateTime?            @db.Timestamptz(6)
-  createdAt             DateTime             @default(now()) @db.Timestamptz(6)
-  userId                String               @db.Uuid
-  echoAppId             String               @db.Uuid
-  apiKeyId              String?              @db.Uuid
-  markUpId              String?              @db.Uuid
-  spendPoolId           String?              @db.Uuid
-  userSpendPoolUsageId  String?              @db.Uuid
-  referralCodeId        String?              @db.Uuid
-  referrerRewardId      String?              @db.Uuid
-  apiKey                ApiKey?              @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
-  echoApp               EchoApp              @relation(fields: [echoAppId], references: [id])
-  markUp                MarkUp?              @relation(fields: [markUpId], references: [id])
-  spendPool             SpendPool?           @relation(fields: [spendPoolId], references: [id])
-  transactionMetadata   TransactionMetadata? @relation(fields: [transactionMetadataId], references: [id])
-  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userSpendPoolUsage    UserSpendPoolUsage?  @relation(fields: [userSpendPoolUsageId], references: [id])
-  referralCode          ReferralCode?        @relation(fields: [referralCodeId], references: [id])
-  referrerReward        ReferralReward?      @relation(fields: [referrerRewardId], references: [id])
+  id                        String                   @id @default(uuid()) @db.Uuid
+  transactionMetadataId     String?                  @db.Uuid
+  x402TransactionMetadataId String?                  @db.Uuid
+  totalCost                 Decimal                  @default(0.0) @db.Decimal(65, 14)
+  appProfit                 Decimal                  @default(0.0) @db.Decimal(65, 14)
+  markUpProfit              Decimal                  @default(0.0) @db.Decimal(65, 14)
+  referralProfit            Decimal                  @default(0.0) @db.Decimal(65, 14)
+  status                    String?
+  rawTransactionCost        Decimal                  @default(0.0) @db.Decimal(65, 14)
+  isArchived                Boolean                  @default(false)
+  archivedAt                DateTime?                @db.Timestamptz(6)
+  createdAt                 DateTime                 @default(now()) @db.Timestamptz(6)
+  userId                    String                   @db.Uuid
+  echoAppId                 String                   @db.Uuid
+  apiKeyId                  String?                  @db.Uuid
+  markUpId                  String?                  @db.Uuid
+  spendPoolId               String?                  @db.Uuid
+  userSpendPoolUsageId      String?                  @db.Uuid
+  referralCodeId            String?                  @db.Uuid
+  referrerRewardId          String?                  @db.Uuid
+  apiKey                    ApiKey?                  @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  echoApp                   EchoApp                  @relation(fields: [echoAppId], references: [id])
+  markUp                    MarkUp?                  @relation(fields: [markUpId], references: [id])
+  spendPool                 SpendPool?               @relation(fields: [spendPoolId], references: [id])
+  transactionMetadata       TransactionMetadata?     @relation(fields: [transactionMetadataId], references: [id])
+  x402TransactionMetadata   x402TransactionMetadata? @relation(fields: [x402TransactionMetadataId], references: [id], onDelete: Cascade)
+  user                      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userSpendPoolUsage        UserSpendPoolUsage?      @relation(fields: [userSpendPoolUsageId], references: [id])
+  referralCode              ReferralCode?            @relation(fields: [referralCodeId], references: [id])
+  referrerReward            ReferralReward?          @relation(fields: [referrerRewardId], references: [id])
 
   @@map("transactions")
 }
@@ -372,24 +374,37 @@ model UserSpendPoolUsage {
 }
 
 model TransactionMetadata {
-  id           String        @id @default(uuid()) @db.Uuid
-  providerId   String
-  provider     String
-  model        String
-  inputTokens  Int?
-  outputTokens Int?
-  totalTokens  Int?
+  id              String        @id @default(uuid()) @db.Uuid
+  providerId      String
+  provider        String
+  model           String
+  inputTokens     Int?
+  outputTokens    Int?
+  totalTokens     Int?
   durationSeconds Int?
-  generateAudio Boolean?
-  toolCost     Decimal       @default(0.0) @db.Decimal(65, 14)
-  prompt       String?
-  isArchived   Boolean       @default(false)
-  archivedAt   DateTime?     @db.Timestamptz(6)
-  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
-  transactions Transaction[]
+  generateAudio   Boolean?
+  toolCost        Decimal       @default(0.0) @db.Decimal(65, 14)
+  prompt          String?
+  isArchived      Boolean       @default(false)
+  archivedAt      DateTime?     @db.Timestamptz(6)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+  transactions    Transaction[]
 
   @@map("transaction_metadata")
+}
+
+model x402TransactionMetadata {
+  id               String        @id @default(uuid()) @db.Uuid
+  resourcePath     String
+  resourceArgs     Json          @default("{}")
+  resourceResponse Json          @default("{}")
+  resourceError    Json          @default("{}")
+  createdAt        DateTime      @default(now()) @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @db.Timestamptz
+  transactions     Transaction[]
+
+  @@map("x402_transaction_metadata")
 }
 
 model ReferralCode {
@@ -494,16 +509,17 @@ model OutboundEmailSent {
 }
 
 model VideoGenerationX402 {
-  videoId         String     @id
-  wallet          String?
-  userId          String?   @db.Uuid
-  echoAppId       String?   @db.Uuid
-  cost            Decimal
-  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
-  expiresAt       DateTime  @db.Timestamptz(6)
-  isFinal         Boolean   @default(false)
+  videoId   String   @id
+  wallet    String?
+  userId    String?  @db.Uuid
+  echoAppId String?  @db.Uuid
+  cost      Decimal
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  expiresAt DateTime @db.Timestamptz(6)
+  isFinal   Boolean  @default(false)
 
-  user    User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   echoApp EchoApp? @relation(fields: [echoAppId], references: [id], onDelete: Cascade)
+
   @@map("video_generation_x402")
 }

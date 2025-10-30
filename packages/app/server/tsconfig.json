@@ -4,7 +4,9 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": "./src",
-    "types": ["node"]
+    "types": ["node"],
+    "module": "esnext",
+    "moduleResolution": "bundler"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "__tests__/**/*"]

@@ -141,30 +141,26 @@ export class EchoControlService {
    * Create an LLM transaction record directly in the database
    * Uses centralized logic from EchoDbService
    */
-  async createTransaction(
-    transaction: Transaction,
-    maxCost: Decimal
-  ): Promise<void> {
+  async createTransaction(transaction: Transaction, maxCost: Decimal) {
     try {
       if (!this.authResult) {
         logger.error('No authentication result available');
-        return;
+        return null;
       }
 
       if (!this.markUpAmount) {
         logger.error('Error Fetching Markup Amount');
-        return;
+        return null;
       }
 
       if (this.freeTierSpendPool) {
-        await this.createFreeTierTransaction(transaction);
-        return;
+        return await this.createFreeTierTransaction(transaction);
       } else {
-        await this.createPaidTransaction(transaction, maxCost);
-        return;
+        return await this.createPaidTransaction(transaction, maxCost);
       }
     } catch (error) {
       logger.error(`Error creating transaction: ${error}`);
+      return null;
     }
   }
 
@@ -242,7 +238,7 @@ export class EchoControlService {
       markUpProfit: markUpProfitDecimal,
     };
   }
-  async createFreeTierTransaction(transaction: Transaction): Promise<void> {
+  async createFreeTierTransaction(transaction: Transaction) {
     if (!this.authResult) {
       logger.error('No authentication result available');
       throw new UnauthorizedError('No authentication result available');
@@ -286,16 +282,13 @@ export class EchoControlService {
       ...(this.referrerRewardId && { referrerRewardId: this.referrerRewardId }),
     };
 
-    await this.freeTierService.createFreeTierTransaction(
+    return await this.freeTierService.createFreeTierTransaction(
       transactionData,
       this.freeTierSpendPool.id
     );
   }
 
-  async createPaidTransaction(
-    transaction: Transaction,
-    maxCost: Decimal
-  ): Promise<void> {
+  async createPaidTransaction(transaction: Transaction, maxCost: Decimal) {
     if (!this.authResult) {
       logger.error('No authentication result available');
       throw new UnauthorizedError('No authentication result available');
@@ -334,6 +327,6 @@ export class EchoControlService {
       ...(this.referrerRewardId && { referrerRewardId: this.referrerRewardId }),
     };
 
-    await this.dbService.createPaidTransaction(transactionData);
+    return await this.dbService.createPaidTransaction(transactionData);
   }
 }
