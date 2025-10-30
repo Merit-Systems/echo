@@ -4,25 +4,34 @@ import type {
   ApiKeyValidationResult,
   EchoApp,
   Transaction,
+  TransactionCosts,
   TransactionRequest,
   User,
+  X402AuthenticationResult,
 } from '../types';
 import { EchoDbService } from './DbService';
 
 import { Decimal } from '@prisma/client/runtime/library';
 import { PaymentRequiredError, UnauthorizedError } from '../errors/http';
-import { PrismaClient, SpendPool } from '../generated/prisma';
+import {
+  EnumTransactionType,
+  MarkUp,
+  PrismaClient,
+  SpendPool,
+} from '../generated/prisma';
 import logger from '../logger';
 import { EarningsService } from './EarningsService';
 import FreeTierService from './FreeTierService';
+import { applyEchoMarkup } from './PricingService';
 
 export class EchoControlService {
   private readonly db: PrismaClient;
   private readonly dbService: EchoDbService;
   private readonly freeTierService: FreeTierService;
   private earningsService: EarningsService;
-  private readonly apiKey: string;
+  private readonly apiKey: string | undefined;
   private authResult: ApiKeyValidationResult | null = null;
+  private x402AuthenticationResult: X402AuthenticationResult | null = null;
   private markUpAmount: Decimal | null = null;
   private markUpId: string | null = null;
   private referralAmount: Decimal | null = null;
@@ -30,7 +39,7 @@ export class EchoControlService {
   private referralCodeId: string | null = null;
   private freeTierSpendPool: SpendPool | null = null;
 
-  constructor(db: PrismaClient, apiKey: string) {
+  constructor(db: PrismaClient, apiKey?: string) {
     // Check if the generated Prisma client exists
     const generatedPrismaPath = join(__dirname, 'generated', 'prisma');
     if (!existsSync(generatedPrismaPath)) {
@@ -53,7 +62,9 @@ export class EchoControlService {
    */
   async verifyApiKey(): Promise<ApiKeyValidationResult | null> {
     try {
-      this.authResult = await this.dbService.validateApiKey(this.apiKey);
+      if (this.apiKey) {
+        this.authResult = await this.dbService.validateApiKey(this.apiKey);
+      }
     } catch (error) {
       logger.error(`Error verifying API key: ${error}`);
       return null;
@@ -79,6 +90,30 @@ export class EchoControlService {
     }
 
     return this.authResult;
+  }
+
+  identifyX402Request(echoApp: EchoApp | null, markUp: MarkUp | null): void {
+    if (echoApp) {
+      this.x402AuthenticationResult = {
+        echoApp: echoApp,
+        echoAppId: echoApp.id,
+      };
+    }
+
+    if (markUp) {
+      this.markUpAmount = markUp.amount;
+      this.markUpId = markUp.id;
+    } else {
+      // Default markup amount when no markup is configured
+      this.markUpAmount = new Decimal(1.0);
+      this.markUpId = null;
+    }
+
+    this.referralAmount = new Decimal(1.0);
+    this.referrerRewardId = null;
+    this.referralCodeId = null;
+    this.freeTierSpendPool = null;
+    this.referralCodeId = null;
   }
 
   /**
@@ -141,10 +176,7 @@ export class EchoControlService {
    * Create an LLM transaction record directly in the database
    * Uses centralized logic from EchoDbService
    */
-  async createTransaction(
-    transaction: Transaction,
-    maxCost: Decimal
-  ): Promise<void> {
+  async createTransaction(transaction: Transaction): Promise<void> {
     try {
       if (!this.authResult) {
         logger.error('No authentication result available');
@@ -160,7 +192,7 @@ export class EchoControlService {
         await this.createFreeTierTransaction(transaction);
         return;
       } else {
-        await this.createPaidTransaction(transaction, maxCost);
+        await this.createPaidTransaction(transaction);
         return;
       }
     } catch (error) {
@@ -186,14 +218,9 @@ export class EchoControlService {
 
   async computeTransactionCosts(
     transaction: Transaction,
-    referralCodeId: string | null
-  ): Promise<{
-    rawTransactionCost: Decimal;
-    totalTransactionCost: Decimal;
-    totalAppProfit: Decimal;
-    referralProfit: Decimal;
-    markUpProfit: Decimal;
-  }> {
+    referralCodeId: string | null,
+    addEchoProfit: boolean = false
+  ): Promise<TransactionCosts> {
     if (!this.markUpAmount) {
       logger.error('User has not authenticated');
       throw new UnauthorizedError('User has not authenticated');
@@ -229,9 +256,14 @@ export class EchoControlService {
     const markUpProfitDecimal = totalAppProfitDecimal.minus(
       referralProfitDecimal
     );
-    const totalTransactionCostDecimal = transaction.rawTransactionCost.plus(
-      totalAppProfitDecimal
-    );
+
+    const echoProfitDecimal = addEchoProfit
+      ? applyEchoMarkup(transaction.rawTransactionCost)
+      : new Decimal(0);
+
+    const totalTransactionCostDecimal = transaction.rawTransactionCost
+      .plus(totalAppProfitDecimal)
+      .plus(echoProfitDecimal);
 
     // Return Decimal values directly
     return {
@@ -240,6 +272,7 @@ export class EchoControlService {
       totalAppProfit: totalAppProfitDecimal,
       referralProfit: referralProfitDecimal,
       markUpProfit: markUpProfitDecimal,
+      echoProfit: echoProfitDecimal,
     };
   }
   async createFreeTierTransaction(transaction: Transaction): Promise<void> {
@@ -263,6 +296,7 @@ export class EchoControlService {
       rawTransactionCost,
       totalTransactionCost,
       totalAppProfit,
+      echoProfit,
       referralProfit,
       markUpProfit,
     } = await this.computeTransactionCosts(transaction, this.referralCodeId);
@@ -273,6 +307,7 @@ export class EchoControlService {
       markUpProfit: markUpProfit,
       referralProfit: referralProfit,
       rawTransactionCost: rawTransactionCost,
+      echoProfit: echoProfit,
       metadata: transaction.metadata,
       status: transaction.status,
       userId: userId,
@@ -292,10 +327,7 @@ export class EchoControlService {
     );
   }
 
-  async createPaidTransaction(
-    transaction: Transaction,
-    maxCost: Decimal
-  ): Promise<void> {
+  async createPaidTransaction(transaction: Transaction): Promise<void> {
     if (!this.authResult) {
       logger.error('No authentication result available');
       throw new UnauthorizedError('No authentication result available');
@@ -307,14 +339,8 @@ export class EchoControlService {
       totalAppProfit,
       referralProfit,
       markUpProfit,
+      echoProfit,
     } = await this.computeTransactionCosts(transaction, this.referralCodeId);
-
-    logger.info(
-      `Transaction cost: ${rawTransactionCost}, Max cost: ${maxCost}`
-    );
-    if (rawTransactionCost.greaterThan(maxCost)) {
-      logger.info(` Difference: ${rawTransactionCost.minus(maxCost)}`);
-    }
 
     const { userId, echoAppId, apiKeyId } = this.authResult;
 
@@ -324,6 +350,7 @@ export class EchoControlService {
       markUpProfit: markUpProfit,
       referralProfit: referralProfit,
       rawTransactionCost: rawTransactionCost,
+      echoProfit: echoProfit,
       metadata: transaction.metadata,
       status: transaction.status,
       userId: userId,
@@ -335,5 +362,48 @@ export class EchoControlService {
     };
 
     await this.dbService.createPaidTransaction(transactionData);
+  }
+
+  async identifyX402Transaction(
+    echoApp: EchoApp,
+    markUp: MarkUp
+  ): Promise<void> {
+    this.markUpId = markUp.id;
+    this.markUpAmount = markUp.amount;
+    this.x402AuthenticationResult = {
+      echoApp,
+      echoAppId: echoApp.id,
+    };
+  }
+
+  async createX402Transaction(
+    transaction: Transaction,
+    addEchoProfit: boolean = true
+  ): Promise<TransactionCosts> {
+    const transactionCosts = await this.computeTransactionCosts(
+      transaction,
+      null,
+      addEchoProfit
+    );
+
+    const transactionData: TransactionRequest = {
+      totalCost: transactionCosts.totalTransactionCost,
+      appProfit: transactionCosts.totalAppProfit,
+      markUpProfit: transactionCosts.markUpProfit,
+      referralProfit: transactionCosts.referralProfit,
+      rawTransactionCost: transactionCosts.rawTransactionCost,
+      echoProfit: transactionCosts.echoProfit,
+      metadata: transaction.metadata,
+      status: transaction.status,
+      ...(this.x402AuthenticationResult?.echoAppId && {
+        echoAppId: this.x402AuthenticationResult?.echoAppId,
+      }),
+      ...(this.markUpId && { markUpId: this.markUpId }),
+      transactionType: EnumTransactionType.X402,
+    };
+
+    await this.dbService.createPaidTransaction(transactionData);
+
+    return transactionCosts;
   }
 }

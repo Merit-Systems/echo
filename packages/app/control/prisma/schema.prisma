@@ -231,6 +231,8 @@ enum EnumPayoutStatus {
 enum EnumPayoutType {
   MARKUP
   REFERRAL
+  ECHO_PROFIT
+  APP_PROFIT
 }
 
 model Payout {
@@ -301,11 +303,17 @@ enum EnumPaymentSource {
   balance
 }
 
+enum EnumTransactionType {
+  X402
+  BALANCE
+}
+
 model Transaction {
   id                    String               @id @default(uuid()) @db.Uuid
   transactionMetadataId String?              @db.Uuid
   totalCost             Decimal              @default(0.0) @db.Decimal(65, 14)
   appProfit             Decimal              @default(0.0) @db.Decimal(65, 14)
+  echoProfit            Decimal              @default(0.0) @db.Decimal(65, 14)
   markUpProfit          Decimal              @default(0.0) @db.Decimal(65, 14)
   referralProfit        Decimal              @default(0.0) @db.Decimal(65, 14)
   rawTransactionCost    Decimal              @default(0.0) @db.Decimal(65, 14)
@@ -313,8 +321,9 @@ model Transaction {
   isArchived            Boolean              @default(false)
   archivedAt            DateTime?            @db.Timestamptz(6)
   createdAt             DateTime             @default(now()) @db.Timestamptz(6)
-  userId                String               @db.Uuid
-  echoAppId             String               @db.Uuid
+  transactionType       EnumTransactionType  @default(BALANCE)
+  userId                String?              @db.Uuid
+  echoAppId             String?              @db.Uuid
   apiKeyId              String?              @db.Uuid
   markUpId              String?              @db.Uuid
   spendPoolId           String?              @db.Uuid
@@ -322,11 +331,11 @@ model Transaction {
   referralCodeId        String?              @db.Uuid
   referrerRewardId      String?              @db.Uuid
   apiKey                ApiKey?              @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
-  echoApp               EchoApp              @relation(fields: [echoAppId], references: [id])
+  echoApp               EchoApp?              @relation(fields: [echoAppId], references: [id])
   markUp                MarkUp?              @relation(fields: [markUpId], references: [id])
   spendPool             SpendPool?           @relation(fields: [spendPoolId], references: [id])
   transactionMetadata   TransactionMetadata? @relation(fields: [transactionMetadataId], references: [id])
-  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
   userSpendPoolUsage    UserSpendPoolUsage?  @relation(fields: [userSpendPoolUsageId], references: [id])
   referralCode          ReferralCode?        @relation(fields: [referralCodeId], references: [id])
   referrerReward        ReferralReward?      @relation(fields: [referrerRewardId], references: [id])

@@ -25,7 +25,7 @@ async function makeRequest(useStreaming: boolean = false) {
 
     // Initialize OpenAI client with custom baseURL
     const openai = new OpenAI({
-      baseURL: 'https://echo-staging.up.railway.app',
+      baseURL: 'http://localhost:3070',
       apiKey: process.env.ECHO_API_KEY, // Required by the client but not used with local server
     });
 

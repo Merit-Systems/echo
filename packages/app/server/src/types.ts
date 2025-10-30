@@ -4,6 +4,8 @@ import { EchoControlService } from 'services/EchoControlService';
 import { Response } from 'express';
 import { BaseProvider } from 'providers/BaseProvider';
 import { Hex } from 'viem';
+import { X402AuthenticationService } from 'services/x402AuthenticationService';
+import { EnumTransactionType } from 'generated/prisma';
 
 export interface EchoApp {
   id: string;
@@ -81,13 +83,15 @@ export interface TransactionRequest extends Transaction {
   appProfit: Decimal;
   markUpProfit: Decimal;
   referralProfit: Decimal;
-  userId: string;
-  echoAppId: string;
+  echoProfit: Decimal;
+  userId?: string;
+  echoAppId?: string;
   apiKeyId?: string;
   markUpId?: string;
   spendPoolId?: string;
   referralCodeId?: string;
   referrerRewardId?: string;
+  transactionType?: EnumTransactionType;
 }
 
 export interface ApiKeyValidationResult {
@@ -97,6 +101,11 @@ export interface ApiKeyValidationResult {
   echoApp: EchoApp;
   apiKeyId?: string;
   apiKey?: ApiKey;
+}
+
+export interface X402AuthenticationResult {
+  echoApp: EchoApp;
+  echoAppId: string;
 }
 
 /**
@@ -234,7 +243,10 @@ export type HandlerInput = {
   isPassthroughProxyRoute: boolean;
   provider: BaseProvider;
   isStream: boolean;
+  x402AuthenticationService: X402AuthenticationService;
 };
+
+export type ApiKeyHandlerInput = Omit<HandlerInput, 'x402AuthenticationService'>;
 
 export type X402HandlerInput = Omit<HandlerInput, 'echoControlService'>;
 
@@ -247,3 +259,13 @@ export type SendUserOperationReturnType = {
   /** The hash of the user operation. This is not the transaction hash which is only available after the operation is completed.*/
   userOpHash: Hex;
 };
+
+
+export interface TransactionCosts {
+  rawTransactionCost: Decimal;
+  totalTransactionCost: Decimal;
+  totalAppProfit: Decimal;
+  referralProfit: Decimal;
+  markUpProfit: Decimal;
+  echoProfit: Decimal;
+}
