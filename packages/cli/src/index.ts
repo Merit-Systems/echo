@@ -336,7 +336,8 @@ async function main() {
 
     if (trimmed.toLowerCase() === "logout") {
       clearToken();
-      console.log(chalk.yellow("Logged out successfully"));
+      token = ""; // Clear the in-memory token
+      console.log(chalk.yellow("Logged out successfully. Type 'login' to authenticate again."));
       rl.prompt();
       return;
     }
@@ -347,6 +348,13 @@ async function main() {
       } catch (error) {
         console.error(chalk.red("Login failed:"), error);
       }
+      rl.prompt();
+      return;
+    }
+
+    // Check if token is available before attempting chat
+    if (!token) {
+      console.log(chalk.yellow("You are not logged in. Type 'login' to authenticate."));
       rl.prompt();
       return;
     }
