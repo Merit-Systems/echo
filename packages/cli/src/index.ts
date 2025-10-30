@@ -16,9 +16,9 @@ const CONFIG_DIR = join(homedir(), ".echo-cli");
 const TOKEN_FILE = join(CONFIG_DIR, "token.json");
 const ECHO_CONTROL_URL = process.env.ECHO_CONTROL_URL || "https://echo.merit.systems";
 
-// Ensure config directory exists
+// Ensure config directory exists with secure permissions
 if (!existsSync(CONFIG_DIR)) {
-  mkdirSync(CONFIG_DIR, { recursive: true });
+  mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
 }
 
 // PKCE helpers
@@ -42,7 +42,7 @@ interface TokenData {
 }
 
 function saveToken(data: TokenData) {
-  writeFileSync(TOKEN_FILE, JSON.stringify(data, null, 2));
+  writeFileSync(TOKEN_FILE, JSON.stringify(data, null, 2), { mode: 0o600 });
 }
 
 function loadToken(): TokenData | null {
