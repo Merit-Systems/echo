@@ -23,8 +23,8 @@ import { api } from '@/trpc/client';
 
 interface Transaction {
   id: string;
-  user: {
-    id: string;
+  user?: {
+    id: string | null;
     name: string | null;
     image: string | null;
   };
@@ -71,7 +71,7 @@ export const TransactionsTable: React.FC<Props> = ({ appId }) => {
         <TransactionRows
           transactions={rows.map(row => ({
             id: row.id,
-            user: row.user,
+            user: row.user ?? undefined,
             date: row.date,
             callCount: row.callCount,
             markUpProfit: row.markUpProfit,
@@ -104,11 +104,16 @@ const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
     <TableRow key={transaction.id}>
       <TableCell className="pl-4">
         <div className="flex flex-row items-center gap-2">
-          <UserAvatar src={transaction.user.image} className="size-8" />
+          <UserAvatar
+            src={transaction.user?.image ?? undefined}
+            className="size-8"
+          />
           <div className="flex flex-col items-start">
             <p className="text-sm leading-tight">
-              <span className="font-medium">{transaction.user.name}</span> made{' '}
-              {transaction.callCount} requests
+              <span className="font-medium">
+                {transaction.user?.name ?? 'x402 Users'}
+              </span>{' '}
+              made {transaction.callCount} requests
             </p>
             <p className="text-[10px] text-muted-foreground">
               {formatDistanceToNow(transaction.date, {

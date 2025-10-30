@@ -1,30 +1,13 @@
 import { TransactionEscrowMiddleware } from 'middleware/transaction-escrow-middleware';
 import { modelRequestService } from 'services/ModelRequestService';
-import { HandlerInput, Network, Transaction, X402HandlerInput } from 'types';
+import { ApiKeyHandlerInput, X402HandlerInput } from 'types';
 import {
-  usdcBigIntToDecimal,
-  decimalToUsdcBigInt,
-  buildX402Response,
-  getSmartAccount,
   calculateRefundAmount,
-  validateXPaymentHeader,
 } from 'utils';
-import { transfer } from 'transferWithAuth';
 import { checkBalance } from 'services/BalanceCheckService';
 import { prisma } from 'server';
 import { makeProxyPassthroughRequest } from 'services/ProxyPassthroughService';
-import { USDC_ADDRESS } from 'services/fund-repo/constants';
-import { FacilitatorClient } from 'services/facilitator/facilitatorService';
-import {
-  ExactEvmPayload,
-  PaymentPayload,
-  PaymentRequirementsSchema,
-  SettleRequestSchema,
-  ExactEvmPayloadSchema,
-} from 'services/facilitator/x402-types';
-import { Decimal } from '@prisma/client/runtime/library';
 import logger from 'logger';
-import { Request, Response } from 'express';
 import { ProviderType } from 'providers/ProviderType';
 import { safeFundRepoIfWorthwhile } from 'services/fund-repo/fundRepoService';
 import { applyMaxCostMarkup } from 'services/PricingService';
@@ -172,6 +155,9 @@ export async function finalize(
     }
   }
 }
+import { settle } from 'handlers/settle';
+import { finalize } from 'handlers/finalize';
+import { refund } from 'handlers/refund';
 
 export async function handleX402Request({
   req,
@@ -181,11 +167,11 @@ export async function handleX402Request({
   isPassthroughProxyRoute,
   provider,
   isStream,
+  x402AuthenticationService,
 }: X402HandlerInput) {
   if (isPassthroughProxyRoute) {
     return await makeProxyPassthroughRequest(req, res, provider, headers);
   }
-
   const settleResult = await settle(req, res, headers, maxCost);
   if (!settleResult) {
     return;
@@ -202,7 +188,6 @@ export async function handleX402Request({
       isStream
     );
     const transaction = transactionResult.transaction;
-
     if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
       await prisma.videoGenerationX402.create({
         data: {
@@ -220,9 +205,14 @@ export async function handleX402Request({
       transactionResult.data
     );
 
+    logger.info(`Creating X402 transaction for app. Metadata: ${JSON.stringify(transaction.metadata)}`);
+    const transactionCosts = await x402AuthenticationService.createX402Transaction(transaction);
+
     await finalize(
       paymentAmountDecimal,
-      transactionResult.transaction,
+      transactionCosts.rawTransactionCost,
+      transactionCosts.totalAppProfit,
+      transactionCosts.echoProfit,
       payload
     );
   } catch (error) {
@@ -239,7 +229,7 @@ export async function handleApiKeyRequest({
   isPassthroughProxyRoute,
   provider,
   isStream,
-}: HandlerInput) {
+}: ApiKeyHandlerInput) {
   const transactionEscrowMiddleware = new TransactionEscrowMiddleware(prisma);
 
   if (isPassthroughProxyRoute) {
@@ -276,7 +266,7 @@ export async function handleApiKeyRequest({
 
   modelRequestService.handleResolveResponse(res, isStream, data);
 
-  await echoControlService.createTransaction(transaction, maxCost);
+  await echoControlService.createTransaction(transaction);
 
   if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
     const transactionCost = await echoControlService.computeTransactionCosts(

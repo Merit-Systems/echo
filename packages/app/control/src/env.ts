@@ -152,6 +152,44 @@ export const env = createEnv({
     MERIT_SENDER_GITHUB_ID: IS_STRICT
       ? z.coerce.number()
       : z.coerce.number().default(1),
+    MERIT_CONTRACT_ADDRESS: IS_STRICT
+      ? z.string().regex(/^0x[a-fA-F0-9]{40}$/, {
+          message: 'MERIT_CONTRACT_ADDRESS must be a valid Ethereum address',
+        })
+      : z.string().default('0x1234567890123456789012345678901234567890'),
+    MERIT_REPO_ID: IS_STRICT ? z.string() : z.string().default('1'),
+
+    // coinbase cdp
+
+    CDP_API_KEY_ID: IS_STRICT
+      ? z.string()
+      : z.string().default('cdp-api-key-id'),
+    CDP_API_KEY_SECRET: IS_STRICT
+      ? z.string()
+      : z.string().default('cdp-api-key-secret'),
+    CDP_WALLET_SECRET: IS_STRICT
+      ? z.string()
+      : z.string().default('cdp-wallet-secret'),
+    WALLET_OWNER: IS_STRICT ? z.string() : z.string().default('wallet-owner'),
+    BASE_RPC_URL: IS_STRICT ? z.string().url() : z.string().url().optional(),
+
+    // crypto addresses
+
+    USDC_ADDRESS: IS_STRICT
+      ? z.string().regex(/^0x[a-fA-F0-9]{40}$/, {
+          message: 'USDC_ADDRESS must be a valid Ethereum address',
+        })
+      : z.string().default('0x1234567890123456789012345678901234567890'),
+    ETH_ADDRESS: IS_STRICT
+      ? z.string().regex(/^0x[a-fA-F0-9]{40}$/, {
+          message: 'ETH_ADDRESS must be a valid Ethereum address',
+        })
+      : z.string().default('0x1234567890123456789012345678901234567890'),
+    ECHO_PAYOUTS_ADDRESS: IS_STRICT
+      ? z.string().regex(/^0x[a-fA-F0-9]{40}$/, {
+          message: 'ECHO_PAYOUTS_ADDRESS must be a valid Ethereum address',
+        })
+      : z.string().default('0x1234567890123456789012345678901234567890'),
 
     // qstash
 

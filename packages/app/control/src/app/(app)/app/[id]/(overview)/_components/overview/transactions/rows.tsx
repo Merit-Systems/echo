@@ -30,8 +30,10 @@ export const TransactionRows = async ({ appId }: { appId: string }) => {
           <UserAvatar src={transaction.user.image} className="size-8" />
           <div className="flex flex-col items-start">
             <p className="text-sm leading-tight">
-              <span className="font-medium">{transaction.user.name}</span> made{' '}
-              {transaction.callCount} requests
+              <span className="font-medium">
+                {transaction.user.name ?? 'x402 Users'}
+              </span>{' '}
+              made {transaction.callCount} requests
             </p>
             <p className="text-[10px] text-muted-foreground">
               {formatDistanceToNow(transaction.date, {

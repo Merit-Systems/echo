@@ -31,6 +31,10 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
             href: '/admin/payouts',
           },
           {
+            label: 'X402 Payouts',
+            href: '/admin/x402-payouts',
+          },
+          {
             label: 'Credit Grants',
             href: '/admin/credit-grants',
             subRoutes: ['/admin/credit-grants', '/admin/credit-grants/new'],

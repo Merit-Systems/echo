@@ -124,6 +124,7 @@ export async function calculateUserMarkupEarnings(
 
   const byApp: Record<string, number> = {};
   for (const row of groupedByApp) {
+    if (!row.echoAppId) continue;
     const gross = row._sum.markUpProfit ? Number(row._sum.markUpProfit) : 0;
     const claimed = claimedMap[row.echoAppId] || 0;
     const net = Math.max(0, gross - claimed);
