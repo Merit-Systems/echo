@@ -21,6 +21,7 @@ const X402RS_FACILITATOR_METHOD_PREFIX =
 const PAYAI_FACILITATOR_BASE_URL = process.env.PAYAI_FACILITATOR_BASE_URL;
 const PAYAI_FACILITATOR_METHOD_PREFIX =
   process.env.PAYAI_FACILITATOR_METHOD_PREFIX;
+const facilitatorTimeout = process.env.FACILITATOR_REQUEST_TIMEOUT || 20000;
 
 type FacilitatorMethod = 'verify' | 'settle';
 
@@ -103,14 +104,20 @@ export async function facilitatorWithRetry<
         paymentRequirements: toJsonSafe(paymentRequirements),
       };
 
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), Number(facilitatorTimeout));
+
       const res = await fetch(
         `${facilitator.url}${facilitator.methodPrefix}/${method}`,
         {
           method: 'POST',
           headers,
           body: JSON.stringify(requestBody),
+          signal: abortController.signal,
         }
       );
+
+      clearTimeout(timeoutId);
 
       if (res.status !== 200) {
         const errorBody = await res.text();
