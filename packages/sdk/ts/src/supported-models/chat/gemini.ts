@@ -10,13 +10,11 @@ export type GeminiModel =
   | 'gemini-2.0-flash-lite-001'
   | 'gemini-2.0-flash-lite-preview'
   | 'gemini-2.0-flash-lite-preview-02-05'
-  | 'gemini-2.0-flash-preview-image-generation'
   | 'gemini-2.0-flash-thinking-exp'
   | 'gemini-2.0-flash-thinking-exp-01-21'
   | 'gemini-2.0-flash-thinking-exp-1219'
   | 'gemini-2.5-flash'
   | 'gemini-2.5-flash-image'
-  | 'gemini-2.5-flash-image-preview'
   | 'gemini-2.5-flash-lite'
   | 'gemini-2.5-flash-lite-preview-06-17'
   | 'gemini-2.5-flash-lite-preview-09-2025'
@@ -79,12 +77,6 @@ export const GeminiModels: SupportedModel[] = [
     provider: 'Gemini',
   },
   {
-    model_id: 'gemini-2.0-flash-preview-image-generation',
-    input_cost_per_token: 1e-7,
-    output_cost_per_token: 4e-7,
-    provider: 'Gemini',
-  },
-  {
     model_id: 'gemini-2.0-flash-thinking-exp',
     input_cost_per_token: 1e-7,
     output_cost_per_token: 4e-7,
@@ -110,12 +102,6 @@ export const GeminiModels: SupportedModel[] = [
   },
   {
     model_id: 'gemini-2.5-flash-image',
-    input_cost_per_token: 3e-7,
-    output_cost_per_token: 0.0000025,
-    provider: 'Gemini',
-  },
-  {
-    model_id: 'gemini-2.5-flash-image-preview',
     input_cost_per_token: 3e-7,
     output_cost_per_token: 0.0000025,
     provider: 'Gemini',
