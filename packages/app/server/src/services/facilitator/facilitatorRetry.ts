@@ -38,14 +38,14 @@ const facilitators: FacilitatorConfig[] = [
     name: 'Coinbase',
   },
   {
-    url: X402RS_FACILITATOR_BASE_URL!,
-    methodPrefix: X402RS_FACILITATOR_METHOD_PREFIX!,
-    name: 'X402RS',
-  },
-  {
     url: PAYAI_FACILITATOR_BASE_URL!,
     methodPrefix: PAYAI_FACILITATOR_METHOD_PREFIX!,
     name: 'PayAI',
+  },
+  {
+    url: X402RS_FACILITATOR_BASE_URL!,
+    methodPrefix: X402RS_FACILITATOR_METHOD_PREFIX!,
+    name: 'X402RS',
   },
   {
     url: '',
@@ -105,7 +105,10 @@ export async function facilitatorWithRetry<
       };
 
       const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), Number(facilitatorTimeout));
+      const timeoutId = setTimeout(() => {
+        abortController.abort();
+        logger.warn(`Facilitator ${facilitator.name} ${method} request timed out after ${facilitatorTimeout}ms`);
+      }, Number(facilitatorTimeout));
 
       const res = await fetch(
         `${facilitator.url}${facilitator.methodPrefix}/${method}`,
@@ -122,15 +125,6 @@ export async function facilitatorWithRetry<
       if (res.status !== 200) {
         const errorBody = await res.text();
         const errorMsg = `${res.status} ${res.statusText} - ${errorBody}`;
-        logger.error(
-          `${facilitator.name} facilitator ${method} failed - Status: ${res.status}`,
-          {
-            facilitator: facilitator.name,
-            method,
-            status: res.status,
-            errorBody,
-          }
-        );
         logMetric('facilitator_failure', 1, {
           facilitator: facilitator.name,
           method,
