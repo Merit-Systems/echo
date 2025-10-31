@@ -5,7 +5,7 @@ import { Charts, LoadingCharts } from '@/app/(app)/_components/charts';
 import type { ChartData } from '@/app/(app)/_components/charts/base-chart';
 
 import { api } from '@/trpc/client';
-import { useActivityContext } from '../../../../../../_components/time-range-selector/context';
+import { useActivityContext } from '@/app/(app)/_components/time-range-selector/context';
 
 import { formatCurrency } from '@/lib/utils';
 import { useMemo } from 'react';
@@ -30,14 +30,13 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
   );
 
   const [isOwner] = api.apps.app.isOwner.useSuspenseQuery(appId);
-  const [numTokens] = api.apps.app.getNumTokens.useSuspenseQuery({ appId });
   const [numTransactions] = api.apps.app.transactions.count.useSuspenseQuery({
     appId,
   });
 
   const isInitialized = useMemo(() => {
-    return !isOwner || (numTokens > 0 && numTransactions > 0);
-  }, [isOwner, numTokens, numTransactions]);
+    return !isOwner || numTransactions > 0;
+  }, [isOwner, numTransactions]);
 
   // Transform data for the chart
   const chartData: ChartData<Omit<(typeof activity)[number], 'timestamp'>>[] =
@@ -80,7 +79,7 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
           trigger: {
             value: 'profit',
             label: 'Profit',
-            amount: numTokens === 0 ? '--' : formatCurrency(totalProfit),
+            amount: numTransactions === 0 ? '--' : formatCurrency(totalProfit),
           },
           bars: [
             {
@@ -112,7 +111,7 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
             value: 'tokens',
             label: 'Tokens',
             amount:
-              numTokens === 0
+              numTransactions === 0
                 ? '--'
                 : totalTokens.toLocaleString(undefined, {
                     notation: 'compact',
@@ -161,7 +160,7 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
             value: 'transactions',
             label: 'Transactions',
             amount:
-              numTokens === 0
+              numTransactions === 0
                 ? '--'
                 : totalTransactions.toLocaleString(undefined, {
                     notation: 'compact',

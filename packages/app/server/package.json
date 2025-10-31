@@ -12,7 +12,7 @@
     "prebuild": "pnpm run copy-schema && pnpm run prisma:generate",
     "predev": "pnpm run copy-prisma",
     "prestart": "pnpm run copy-prisma",
-    "dev": "npx tsx src/server.ts",
+    "dev": "pnpm run build && node dist/server.js",
     "start": "node dist/server.js",
     "prisma:migrate-deploy": "pnpx prisma migrate deploy",
     "anthropic-client": "npx tsx src/clients/anthropic-client.ts",
