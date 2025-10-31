@@ -68,6 +68,11 @@ const DEFAULT_TEMPLATES = {
     description:
       'Vite React application with Echo and the Vercel AI SDK for image generation',
   },
+  authjs: {
+    title: 'Auth.js (NextAuth)',
+    description:
+      'Next.js application with Echo as an Auth.js provider for authentication',
+  },
 } as const;
 
 type TemplateName = keyof typeof DEFAULT_TEMPLATES;

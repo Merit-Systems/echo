@@ -1,6 +1,6 @@
 {
-  "name": "@merit/echo-authjs-provider",
-  "version": "1.0.1",
+  "name": "@merit-systems/echo-authjs-provider",
+  "version": "0.0.1",
   "description": "Auth.js provider for Echo login",
   "type": "module",
   "main": "./dist/index.js",
