@@ -1,0 +1,387 @@
+## Description: Guidelines and best practices for building Echo Next.js Chat applications, including streaming, server/client boundaries, and chat UI patterns globs: /**/*.ts,/**/*.tsx,**/*.js,**/*.jsx
+
+## Echo Next.js Chat Guidelines
+
+## SDK Initialization
+
+### Server-Side Setup
+
+ALWAYS initialize Echo in `src/echo/index.ts` for server-side AI calls:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap your application with `EchoProvider`:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Chat API Implementation
+
+### Streaming Chat Route
+
+ALWAYS implement chat endpoints with proper validation and streaming:
+
+```typescript
+// app/api/chat/route.ts
+import { convertToModelMessages, streamText, type UIMessage } from 'ai';
+import { openai } from '@/echo';
+
+// Allow streaming responses up to 30 seconds
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  try {
+    const {
+      model,
+      messages,
+    }: {
+      messages: UIMessage[];
+      model: string;
+    } = await req.json();
+
+    // ✅ ALWAYS validate required parameters
+    if (!model) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Model parameter is required',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Messages parameter is required and must be an array',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const result = streamText({
+      model: openai(model),
+      messages: convertToModelMessages(messages),
+    });
+
+    return result.toUIMessageStreamResponse({
+      sendSources: true,
+      sendReasoning: true,
+    });
+  } catch (error) {
+    console.error('Chat API error:', error);
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: 'Failed to process chat request',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+}
+```
+
+## Client-Side Chat UI
+
+### Using the useChat Hook
+
+Use the `useChat` hook from Echo React SDK for chat state management:
+
+```typescript
+'use client';
+
+import { useChat, useEcho } from '@merit-systems/echo-react-sdk';
+import { useState } from 'react';
+
+export function ChatInterface() {
+  const [input, setInput] = useState('');
+  const { messages, sendMessage, status } = useChat();
+  const { user } = useEcho();
+
+  const isSignedIn = user !== null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() && isSignedIn) {
+      sendMessage({
+        role: 'user',
+        content: input,
+      });
+      setInput('');
+    }
+  };
+
+  return (
+    <div className="chat-container">
+      <div className="messages">
+        {messages.map((message, index) => (
+          <div key={index} className={`message ${message.role}`}>
+            <div className="content">{message.content}</div>
+          </div>
+        ))}
+        {status === 'pending' && <div className="loading">Thinking...</div>}
+      </div>
+      
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={!isSignedIn || status === 'pending'}
+          placeholder={isSignedIn ? 'Type a message...' : 'Sign in to chat'}
+        />
+        <button type="submit" disabled={!isSignedIn || status === 'pending'}>
+          Send
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+## Streaming Responses
+
+### Proper Streaming Setup
+
+ALWAYS use streaming for responsive chat experiences:
+
+```typescript
+// ✅ CORRECT - Using streaming
+const result = streamText({
+  model: openai('gpt-4o'),
+  messages: convertToModelMessages(messages),
+});
+
+return result.toUIMessageStreamResponse({
+  sendSources: true,
+  sendReasoning: true,
+});
+
+// ❌ INCORRECT - Using non-streaming (blocks until complete)
+const result = await generateText({
+  model: openai('gpt-4o'),
+  messages: convertToModelMessages(messages),
+});
+
+return Response.json({ text: result.text });
+```
+
+## Environment Variables
+
+ALWAYS store credentials in `.env.local`:
+
+```bash
+# Server-side only
+ECHO_APP_ID=your_echo_app_id
+
+# Client-side (public)
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys:
+
+```typescript
+// ✅ CORRECT
+const appId = process.env.ECHO_APP_ID!;
+
+// ❌ INCORRECT
+const appId = 'echo_app_123abc';
+```
+
+## Feature Flags and Custom Properties
+
+### Centralized Feature Flags
+
+ALWAYS define feature flags in a single constants file:
+
+```typescript
+// src/lib/flags.ts
+export enum ChatFeatureFlags {
+  ENABLE_VOICE_INPUT = 'enable_voice_input',
+  ENABLE_FILE_UPLOAD = 'enable_file_upload',
+  ENABLE_REASONING = 'enable_reasoning',
+  ENABLE_SOURCES = 'enable_sources',
+}
+
+export function validateChatFeatureFlag(flag: string): boolean {
+  return Object.values(ChatFeatureFlags).includes(flag as ChatFeatureFlags);
+}
+```
+
+### Custom Properties
+
+If a custom property is used multiple times, define it once:
+
+```typescript
+// src/lib/properties.ts
+export const ChatProperties = {
+  MESSAGE_COUNT: 'message_count',
+  CONVERSATION_ID: 'conversation_id',
+  MODEL_PREFERENCE: 'model_preference',
+} as const;
+
+export type ChatProperty = typeof ChatProperties[keyof typeof ChatProperties];
+```
+
+## TypeScript Types
+
+### Message Types
+
+ALWAYS export shared types for chat messages:
+
+```typescript
+// src/lib/types.ts
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: number;
+  metadata?: {
+    model?: string;
+    tokens?: number;
+    sources?: Source[];
+  };
+}
+
+export interface Source {
+  id: string;
+  title: string;
+  url: string;
+  snippet?: string;
+}
+
+export interface ChatState {
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  error: string | null;
+}
+```
+
+## Chat UI Components
+
+### Component Organization
+
+Structure chat components for reusability:
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   └── chat/
+│   │       └── route.ts           # Chat API endpoint
+│   └── page.tsx                   # Main chat page
+├── components/
+│   ├── ai-elements/
+│   │   ├── message.tsx            # Message display
+│   │   ├── conversation.tsx       # Conversation container
+│   │   ├── prompt-input.tsx       # User input
+│   │   └── loader.tsx             # Loading states
+│   └── echo-account.tsx           # Account management
+├── echo/
+│   └── index.ts                   # Server-side Echo init
+├── lib/
+│   ├── flags.ts                   # Feature flags
+│   ├── properties.ts              # Custom properties
+│   └── types.ts                   # Shared types
+└── providers.tsx                  # Client providers
+```
+
+## Error Handling
+
+ALWAYS handle errors with clear messages and appropriate status codes:
+
+```typescript
+// ✅ CORRECT
+try {
+  const result = await streamText({
+    model: openai(model),
+    messages: convertToModelMessages(messages),
+  });
+  return result.toUIMessageStreamResponse();
+} catch (error) {
+  console.error('Chat error:', error);
+  
+  if (error instanceof AuthenticationError) {
+    return new Response(
+      JSON.stringify({ error: 'Authentication failed' }),
+      { status: 401 }
+    );
+  }
+  
+  return new Response(
+    JSON.stringify({ error: 'Internal server error' }),
+    { status: 500 }
+  );
+}
+
+// ❌ INCORRECT
+try {
+  const result = await streamText({
+    model: openai(model),
+    messages: convertToModelMessages(messages),
+  });
+  return result.toUIMessageStreamResponse();
+} catch (error) {
+  // Silent failure or generic error
+  return new Response('Error', { status: 500 });
+}
+```
+
+## Testing
+
+NEVER call external services in tests. ALWAYS mock:
+
+```typescript
+import { vi } from 'vitest';
+
+vi.mock('@/echo', () => ({
+  openai: vi.fn(() => mockOpenAI),
+}));
+
+describe('Chat API', () => {
+  it('should stream chat responses', async () => {
+    const response = await POST(mockRequest);
+    expect(response.status).toBe(200);
+  });
+});
+```
+
+## Best Practices
+
+1. **Streaming First**: Always use streaming for responsive UX
+2. **Validation**: Validate all inputs in API routes
+3. **Error Handling**: Provide clear, actionable error messages
+4. **Type Safety**: Export and use strict TypeScript types
+5. **Feature Flags**: Centralize in one file, validate before use
+6. **Component Structure**: Keep chat components modular and reusable
+7. **Security**: Never expose server secrets to client components
+8. **Performance**: Use proper loading states and optimistic updates
