@@ -152,7 +152,7 @@ export async function facilitatorWithRetry<
   }
 
   const errorDetails = errors
-    .map(e => `${e.facilitator}: ${e.error}`)
+    .map(e => `${e.facilitator}: ${e.error.slice(0, 20)}`)
     .join('; ');
   throw new Error(`All facilitators failed for ${method}: ${errorDetails}`);
 }
