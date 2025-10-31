@@ -72,13 +72,14 @@ const { text } = await generateText({
 
 ## API
 
-### `createX402OpenAI(walletClient, baseRouterUrl?)`
+### `createX402OpenAI(walletClient, baseRouterUrl?, echoAppId?)`
 
 Creates an OpenAI provider that handles x402 payments automatically.
 
 **Parameters:**
 - `walletClient` - x402 wallet signer
 - `baseRouterUrl` - Optional router URL (default: `https://echo.router.merit.systems`)
+- `echoAppId` - Optional Echo app ID for usage tracking and analytics
 
 **Returns:** OpenAI provider compatible with Vercel AI SDK
 
@@ -90,3 +91,18 @@ const openai = createX402OpenAI(
   'https://your-router.com'
 );
 ```
+
+
+## Using Echo
+
+To track usage and analytics for your application, provide your Echo app ID:
+
+```typescript
+const openai = createX402OpenAI(
+  walletClient,
+  'https://echo.router.merit.systems',
+  'your-echo-app-id'
+);
+```
+
+The SDK will automatically include the `x-echo-app-id` header in all requests, enabling you to set a mark-up via Echo, which is automatically applied to your x402 transactions.

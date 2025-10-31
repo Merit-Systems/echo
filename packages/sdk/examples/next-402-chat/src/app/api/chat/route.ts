@@ -49,10 +49,10 @@ export async function POST(req: Request) {
 
   if (useServerWallet) {
     // Create OpenAI provider with payment authorization
-    const withX402 = createX402OpenAI(walletClient);
+    const withX402 = createX402OpenAI(walletClient, undefined, process.env.ECHO_APP_ID);
     // Proceed with actual streaming request
     const result = streamText({
-      model: withX402('gpt-5'),
+      model: withX402('gpt-4o'),
       messages: convertToModelMessages(messages),
       maxRetries: 0,
       maxOutputTokens: 1000,
