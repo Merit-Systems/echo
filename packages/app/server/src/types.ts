@@ -246,7 +246,10 @@ export type HandlerInput = {
   x402AuthenticationService: X402AuthenticationService;
 };
 
-export type ApiKeyHandlerInput = Omit<HandlerInput, 'x402AuthenticationService'>;
+export type ApiKeyHandlerInput = Omit<
+  HandlerInput,
+  'x402AuthenticationService'
+>;
 
 export type X402HandlerInput = Omit<HandlerInput, 'echoControlService'>;
 
@@ -259,7 +262,6 @@ export type SendUserOperationReturnType = {
   /** The hash of the user operation. This is not the transaction hash which is only available after the operation is completed.*/
   userOpHash: Hex;
 };
-
 
 export interface TransactionCosts {
   rawTransactionCost: Decimal;

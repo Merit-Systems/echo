@@ -26,7 +26,11 @@ export async function getPaymentHeaderFromBody(
   return paymentHeader;
 }
 
-function fetchWithX402Payment(fetch: any, walletClient: Signer, echoAppId?: string): typeof fetch {
+function fetchWithX402Payment(
+  fetch: any,
+  walletClient: Signer,
+  echoAppId?: string
+): typeof fetch {
   return async (input: URL, init?: RequestInit) => {
     const headers: Record<string, any> = { ...init?.headers };
 
@@ -58,11 +62,17 @@ function fetchWithX402Payment(fetch: any, walletClient: Signer, echoAppId?: stri
   };
 }
 
-export function createX402OpenAI(
-  walletClient: Signer,
-  baseRouterUrl?: string,
-  echoAppId?: string
-): OpenAIProvider {
+export interface X402OpenAIConfig {
+  walletClient: Signer;
+  baseRouterUrl?: string;
+  echoAppId?: string;
+}
+
+export function createX402OpenAI({
+  walletClient,
+  baseRouterUrl,
+  echoAppId,
+}: X402OpenAIConfig): OpenAIProvider {
   return createOpenAI({
     baseURL: baseRouterUrl || 'https://echo.router.merit.systems',
     apiKey: 'placeholder_replaced_by_echoFetch',

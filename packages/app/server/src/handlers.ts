@@ -1,9 +1,7 @@
 import { TransactionEscrowMiddleware } from 'middleware/transaction-escrow-middleware';
 import { modelRequestService } from 'services/ModelRequestService';
 import { ApiKeyHandlerInput, X402HandlerInput } from 'types';
-import {
-  calculateRefundAmount,
-} from 'utils';
+import { calculateRefundAmount } from 'utils';
 import { checkBalance } from 'services/BalanceCheckService';
 import { prisma } from 'server';
 import { makeProxyPassthroughRequest } from 'services/ProxyPassthroughService';
@@ -59,8 +57,11 @@ export async function handleX402Request({
       transactionResult.data
     );
 
-    logger.info(`Creating X402 transaction for app. Metadata: ${JSON.stringify(transaction.metadata)}`);
-    const transactionCosts = await x402AuthenticationService.createX402Transaction(transaction);
+    logger.info(
+      `Creating X402 transaction for app. Metadata: ${JSON.stringify(transaction.metadata)}`
+    );
+    const transactionCosts =
+      await x402AuthenticationService.createX402Transaction(transaction);
 
     await finalize(
       paymentAmountDecimal,

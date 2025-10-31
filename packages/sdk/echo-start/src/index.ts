@@ -179,7 +179,10 @@ function isExternalTemplate(template: string): boolean {
 function resolveTemplateRepo(template: string): string {
   let repo = template;
 
-  if (repo.startsWith('https://github.com/') || repo.startsWith('http://github.com/')) {
+  if (
+    repo.startsWith('https://github.com/') ||
+    repo.startsWith('http://github.com/')
+  ) {
     repo = repo.replace(/^https?:\/\/github\.com\//, '');
   }
 
@@ -192,29 +195,34 @@ function resolveTemplateRepo(template: string): string {
 
 function detectEnvVarName(projectPath: string): string | null {
   const envFiles = ['.env.local', '.env.example', '.env'];
-  
+
   for (const fileName of envFiles) {
     const filePath = path.join(projectPath, fileName);
     if (existsSync(filePath)) {
       const content = readFileSync(filePath, 'utf-8');
-      const match = content.match(/(NEXT_PUBLIC_|VITE_|REACT_APP_)?ECHO_APP_ID/);
+      const match = content.match(
+        /(NEXT_PUBLIC_|VITE_|REACT_APP_)?ECHO_APP_ID/
+      );
       if (match) {
         return match[0];
       }
     }
   }
-  
+
   return null;
 }
 
 function detectFrameworkEnvVarName(projectPath: string): string {
   const packageJsonPath = path.join(projectPath, 'package.json');
-  
+
   if (existsSync(packageJsonPath)) {
     try {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-      const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
-      
+      const deps = {
+        ...packageJson.dependencies,
+        ...packageJson.devDependencies,
+      };
+
       if (deps['next']) {
         return 'NEXT_PUBLIC_ECHO_APP_ID';
       } else if (deps['vite']) {
@@ -227,7 +235,7 @@ function detectFrameworkEnvVarName(projectPath: string): string {
       console.error(e);
     }
   }
-  
+
   return 'NEXT_PUBLIC_ECHO_APP_ID';
 }
 
@@ -262,7 +270,7 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
   }
 
   const isExternal = isExternalTemplate(template);
-  
+
   if (isExternal) {
     log.step(`Using external template: ${template}`);
   } else {
@@ -306,7 +314,7 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     s.start('Downloading template files');
 
     let repoPath: string;
-    
+
     if (isExternal) {
       repoPath = resolveTemplateRepo(template);
     } else {
@@ -390,7 +398,8 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       }
     } else if (isExternal) {
       const detectedVarName = detectEnvVarName(absoluteProjectPath);
-      const envVarName = detectedVarName || detectFrameworkEnvVarName(absoluteProjectPath);
+      const envVarName =
+        detectedVarName || detectFrameworkEnvVarName(absoluteProjectPath);
       const envContent = `${envVarName}=${appId}\n`;
       writeFileSync(envPath, envContent);
       log.message(`Created .env.local with ${envVarName}`);

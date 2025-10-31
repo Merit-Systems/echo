@@ -107,7 +107,9 @@ export async function facilitatorWithRetry<
       const abortController = new AbortController();
       const timeoutId = setTimeout(() => {
         abortController.abort();
-        logger.warn(`Facilitator ${facilitator.name} ${method} request timed out after ${facilitatorTimeout}ms`);
+        logger.warn(
+          `Facilitator ${facilitator.name} ${method} request timed out after ${facilitatorTimeout}ms`
+        );
       }, Number(facilitatorTimeout));
 
       const res = await fetch(
