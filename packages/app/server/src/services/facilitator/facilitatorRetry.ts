@@ -141,14 +141,6 @@ export async function facilitatorWithRetry<
       return data as T;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.error(
-        `${facilitator.name} facilitator ${method} threw exception`,
-        {
-          facilitator: facilitator.name,
-          method,
-          error: errorMsg,
-        }
-      );
       logMetric('facilitator_failure', 1, {
         facilitator: facilitator.name,
         method,
