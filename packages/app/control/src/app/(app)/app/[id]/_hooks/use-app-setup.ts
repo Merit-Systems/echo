@@ -25,18 +25,10 @@ export const useAppConnectionSetup = (appId: string) => {
       refetchInterval: shouldRefetchConnection ? 2500 : undefined,
     }
   );
-  const [transactionsCount] = api.apps.app.transactions.count.useSuspenseQuery(
-    {
-      appId,
-    },
-    {
-      refetchInterval: shouldRefetchTransactions ? 2500 : undefined,
-    }
-  );
 
   const isConnected = useMemo(() => {
-    return numTokens > 0 || numApiKeys > 0 || transactionsCount > 0;
-  }, [numTokens, numApiKeys, transactionsCount]);
+    return numTokens > 0 || numApiKeys > 0;
+  }, [numTokens, numApiKeys]);
 
   useEffect(() => {
     setShouldRefetchConnection(!isConnected);
