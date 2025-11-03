@@ -174,6 +174,22 @@ npx echo-start@latest --template react-image
 
 ---
 
+#### Auth.js (NextAuth) (`authjs`)
+
+Next.js application demonstrating Echo as an Auth.js provider for authentication.
+
+```bash
+npx echo-start@latest --template authjs
+```
+
+**Features:**
+
+- Auth.js (NextAuth v5) integration
+- Echo as authentication provider
+- Server-side session management
+
+---
+
 ## Template Structure
 
 Each template follows a consistent structure:
