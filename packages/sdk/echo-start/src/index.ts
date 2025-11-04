@@ -73,10 +73,6 @@ const DEFAULT_TEMPLATES = {
 type TemplateName = keyof typeof DEFAULT_TEMPLATES;
 type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
 
-function escapeRegExp(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function printHeader(): void {
   console.log();
   console.log(`${chalk.cyan('Echo Start')} ${chalk.gray(`(${VERSION})`)}`);

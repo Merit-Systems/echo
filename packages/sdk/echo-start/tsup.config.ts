@@ -6,5 +6,6 @@ export default defineConfig({
   dts: true,
   clean: true,
   minify: true,
+  external: ['open'],
   onSuccess: 'chmod +x dist/index.js',
 });
