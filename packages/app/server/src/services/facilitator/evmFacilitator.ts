@@ -1,7 +1,7 @@
-import { 
-  getAddress, 
-  Hex, 
-  parseErc6492Signature, 
+import {
+  getAddress,
+  Hex,
+  parseErc6492Signature,
   Address,
   encodeFunctionData,
   Abi,
@@ -36,7 +36,7 @@ export async function verify(
   }
 
   const parseResult = ExactEvmPayloadSchema.safeParse(payload.payload);
-  
+
   if (!parseResult.success) {
     return {
       isValid: false,
@@ -68,7 +68,10 @@ export async function verify(
   }
 
   // Verify that payment was made to the correct address
-  if (getAddress(exactEvmPayload.authorization.to) !== getAddress(paymentRequirements.payTo)) {
+  if (
+    getAddress(exactEvmPayload.authorization.to) !==
+    getAddress(paymentRequirements.payTo)
+  ) {
     return {
       isValid: false,
       invalidReason: 'invalid_exact_evm_payload_recipient_mismatch',
@@ -78,7 +81,8 @@ export async function verify(
 
   // Verify deadline is not yet expired (pad 3 blocks = 6 seconds)
   if (
-    BigInt(exactEvmPayload.authorization.validBefore) < BigInt(Math.floor(Date.now() / 1000) + 6)
+    BigInt(exactEvmPayload.authorization.validBefore) <
+    BigInt(Math.floor(Date.now() / 1000) + 6)
   ) {
     return {
       isValid: false,
@@ -88,7 +92,10 @@ export async function verify(
   }
 
   // Verify deadline is not yet valid
-  if (BigInt(exactEvmPayload.authorization.validAfter) > BigInt(Math.floor(Date.now() / 1000))) {
+  if (
+    BigInt(exactEvmPayload.authorization.validAfter) >
+    BigInt(Math.floor(Date.now() / 1000))
+  ) {
     return {
       isValid: false,
       invalidReason: 'invalid_exact_evm_payload_authorization_valid_after',
@@ -112,7 +119,10 @@ export async function verify(
   }
 
   // Verify value in payload is enough to cover paymentRequirements.maxAmountRequired
-  if (BigInt(exactEvmPayload.authorization.value) < BigInt(paymentRequirements.maxAmountRequired)) {
+  if (
+    BigInt(exactEvmPayload.authorization.value) <
+    BigInt(paymentRequirements.maxAmountRequired)
+  ) {
     return {
       isValid: false,
       invalidReason: 'invalid_exact_evm_payload_authorization_value',
@@ -144,7 +154,7 @@ export async function settle(
   }
 
   const parseResult = ExactEvmPayloadSchema.safeParse(paymentPayload.payload);
-  
+
   if (!parseResult.success) {
     return {
       success: false,
@@ -166,7 +176,10 @@ export async function settle(
     18 // ETH decimals
   );
 
-  const ethereumBalance = await getEthereumBalance(paymentPayload.network, smartAccount.address);
+  const ethereumBalance = await getEthereumBalance(
+    paymentPayload.network,
+    smartAccount.address
+  );
   logger.info('Ethereum balance', {
     balance: ethereumBalance,
     address: smartAccount.address,
@@ -174,21 +187,21 @@ export async function settle(
   if (ethereumBalance < ETH_WARNING_THRESHOLD) {
     const ethBalanceFormatted = formatUnits(ethereumBalance, 18);
     const readableEthWarningThreshold = formatUnits(ETH_WARNING_THRESHOLD, 18);
-    
+
     logger.warn(
       `Ethereum balance is less than ${readableEthWarningThreshold} ETH`,
-      { 
+      {
         balance: ethBalanceFormatted,
         threshold: readableEthWarningThreshold,
         address: smartAccount.address,
       }
     );
-    
+
     logMetric('server_wallet.ethereum_balance_running_low', 1, {
       amount: ethBalanceFormatted,
       address: smartAccount.address,
     });
-    
+
     return {
       success: false,
       network: paymentPayload.network,
@@ -227,7 +240,9 @@ export async function settle(
     userOpHash: result.userOpHash,
   });
 
-  logger.info('Settlement transaction completed', { userOpHash: result.userOpHash });
+  logger.info('Settlement transaction completed', {
+    userOpHash: result.userOpHash,
+  });
 
   return {
     success: true,
@@ -236,4 +251,3 @@ export async function settle(
     payer: payload.authorization.from,
   };
 }
-

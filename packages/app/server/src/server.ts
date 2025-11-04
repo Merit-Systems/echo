@@ -110,12 +110,16 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
       await initializeProvider(req, res);
 
     const x402AuthenticationService = new X402AuthenticationService(prisma);
-    const x402AuthenticationResult = await x402AuthenticationService.authenticateX402Request(headers);    
+    const x402AuthenticationResult =
+      await x402AuthenticationService.authenticateX402Request(headers);
     if (!provider || is402Sniffer) {
       return buildX402Response(req, res, new Decimal(0));
     }
     const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
-    const maxCostWithMarkup = applyMaxCostMarkup(maxCost, x402AuthenticationResult?.markUp || null);
+    const maxCostWithMarkup = applyMaxCostMarkup(
+      maxCost,
+      x402AuthenticationResult?.markUp || null
+    );
 
     if (
       !isApiRequest(headers) &&
@@ -152,7 +156,7 @@ app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
         isPassthroughProxyRoute,
         provider,
         isStream,
-        x402AuthenticationService
+        x402AuthenticationService,
       });
       return;
     }
