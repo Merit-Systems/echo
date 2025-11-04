@@ -77,67 +77,6 @@ function escapeRegExp(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function upsertEnvVar(filePath: string, varName: string, value: string) {
-  const line = `${varName}=${value}`;
-  if (existsSync(filePath)) {
-    const content = readFileSync(filePath, 'utf-8');
-    const re = new RegExp(`^(${escapeRegExp(varName)}\\s*=\\s*).+$`, 'm');
-    const updated = re.test(content)
-      ? content.replace(re, (match, group1) => group1 + value)
-      : content.endsWith('\n')
-        ? content + line + '\n'
-        : content + '\n' + line + '\n';
-    writeFileSync(filePath, updated);
-  } else {
-    writeFileSync(filePath, line + '\n');
-  }
-}
-
-function deriveReferralVarNameFromAppVar(appVar: string): string {
-  if (appVar.includes('ECHO_APP_ID')) {
-    return appVar.replace('ECHO_APP_ID', 'ECHO_REFERRAL_CODE');
-  }
-  return 'NEXT_PUBLIC_ECHO_REFERRAL_CODE';
-}
-
-function readJsonIfExists<T = unknown>(p: string): T | null {
-  if (!existsSync(p)) return null;
-  try {
-    return JSON.parse(readFileSync(p, 'utf-8')) as T;
-  } catch {
-    return null;
-  }
-}
-
-function extractTemplateReferralCode(projectPath: string): string | null {
-  const dotEchoPath = path.join(projectPath, '.echo', 'template.json');
-  const dotEcho = readJsonIfExists<{ referralCode?: string }>(dotEchoPath);
-  if (dotEcho?.referralCode && typeof dotEcho.referralCode === 'string') {
-    return dotEcho.referralCode;
-  }
-
-  const echoTemplatePath = path.join(projectPath, 'echo-template.json');
-  const echoTemplate = readJsonIfExists<{ referralCode?: string }>(
-    echoTemplatePath
-  );
-  if (
-    echoTemplate?.referralCode &&
-    typeof echoTemplate.referralCode === 'string'
-  ) {
-    return echoTemplate.referralCode;
-  }
-
-  const pkgPath = path.join(projectPath, 'package.json');
-  type PkgEcho = { echo?: { referralCode?: string } };
-  const pkg = readJsonIfExists<PkgEcho>(pkgPath);
-  const pkgReferral = pkg?.echo?.referralCode;
-  if (pkgReferral && typeof pkgReferral === 'string') {
-    return pkgReferral;
-  }
-
-  return null;
-}
-
 function printHeader(): void {
   console.log();
   console.log(`${chalk.cyan('Echo Start')} ${chalk.gray(`(${VERSION})`)}`);
@@ -336,8 +275,19 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
 
   const isExternal = isExternalTemplate(template);
 
+  let owner = '';
+  let createLink = 'https://echo.merit.systems/new';
+
   if (isExternal) {
+    const repoPath = resolveTemplateRepo(template);
+    owner = repoPath.split('/')[0] || '';
     log.step(`Using external template: ${template}`);
+    if (owner) {
+      createLink += `?ref=${owner}`;
+      log.step(`Auto-applying referral for template creator: ${owner}. Use the link below when creating a new app to register it.`);
+    } else {
+      log.warning('Could not extract template owner for referral; using default creation link.');
+    }
   } else {
     const templateName = template as TemplateName;
     log.step(`Selected template: ${DEFAULT_TEMPLATES[templateName].title}`);
@@ -350,7 +300,7 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       placeholder: 'Enter your app ID...',
       validate: (value: string) => {
         if (!value.trim()) {
-          return 'Please enter an App ID or create one at https://echo.merit.systems/new';
+          return `Please enter an App ID or create one at ${createLink} to auto-register the referral (if applicable).`;
         }
         return;
       },
@@ -362,6 +312,8 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     }
 
     appId = enteredAppId;
+  } else if (isExternal && owner) {
+    log.warning(`App ID provided via CLI; referral for ${owner} cannot be auto-registered for existing apps. Create new apps via ${createLink} to apply referrals.`);
   }
 
   log.step(`Using App ID: ${appId}`);
@@ -470,20 +422,6 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       log.message(`Created .env.local with ${envVarName}`);
     }
 
-    if (isExternal) {
-      const referralCode = extractTemplateReferralCode(absoluteProjectPath);
-      if (referralCode) {
-        const existingAppVar =
-          detectEnvVarName(absoluteProjectPath) ||
-          detectFrameworkEnvVarName(absoluteProjectPath);
-        const referralVar = deriveReferralVarNameFromAppVar(existingAppVar);
-        upsertEnvVar(envPath, referralVar, referralCode);
-        log.message(
-          `Registered template referral code in .env.local as ${referralVar}`
-        );
-      }
-    }
-
     log.step('Project setup completed successfully');
 
     // Auto-install dependencies unless skipped
@@ -564,7 +502,7 @@ async function main() {
     .argument('[directory]', 'Directory to create the app in')
     .option(
       '-t, --template <template>',
-      `Template to use. Can be a preset (${Object.keys(DEFAULT_TEMPLATES).join(', ')}) or a GitHub repository URL (https://github.com/user/repo)`
+      `Template to use. Can be a preset (${Object.keys(DEFAULT_TEMPLATES).join(', ')}) or a GitHub repository URL[](https://github.com/user/repo)`
     )
     .option('-a, --app-id <appId>', 'Echo App ID to use in the project')
     .option('--skip-install', 'Skip automatic dependency installation')
