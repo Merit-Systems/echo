@@ -28,12 +28,12 @@ export async function getERC20Balance(
     transport: http(baseRpcUrl),
   });
 
-  const balance = await client.readContract({
+  const balance = (await client.readContract({
     address: erc20Address,
     abi: ERC20_CONTRACT_ABI,
     functionName: 'balanceOf',
     args: [userAddress],
-  }) as bigint;
+  })) as bigint;
 
   return balance;
 }
@@ -60,4 +60,3 @@ export async function getEthereumBalance(
 
   return balance;
 }
-

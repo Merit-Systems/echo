@@ -11,7 +11,7 @@ const verify = async (request: VerifyRequest): Promise<VerifyResponse> => {
   const { paymentPayload, paymentRequirements } = request;
 
   const network = paymentPayload.network;
-  
+
   if (network.startsWith('solana')) {
     logger.error('SVM not yet supported in localFacilitator');
     return {
@@ -29,7 +29,7 @@ const settle = async (request: SettleRequest): Promise<SettleResponse> => {
   const { paymentPayload, paymentRequirements } = request;
 
   const network = paymentPayload.network;
-  
+
   if (network.startsWith('solana')) {
     logger.error('SVM not yet supported in localFacilitator');
     return {

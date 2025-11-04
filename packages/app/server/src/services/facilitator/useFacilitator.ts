@@ -4,7 +4,7 @@ import {
   SettleResponse,
   VerifyResponse,
 } from './x402-types';
-import { facilitatorWithRetry } from './facilitatorRetry';
+import { facilitatorProxy } from './facilitatorProxy';
 
 /**
  * Creates a facilitator client for interacting with the X402 payment facilitator service
@@ -24,7 +24,7 @@ export function useFacilitator() {
     payload: PaymentPayload,
     paymentRequirements: PaymentRequirements
   ): Promise<VerifyResponse> {
-    return facilitatorWithRetry<VerifyResponse>(
+    return facilitatorProxy<VerifyResponse>(
       'verify',
       payload,
       paymentRequirements
@@ -43,7 +43,7 @@ export function useFacilitator() {
     payload: PaymentPayload,
     paymentRequirements: PaymentRequirements
   ): Promise<SettleResponse> {
-    return facilitatorWithRetry<SettleResponse>(
+    return facilitatorProxy<SettleResponse>(
       'settle',
       payload,
       paymentRequirements

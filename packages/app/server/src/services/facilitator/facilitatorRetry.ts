@@ -21,6 +21,7 @@ const X402RS_FACILITATOR_METHOD_PREFIX =
 const PAYAI_FACILITATOR_BASE_URL = process.env.PAYAI_FACILITATOR_BASE_URL;
 const PAYAI_FACILITATOR_METHOD_PREFIX =
   process.env.PAYAI_FACILITATOR_METHOD_PREFIX;
+const facilitatorTimeout = process.env.FACILITATOR_REQUEST_TIMEOUT || 20000;
 
 type FacilitatorMethod = 'verify' | 'settle';
 
@@ -37,14 +38,14 @@ const facilitators: FacilitatorConfig[] = [
     name: 'Coinbase',
   },
   {
-    url: X402RS_FACILITATOR_BASE_URL!,
-    methodPrefix: X402RS_FACILITATOR_METHOD_PREFIX!,
-    name: 'X402RS',
-  },
-  {
     url: PAYAI_FACILITATOR_BASE_URL!,
     methodPrefix: PAYAI_FACILITATOR_METHOD_PREFIX!,
     name: 'PayAI',
+  },
+  {
+    url: X402RS_FACILITATOR_BASE_URL!,
+    methodPrefix: X402RS_FACILITATOR_METHOD_PREFIX!,
+    name: 'X402RS',
   },
   {
     url: '',
@@ -103,27 +104,29 @@ export async function facilitatorWithRetry<
         paymentRequirements: toJsonSafe(paymentRequirements),
       };
 
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => {
+        abortController.abort();
+        logger.warn(
+          `Facilitator ${facilitator.name} ${method} request timed out after ${facilitatorTimeout}ms`
+        );
+      }, Number(facilitatorTimeout));
+
       const res = await fetch(
         `${facilitator.url}${facilitator.methodPrefix}/${method}`,
         {
           method: 'POST',
           headers,
           body: JSON.stringify(requestBody),
+          signal: abortController.signal,
         }
       );
+
+      clearTimeout(timeoutId);
 
       if (res.status !== 200) {
         const errorBody = await res.text();
         const errorMsg = `${res.status} ${res.statusText} - ${errorBody}`;
-        logger.error(
-          `${facilitator.name} facilitator ${method} failed - Status: ${res.status}`,
-          {
-            facilitator: facilitator.name,
-            method,
-            status: res.status,
-            errorBody,
-          }
-        );
         logMetric('facilitator_failure', 1, {
           facilitator: facilitator.name,
           method,
@@ -141,14 +144,6 @@ export async function facilitatorWithRetry<
       return data as T;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.error(
-        `${facilitator.name} facilitator ${method} threw exception`,
-        {
-          facilitator: facilitator.name,
-          method,
-          error: errorMsg,
-        }
-      );
       logMetric('facilitator_failure', 1, {
         facilitator: facilitator.name,
         method,
@@ -160,7 +155,7 @@ export async function facilitatorWithRetry<
   }
 
   const errorDetails = errors
-    .map(e => `${e.facilitator}: ${e.error}`)
+    .map(e => `${e.facilitator}: ${e.error.slice(0, 20)}`)
     .join('; ');
   throw new Error(`All facilitators failed for ${method}: ${errorDetails}`);
 }

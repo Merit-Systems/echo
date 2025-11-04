@@ -1,0 +1,32 @@
+{
+  "name": "authjs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@auth/core": "^0.41.1",
+    "@merit-systems/echo-authjs-provider": "^0.0.1",
+    "@merit-systems/echo-next-sdk": "^0.0.30",
+    "@merit-systems/echo-typescript-sdk": "^1.0.23",
+    "ai": "^5.0.82",
+    "next": "16.0.1",
+    "next-auth": "5.0.0-beta.30",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.16",
+    "@types/node": "^20.19.24",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "eslint": "^9.38.0",
+    "eslint-config-next": "16.0.1",
+    "tailwindcss": "^4.1.16",
+    "typescript": "^5.9.3"
+  }
+}

@@ -376,3 +376,44 @@ Client-side image generation for React applications with Echo billing and image 
         </Tabs>
     </Step>
 </Steps>
+
+## Auth.js (NextAuth)
+
+Next.js application demonstrating Echo as an Auth.js provider for authentication.
+
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/authjs)
+
+<Steps>
+    <Step>
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Create an Auth.js app
+        Run the following commands to create a new app with Auth.js integration.
+
+        <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
+            <Tab value="npm">
+                ```sh lineNumbers
+                npx echo-start@latest --template authjs --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="yarn">
+                ```sh lineNumbers
+                yarn dlx echo-start@latest --template authjs --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="pnpm">
+                ```sh lineNumbers
+                pnpx echo-start@latest --template authjs --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+            <Tab value="bun">
+                ```sh lineNumbers
+                bunx echo-start@latest --template authjs --app-id YOUR_ECHO_APP_ID
+                ```
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>

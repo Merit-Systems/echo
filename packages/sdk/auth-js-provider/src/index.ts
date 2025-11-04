@@ -52,7 +52,7 @@ function validateAppId(appId: string, context?: string): void {
  * const response = await Auth(request, {
  *   providers: [
  *     Echo({
- *       clientId: ECHO_CLIENT_ID,
+ *       appId: ECHO_APP_ID,
  *     }),
  *   ],
  * })
@@ -95,6 +95,9 @@ export default function Echo(
         email: profile.email,
         image: profile.picture || null,
       };
+    },
+    client: {
+      token_endpoint_auth_method: 'none',
     },
     options: config,
   };

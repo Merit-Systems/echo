@@ -49,10 +49,14 @@ export async function POST(req: Request) {
 
   if (useServerWallet) {
     // Create OpenAI provider with payment authorization
-    const withX402 = createX402OpenAI(walletClient);
+    const withX402 = createX402OpenAI({
+      walletClient,
+      baseRouterUrl: 'http://localhost:3070',
+      echoAppId: process.env.ECHO_APP_ID,
+    });
     // Proceed with actual streaming request
     const result = streamText({
-      model: withX402('gpt-5'),
+      model: withX402('gpt-4o'),
       messages: convertToModelMessages(messages),
       maxRetries: 0,
       maxOutputTokens: 1000,
@@ -67,7 +71,11 @@ export async function POST(req: Request) {
 
   const authHeader = req.headers.get('x-payment');
   // Create OpenAI provider with payment authorization
-  const openai = createX402OpenAIWithoutPayment(authHeader);
+  const openai = createX402OpenAIWithoutPayment({
+    paymentAuthHeader: authHeader,
+    baseRouterUrl: 'http://localhost:3070',
+    echoAppId: process.env.ECHO_APP_ID,
+  });
   // Proceed with actual streaming request
   const result = streamText({
     model: openai(model),
