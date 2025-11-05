@@ -37,9 +37,10 @@ import {
 
 import { getSchemaForRoute } from './schema/schemaForRoute';
 import { getDescriptionForRoute } from './schema/descriptionForRoute';
-const API_KEY_ID = process.env.CDP_API_KEY_ID || 'your-api-key-id';
-const API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || 'your-api-key-secret';
-const WALLET_SECRET = process.env.CDP_WALLET_SECRET || 'your-wallet-secret';
+import { env } from './env';
+const API_KEY_ID = env.CDP_API_KEY_ID || 'your-api-key-id';
+const API_KEY_SECRET = env.CDP_API_KEY_SECRET || 'your-api-key-secret';
+const WALLET_SECRET = env.CDP_WALLET_SECRET || 'your-wallet-secret';
 /**
  * Converts a decimal amount (USD) to USDC BigInt representation
  * USDC has 6 decimal places, so $1.234567 becomes 1234567n
@@ -87,12 +88,12 @@ export function calculateRefundAmount(
  * Generates a random nonce in hexadecimal format
  * @returns A random hex string with 0x prefix (25 bytes = 50 hex chars)
  */
-export function generateRandomNonce(): `0x${string}` {
+function generateRandomNonce(): `0x${string}` {
   const bytes = crypto.randomBytes(32);
   return `0x${bytes.toString('hex')}` as `0x${string}`;
 }
 
-export function parseX402Headers(
+function parseX402Headers(
   headers: Record<string, string>
 ): ExactEvmPayloadAuthorization {
   return {
@@ -115,10 +116,10 @@ export async function buildX402Response(
   res: Response,
   maxCost: Decimal
 ) {
-  const network = process.env.NETWORK as Network;
+  const network = env.NETWORK as Network;
   const maxCostBigInt = decimalToUsdcBigInt(maxCost);
   const paymentUrl = req.path;
-  const host = process.env.ECHO_ROUTER_BASE_URL;
+  const host = env.ECHO_ROUTER_BASE_URL;
   const resourceUrl = `${host}${req.url}`;
 
   let recipient: string;

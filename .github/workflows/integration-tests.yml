@@ -57,6 +57,9 @@ jobs:
       CDP_API_KEY_SECRET: ${{ secrets.CDP_API_KEY_SECRET }}
       CDP_WALLET_SECRET: ${{ secrets.CDP_WALLET_SECRET }}
 
+      # Facilitator Configuration
+      PROXY_FACILITATOR_URL: ${{ secrets.PROXY_FACILITATOR_URL }}
+
       # OAuth Configuration (short expiry for fast integration tests)
       OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 5
       OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: 5
@@ -150,6 +153,9 @@ jobs:
           CDP_WALLET_SECRET=${{ secrets.CDP_WALLET_SECRET }}
           WALLET_OWNER="integration-test-owner"
 
+          # Facilitator Configuration
+          PROXY_FACILITATOR_URL=${{ secrets.PROXY_FACILITATOR_URL }}
+
           # OAuth Configuration
           OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=5
           OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=5
@@ -230,6 +236,7 @@ jobs:
           DATABASE_URL="${DATABASE_URL}" \
           NODE_ENV=test \
           PORT=3069 \
+          PROXY_FACILITATOR_URL="${PROXY_FACILITATOR_URL}" \
           OPENAI_API_KEY="${OPENAI_API_KEY}" \
           ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}" \
           CDP_API_KEY_ID="${CDP_API_KEY_ID}" \
@@ -343,6 +350,9 @@ jobs:
       CDP_API_KEY_SECRET: ${{ secrets.CDP_API_KEY_SECRET }}
       CDP_WALLET_SECRET: ${{ secrets.CDP_WALLET_SECRET }}
 
+      # Facilitator Configuration
+      PROXY_FACILITATOR_URL: ${{ secrets.PROXY_FACILITATOR_URL }}
+
       # OAuth Configuration
       OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS: 2592000
       OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: 86400
@@ -397,6 +407,7 @@ jobs:
           CDP_API_KEY_ID=${{ secrets.CDP_API_KEY_ID }}
           CDP_API_KEY_SECRET=${{ secrets.CDP_API_KEY_SECRET }}
           CDP_WALLET_SECRET=${{ secrets.CDP_WALLET_SECRET }}
+          PROXY_FACILITATOR_URL=${{ secrets.PROXY_FACILITATOR_URL }}
           OAUTH_REFRESH_TOKEN_EXPIRY_SECONDS=2592000
           CI=true
           NODE_ENV=test

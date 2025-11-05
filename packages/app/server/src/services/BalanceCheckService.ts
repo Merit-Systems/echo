@@ -2,7 +2,7 @@ import { X402_ERROR_MESSAGE } from '../constants';
 import { PaymentRequiredError, UnauthorizedError } from '../errors/http';
 import { EchoControlService } from './EchoControlService';
 
-export interface BalanceCheckResult {
+interface BalanceCheckResult {
   enoughBalance: boolean;
   usingFreeTier: boolean;
   effectiveBalance: number | null;

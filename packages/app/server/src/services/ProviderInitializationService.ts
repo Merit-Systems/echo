@@ -21,7 +21,7 @@ import { extractIsStream, extractModelName } from './RequestDataService';
  *
  * @returns
  */
-export function detectPassthroughProxyRoute(req: Request):
+function detectPassthroughProxyRoute(req: Request):
   | {
       provider: BaseProvider;
       model: string;

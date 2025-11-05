@@ -7,6 +7,7 @@ import {
 } from './types';
 import { Transaction } from '../../../types';
 import { HttpError } from 'errors/http';
+import { env } from '../../../env';
 
 export const calculateTavilySearchCost = (
   input: TavilySearchInput | undefined
@@ -34,7 +35,7 @@ export const createTavilyTransaction = (
     status: 'completed',
   };
 };
-const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
+const TAVILY_API_KEY = env.TAVILY_API_KEY;
 export async function tavilySearch(
   input: TavilySearchInput
 ): Promise<TavilySearchOutput> {

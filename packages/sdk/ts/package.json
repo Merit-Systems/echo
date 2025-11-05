@@ -42,7 +42,7 @@
   "license": "MIT",
   "devDependencies": {
     "@ai-sdk/gateway": "^1.0.12",
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.3.1",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
     "dotenv": "^16.5.0",

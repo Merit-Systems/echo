@@ -15,20 +15,20 @@ import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
 import { AsyncLocalStorage } from 'async_hooks';
 import dotenv from 'dotenv';
 import winston from 'winston';
+import { env } from './env';
 
 dotenv.config();
 
 // AsyncLocalStorage for storing requestId across async operations
 export const requestIdStorage = new AsyncLocalStorage<string>();
 
-const OTEL_SERVICE_NAME = process.env.OTEL_SERVICE_NAME!;
-const OTEL_SERVICE_VERSION = process.env.OTEL_SERVICE_VERSION!;
-const NODE_ENV = process.env.NODE_ENV!;
-const OTEL_EXPORTER_OTLP_ENDPOINT =
-  process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT!;
-const SIGNOZ_INGESTION_KEY = process.env.SIGNOZ_INGESTION_KEY!;
+const OTEL_SERVICE_NAME = env.OTEL_SERVICE_NAME;
+const OTEL_SERVICE_VERSION = env.OTEL_SERVICE_VERSION;
+const NODE_ENV = env.NODE_ENV;
+const OTEL_EXPORTER_OTLP_ENDPOINT = env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT;
+const SIGNOZ_INGESTION_KEY = env.SIGNOZ_INGESTION_KEY ?? '';
 const OTEL_EXPORTER_OTLP_METRICS_ENDPOINT =
-  process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT!;
+  env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT;
 
 const resource = resourceFromAttributes({
   'service.name': OTEL_SERVICE_NAME,
@@ -41,17 +41,20 @@ const loggerProvider = new LoggerProvider({
   resource: resource,
 });
 
-const otlpExporter = new OTLPLogExporter({
-  url: OTEL_EXPORTER_OTLP_ENDPOINT,
-  headers: {
-    'signoz-access-token': SIGNOZ_INGESTION_KEY,
-  },
-});
+// Only create OTLP exporter if endpoint is configured
+if (OTEL_EXPORTER_OTLP_ENDPOINT) {
+  const otlpExporter = new OTLPLogExporter({
+    url: OTEL_EXPORTER_OTLP_ENDPOINT,
+    headers: {
+      'signoz-access-token': SIGNOZ_INGESTION_KEY,
+    },
+  });
 
-// Add processor with the OTLP exporter
-loggerProvider.addLogRecordProcessor(
-  new SimpleLogRecordProcessor(otlpExporter)
-);
+  // Add processor with the OTLP exporter
+  loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(otlpExporter)
+  );
+}
 
 // Register the logger provider
 logs.setGlobalLoggerProvider(loggerProvider);
@@ -96,21 +99,21 @@ const logger = winston.createLogger({
 // 🔹 METRICS SETUP
 // -------------------------
 
-const metricExporter = new OTLPMetricExporter({
-  url: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,
-  headers: {
-    'signoz-access-token': SIGNOZ_INGESTION_KEY,
-  },
-});
-
 const meterProvider = new MeterProvider({
   resource: resource,
-  readers: [
-    new PeriodicExportingMetricReader({
-      exporter: metricExporter,
-      exportIntervalMillis: 1000, // optional, defaults to 60s
-    }),
-  ],
+  readers: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+    ? [
+        new PeriodicExportingMetricReader({
+          exporter: new OTLPMetricExporter({
+            url: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,
+            headers: {
+              'signoz-access-token': SIGNOZ_INGESTION_KEY,
+            },
+          }),
+          exportIntervalMillis: 1000, // optional, defaults to 60s
+        }),
+      ]
+    : [],
 });
 
 // Register the meter provider globally

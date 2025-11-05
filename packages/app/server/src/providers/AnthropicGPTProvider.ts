@@ -4,10 +4,9 @@ import type { LlmTransactionMetadata, Transaction } from '../types';
 import { GPTProvider } from './GPTProvider';
 import { ProviderType } from './ProviderType';
 import logger from '../logger';
+import { env } from '../env';
 
-export const parseSSEAnthropicGPTFormat = (
-  data: string
-): StreamingChunkBody[] => {
+const parseSSEAnthropicGPTFormat = (data: string): StreamingChunkBody[] => {
   // Split by double newlines to separate events
   const events = data.split('\n\n');
   const chunks: StreamingChunkBody[] = [];
@@ -59,7 +58,7 @@ export class AnthropicGPTProvider extends GPTProvider {
   }
 
   override getApiKey(): string | undefined {
-    return process.env.ANTHROPIC_API_KEY;
+    return env.ANTHROPIC_API_KEY;
   }
 
   override async handleBody(data: string): Promise<Transaction> {

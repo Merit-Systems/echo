@@ -14,6 +14,7 @@ import { Transaction } from '../types';
 import { extractOperationId } from '../utils/gemini/string-parsing.js';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
+import { env } from '../env';
 
 // Constants
 export const PROXY_PASSTHROUGH_ONLY_MODEL = 'PROXY_PLACEHOLDER_VERTEX_AI';
@@ -61,7 +62,7 @@ export class VertexAIProvider extends BaseProvider {
 
   getBaseUrl(): string {
     const project = this.getRequiredEnvVar('GOOGLE_CLOUD_PROJECT');
-    const location = process.env.GOOGLE_CLOUD_LOCATION || 'global';
+    const location = env.GOOGLE_CLOUD_LOCATION || 'global';
     return `https://aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google`;
   }
 
@@ -72,7 +73,7 @@ export class VertexAIProvider extends BaseProvider {
   override formatUpstreamUrl(req: { path: string; url: string }): string {
     const pathWithoutV1 = req.path.replace(/^\/v1/, '');
     const project = this.getRequiredEnvVar('GOOGLE_CLOUD_PROJECT');
-    const location = process.env.GOOGLE_CLOUD_LOCATION || 'global';
+    const location = env.GOOGLE_CLOUD_LOCATION || 'global';
     const queryString = req.url.includes('?')
       ? req.url.substring(req.url.indexOf('?'))
       : '';
@@ -471,11 +472,15 @@ export class VertexAIProvider extends BaseProvider {
   }
 
   private getServiceAccountCredentials(): any {
-    const serviceAccountKeyEncoded =
-      process.env.GOOGLE_SERVICE_ACCOUNT_KEY_ENCODED;
+    const serviceAccountKeyEncoded = env.GOOGLE_SERVICE_ACCOUNT_KEY_ENCODED;
+    
+    if (!serviceAccountKeyEncoded) {
+      return null;
+    }
+
     // decode from base64
     const serviceAccountKey = Buffer.from(
-      serviceAccountKeyEncoded!,
+      serviceAccountKeyEncoded,
       'base64'
     ).toString('utf-8');
 

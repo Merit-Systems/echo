@@ -5,12 +5,11 @@ import { ProviderType } from './ProviderType';
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from '../logger';
 import { getImageModelCost } from '../services/AccountingService';
+import { env } from '../env';
 
 // Use OpenAI SDK's ResponseUsage for non-streaming responses
 
-export const parseSSEImageGenerationFormat = (
-  data: string
-): ImagesResponse[] => {
+const parseSSEImageGenerationFormat = (data: string): ImagesResponse[] => {
   // Split by double newlines to separate complete events
   const eventBlocks = data.split('\n\n');
   const chunks: ImagesResponse[] = [];
@@ -67,7 +66,7 @@ export class OpenAIImageProvider extends BaseProvider {
   }
 
   getApiKey(): string | undefined {
-    return process.env.OPENAI_API_KEY;
+    return env.OPENAI_API_KEY;
   }
 
   async handleBody(data: string): Promise<Transaction> {

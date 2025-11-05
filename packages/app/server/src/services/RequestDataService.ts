@@ -1,9 +1,10 @@
 import { Request } from 'express';
 import { BaseProvider } from '../providers/BaseProvider';
 import {
-  isGeminiStreamingPath,
   extractGeminiModelName,
-} from '../utils/gemini/string-parsing.js';
+  isGeminiStreamingPath,
+} from '../utils/gemini/string-parsing';
+import { env } from '../env';
 
 export function extractModelName(req: Request): string | undefined {
   const model = req.body.model;
@@ -39,10 +40,10 @@ export function extractMaxOutputTokens(req: Request): number {
     return geminiMaxOutputTokens;
   }
 
-  return Number(process.env.MAX_OUTPUT_TOKENS) || 4096;
+  return Number(env.MAX_OUTPUT_TOKENS) || 4096;
 }
 
-export function extractGeminiIsStream(req: Request): boolean {
+function extractGeminiIsStream(req: Request): boolean {
   const path = req.path;
   return path.endsWith(':streamGenerateContent');
 }

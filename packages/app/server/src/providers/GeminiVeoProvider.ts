@@ -21,6 +21,7 @@ import {
 } from '../utils/gemini/string-parsing.js';
 import type { Request } from 'express';
 import type { EchoControlService } from '../services/EchoControlService';
+import { env } from '../env';
 
 export const PROXY_PASSTHROUGH_ONLY_MODEL = 'PROXY_PLACEHOLDER_GEMINI_VEO';
 
@@ -75,7 +76,7 @@ export class GeminiVeoProvider extends BaseProvider {
   }
 
   getApiKey(): string | undefined {
-    return process.env.GEMINI_API_KEY;
+    return env.GEMINI_API_KEY;
   }
 
   override supportsStream(): boolean {
