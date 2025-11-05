@@ -1,38 +1,4 @@
-export const MERIT_ABI = [
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'repoId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'instanceId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'contract ERC20',
-        name: 'token',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: 'amount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bytes',
-        name: 'data',
-        type: 'bytes',
-      },
-    ],
-    name: 'fundRepo',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-];
+import { env } from '../../env';
 
 export const ERC20_CONTRACT_ABI = [
   {
@@ -64,7 +30,7 @@ export const ERC20_CONTRACT_ABI = [
   },
 ] as const;
 
-export const ERC3009_ABI = [
+const ERC3009_ABI = [
   {
     name: 'transferWithAuthorization',
     type: 'function',
@@ -82,7 +48,4 @@ export const ERC3009_ABI = [
   },
 ] as const;
 
-export const MERIT_CONTRACT_ADDRESS = process.env
-  .MERIT_CONTRACT_ADDRESS as `0x${string}`;
-export const USDC_ADDRESS = process.env.USDC_ADDRESS as `0x${string}`;
-export const ETH_ADDRESS = process.env.ETH_ADDRESS as `0x${string}`;
+export const USDC_ADDRESS = env.USDC_ADDRESS as `0x${string}`;

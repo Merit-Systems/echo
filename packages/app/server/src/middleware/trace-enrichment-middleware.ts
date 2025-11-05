@@ -97,13 +97,4 @@ export function traceLoggingMiddleware(
   next();
 }
 
-// Backward compatibility export (uses both parts)
-export function traceEnrichmentMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  traceSetupMiddleware(req, res, () => {
-    traceLoggingMiddleware(req, res, next);
-  });
-}
+// Removed unused backward compatibility function

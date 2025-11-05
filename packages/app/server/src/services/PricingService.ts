@@ -15,10 +15,11 @@ import { ProviderType } from 'providers/ProviderType';
 import { Tool } from 'openai/resources/responses/responses';
 import { SupportedVideoModel } from '@merit-systems/echo-typescript-sdk';
 import { MarkUp } from 'generated/prisma/client';
+import { env } from '../env';
 
 export function applyEchoMarkup(cost: Decimal): Decimal {
-  const echoMarkup = process.env.ECHO_MARKUP || '1.25';
-  const applyEchoMarkup = process.env.APPLY_ECHO_MARKUP === 'true';
+  const echoMarkup = env.ECHO_MARKUP;
+  const applyEchoMarkup = env.APPLY_ECHO_MARKUP === 'true';
   if (applyEchoMarkup) {
     return cost.mul(new Decimal(echoMarkup)).minus(cost);
   }

@@ -8,7 +8,7 @@ import { BaseProvider } from '../providers/BaseProvider';
 import { Transaction } from '../types';
 import { Request } from 'express';
 
-export class HandleStreamService {
+class HandleStreamService {
   /**
    * Duplicates a stream into two independent streams
    * @param stream - The original stream to duplicate

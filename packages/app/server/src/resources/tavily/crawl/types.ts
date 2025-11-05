@@ -21,7 +21,7 @@ export const TavilyCrawlInputSchema = z.object({
 export type TavilyCrawlInput = z.infer<typeof TavilyCrawlInputSchema>;
 
 // Output schema
-export const TavilyCrawlResultSchema = z.object({
+const TavilyCrawlResultSchema = z.object({
   url: z.string(),
   raw_content: z.string().nullable(),
   favicon: z.string().optional(),

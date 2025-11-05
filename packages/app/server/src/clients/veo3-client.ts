@@ -1,12 +1,13 @@
 import { GoogleGenAI, GenerateVideosOperation } from '@google/genai';
 import dotenv from 'dotenv';
+import { env } from '../env';
 
 dotenv.config();
 
 async function makeRequest() {
   const ai = new GoogleGenAI({
-    apiKey: process.env.ECHO_API_KEY || '',
-    // apiKey: process.env.GEMINI_API_KEY || '',
+    apiKey: env.ECHO_API_KEY || '',
+    // apiKey: env.GEMINI_API_KEY || '',
     httpOptions: {
       baseUrl: 'http://localhost:3070',
     },

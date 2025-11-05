@@ -4,6 +4,7 @@ import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import { CompletionStateBody, parseSSEGPTFormat } from './GPTProvider';
 import logger from '../logger';
+import { env } from '../env';
 
 export class GroqProvider extends BaseProvider {
   private readonly GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
@@ -17,7 +18,7 @@ export class GroqProvider extends BaseProvider {
   }
 
   getApiKey(): string | undefined {
-    return process.env.GROQ_API_KEY;
+    return env.GROQ_API_KEY;
   }
 
   override supportsStream(): boolean {

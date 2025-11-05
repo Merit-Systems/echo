@@ -25,7 +25,7 @@ export const TavilySearchInputSchema = z.object({
 export type TavilySearchInput = z.infer<typeof TavilySearchInputSchema>;
 
 // Output schema
-export const TavilySearchResultSchema = z.object({
+const TavilySearchResultSchema = z.object({
   title: z.string(),
   url: z.string(),
   content: z.string(),

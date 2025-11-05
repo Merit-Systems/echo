@@ -102,13 +102,13 @@ const createVideoModelToProviderMapping = (): Record<string, ProviderType> => {
  * This replaces the previous hardcoded mapping and automatically includes all
  * supported models from the JSON configuration file.
  */
-export const MODEL_TO_PROVIDER: Record<string, ProviderType> =
+const MODEL_TO_PROVIDER: Record<string, ProviderType> =
   createChatModelToProviderMapping();
 
-export const IMAGE_MODEL_TO_PROVIDER: Record<string, ProviderType> =
+const IMAGE_MODEL_TO_PROVIDER: Record<string, ProviderType> =
   createImageModelToProviderMapping();
 
-export const VIDEO_MODEL_TO_PROVIDER: Record<string, ProviderType> =
+const VIDEO_MODEL_TO_PROVIDER: Record<string, ProviderType> =
   createVideoModelToProviderMapping();
 
 export const getProvider = (

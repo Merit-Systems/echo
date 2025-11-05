@@ -13,14 +13,14 @@ export const TavilyExtractInputSchema = z.object({
 export type TavilyExtractInput = z.infer<typeof TavilyExtractInputSchema>;
 
 // Output schema
-export const TavilyExtractResultSchema = z.object({
+const TavilyExtractResultSchema = z.object({
   url: z.string(),
   raw_content: z.string(),
   images: z.array(z.string()).optional(),
   favicon: z.string().optional(),
 });
 
-export const TavilyExtractFailedResultSchema = z.object({
+const TavilyExtractFailedResultSchema = z.object({
   url: z.string(),
   error: z.string(),
 });

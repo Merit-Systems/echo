@@ -52,5 +52,3 @@ export function useFacilitator() {
 
   return { verify, settle };
 }
-
-export const { verify, settle } = useFacilitator();

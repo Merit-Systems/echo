@@ -1,13 +1,14 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
+import { env } from '../env';
 
 dotenv.config();
 
 async function makeRequest() {
-  console.log(process.env.ECHO_API_KEY);
+  console.log(env.ECHO_API_KEY);
   const openai = new OpenAI({
     baseURL: 'http://localhost:3070',
-    apiKey: process.env.ECHO_API_KEY,
+    apiKey: env.ECHO_API_KEY,
   });
 
   let video = await openai.videos.create({

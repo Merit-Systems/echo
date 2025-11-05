@@ -3,6 +3,7 @@ import { getCostPerToken } from '../services/AccountingService';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import logger from '../logger';
+import { env } from '../env';
 
 export interface CompletionStateBody {
   id: string;
@@ -66,7 +67,7 @@ export class GPTProvider extends BaseProvider {
   }
 
   getApiKey(): string | undefined {
-    return process.env.OPENAI_API_KEY;
+    return env.OPENAI_API_KEY;
   }
 
   async handleBody(data: string): Promise<Transaction> {

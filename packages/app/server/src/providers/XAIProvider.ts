@@ -4,6 +4,7 @@ import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import { CompletionStateBody, parseSSEGPTFormat } from './GPTProvider';
 import logger from '../logger';
+import { env } from '../env';
 
 export class XAIProvider extends BaseProvider {
   private readonly XAI_BASE_URL = 'https://api.x.ai/v1';
@@ -17,7 +18,7 @@ export class XAIProvider extends BaseProvider {
   }
 
   getApiKey(): string | undefined {
-    return process.env.XAI_API_KEY;
+    return env.XAI_API_KEY;
   }
 
   override supportsStream(): boolean {

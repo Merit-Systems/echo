@@ -3,14 +3,15 @@ import { getCostPerToken } from '../services/AccountingService';
 import { LlmTransactionMetadata, Transaction } from '../types';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
+import { env } from '../env';
 
-export interface GeminiUsage {
+interface GeminiUsage {
   promptTokenCount: number;
   candidatesTokenCount: number;
   totalTokenCount: number;
 }
 
-export interface GeminiCandidate {
+interface GeminiCandidate {
   content: {
     parts: Array<{
       text: string;
@@ -19,12 +20,12 @@ export interface GeminiCandidate {
   finishReason?: string;
 }
 
-export interface GeminiResponse {
+interface GeminiResponse {
   candidates: GeminiCandidate[];
   usageMetadata: GeminiUsage;
 }
 
-export const parseSSEGeminiFormat = (data: string): GeminiUsage | null => {
+const parseSSEGeminiFormat = (data: string): GeminiUsage | null => {
   try {
     // First, try to parse as a JSON array (actual Gemini streaming format)
     const parsed = JSON.parse(data);
@@ -104,7 +105,7 @@ export class GeminiProvider extends BaseProvider {
   }
 
   getApiKey(): string | undefined {
-    return process.env.GEMINI_API_KEY;
+    return env.GEMINI_API_KEY;
   }
 
   override supportsStream(): boolean {

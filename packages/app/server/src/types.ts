@@ -22,7 +22,7 @@ export interface EchoApp {
   };
 }
 
-export interface ApiKey {
+interface ApiKey {
   id: string;
   key: string;
   name?: string;
@@ -52,7 +52,7 @@ export interface Balance {
   balance: number;
 }
 
-export interface TransactionMetadata {
+interface TransactionMetadata {
   providerId: string;
   provider: string;
   model: string;
@@ -67,7 +67,7 @@ export interface LlmTransactionMetadata extends TransactionMetadata {
   toolCost?: Decimal;
 }
 
-export interface VeoTransactionMetadata extends TransactionMetadata {
+interface VeoTransactionMetadata extends TransactionMetadata {
   durationSeconds: number;
   generateAudio: boolean;
 }
@@ -144,26 +144,26 @@ export interface X402ChallengeParams {
   network: Network;
 }
 
-export interface X402PaymentBody {
+interface X402PaymentBody {
   type: 'x402';
   url: string;
   network: Network;
 }
 
-export enum X402Version {
+enum X402Version {
   V1 = 'V1',
 }
 
-export enum Schema {
+enum Schema {
   Exact = 'Exact',
 }
 
-export type Address = string;
-export type TokenAmount = string;
-export type Url = string;
-export type Nonce = string;
+type Address = string;
+type TokenAmount = string;
+type Url = string;
+type Nonce = string;
 
-export interface ExactEvmPayloadAuthorization {
+interface ExactEvmPayloadAuthorization {
   from: Address;
   to: Address;
   value: TokenAmount;
@@ -172,19 +172,19 @@ export interface ExactEvmPayloadAuthorization {
   nonce: Nonce;
 }
 
-export interface ExactEvmPayload {
+interface ExactEvmPayload {
   signature: string;
   authorization: ExactEvmPayloadAuthorization;
 }
 
-export interface PaymentPayload {
+interface PaymentPayload {
   x402_version: X402Version;
   schema: Schema;
   network: Network;
   payload: ExactEvmPayload;
 }
 
-export interface PaymentRequirements {
+interface PaymentRequirements {
   schema: Schema;
   network: Network;
   max_amount_required: TokenAmount;
@@ -198,43 +198,40 @@ export interface PaymentRequirements {
   extra?: unknown;
 }
 
-export interface VerifyResponse {
+interface VerifyResponse {
   verified: boolean;
   transaction_id?: string;
 }
 
-export interface VerifyRequest {
+interface VerifyRequest {
   x402_version: X402Version;
   payment_payload: PaymentPayload;
   payment_requirements: PaymentRequirements;
 }
 
-export type SettleRequest = VerifyRequest;
-export type SettleResponse = VerifyResponse;
+type SettleRequest = VerifyRequest;
+type SettleResponse = VerifyResponse;
 
-export interface PaymentRequiredResponse {
+interface PaymentRequiredResponse {
   error: string;
   accepts: PaymentRequirements[];
   x402_version: X402Version;
 }
 
-export interface SupportedPaymentKind {
+interface SupportedPaymentKind {
   x402_version: X402Version;
   schema: Schema;
   network: Network;
   extra?: { fee_payer: Address };
 }
 
-export interface SupportedPaymentKindsResponse {
+interface SupportedPaymentKindsResponse {
   kinds: SupportedPaymentKind[];
 }
 
-export type TransferWithAuthorization = Omit<
-  ExactEvmPayloadAuthorization,
-  'from'
->;
+type TransferWithAuthorization = Omit<ExactEvmPayloadAuthorization, 'from'>;
 
-export type HandlerInput = {
+type HandlerInput = {
   req: EscrowRequest;
   res: Response;
   headers: Record<string, string>;

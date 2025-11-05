@@ -7,11 +7,12 @@ import {
 } from './x402-types';
 import logger, { logMetric } from '../../logger';
 import dotenv from 'dotenv';
+import { env } from '../../env';
 
 dotenv.config();
 
-const PROXY_FACILITATOR_URL = process.env.PROXY_FACILITATOR_URL;
-const facilitatorTimeout = process.env.FACILITATOR_REQUEST_TIMEOUT || 20000;
+const PROXY_FACILITATOR_URL = env.PROXY_FACILITATOR_URL;
+const facilitatorTimeout = env.FACILITATOR_REQUEST_TIMEOUT || 20000;
 
 type FacilitatorMethod = 'verify' | 'settle';
 
@@ -87,4 +88,3 @@ export async function facilitatorProxy<
 
   return data as T;
 }
-

@@ -13,6 +13,7 @@ import { prisma } from '../server';
 import { EchoDbService } from '../services/DbService';
 import logger from '../logger';
 import { decimalToUsdcBigInt } from 'utils';
+import { env } from '../env';
 
 export class OpenAIVideoProvider extends BaseProvider {
   static detectPassthroughProxy(
@@ -90,7 +91,7 @@ export class OpenAIVideoProvider extends BaseProvider {
   }
 
   getApiKey(): string | undefined {
-    return process.env.OPENAI_API_KEY;
+    return env.OPENAI_API_KEY;
   }
 
   override async handleBody(

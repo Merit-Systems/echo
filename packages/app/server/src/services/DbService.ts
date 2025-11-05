@@ -18,16 +18,14 @@ import {
 } from '../generated/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from '../logger';
+import { env } from '../env';
+
 /**
  * Secret key for deterministic API key hashing (should match echo-control)
  */
-const API_KEY_HASH_SECRET =
-  process.env.API_KEY_HASH_SECRET ||
-  'change-this-in-production-very-secret-key';
+const API_KEY_HASH_SECRET = env.API_KEY_HASH_SECRET;
 
-const API_ECHO_ACCESS_JWT_SECRET =
-  process.env.API_ECHO_ACCESS_JWT_SECRET ||
-  'api-jwt-secret-change-in-production';
+const API_ECHO_ACCESS_JWT_SECRET = env.API_ECHO_ACCESS_JWT_SECRET;
 
 /**
  * Hash an API key deterministically for O(1) database lookup

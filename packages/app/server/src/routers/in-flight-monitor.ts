@@ -3,6 +3,7 @@ import { prisma } from '../server';
 import { authenticateRequest } from '../auth';
 import logger from '../logger';
 import { UnauthorizedError } from '../errors/http';
+import { env } from '../env';
 
 const inFlightMonitorRouter: Router = Router();
 
@@ -56,7 +57,7 @@ inFlightMonitorRouter.get(
         echoAppId,
         numberInFlight: inFlightRequest?.numberInFlight ?? 0,
         lastUpdated: inFlightRequest?.updatedAt ?? null,
-        maxAllowed: Number(process.env.MAX_IN_FLIGHT_REQUESTS) || 10,
+        maxAllowed: Number(env.MAX_IN_FLIGHT_REQUESTS) || 10,
       };
 
       logger.info(

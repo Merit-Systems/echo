@@ -24,7 +24,11 @@ export interface ProviderConfig {
 }
 
 export function cleanModelId(modelId: string): string {
-  return modelId.split('/')[1];
+  const parts = modelId.split('/');
+  if (parts.length < 2) {
+    throw new Error(`Invalid model ID format: ${modelId}`);
+  }
+  return parts[1]!;
 }
 
 export function matchModelsWithPricing(
@@ -104,6 +108,9 @@ export function matchModelsWithPricing(
         });
 
         const bestMatch = potentialMatches[0];
+        if (bestMatch === undefined) {
+          continue;
+        }
         pricing = bestMatch.pricing;
         console.log(
           `✅ Matched ${modelId} with ${bestMatch.gatewayModelId} pricing`

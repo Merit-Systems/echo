@@ -40,6 +40,7 @@ function parseArgs(): ScriptOptions {
  */
 function log(message: string, options: ScriptOptions): void {
   if (options.verbose) {
+    ``;
     console.log(`[generate-api-types] ${message}`);
   }
 }
@@ -64,15 +65,21 @@ function generateControlAppTypes(options: ScriptOptions): void {
     }
 
     // Ensure Prisma is generated first
+    log('Generating Prisma client...', options);
     execSync('pnpm prisma:generate', {
       cwd: controlAppPath,
       stdio: options.verbose ? 'inherit' : 'pipe',
+      timeout: 60000, // 60 second timeout
+      encoding: 'utf8',
     });
 
-    // Ensure Prisma is generated first, then run the generate-api-types command
+    // Run the generate-api-types command
+    log('Running generate-api-types in control app...', options);
     execSync('npm run generate-api-types', {
       cwd: controlAppPath,
       stdio: options.verbose ? 'inherit' : 'pipe',
+      timeout: 120000, // 120 second timeout
+      encoding: 'utf8',
     });
 
     log('✅ Successfully generated API types in control app', options);

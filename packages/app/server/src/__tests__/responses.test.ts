@@ -4,6 +4,7 @@ import type {
   ResponseInputItem,
 } from 'openai/resources/responses/responses';
 import dotenv from 'dotenv';
+import { env } from '../env';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -13,15 +14,13 @@ describe('Echo API Test', () => {
 
   beforeAll(() => {
     // Check if ECHO_API_KEY is set
-    if (!process.env.ECHO_API_KEY) {
+    if (!env.ECHO_API_KEY) {
       throw new Error('ECHO_API_KEY environment variable is not set');
     }
 
-    console.log('ECHO_API_KEY:', process.env.ECHO_API_KEY);
-
     // Create OpenAI client with echo.router.merit.systems baseURL
     oai = new OpenAI({
-      apiKey: process.env.ECHO_API_KEY,
+      apiKey: env.ECHO_API_KEY,
       baseURL: 'http://localhost:3070',
       timeout: 30000,
     });
@@ -43,7 +42,7 @@ describe('Echo API Test', () => {
     console.log('Base URL:', oai.baseURL);
     console.log(
       'API Key (first 10 chars):',
-      process.env.ECHO_API_KEY?.substring(0, 10) + '...'
+      env.ECHO_API_KEY?.substring(0, 10) + '...'
     );
     console.log('Input being sent:', JSON.stringify(input, null, 2));
     console.log('==========================');

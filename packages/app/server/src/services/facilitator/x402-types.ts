@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-export const SvmAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const SvmAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
-export const Base64EncodedRegex = /^[A-Za-z0-9+/]*={0,2}$/;
+const Base64EncodedRegex = /^[A-Za-z0-9+/]*={0,2}$/;
 
-export const NetworkSchema = z.enum([
+const NetworkSchema = z.enum([
   'base-sepolia',
   'base',
   'avalanche-fuji',
@@ -27,9 +27,9 @@ const MixedAddressRegex =
 const HexEncoded64ByteRegex = /^0x[0-9a-fA-F]{64}$/;
 const EvmSignatureRegex = /^0x[0-9a-fA-F]+$/; // Flexible hex signature validation
 // Enums
-export const schemes = ['exact'] as const;
-export const x402Versions = [1] as const;
-export const ErrorReasons = [
+const schemes = ['exact'] as const;
+const x402Versions = [1] as const;
+const ErrorReasons = [
   'insufficient_funds',
   'invalid_exact_evm_payload_authorization_valid_after',
   'invalid_exact_evm_payload_authorization_valid_before',
@@ -102,7 +102,7 @@ export const PaymentRequirementsSchema = z.object({
 export type PaymentRequirements = z.infer<typeof PaymentRequirementsSchema>;
 
 // x402ExactEvmPayload
-export const ExactEvmPayloadAuthorizationSchema = z.object({
+const ExactEvmPayloadAuthorizationSchema = z.object({
   from: z.string().regex(EvmAddressRegex),
   to: z.string().regex(EvmAddressRegex),
   value: z.string().refine(isInteger).refine(hasMaxLength(EvmMaxAtomicUnits)),
@@ -110,7 +110,7 @@ export const ExactEvmPayloadAuthorizationSchema = z.object({
   validBefore: z.string().refine(isInteger),
   nonce: z.string().regex(HexEncoded64ByteRegex),
 });
-export type ExactEvmPayloadAuthorization = z.infer<
+type ExactEvmPayloadAuthorization = z.infer<
   typeof ExactEvmPayloadAuthorizationSchema
 >;
 
@@ -121,10 +121,10 @@ export const ExactEvmPayloadSchema = z.object({
 export type ExactEvmPayload = z.infer<typeof ExactEvmPayloadSchema>;
 
 // x402ExactSvmPayload
-export const ExactSvmPayloadSchema = z.object({
+const ExactSvmPayloadSchema = z.object({
   transaction: z.string().regex(Base64EncodedRegex),
 });
-export type ExactSvmPayload = z.infer<typeof ExactSvmPayloadSchema>;
+type ExactSvmPayload = z.infer<typeof ExactSvmPayloadSchema>;
 
 // x402PaymentPayload
 export const PaymentPayloadSchema = z.object({
@@ -134,18 +134,18 @@ export const PaymentPayloadSchema = z.object({
   payload: z.union([ExactEvmPayloadSchema, ExactSvmPayloadSchema]),
 });
 export type PaymentPayload = z.infer<typeof PaymentPayloadSchema>;
-export type UnsignedPaymentPayload = Omit<PaymentPayload, 'payload'> & {
+type UnsignedPaymentPayload = Omit<PaymentPayload, 'payload'> & {
   payload: Omit<ExactEvmPayload, 'signature'> & { signature: undefined };
 };
 
 // x402 Resource Server Response
-export const x402ResponseSchema = z.object({
+const x402ResponseSchema = z.object({
   x402Version: z.number().refine(val => x402Versions.includes(val as 1)),
   error: z.enum(ErrorReasons).optional(),
   accepts: z.array(PaymentRequirementsSchema).optional(),
   payer: z.string().regex(MixedAddressRegex).optional(),
 });
-export type x402Response = z.infer<typeof x402ResponseSchema>;
+type x402Response = z.infer<typeof x402ResponseSchema>;
 
 // x402RequestStructure
 const HTTPVerbsSchema = z.enum([
@@ -157,9 +157,9 @@ const HTTPVerbsSchema = z.enum([
   'OPTIONS',
   'HEAD',
 ]);
-export type HTTPVerbs = z.infer<typeof HTTPVerbsSchema>;
+type HTTPVerbs = z.infer<typeof HTTPVerbsSchema>;
 
-export const HTTPRequestStructureSchema = z.object({
+const HTTPRequestStructureSchema = z.object({
   type: z.literal('http'),
   method: HTTPVerbsSchema,
   queryParams: z.record(z.string(), z.string()).optional(),
@@ -185,19 +185,19 @@ export const HTTPRequestStructureSchema = z.object({
 //   path: z.string(),
 // });
 
-export const RequestStructureSchema = z.discriminatedUnion('type', [
+const RequestStructureSchema = z.discriminatedUnion('type', [
   HTTPRequestStructureSchema,
   // MCPRequestStructureSchema,
   // OpenAPIRequestStructureSchema,
 ]);
 
-export type HTTPRequestStructure = z.infer<typeof HTTPRequestStructureSchema>;
+type HTTPRequestStructure = z.infer<typeof HTTPRequestStructureSchema>;
 // export type MCPRequestStructure = z.infer<typeof MCPRequestStructureSchema>;
 // export type OpenAPIRequestStructure = z.infer<typeof OpenAPIRequestStructureSchema>;
-export type RequestStructure = z.infer<typeof RequestStructureSchema>;
+type RequestStructure = z.infer<typeof RequestStructureSchema>;
 
 // x402DiscoveryResource
-export const DiscoveredResourceSchema = z.object({
+const DiscoveredResourceSchema = z.object({
   resource: z.string(),
   type: z.enum(['http']),
   x402Version: z.number().refine(val => x402Versions.includes(val as 1)),
@@ -205,7 +205,7 @@ export const DiscoveredResourceSchema = z.object({
   lastUpdated: z.date(),
   metadata: z.record(z.any(), z.any()).optional(),
 });
-export type DiscoveredResource = z.infer<typeof DiscoveredResourceSchema>;
+type DiscoveredResource = z.infer<typeof DiscoveredResourceSchema>;
 
 // x402SettleRequest
 export const SettleRequestSchema = z.object({
@@ -215,14 +215,14 @@ export const SettleRequestSchema = z.object({
 export type SettleRequest = z.infer<typeof SettleRequestSchema>;
 
 // x402VerifyRequest
-export const VerifyRequestSchema = z.object({
+const VerifyRequestSchema = z.object({
   paymentPayload: PaymentPayloadSchema,
   paymentRequirements: PaymentRequirementsSchema,
 });
 export type VerifyRequest = z.infer<typeof VerifyRequestSchema>;
 
 // x402VerifyResponse
-export const VerifyResponseSchema = z.object({
+const VerifyResponseSchema = z.object({
   isValid: z.boolean(),
   invalidReason: z.enum(ErrorReasons).optional(),
   payer: EvmOrSvmAddress.optional(),
@@ -230,7 +230,7 @@ export const VerifyResponseSchema = z.object({
 export type VerifyResponse = z.infer<typeof VerifyResponseSchema>;
 
 // x402SettleResponse
-export const SettleResponseSchema = z.object({
+const SettleResponseSchema = z.object({
   success: z.boolean(),
   errorReason: z.enum(ErrorReasons).optional(),
   payer: EvmOrSvmAddress.optional(),
@@ -240,17 +240,17 @@ export const SettleResponseSchema = z.object({
 export type SettleResponse = z.infer<typeof SettleResponseSchema>;
 
 // x402DiscoverListRequest
-export const ListDiscoveryResourcesRequestSchema = z.object({
+const ListDiscoveryResourcesRequestSchema = z.object({
   type: z.string().optional(),
   limit: z.number().optional(),
   offset: z.number().optional(),
 });
-export type ListDiscoveryResourcesRequest = z.infer<
+type ListDiscoveryResourcesRequest = z.infer<
   typeof ListDiscoveryResourcesRequestSchema
 >;
 
 // x402ListDiscoveryResourcesResponse
-export const ListDiscoveryResourcesResponseSchema = z.object({
+const ListDiscoveryResourcesResponseSchema = z.object({
   x402Version: z.number().refine(val => x402Versions.includes(val as 1)),
   items: z.array(DiscoveredResourceSchema),
   pagination: z.object({
@@ -259,23 +259,23 @@ export const ListDiscoveryResourcesResponseSchema = z.object({
     total: z.number(),
   }),
 });
-export type ListDiscoveryResourcesResponse = z.infer<
+type ListDiscoveryResourcesResponse = z.infer<
   typeof ListDiscoveryResourcesResponseSchema
 >;
 
 // x402SupportedPaymentKind
-export const SupportedPaymentKindSchema = z.object({
+const SupportedPaymentKindSchema = z.object({
   x402Version: z.number().refine(val => x402Versions.includes(val as 1)),
   scheme: z.enum(schemes),
   network: NetworkSchema,
   extra: z.record(z.any(), z.any()).optional(),
 });
-export type SupportedPaymentKind = z.infer<typeof SupportedPaymentKindSchema>;
+type SupportedPaymentKind = z.infer<typeof SupportedPaymentKindSchema>;
 
 // x402SupportedPaymentKindsResponse
-export const SupportedPaymentKindsResponseSchema = z.object({
+const SupportedPaymentKindsResponseSchema = z.object({
   kinds: z.array(SupportedPaymentKindSchema),
 });
-export type SupportedPaymentKindsResponse = z.infer<
+type SupportedPaymentKindsResponse = z.infer<
   typeof SupportedPaymentKindsResponseSchema
 >;

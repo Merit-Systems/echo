@@ -88,7 +88,7 @@ async function executeResourceWithRefund<TInput, TOutput>(
   }
 }
 
-export async function handleResourceRequest<TInput, TOutput>(
+async function handleResourceRequest<TInput, TOutput>(
   req: Request,
   res: Response,
   config: ResourceHandlerConfig<TInput, TOutput>
