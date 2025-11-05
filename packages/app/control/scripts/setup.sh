@@ -15,12 +15,10 @@ fi
 if ! grep -q "^AUTH_SECRET=" .env || grep -q "^AUTH_SECRET=$" .env; then
     echo "Generating AUTH_SECRET..."
     AUTH_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
-    # Use sed to update or append
-    if grep -q "^AUTH_SECRET=" .env; then
-        sed -i '' "s/^AUTH_SECRET=.*/AUTH_SECRET=$AUTH_SECRET/" .env
-    else
-        echo "AUTH_SECRET=$AUTH_SECRET" >> .env
-    fi
+    # Use grep and mv to safely update AUTH_SECRET, avoiding sed issues with special chars and improving portability.
+    grep -v "^AUTH_SECRET=" .env > .env.tmp
+    echo "AUTH_SECRET=$AUTH_SECRET" >> .env.tmp
+    mv .env.tmp .env
     echo "OK: AUTH_SECRET generated"
 fi
 
@@ -28,22 +26,18 @@ fi
 if ! grep -q "^DATABASE_URL=" .env || grep -q "^DATABASE_URL=$" .env; then
     echo "Setting DATABASE_URL..."
     DB_URL="postgresql://echo_user:echo_password@localhost:5469/echo_control_v2?schema=public"
-    if grep -q "^DATABASE_URL=" .env; then
-        sed -i '' "s|^DATABASE_URL=.*|DATABASE_URL=\"$DB_URL\"|" .env
-    else
-        echo "DATABASE_URL=\"$DB_URL\"" >> .env
-    fi
+    grep -v "^DATABASE_URL=" .env > .env.tmp
+    echo "DATABASE_URL=\"$DB_URL\"" >> .env.tmp
+    mv .env.tmp .env
     echo "OK: DATABASE_URL configured"
 fi
 
 # Ensure ECHO_CONTROL_APP_BASE_URL is set
 if ! grep -q "^ECHO_CONTROL_APP_BASE_URL=" .env || grep -q "^ECHO_CONTROL_APP_BASE_URL=$" .env; then
     echo "Setting ECHO_CONTROL_APP_BASE_URL..."
-    if grep -q "^ECHO_CONTROL_APP_BASE_URL=" .env; then
-        sed -i '' "s|^ECHO_CONTROL_APP_BASE_URL=.*|ECHO_CONTROL_APP_BASE_URL=http://localhost:3000|" .env
-    else
-        echo "ECHO_CONTROL_APP_BASE_URL=http://localhost:3000" >> .env
-    fi
+    grep -v "^ECHO_CONTROL_APP_BASE_URL=" .env > .env.tmp
+    echo "ECHO_CONTROL_APP_BASE_URL=http://localhost:3000" >> .env.tmp
+    mv .env.tmp .env
 fi
 
 echo ""

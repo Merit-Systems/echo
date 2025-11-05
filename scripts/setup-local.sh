@@ -61,7 +61,9 @@ if [ ! -f .env ]; then
 
     # Generate AUTH_SECRET
     AUTH_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
-    sed -i '' "s/^AUTH_SECRET=.*/AUTH_SECRET=$AUTH_SECRET/" .env
+    grep -v "^AUTH_SECRET=" .env > .env.tmp
+    echo "AUTH_SECRET=$AUTH_SECRET" >> .env.tmp
+    mv .env.tmp .env
 
     # Update DATABASE_URL if needed
     echo "OK: Created .env file with AUTH_SECRET"
