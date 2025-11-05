@@ -58,17 +58,26 @@ cd packages/app/control
 if [ ! -f .env ]; then
     echo "Creating .env file for echo-control..."
     cp .env.example .env
+fi
 
-    # Generate AUTH_SECRET
+# Generate AUTH_SECRET if not present
+if ! grep -q "^AUTH_SECRET=" .env || grep -q "^AUTH_SECRET=$" .env; then
+    echo "Generating AUTH_SECRET..."
     AUTH_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
     grep -v "^AUTH_SECRET=" .env > .env.tmp
     echo "AUTH_SECRET=$AUTH_SECRET" >> .env.tmp
     mv .env.tmp .env
+    echo "OK: AUTH_SECRET generated"
+fi
 
-    # Update DATABASE_URL if needed
-    echo "OK: Created .env file with AUTH_SECRET"
-else
-    echo "INFO: .env file already exists, skipping creation"
+# Ensure DATABASE_URL is set for local dev
+if ! grep -q "^DATABASE_URL=" .env || grep -q "^DATABASE_URL=$" .env; then
+    echo "Setting DATABASE_URL..."
+    DB_URL="postgresql://echo_user:echo_password@localhost:5469/echo_control_v2?schema=public"
+    grep -v "^DATABASE_URL=" .env > .env.tmp
+    echo "DATABASE_URL=\"$DB_URL\"" >> .env.tmp
+    mv .env.tmp .env
+    echo "OK: DATABASE_URL configured"
 fi
 
 # Start PostgreSQL container
