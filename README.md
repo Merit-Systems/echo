@@ -174,7 +174,7 @@ If you prefer manual setup or the script fails:
 - `DATABASE_URL` - PostgreSQL connection string (set to `postgresql://echo_user:echo_password@localhost:5469/echo_control_v2?schema=public`)
 
 **Echo Server** (`packages/app/server/.env`):
-- `DATABASE_URL` - PostgreSQL connection string (set to `postgresql://echo_user:echo_password@localhost:5469/echo_control?schema=public`)
+- `DATABASE_URL` - PostgreSQL connection string (set to `postgresql://echo_user:echo_password@localhost:5469/echo_control_v2?schema=public`)
 - `ECHO_CONTROL_BASE_URL` - Set to `http://localhost:3000/`
 
 For local development, most other variables (Stripe, OAuth providers, API keys) are optional and can use mock values.
