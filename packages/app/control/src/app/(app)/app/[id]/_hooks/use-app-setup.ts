@@ -56,13 +56,25 @@ export const useAppConnectionSetup = (appId: string) => {
   }, [numTransactions]);
 
   useEffect(() => {
-    setShouldRefetchTransactions(!hasMadeTransactions);
+    // For API key mode, stop polling for transactions if API keys exist
+    // For OAuth mode, continue polling until transactions are made
+    if (numApiKeys > 0) {
+      setShouldRefetchTransactions(false);
+    } else {
+      setShouldRefetchTransactions(!hasMadeTransactions);
+    }
     void utils.apps.app.stats.bucketed.invalidate({ appId });
-  }, [hasMadeTransactions, appId, utils]);
+  }, [hasMadeTransactions, appId, utils, numApiKeys]);
 
   const connectionSteps = useMemo(() => {
+    // For API key mode, if API keys exist, we don't require transactions
+    // API keys are a valid authentication method that doesn't need immediate usage
+    if (numApiKeys > 0) {
+      return [isConnected];
+    }
+    // For OAuth mode, require both connection and transactions
     return [isConnected, hasMadeTransactions];
-  }, [isConnected, hasMadeTransactions]);
+  }, [isConnected, hasMadeTransactions, numApiKeys]);
 
   const completedConnectionSteps = useMemo(() => {
     return connectionSteps.filter(Boolean);
