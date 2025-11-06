@@ -45,12 +45,28 @@ export const ChatCompletionInput = z.object({
     .union([z.enum(['none', 'auto']), z.object({ name: z.string() })])
     .optional(),
 
-  // new structured output / response_format
+  // response_format: supports text (default), json_schema (Structured Outputs), or json_object (older JSON mode)
   response_format: z
-    .object({
-      type: z.enum(['json_schema']),
-      json_schema: z.any(), // you may replace with a more precise JSON Schema type
-    })
+    .discriminatedUnion('type', [
+      // Text format (default)
+      z.object({
+        type: z.literal('text'),
+      }),
+      // JSON Schema format (Structured Outputs) - preferred for structured JSON
+      z.object({
+        type: z.literal('json_schema'),
+        json_schema: z.object({
+          name: z.string().optional(),
+          description: z.string().optional(),
+          schema: z.object(), // JSON Schema object
+          strict: z.boolean().optional(),
+        }),
+      }),
+      // JSON Object format (older JSON mode)
+      z.object({
+        type: z.literal('json_object'),
+      }),
+    ])
     .optional(),
 });
 

@@ -17,6 +17,37 @@ const facilitatorTimeout = env.FACILITATOR_REQUEST_TIMEOUT || 20000;
 
 type FacilitatorMethod = 'verify' | 'settle';
 
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number,
+  method: FacilitatorMethod
+): Promise<Response> {
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    abortController.abort();
+    logger.warn(
+      `Proxy facilitator ${method} request timed out after ${timeoutMs}ms`
+    );
+  }, Number(timeoutMs));
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: abortController.signal,
+    });
+    clearTimeout(timeoutId);
+    return res;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    logMetric('facilitator_proxy_failure', 1, {
+      method,
+      error: error instanceof Error ? error.message : 'unknown',
+    });
+    throw new FacilitatorProxyError();
+  }
+}
+
 /**
  * Executes a facilitator request via the proxy router
  *
@@ -53,21 +84,16 @@ export async function facilitatorProxy<
     paymentRequirements: toJsonSafe(paymentRequirements),
   };
 
-  const abortController = new AbortController();
-  const timeoutId = setTimeout(() => {
-    abortController.abort();
-    logger.warn(
-      `Proxy facilitator ${method} request timed out after ${facilitatorTimeout}ms`
-    );
-  }, Number(facilitatorTimeout));
-  const res = await fetch(`${PROXY_FACILITATOR_URL}/${method}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(requestBody),
-    signal: abortController.signal,
-  });
-
-  clearTimeout(timeoutId);
+  const res = await fetchWithTimeout(
+    `${PROXY_FACILITATOR_URL}/${method}`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+    },
+    facilitatorTimeout,
+    method
+  );
 
   if (res.status !== 200) {
     logMetric('facilitator_proxy_failure', 1, {

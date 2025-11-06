@@ -473,7 +473,7 @@ export class VertexAIProvider extends BaseProvider {
 
   private getServiceAccountCredentials(): any {
     const serviceAccountKeyEncoded = env.GOOGLE_SERVICE_ACCOUNT_KEY_ENCODED;
-    
+
     if (!serviceAccountKeyEncoded) {
       return null;
     }
