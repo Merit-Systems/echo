@@ -40,7 +40,6 @@ function parseArgs(): ScriptOptions {
  */
 function log(message: string, options: ScriptOptions): void {
   if (options.verbose) {
-    ``;
     console.log(`[generate-api-types] ${message}`);
   }
 }

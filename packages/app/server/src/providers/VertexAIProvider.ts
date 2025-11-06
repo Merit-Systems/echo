@@ -472,11 +472,15 @@ export class VertexAIProvider extends BaseProvider {
   }
 
   private getServiceAccountCredentials(): any {
-    const serviceAccountKeyEncoded =
-      process.env.GOOGLE_SERVICE_ACCOUNT_KEY_ENCODED;
+    const serviceAccountKeyEncoded = env.GOOGLE_SERVICE_ACCOUNT_KEY_ENCODED;
+
+    if (!serviceAccountKeyEncoded) {
+      return null;
+    }
+
     // decode from base64
     const serviceAccountKey = Buffer.from(
-      serviceAccountKeyEncoded!,
+      serviceAccountKeyEncoded,
       'base64'
     ).toString('utf-8');
 
