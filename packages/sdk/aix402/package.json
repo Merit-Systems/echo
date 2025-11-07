@@ -62,8 +62,8 @@
     "@ai-sdk/react": "2.0.17",
     "ai": "5.0.47",
     "react": "^18.0.0",
-    "x402-fetch": "^0.6.0",
-    "x402": "^0.6.5",
+    "x402-fetch": "^0.7.0",
+    "x402": "^0.7.1",
     "zod": "^4.1.5",
     "@merit-systems/echo-react-sdk": "workspace:*",
     "@ai-sdk/openai": "2.0.16"
