@@ -1,6 +1,6 @@
 {
   "name": "@merit-systems/ai-x402",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "AI x402 payment integration SDK for Echo platform",
   "type": "module",
   "main": "./dist/index.cjs",
