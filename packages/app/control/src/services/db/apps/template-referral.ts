@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { db } from '@/services/db/client';
 import { appIdSchema } from './lib/schemas';
+import { AppRole } from './permissions/types';
 
 export const registerTemplateReferralSchema = z.object({
   appId: appIdSchema,
@@ -31,7 +32,7 @@ export async function registerTemplateReferral(
       appMemberships: {
         where: {
           userId,
-          role: 'owner',
+          role: AppRole.OWNER,
         },
       },
     },

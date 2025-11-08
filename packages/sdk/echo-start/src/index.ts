@@ -78,6 +78,10 @@ const DEFAULT_TEMPLATES = {
 type TemplateName = keyof typeof DEFAULT_TEMPLATES;
 type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
 
+const ECHO_BASE_URL =
+  (typeof process !== 'undefined' && process.env?.ECHO_BASE_URL) ||
+  'https://echo.merit.systems';
+
 function printHeader(): void {
   console.log();
   console.log(`${chalk.cyan('Echo Start')} ${chalk.gray(`(${VERSION})`)}`);
@@ -179,6 +183,68 @@ function isExternalTemplate(template: string): boolean {
     template.startsWith('https://github.com/') ||
     template.startsWith('http://github.com/')
   );
+}
+
+function extractGithubUsername(templateUrl: string): string | null {
+  const match = templateUrl.match(
+    /github\.com\/([^\/]+)/
+  );
+  return match?.[1] ?? null;
+}
+
+async function registerTemplateReferral(
+  appId: string,
+  templateUrl: string
+): Promise<void> {
+  const githubUsername = extractGithubUsername(templateUrl);
+  
+  if (!githubUsername) {
+    log.warn('Could not extract GitHub username from template URL');
+    return;
+  }
+
+  try {
+    log.step(`Registering template referral for ${githubUsername}...`);
+    
+    const response = await fetch(
+      `${ECHO_BASE_URL}/api/v1/referrals/register-template`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          appId,
+          githubUsername,
+          templateUrl,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      log.warn(`Referral registration failed: ${response.status} - ${errorText}`);
+      return;
+    }
+
+    const result = (await response.json()) as {
+      status?: string;
+      referrerUsername?: string;
+      message?: string;
+    };
+    
+    if (result.status === 'registered' && result.referrerUsername) {
+      log.success(
+        `Template creator ${result.referrerUsername} registered as referrer`
+      );
+    } else if (result.status === 'skipped') {
+      log.info(`Referral skipped: ${result.message || 'Unknown reason'}`);
+    } else if (result.status === 'not_found') {
+      log.info(`Template creator ${githubUsername} not found on Echo`);
+    }
+  } catch (error) {
+    log.warn(`Referral registration error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 function resolveTemplateRepo(template: string): string {
@@ -305,6 +371,10 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
   }
 
   log.step(`Using App ID: ${appId}`);
+
+  if (isExternal) {
+    await registerTemplateReferral(appId, template);
+  }
 
   const absoluteProjectPath = path.resolve(projectDir);
 
