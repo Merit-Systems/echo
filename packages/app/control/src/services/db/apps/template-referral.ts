@@ -68,7 +68,8 @@ export async function registerTemplateReferral(
   const githubLink = await db.githubLink.findFirst({
     where: {
       githubUrl: {
-        contains: githubUsername,
+        equals: `https://github.com/${githubUsername}`,
+        mode: 'insensitive',
       },
       githubType: 'user',
       isArchived: false,
