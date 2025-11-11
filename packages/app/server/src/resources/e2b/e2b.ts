@@ -5,6 +5,7 @@ import { DEFAULT_VCPU_COUNT, PRICE_PER_VCPU_PER_SECOND } from './prices';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Transaction } from '../../types';
 import { HttpError } from 'errors/http';
+import { env } from '../../env';
 dotenv.config();
 
 export const calculateE2BExecuteCost = (): Decimal => {
@@ -37,13 +38,13 @@ export const createE2BTransaction = (
 export const e2bExecutePythonSnippet = async (
   snippet: string
 ): Promise<E2BExecuteOutput> => {
-  if (!process.env.E2B_API_KEY) {
+  if (!env.E2B_API_KEY) {
     throw new Error('E2B_API_KEY environment variable is required but not set');
   }
   try {
     const startTime = performance.now();
     const sandbox = await Sandbox.create({
-      apiKey: process.env.E2B_API_KEY,
+      apiKey: env.E2B_API_KEY,
     });
     const { results, logs, error, executionCount } = await sandbox.runCode(
       snippet,

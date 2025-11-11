@@ -67,6 +67,46 @@ npx echo-start@latest --template assistant-ui
 
 ---
 
+### CLI Templates
+
+#### Echo CLI (`echo-cli`)
+
+A command-line interface for AI chat powered by Echo with support for both API key and crypto wallet payments.
+
+**Note:** This template is different from web-based templates. Install it directly from the repository:
+
+```bash
+git clone https://github.com/Merit-Systems/echo.git
+cd echo/templates/echo-cli
+pnpm install
+pnpm build
+```
+
+**Features:**
+
+- Dual authentication: Echo API keys or WalletConnect
+- Multi-model support (GPT-4o, GPT-5, etc.)
+- X402 protocol for crypto payments
+- Conversation history and resume
+- Secure OS keychain credential storage
+- Export conversations as JSON
+- Profile and usage management
+
+**Usage:**
+
+```bash
+echodex login          # Authenticate
+echodex                # Start chat
+echodex model          # Select AI model
+echodex resume         # Resume conversation
+echodex history        # View history
+echodex export         # Export as JSON
+echodex profile        # View profile
+echodex logout         # Sign out
+```
+
+---
+
 ### Feature-Specific Templates
 
 #### Next.js Chat (`next-chat`)

@@ -18,6 +18,7 @@ import {
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from 'logger';
 import { Request, Response } from 'express';
+import { env } from '../env';
 
 export async function settle(
   req: Request,
@@ -27,7 +28,7 @@ export async function settle(
 ): Promise<
   { payload: ExactEvmPayload; paymentAmountDecimal: Decimal } | undefined
 > {
-  const network = process.env.NETWORK as Network;
+  const network = env.NETWORK as Network;
 
   let recipient: string;
   try {

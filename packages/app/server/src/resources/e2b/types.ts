@@ -8,7 +8,7 @@ export const E2BExecuteInputSchema = z.object({
 export type E2BExecuteInput = z.infer<typeof E2BExecuteInputSchema>;
 
 // Chart type enums
-export const ChartTypeSchema = z.enum([
+const ChartTypeSchema = z.enum([
   'line',
   'scatter',
   'bar',
@@ -18,7 +18,7 @@ export const ChartTypeSchema = z.enum([
   'unknown',
 ]);
 
-export const ScaleTypeSchema = z.enum([
+const ScaleTypeSchema = z.enum([
   'linear',
   'datetime',
   'categorical',
@@ -31,7 +31,7 @@ export const ScaleTypeSchema = z.enum([
 ]);
 
 // Result schema
-export const ResultSchema = z.object({
+const ResultSchema = z.object({
   isMainResult: z.boolean(),
   text: z.string().optional(),
   html: z.string().optional(),
@@ -49,24 +49,24 @@ export const ResultSchema = z.object({
   raw: z.record(z.string(), z.unknown()),
 });
 
-export type Result = z.infer<typeof ResultSchema>;
+type Result = z.infer<typeof ResultSchema>;
 
 // Logs schema
-export const LogsSchema = z.object({
+const LogsSchema = z.object({
   stdout: z.array(z.string()),
   stderr: z.array(z.string()),
 });
 
-export type Logs = z.infer<typeof LogsSchema>;
+type Logs = z.infer<typeof LogsSchema>;
 
 // Execution error schema
-export const ExecutionErrorSchema = z.object({
+const ExecutionErrorSchema = z.object({
   name: z.string(),
   value: z.string(),
   traceback: z.string(),
 });
 
-export type ExecutionError = z.infer<typeof ExecutionErrorSchema>;
+type ExecutionError = z.infer<typeof ExecutionErrorSchema>;
 
 // Output schema
 export const E2BExecuteOutputSchema = z.object({

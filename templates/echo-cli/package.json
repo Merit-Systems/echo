@@ -1,0 +1,50 @@
+{
+  "name": "echodex",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "echodex": "./dist/index.js"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.19.0",
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.20.6"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.64",
+    "@clack/prompts": "^0.11.0",
+    "@merit-systems/ai-x402": "^0.1.3",
+    "@merit-systems/echo-typescript-sdk": "^1.0.23",
+    "@types/qrcode-terminal": "^0.12.2",
+    "@types/react": "^19.2.2",
+    "@walletconnect/ethereum-provider": "^2.23.0",
+    "@walletconnect/keyvaluestorage": "^1.1.1",
+    "ai": "^5.0.89",
+    "chalk": "^5.6.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.2",
+    "conf": "^15.0.2",
+    "ink": "^6.4.0",
+    "keytar": "^7.9.0",
+    "open": "^10.2.0",
+    "ora": "^9.0.0",
+    "pino": "^10.1.0",
+    "qrcode-terminal": "^0.12.0",
+    "react": "^19.2.0",
+    "viem": "^2.38.6",
+    "x402": "0.6.6",
+    "zod": "^4.1.12"
+  }
+}

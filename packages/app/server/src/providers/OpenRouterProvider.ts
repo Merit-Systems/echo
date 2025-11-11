@@ -3,8 +3,9 @@ import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import { getCostPerToken } from '../services/AccountingService';
 import logger from '../logger';
+import { env } from '../env';
 
-export interface CompletionStateBody {
+interface CompletionStateBody {
   id: string;
   usage: {
     prompt_tokens: number;
@@ -13,7 +14,7 @@ export interface CompletionStateBody {
   };
 }
 
-export interface StreamingChunkBody {
+interface StreamingChunkBody {
   id: string;
   choices: {
     index: number;
@@ -29,7 +30,7 @@ export interface StreamingChunkBody {
   } | null;
 }
 
-export const parseSSEGPTFormat = (data: string): StreamingChunkBody[] => {
+const parseSSEGPTFormat = (data: string): StreamingChunkBody[] => {
   // Split by double newlines to separate events
   const events = data.split('\n\n');
   const chunks: StreamingChunkBody[] = [];
@@ -66,7 +67,7 @@ export class OpenRouterProvider extends BaseProvider {
   }
 
   getApiKey(): string | undefined {
-    return process.env.OPENROUTER_API_KEY;
+    return env.OPENROUTER_API_KEY;
   }
 
   async handleBody(data: string): Promise<Transaction> {

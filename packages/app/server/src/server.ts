@@ -5,13 +5,13 @@ try {
 } catch (err: any) {
   console.warn('⚠️ OpenTelemetry not available:', err.message);
 }
-
 import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { Express, NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import { authenticateRequest } from './auth';
+import { env } from './env';
 import { HttpError } from './errors/http';
 import { PrismaClient } from './generated/prisma';
 import logger, { logMetric } from './logger';
@@ -39,7 +39,7 @@ import { X402AuthenticationService } from 'services/x402AuthenticationService';
 dotenv.config();
 
 const app: Express = express();
-const port = process.env.PORT || 3069;
+const port = env.PORT;
 
 // Configure multer for handling form data and file uploads
 const upload = multer({
@@ -51,7 +51,7 @@ const upload = multer({
 export const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL ?? 'postgresql://localhost:5469/echo',
+      url: env.DATABASE_URL ?? 'postgresql://localhost:5469/echo',
     },
   },
   log: ['warn', 'error'],

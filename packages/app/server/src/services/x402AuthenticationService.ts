@@ -3,6 +3,7 @@ import { EchoDbService } from './DbService';
 import { EchoApp, Transaction, TransactionCosts } from '../types';
 import { EchoControlService } from './EchoControlService';
 import logger from 'logger';
+import { env } from '../env';
 
 export class X402AuthenticationService {
   private readonly dbService: EchoDbService;
@@ -39,7 +40,7 @@ export class X402AuthenticationService {
   async createX402Transaction(
     transaction: Transaction
   ): Promise<TransactionCosts> {
-    const applyEchoMarkup = process.env.APPLY_ECHO_MARKUP === 'true';
+    const applyEchoMarkup = env.APPLY_ECHO_MARKUP === 'true';
     const transactionCosts =
       await this.echoControlService.createX402Transaction(
         transaction,

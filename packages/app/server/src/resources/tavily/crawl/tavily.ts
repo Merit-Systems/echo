@@ -11,6 +11,7 @@ import {
 } from './types';
 import { Transaction } from '../../../types';
 import { HttpError } from 'errors/http';
+import { env } from '../../../env';
 
 export const calculateTavilyCrawlMaxCost = (
   input: TavilyCrawlInput | undefined
@@ -86,7 +87,7 @@ export const createTavilyTransaction = (
   };
 };
 
-const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
+const TAVILY_API_KEY = env.TAVILY_API_KEY;
 
 export async function tavilyCrawl(
   input: TavilyCrawlInput

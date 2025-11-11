@@ -2,6 +2,7 @@ import OpenAI, { toFile } from 'openai';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import { env } from '../env';
 
 dotenv.config();
 
@@ -9,7 +10,7 @@ async function makeImageEditRequest() {
   try {
     // Initialize OpenAI client
     const client = new OpenAI({
-      apiKey: process.env.ECHO_API_KEY || '',
+      apiKey: env.ECHO_API_KEY || '',
       baseURL: 'http://localhost:3070',
     });
 
@@ -73,7 +74,7 @@ async function makeImageEditRequestWithMultipleImages() {
   try {
     // Initialize OpenAI client
     const client = new OpenAI({
-      apiKey: process.env.ECHO_API_KEY || '',
+      apiKey: env.ECHO_API_KEY || '',
       baseURL: 'http://localhost:3070/v1',
     });
 

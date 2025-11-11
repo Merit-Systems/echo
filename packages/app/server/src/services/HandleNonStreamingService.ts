@@ -2,7 +2,7 @@ import { Response as ExpressResponse, Request } from 'express';
 import { BaseProvider } from '../providers/BaseProvider';
 import { Transaction } from '../types';
 
-export class HandleNonStreamingService {
+class HandleNonStreamingService {
   /**
    * Handles non-streaming response from the model provider
    * Processes the response and sends it to the client

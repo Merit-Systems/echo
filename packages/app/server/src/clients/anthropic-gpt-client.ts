@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
+import { env } from '../env';
 
 dotenv.config();
 
@@ -8,7 +9,7 @@ async function makeRequest(useStreaming: boolean = false) {
     // Initialize OpenAI client with custom baseURL
     const openai = new OpenAI({
       baseURL: 'http://localhost:3070',
-      apiKey: process.env.ECHO_API_KEY, // Required by the client but not used with local server
+      apiKey: env.ECHO_API_KEY, // Required by the client but not used with local server
     });
 
     if (useStreaming) {

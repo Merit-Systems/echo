@@ -7,7 +7,7 @@ import { handleNonStreamingService } from './HandleNonStreamingService';
 import { handleStreamService } from './HandleStreamService';
 import { formatUpstreamUrl } from './RequestDataService';
 
-export class ModelRequestService {
+class ModelRequestService {
   /**
    * Validates and executes a model request, handling the response directly
    * @param req - Express request object containing the model request

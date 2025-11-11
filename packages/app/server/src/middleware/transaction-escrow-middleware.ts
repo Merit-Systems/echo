@@ -3,12 +3,13 @@ import { PrismaClient } from '../generated/prisma';
 import logger, { logMetric } from '../logger';
 import { EchoControlService } from '../services/EchoControlService';
 import { getRequestId } from '../utils/trace';
+import { env } from '../env';
 
-const MAX_IN_FLIGHT_REQUESTS = Number(process.env.MAX_IN_FLIGHT_REQUESTS) || 10;
+const MAX_IN_FLIGHT_REQUESTS = Number(env.MAX_IN_FLIGHT_REQUESTS) || 10;
 const ESTIMATED_COST_PER_TRANSACTION =
-  Number(process.env.ESTIMATED_COST_PER_TRANSACTION) || 0.01;
-const CLEANUP_INTERVAL_MS = Number(process.env.CLEANUP_INTERVAL_MS) || 300000;
-const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 300000;
+  Number(env.ESTIMATED_COST_PER_TRANSACTION) || 0.01;
+const CLEANUP_INTERVAL_MS = Number(env.CLEANUP_INTERVAL_MS) || 300000;
+const REQUEST_TIMEOUT_MS = Number(env.REQUEST_TIMEOUT_MS) || 300000;
 
 // Extended Request interface to store escrow context
 export interface EscrowRequest extends Request {

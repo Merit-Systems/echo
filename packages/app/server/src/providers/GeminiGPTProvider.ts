@@ -4,8 +4,9 @@ import type { CompletionStateBody, StreamingChunkBody } from './GPTProvider';
 import { GPTProvider } from './GPTProvider';
 import { ProviderType } from './ProviderType';
 import logger from '../logger';
+import { env } from '../env';
 
-export const parseSSEGeminiGPTFormat = (data: string): StreamingChunkBody[] => {
+const parseSSEGeminiGPTFormat = (data: string): StreamingChunkBody[] => {
   // Split by double newlines to separate events
   const events = data.split('\n\n');
   const chunks: StreamingChunkBody[] = [];
@@ -56,7 +57,7 @@ export class GeminiGPTProvider extends GPTProvider {
   }
 
   override getApiKey(): string | undefined {
-    return process.env.GEMINI_API_KEY;
+    return env.GEMINI_API_KEY;
   }
 
   override async handleBody(data: string): Promise<Transaction> {

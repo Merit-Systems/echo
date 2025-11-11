@@ -1,0 +1,7 @@
+onlyBuiltDependencies:
+  - '@reown/appkit'
+  - bufferutil
+  - esbuild
+  - keccak
+  - keytar
+  - utf-8-validate

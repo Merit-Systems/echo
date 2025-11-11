@@ -3,17 +3,16 @@ import { getCostPerToken } from '../services/AccountingService';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import logger from '../logger';
+import { env } from '../env';
 
-export interface AnthropicUsage {
+interface AnthropicUsage {
   input_tokens: number;
   output_tokens: number;
   id: string;
   model: string;
 }
 
-export const parseSSEAnthropicFormat = (
-  data: string
-): AnthropicUsage | null => {
+const parseSSEAnthropicFormat = (data: string): AnthropicUsage | null => {
   // Split by lines to process each SSE event
   const lines = data.split('\n');
   let currentEvent = '';
@@ -102,7 +101,7 @@ export class AnthropicNativeProvider extends BaseProvider {
   }
 
   getApiKey(): string | undefined {
-    return process.env.ANTHROPIC_API_KEY;
+    return env.ANTHROPIC_API_KEY;
   }
 
   override async formatAuthHeaders(
