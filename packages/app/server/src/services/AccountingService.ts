@@ -180,12 +180,6 @@ export const calculateToolCost = (tool: Tool): Decimal => {
 
   switch (tool.type) {
     case 'image_generation': {
-      const model = (tool as any).model;
-      
-      if (model && typeof model === 'string' && model.startsWith('gemini')) {
-        return new Decimal(GeminiImageGenerationToolPricing.cost_per_image);
-      }
-
       const quality = tool.quality;
       const size = tool.size;
 

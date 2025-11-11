@@ -3,6 +3,8 @@ import { getCostPerToken } from '../services/AccountingService';
 import { LlmTransactionMetadata, Transaction } from '../types';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
+import { GeminiImageGenerationToolPricing } from '@merit-systems/echo-typescript-sdk';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export interface GeminiUsage {
   promptTokenCount: number;
@@ -13,7 +15,11 @@ export interface GeminiUsage {
 export interface GeminiCandidate {
   content: {
     parts: Array<{
-      text: string;
+      text?: string;
+      inlineData?: {
+        mimeType: string;
+        data: string; // base64 encoded
+      };
     }>;
   };
   finishReason?: string;
@@ -130,6 +136,7 @@ export class GeminiProvider extends BaseProvider {
       let candidatesTokens = 0;
       let totalTokens = 0;
       let providerId = 'gemini-response';
+      let imageCost = new Decimal(0);
 
       if (this.getIsStream()) {
         const usage = parseSSEGeminiFormat(data);
@@ -149,6 +156,23 @@ export class GeminiProvider extends BaseProvider {
           promptTokens = parsed.usageMetadata.promptTokenCount || 0;
           candidatesTokens = parsed.usageMetadata.candidatesTokenCount || 0;
           totalTokens = parsed.usageMetadata.totalTokenCount || 0;
+        }
+
+
+        if (parsed?.candidates) {
+          for (const candidate of parsed.candidates) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData && part.inlineData.mimeType?.startsWith('image/')) {
+      
+                imageCost = imageCost.plus(
+                  new Decimal(GeminiImageGenerationToolPricing.cost_per_image)
+                );
+                logger.info(
+                  `Gemini image generation detected: ${part.inlineData.mimeType}`
+                );
+              }
+            }
+          }
         }
 
         // Try to get a unique identifier from the response
@@ -178,7 +202,7 @@ export class GeminiProvider extends BaseProvider {
           this.getModel(),
           promptTokens,
           candidatesTokens
-        ),
+        ).plus(imageCost),
         status: 'success',
       };
 
