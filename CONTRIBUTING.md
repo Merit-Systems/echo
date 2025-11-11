@@ -188,6 +188,17 @@ echo/
 - **Echo TS SDK** (`packages/sdk/ts`): Foundation for all framework-specific SDKs
 - **Echo React SDK** (`packages/sdk/react`): React hooks and components
 - **Echo Next SDK** (`packages/sdk/next`): Next.js App Router integration
+- **Echo CLI** (`templates/echo-cli`): Command-line AI agent with authentication options
+
+### Authentication Methods in Echo
+
+Echo supports multiple authentication and payment methods:
+
+1. **Echo API Keys**: Managed accounts with centralized billing
+2. **WalletConnect**: Connect mobile wallets for decentralized payments
+3. **Local Wallet (Self-Custody)**: Generate and manage private keys locally for full custody
+
+All methods integrate with the X402 payment protocol for USDC-based AI payments.
 
 ## Coding Standards
 
@@ -197,6 +208,9 @@ echo/
 - Prefer explicit types over `any`
 - Use interfaces for public APIs, types for internal structures
 - Enable strict mode in `tsconfig.json`
+- Import from correct module paths:
+  - `privateKeyToAccount` from `viem/accounts`, not `viem`
+  - Use relative paths or absolute imports with `@` alias
 
 ### Imports
 
@@ -308,21 +322,30 @@ The scope indicates which package is affected:
 - `react-sdk`: React SDK
 - `next-sdk`: Next.js SDK
 - `ts-sdk`: TypeScript SDK
+- `cli`: Echo CLI template
 - `templates`: Starter templates
 - `docs`: Documentation
+
+When working on the Echo CLI or templates, use `cli` or `templates` scope.
 
 ### Examples
 
 ```bash
 feat(react-sdk): add support for streaming responses
 
+feat(cli): add local wallet self-custody authentication
+
 fix(server): correct token counting for Claude models
 
 docs(templates): add environment setup guide for next-chat
 
+docs(cli): update readme with local wallet instructions
+
 refactor(control): simplify balance calculation logic
 
 test(ts-sdk): add integration tests for provider initialization
+
+test(cli): add tests for wallet generation and signing
 ```
 
 ## Pull Request Process
