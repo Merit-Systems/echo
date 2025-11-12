@@ -111,10 +111,13 @@ Available templates:
 
 - **[next](./templates/next)** - Next.js application with Echo
 - **[react](./templates/react)** - Vite React application with Echo
-- **[nextjsChatbot](./templates/nextjs-chatbot)** - Next.js with Echo and Vercel AI SDK
-- **[assistantUi](./templates/assistant-ui)** - Next.js with Echo and Assistant UI
+- **[next-chat](./templates/next-chat)** - Next.js chatbot with Echo and Vercel AI SDK
+- **[assistant-ui](./templates/assistant-ui)** - Next.js with Echo and Assistant UI
+- **[echo-cli](./templates/echo-cli)** - CLI tool for AI chat with Echo (API keys + crypto wallets)
 
 Or run `npx echo-start my-app` to choose interactively.
+
+**Note:** The CLI template (`echo-cli`) requires manual installation from the repository as it's a command-line tool rather than a web application. See the [templates README](./templates/README.md) for details.
 
 # Development
 

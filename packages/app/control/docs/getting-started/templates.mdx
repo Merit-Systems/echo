@@ -417,3 +417,83 @@ Next.js application demonstrating Echo as an Auth.js provider for authentication
         </Tabs>
     </Step>
 </Steps>
+
+## Echo CLI (Echodex)
+
+A command-line interface for AI chat powered by Echo with support for both API key and crypto wallet payments via the X402 protocol.
+
+[View on GitHub](https://github.com/Merit-Systems/echo/tree/master/templates/echo-cli)
+
+<Callout type="info">
+  **Note:** Unlike web-based templates, the CLI tool requires manual installation from the repository as it's not available through `echo-start`.
+</Callout>
+
+### Features
+
+- **Dual Authentication**: Echo API keys or WalletConnect for flexible payment options
+- **Multi-Model Support**: GPT-4o, GPT-5, GPT-5 Mini, GPT-5 Nano
+- **X402 Protocol**: Pay-per-use with crypto wallets
+- **Conversation Management**: Resume and export chat history
+- **Secure Storage**: OS keychain integration
+- **Real-time Usage Tracking**: View balance and costs
+
+<Steps>
+    <Step>
+        ### Create an Echo App
+        Go to [echo.merit.systems/new](https://echo.merit.systems/new) to get an `app_id`.
+    </Step>
+
+    <Step>
+        ### Clone and Install
+        The CLI template is available in the Echo repository:
+
+        ```sh lineNumbers
+        git clone https://github.com/Merit-Systems/echo.git
+        cd echo/templates/echo-cli
+        pnpm install
+        pnpm build
+        ```
+    </Step>
+
+    <Step>
+        ### Authenticate
+        Start by logging in to Echo:
+
+        ```sh lineNumbers
+        echodex login
+        ```
+
+        Choose between:
+        - **Echo API Key**: Opens your browser to create an API key
+        - **WalletConnect**: Displays a QR code for mobile wallet authentication
+    </Step>
+
+    <Step>
+        ### Start Chatting
+        Once authenticated, start a chat session:
+
+        ```sh lineNumbers
+        echodex
+        ```
+
+        Or use other commands:
+        ```sh lineNumbers
+        echodex model          # Select AI model
+        echodex resume         # Resume last conversation
+        echodex history        # View conversation history
+        echodex export         # Export as JSON
+        echodex profile        # View profile and balance
+        ```
+    </Step>
+</Steps>
+
+### Global Installation (Optional)
+
+To use `echodex` globally on your system:
+
+```sh lineNumbers
+cd echo/templates/echo-cli
+pnpm link --global
+```
+
+For more details, see the [CLI template README](https://github.com/Merit-Systems/echo/tree/master/templates/echo-cli#readme).

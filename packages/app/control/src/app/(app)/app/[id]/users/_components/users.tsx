@@ -56,7 +56,7 @@ export const UsersTable: React.FC<Props> = ({ appId }) => {
       ...rows.map(row =>
         [
           `"${row.name ?? ''}"`,
-          `"${row.email || ''}"`,
+          `"${row.email ?? ''}"`,
           row.usage.totalTransactions,
           row.usage.rawCost,
           row.usage.markupProfit,
@@ -187,7 +187,9 @@ const UserRow = ({ user, showEmail }: { user: User; showEmail: boolean }) => {
       <TableCell className="pl-4">
         <div className="flex flex-row items-center gap-2">
           <UserAvatar src={user.image} className="size-6" />
-          <p className="text-sm font-medium">{user.name}</p>
+          <p className="text-sm font-medium">
+            {user.name ?? (user.email ? `${user.id}` : 'Unknown User')}
+          </p>
         </div>
       </TableCell>
       {showEmail && (
