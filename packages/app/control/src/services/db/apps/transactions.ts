@@ -49,6 +49,7 @@ export const listAppTransactions = async (
           select: {
             id: true,
             name: true,
+            email: true,
             image: true,
           },
         },
@@ -69,6 +70,7 @@ export const listAppTransactions = async (
       user: {
         id: string | null;
         name: string | null;
+        email: string | null;
         image: string | null;
       };
       date: Date;
@@ -93,6 +95,7 @@ export const listAppTransactions = async (
         id: transaction.id,
         user: {
           id: transaction.userId,
+          email: transaction.user?.email ?? null,
           name:
             transaction.user?.name ??
             (transaction.userId === null ? 'x402 Users' : null),
