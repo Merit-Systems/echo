@@ -26,6 +26,7 @@ interface Transaction {
   user?: {
     id: string | null;
     name: string | null;
+    email: string | null;
     image: string | null;
   };
   date: Date;
@@ -111,7 +112,10 @@ const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
           <div className="flex flex-col items-start">
             <p className="text-sm leading-tight">
               <span className="font-medium">
-                {transaction.user?.name ?? 'x402 Users'}
+                {transaction.user?.name ??
+                  (transaction.user?.email
+                    ? `${transaction.user.email.slice(0, 10)}... ${transaction.user.email.slice(-8)}`
+                    : 'Unknown User')}
               </span>{' '}
               made {transaction.callCount} requests
             </p>
