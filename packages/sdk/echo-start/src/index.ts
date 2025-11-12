@@ -5,6 +5,7 @@ import {
   outro,
   select,
   text,
+  confirm,
   spinner,
   log,
   isCancel,
@@ -14,6 +15,7 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import degit from 'degit';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { readFile } from 'fs/promises';
 import path from 'path';
 import { spawn } from 'child_process';
 
@@ -77,6 +79,10 @@ const DEFAULT_TEMPLATES = {
 
 type TemplateName = keyof typeof DEFAULT_TEMPLATES;
 type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
+
+const ECHO_BASE_URL =
+  (typeof process !== 'undefined' && process.env?.ECHO_BASE_URL) ||
+  'https://echo.merit.systems';
 
 function printHeader(): void {
   console.log();
@@ -179,6 +185,70 @@ function isExternalTemplate(template: string): boolean {
     template.startsWith('https://github.com/') ||
     template.startsWith('http://github.com/')
   );
+}
+
+async function extractReferralCodeFromTemplate(
+  templatePath: string
+): Promise<string | null> {
+  const configFile = path.join(templatePath, 'echo.config.json');
+
+  if (!existsSync(configFile)) {
+    return null;
+  }
+
+  try {
+    const content = await readFile(configFile, 'utf-8');
+    const config = JSON.parse(content);
+    return config.referralCode || config.echo?.referralCode || null;
+  } catch {
+    return null;
+  }
+}
+
+async function registerTemplateReferral(
+  appId: string,
+  templatePath: string,
+  apiKey: string
+): Promise<void> {
+  try {
+    const referralCode = await extractReferralCodeFromTemplate(templatePath);
+
+    if (!referralCode) {
+      log.info('No referral code found in template echo.config.json');
+      return;
+    }
+
+    log.step(`Found template referral code, applying...`);
+
+    const response = await fetch(`${ECHO_BASE_URL}/api/v1/user/referral`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        echoAppId: appId,
+        code: referralCode,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as { message?: string };
+      log.warn(
+        `Referral code could not be applied: ${errorData.message || 'Unknown error'}`
+      );
+      return;
+    }
+
+    const result = (await response.json()) as { success?: boolean };
+    if (result.success) {
+      log.success('Template referral code applied successfully');
+    }
+  } catch (error) {
+    log.warn(
+      `Referral registration error: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }
 
 function resolveTemplateRepo(template: string): string {
@@ -366,7 +436,36 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
 
     log.step('Configuring project files');
 
-    // Update package.json with the name of the project
+    if (isExternal) {
+      const referralCode = await extractReferralCodeFromTemplate(
+        absoluteProjectPath
+      );
+
+      if (referralCode) {
+        const shouldApplyReferral = await confirm({
+          message: 'This template includes a referral code. Apply it?',
+          initialValue: true,
+        });
+
+        if (!isCancel(shouldApplyReferral) && shouldApplyReferral) {
+          const apiKey = await text({
+            message: 'Enter your Echo API key:',
+            placeholder: 'Your API key from https://echo.merit.systems/keys',
+            validate: (value: string) => {
+              if (!value.trim()) {
+                return 'API key is required to apply referral code';
+              }
+              return;
+            },
+          });
+
+          if (!isCancel(apiKey)) {
+            await registerTemplateReferral(appId, absoluteProjectPath, apiKey);
+          }
+        }
+      }
+    }
+
     const packageJsonPath = path.join(absoluteProjectPath, 'package.json');
     // Technically this is checked above, but good practice to check again
     if (existsSync(packageJsonPath)) {
