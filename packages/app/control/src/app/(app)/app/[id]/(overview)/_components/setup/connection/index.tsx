@@ -50,7 +50,12 @@ export const Connection: React.FC<Props> = ({ appId }) => {
       refetchInterval: shouldRefetch ? 2500 : undefined,
     }
   );
-  const [numApiKeys] = api.user.apiKeys.count.useSuspenseQuery({ appId });
+  const [numApiKeys] = api.user.apiKeys.count.useSuspenseQuery(
+    { appId },
+    {
+      refetchInterval: shouldRefetch ? 2500 : undefined,
+    }
+  );
 
   const isConnected = useMemo(() => {
     return numTokens > 0 || numApiKeys > 0;
