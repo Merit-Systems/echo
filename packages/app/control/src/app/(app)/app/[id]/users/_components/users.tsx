@@ -188,10 +188,7 @@ const UserRow = ({ user, showEmail }: { user: User; showEmail: boolean }) => {
         <div className="flex flex-row items-center gap-2">
           <UserAvatar src={user.image} className="size-6" />
           <p className="text-sm font-medium">
-            {user.name ??
-              (user.email
-                ? `${user.email.slice(0, 10)}... ${user.email.slice(-8)}`
-                : 'Unknown User')}
+            {user.name ?? (user.email ? `${user.id}` : 'Unknown User')}
           </p>
         </div>
       </TableCell>

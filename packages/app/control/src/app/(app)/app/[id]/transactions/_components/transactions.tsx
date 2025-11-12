@@ -114,7 +114,7 @@ const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
               <span className="font-medium">
                 {transaction.user?.name ??
                   (transaction.user?.email
-                    ? `${transaction.user.email.slice(0, 10)}... ${transaction.user.email.slice(-8)}`
+                    ? `${transaction.user.id}`
                     : 'Unknown User')}
               </span>{' '}
               made {transaction.callCount} requests
