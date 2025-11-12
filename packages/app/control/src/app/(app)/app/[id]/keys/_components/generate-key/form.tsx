@@ -13,11 +13,20 @@ export const GenerateKeyForm: React.FC<Props> = ({ appId }) => {
     appId,
   });
 
+  const utils = api.useUtils();
+
   const {
     mutateAsync: generateApiKey,
     data: apiKey,
     isPending: isGenerating,
-  } = api.user.apiKeys.create.useMutation();
+  } = api.user.apiKeys.create.useMutation({
+    onSuccess: () => {
+      // Invalidate API key count query to immediately update the dashboard
+      // This allows the dashboard to unlock as soon as an API key is created
+      void utils.user.apiKeys.count.invalidate({ appId });
+      void utils.user.apiKeys.list.invalidate();
+    },
+  });
 
   const { mutateAsync: createMembership, isPending: isJoining } =
     api.apps.app.memberships.create.useMutation();

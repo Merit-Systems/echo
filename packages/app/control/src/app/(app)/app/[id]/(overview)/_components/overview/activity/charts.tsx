@@ -33,10 +33,14 @@ export const ActivityCharts: React.FC<Props> = ({ appId }) => {
   const [numTransactions] = api.apps.app.transactions.count.useSuspenseQuery({
     appId,
   });
+  const [numApiKeys] = api.user.apiKeys.count.useSuspenseQuery({ appId });
 
   const isInitialized = useMemo(() => {
-    return !isOwner || numTransactions > 0;
-  }, [isOwner, numTransactions]);
+    // For API key mode: show real data if API keys exist (no transaction requirement)
+    // For OAuth mode: show real data if transactions exist
+    // Non-owners always see real data
+    return !isOwner || numTransactions > 0 || numApiKeys > 0;
+  }, [isOwner, numTransactions, numApiKeys]);
 
   // Transform data for the chart
   const chartData: ChartData<Omit<(typeof activity)[number], 'timestamp'>>[] =

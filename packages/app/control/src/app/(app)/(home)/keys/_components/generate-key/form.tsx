@@ -13,6 +13,8 @@ export const GenerateKeyWithSelect = () => {
   const [selectedAppId, setSelectedAppId] = useState<string>('');
   const [isCompleted, setIsCompleted] = useState(false);
 
+  const utils = api.useUtils();
+
   const {
     mutateAsync: generateApiKey,
     isPending: isGenerating,
@@ -20,6 +22,12 @@ export const GenerateKeyWithSelect = () => {
   } = api.user.apiKeys.create.useMutation({
     onSuccess: () => {
       setIsCompleted(true);
+      // Invalidate API key count query to immediately update dashboards
+      // This allows dashboards to unlock as soon as an API key is created
+      if (selectedAppId) {
+        void utils.user.apiKeys.count.invalidate({ appId: selectedAppId });
+      }
+      void utils.user.apiKeys.list.invalidate();
     },
   });
 
