@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 
 import {
+  cancel,
   intro,
+  isCancel,
+  log,
   outro,
   select,
-  text,
   spinner,
-  log,
-  isCancel,
-  cancel,
+  text,
 } from '@clack/prompts';
 import chalk from 'chalk';
+import { spawn } from 'child_process';
 import { Command } from 'commander';
 import degit from 'degit';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
 
 const program = new Command();
 
@@ -67,6 +67,10 @@ const DEFAULT_TEMPLATES = {
     title: 'React Image Gen',
     description:
       'Vite React application with Echo and the Vercel AI SDK for image generation',
+  },
+  'echo-cli': {
+    title: 'Echo CLI',
+    description: 'Command-line tool for AI chat powered by Echo',
   },
   authjs: {
     title: 'Auth.js (NextAuth)',
