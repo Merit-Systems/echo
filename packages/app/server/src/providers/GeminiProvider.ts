@@ -162,7 +162,7 @@ export class GeminiProvider extends BaseProvider {
 
         if (parsed?.candidates) {
           for (const candidate of parsed.candidates) {
-            for (const part of candidate.content.parts) {
+            for (const part of candidate.content?.parts || []) {
               if (part.inlineData && part.inlineData.mimeType?.startsWith('image/')) {
       
                 imageCost = imageCost.plus(
