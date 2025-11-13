@@ -46,7 +46,7 @@ async function showEchoProfile(): Promise<void> {
     label('Email:', chalk.white(user.email))
     label('Balance:', chalk.green(`$${balance.balance.toFixed(4)}`))
     label('Total Spent:', chalk.yellow(`$${balance.totalSpent.toFixed(4)}`))
-    label('Created:', chalk.white(new Date(user.createdAt).toLocaleDateString()))
+    label('Created:', chalk.white(new Date(user.createdAt as string).toLocaleDateString()))
     blankLine()
   } catch (err) {
     displayAppError(createError({
@@ -89,7 +89,7 @@ async function showLocalWalletProfile(): Promise<void> {
   }
 
   try {
-    const balance = await getUSDCBalance(session.address, session.chainId)
+    const balance = await getUSDCBalance(session.address as `0x${string}`, session.chainId)
 
     blankLine()
     header('=== Local Wallet Profile ===')
