@@ -26,6 +26,7 @@ import {
   VertexAIProvider,
   PROXY_PASSTHROUGH_ONLY_MODEL as VertexAIProxyPassthroughOnlyModel,
 } from './VertexAIProvider';
+import { VercelAIGatewayProvider } from './VercelAIGatewayProvider';
 
 /**
  * Creates model-to-provider mapping from the model_prices_and_context_window.json file.
@@ -57,6 +58,9 @@ const createChatModelToProviderMapping = (): Record<string, ProviderType> => {
         case 'XAI':
         case 'Xai':
           mapping[modelConfig.model_id] = ProviderType.XAI;
+          break;
+        case 'VercelAIGateway':
+          mapping[modelConfig.model_id] = ProviderType.VERCEL_AI_GATEWAY;
           break;
         // Add other providers as needed
         default:
@@ -192,6 +196,8 @@ export const getProvider = (
       return new GroqProvider(stream, model);
     case ProviderType.XAI:
       return new XAIProvider(stream, model);
+    case ProviderType.VERCEL_AI_GATEWAY:
+      return new VercelAIGatewayProvider(stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }
