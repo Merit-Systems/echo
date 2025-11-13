@@ -9,8 +9,8 @@
   },
   "scripts": {
     "start": "tsx src/index.ts",
-    "dev": "tsx src/index.ts",
-    "build": "tsc",
+    "dev": "tsx --env-file=.env.local src/index.ts",
+    "build": "node scripts/build.js",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
@@ -36,6 +36,7 @@
     "cli-table3": "^0.6.5",
     "commander": "^14.0.2",
     "conf": "^15.0.2",
+    "dotenv": "^16.4.7",
     "ink": "^6.4.0",
     "keytar": "^7.9.0",
     "open": "^10.2.0",

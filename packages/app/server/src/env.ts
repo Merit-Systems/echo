@@ -25,6 +25,7 @@ export const env = createEnv({
     CDP_API_KEY_ID: z.string().optional(),
     CDP_API_KEY_SECRET: z.string().optional(),
     CDP_WALLET_SECRET: z.string().optional(),
+    DISABLE_CDP_ERROR_REPORTING: z.coerce.boolean().default(true),
 
     // Facilitator URLs
     PROXY_FACILITATOR_URL: z.string().url().optional(),
