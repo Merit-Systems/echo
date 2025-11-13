@@ -4,6 +4,7 @@ import {
   PaymentRequirements,
   SettleResponse,
   VerifyResponse,
+  ExactEvmPayload,
 } from './x402-types';
 import logger, { logMetric } from '../../logger';
 import dotenv from 'dotenv';
@@ -64,11 +65,9 @@ export async function facilitatorProxy<
   payload: PaymentPayload,
   paymentRequirements: PaymentRequirements
 ): Promise<T> {
-
   if (!PROXY_FACILITATOR_URL) {
     throw new Error('PROXY_FACILITATOR_URL is not set');
   }
-
 
   logMetric('facilitator_proxy_attempt', 1, {
     method,
@@ -96,6 +95,59 @@ export async function facilitatorProxy<
   );
 
   if (res.status !== 200) {
+    let errorBody: string | undefined;
+    try {
+      errorBody = await res.text();
+    } catch (e) {
+      // Ignore errors reading response body
+    }
+
+    // Extract payment details for logging
+    const paymentDetails: Record<string, any> = {
+      scheme: payload.scheme,
+      network: payload.network,
+      x402Version: payload.x402Version,
+    };
+
+    // Extract signature and nonce if it's an ExactEvmPayload
+    if (
+      'payload' in payload &&
+      payload.payload &&
+      typeof payload.payload === 'object'
+    ) {
+      const evmPayload = payload.payload as ExactEvmPayload;
+      if (
+        'signature' in evmPayload &&
+        typeof evmPayload.signature === 'string'
+      ) {
+        paymentDetails.signature =
+          evmPayload.signature.substring(0, 20) + '...';
+      }
+      if (
+        'authorization' in evmPayload &&
+        evmPayload.authorization &&
+        typeof evmPayload.authorization === 'object'
+      ) {
+        if ('nonce' in evmPayload.authorization) {
+          paymentDetails.nonce = evmPayload.authorization.nonce;
+        }
+        if ('from' in evmPayload.authorization) {
+          paymentDetails.from = evmPayload.authorization.from;
+        }
+        if ('to' in evmPayload.authorization) {
+          paymentDetails.to = evmPayload.authorization.to;
+        }
+      }
+    }
+
+    logger.error('Facilitator proxy returned non-200 status', {
+      method,
+      status: res.status,
+      statusText: res.statusText,
+      errorBody: errorBody?.substring(0, 1000), // Limit to first 1000 chars
+      paymentPayload: paymentDetails,
+    });
+
     logMetric('facilitator_proxy_failure', 1, {
       method,
       status: res.status,
