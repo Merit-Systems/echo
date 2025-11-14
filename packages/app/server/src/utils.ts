@@ -4,6 +4,8 @@ import {
   X402ChallengeParams,
 } from 'types';
 import { Request, Response } from 'express';
+import { ok, err } from 'neverthrow';
+import { AppResult, ConfigurationError, ValidationError } from './errors';
 import { CdpClient, EvmSmartAccount } from '@coinbase/cdp-sdk';
 import {
   WALLET_SMART_ACCOUNT,
@@ -22,7 +24,7 @@ import {
   X402_REALM,
   USDC_MULTIPLIER,
 } from './constants';
-import { Decimal } from 'generated/prisma/runtime/library';
+import { Decimal } from './generated/prisma/runtime/library';
 import { USDC_ADDRESS } from 'services/fund-repo/constants';
 import crypto from 'crypto';
 import logger from 'logger';
@@ -49,7 +51,6 @@ const WALLET_SECRET = env.CDP_WALLET_SECRET || 'your-wallet-secret';
  */
 export function decimalToUsdcBigInt(amount: Decimal | number): bigint {
   const numericAmount = typeof amount === 'number' ? amount : Number(amount);
-  // Use Math.ceil for defensive rounding to avoid undercharging
   return BigInt(Math.ceil(numericAmount * USDC_MULTIPLIER));
 }
 
@@ -122,13 +123,18 @@ export async function buildX402Response(
   const host = env.ECHO_ROUTER_BASE_URL;
   const resourceUrl = `${host}${req.url}`;
 
-  let recipient: string;
-  try {
-    recipient = (await getSmartAccount()).smartAccount.address;
-  } catch (error) {
-    logger.error('Failed to get smart account for X402 response', { error });
-    throw error;
+  const smartAccountResult = await getSmartAccount();
+  if (smartAccountResult.isErr()) {
+    logger.error('Failed to get smart account for X402 response', { 
+      error: smartAccountResult.error 
+    });
+    return res.status(500).json({
+      error: 'Failed to initialize payment system',
+      type: smartAccountResult.error.type
+    });
   }
+
+  const recipient = smartAccountResult.value.smartAccount.address;
 
   res.setHeader(
     'WWW-Authenticate',
@@ -201,9 +207,9 @@ export function isX402Request(headers: Record<string, string>): boolean {
   return headers[X402_PAYMENT_HEADER] !== undefined;
 }
 
-export async function getSmartAccount(): Promise<{
+export async function getSmartAccount(): Promise<AppResult<{
   smartAccount: EvmSmartAccount;
-}> {
+}, ConfigurationError>> {
   try {
     const cdp = new CdpClient({
       apiKeyId: API_KEY_ID,
@@ -220,26 +226,43 @@ export async function getSmartAccount(): Promise<{
       owner,
     });
 
-    return { smartAccount };
+    return ok({ smartAccount });
   } catch (error) {
     logger.error('Failed to get smart account', { error });
-    throw new Error(
-      `CDP authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
+    return err(new ConfigurationError(
+      `CDP authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'CDP_WALLET_CONFIG',
+      { error: String(error) }
+    ));
   }
 }
 
 export function validateXPaymentHeader(
   processedHeaders: Record<string, string>,
   req: Request
-): PaymentPayload {
+): AppResult<PaymentPayload, ValidationError> {
   const xPaymentHeader =
     processedHeaders[X402_PAYMENT_HEADER] || req.headers[X402_PAYMENT_HEADER];
+  
   if (!xPaymentHeader) {
-    throw new Error('x-payment header missing after validation');
+    logger.error('x-payment header missing');
+    return err(new ValidationError('x-payment header missing after validation'));
   }
-  const xPaymentData = JSON.parse(
-    Buffer.from(xPaymentHeader as string, 'base64').toString()
-  );
-  return PaymentPayloadSchema.parse(xPaymentData);
+  
+  try {
+    const xPaymentData = JSON.parse(
+      Buffer.from(xPaymentHeader as string, 'base64').toString()
+    );
+    
+    const parseResult = PaymentPayloadSchema.safeParse(xPaymentData);
+    if (!parseResult.success) {
+      logger.error('Invalid payment payload', { error: parseResult.error });
+      return err(new ValidationError('Invalid payment payload format'));
+    }
+    
+    return ok(parseResult.data);
+  } catch (error) {
+    logger.error('Failed to parse x-payment header', { error });
+    return err(new ValidationError('Failed to parse x-payment header'));
+  }
 }

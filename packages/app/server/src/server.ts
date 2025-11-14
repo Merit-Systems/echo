@@ -13,6 +13,7 @@ import multer from 'multer';
 import { authenticateRequest } from './auth';
 import { env } from './env';
 import { HttpError } from './errors/http';
+import { BaseError, isBaseError } from './errors';
 import { PrismaClient } from './generated/prisma';
 import logger, { logMetric } from './logger';
 import {
@@ -70,9 +71,9 @@ app.use(
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
     allowedHeaders: '*', // Allow all headers
     exposedHeaders: '*', // Expose all headers to the client
-    credentials: false, // Set to false when using origin: '*'
-    preflightContinue: false, // Handle preflight requests here
-    optionsSuccessStatus: 200, // Return 200 for preflight OPTIONS requests
+    credentials: false,
+    preflightContinue: false,
+    optionsSuccessStatus: 200,
   })
 );
 
@@ -88,7 +89,7 @@ app.use((req: EscrowRequest, res, next) => {
 });
 
 app.use(express.json({ limit: '100mb' }));
-app.use(upload.any()); // Handle multipart/form-data with any field names
+app.use(upload.any());
 app.use(compression());
 
 app.use(traceLoggingMiddleware);
@@ -104,81 +105,105 @@ app.use('/resource', resourceRouter);
 
 // Main route handler
 app.all('*', async (req: EscrowRequest, res: Response, next: NextFunction) => {
-  try {
-    const headers = req.headers as Record<string, string>;
-    const { provider, isStream, isPassthroughProxyRoute, is402Sniffer } =
-      await initializeProvider(req, res);
+  const headers = req.headers as Record<string, string>;
+  const { provider, isStream, isPassthroughProxyRoute, is402Sniffer } =
+    await initializeProvider(req, res);
 
-    const x402AuthenticationService = new X402AuthenticationService(prisma);
-    const x402AuthenticationResult =
-      await x402AuthenticationService.authenticateX402Request(headers);
-    if (!provider || is402Sniffer) {
-      return buildX402Response(req, res, new Decimal(0));
-    }
-    const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
-    const maxCostWithMarkup = applyMaxCostMarkup(
-      maxCost,
-      x402AuthenticationResult?.markUp || null
-    );
-
-    if (
-      !isApiRequest(headers) &&
-      !isX402Request(headers) &&
-      !isPassthroughProxyRoute
-    ) {
-      return buildX402Response(req, res, maxCostWithMarkup);
-    }
-
-    if (isApiRequest(headers)) {
-      const { processedHeaders, echoControlService } =
-        await authenticateRequest(headers, prisma);
-
-      provider.setEchoControlService(echoControlService);
-
-      await handleApiKeyRequest({
-        req,
-        res,
-        headers: processedHeaders,
-        echoControlService,
-        isPassthroughProxyRoute,
-        provider,
-        isStream,
-        maxCost,
-      });
-      return;
-    }
-    if (isX402Request(headers) || isPassthroughProxyRoute) {
-      await handleX402Request({
-        req,
-        res,
-        headers,
-        maxCost: maxCostWithMarkup,
-        isPassthroughProxyRoute,
-        provider,
-        isStream,
-        x402AuthenticationService,
-      });
-      return;
-    }
-
-    return res.status(400).json({
-      error: 'No request type found',
-    });
-  } catch (error) {
-    return next(error);
+  const x402AuthenticationService = new X402AuthenticationService(prisma);
+  const x402AuthenticationResult =
+    await x402AuthenticationService.authenticateX402Request(headers);
+  if (!provider || is402Sniffer) {
+    return buildX402Response(req, res, new Decimal(0));
   }
+  const maxCost = getRequestMaxCost(req, provider, isPassthroughProxyRoute);
+  const maxCostWithMarkup = applyMaxCostMarkup(
+    maxCost,
+    x402AuthenticationResult?.markUp || null
+  );
+
+  if (
+    !isApiRequest(headers) &&
+    !isX402Request(headers) &&
+    !isPassthroughProxyRoute
+  ) {
+    return buildX402Response(req, res, maxCostWithMarkup);
+  }
+
+  if (isApiRequest(headers)) {
+    const authResult = await authenticateRequest(headers, prisma);
+    
+    if (authResult.isErr()) {
+      const error = authResult.error;
+      logger.error('Authentication failed', { 
+        type: error.type, 
+        message: error.message,
+        context: error.context 
+      });
+      return res.status(error.statusCode).json({
+        error: error.message,
+        type: error.type
+      });
+    }
+    
+    const { processedHeaders, echoControlService } = authResult.value;
+    provider.setEchoControlService(echoControlService);
+
+    await handleApiKeyRequest({
+      req,
+      res,
+      headers: processedHeaders,
+      echoControlService,
+      isPassthroughProxyRoute,
+      provider,
+      isStream,
+      maxCost,
+    });
+    return;
+  }
+  if (isX402Request(headers) || isPassthroughProxyRoute) {
+    await handleX402Request({
+      req,
+      res,
+      headers,
+      maxCost: maxCostWithMarkup,
+      isPassthroughProxyRoute,
+      provider,
+      isStream,
+      x402AuthenticationService,
+    });
+    return;
+  }
+
+  return res.status(400).json({
+    error: 'No request type found',
+  });
 });
 
 // Error handling middleware
-app.use((error: Error, req: Request, res: Response) => {
-  logger.error(
-    `Error handling request: ${error.message} | Stack: ${error.stack}`
-  );
-
+app.use((error: Error | BaseError | unknown, req: Request, res: Response) => {
   // If response has already been sent, just log the error and return
   if (res.headersSent) {
     logger.warn('Response already sent, cannot send error response');
     return;
+  }
+
+  if (isBaseError(error)) {
+    logMetric('server.error', 1, {
+      error_type: error.type,
+      error_message: error.message,
+      status_code: error.statusCode,
+    });
+    logger.error('Request error', {
+      type: error.type,
+      message: error.message,
+      statusCode: error.statusCode,
+      context: error.context
+    });
+    return res.status(error.statusCode).json({
+      error: error.message,
+      type: error.type,
+      ...(error.context && { context: error.context })
+    });
   }
 
   if (error instanceof HttpError) {
@@ -193,6 +218,9 @@ app.use((error: Error, req: Request, res: Response) => {
   }
 
   if (error instanceof Error) {
+    logger.error(
+      `Error handling request: ${error.message} | Stack: ${error.stack}`
+    );
     logMetric('server.internal_error', 1, {
       error_type: error.name,
       error_message: error.message,
@@ -206,7 +234,7 @@ app.use((error: Error, req: Request, res: Response) => {
   logMetric('server.internal_error', 1, {
     error_type: 'unknown_error',
   });
-  logger.error('Internal server error', error);
+  logger.error('Unknown error', { error });
   return res.status(500).json({
     error: 'Internal Server Error',
   });
@@ -226,7 +254,7 @@ const gracefulShutdown = (signal: string) => {
       logger.info('Database connections closed');
       process.exit(0);
     })
-    .catch(error => {
+    .catch((error: unknown) => {
       logger.error('Error during graceful shutdown:', error);
       process.exit(1);
     });

@@ -9,7 +9,8 @@ import { finalizeResource } from 'handlers/finalize';
 import { refund } from 'handlers/refund';
 import logger from 'logger';
 import { ExactEvmPayload } from 'services/facilitator/x402-types';
-import { HttpError, PaymentRequiredError } from 'errors/http';
+import { HttpError } from 'errors/http';
+import { PaymentRequiredError } from '../errors';
 
 type ResourceHandlerConfig<TInput, TOutput> = {
   inputSchema: ZodSchema<TInput>;
@@ -27,14 +28,24 @@ async function handleApiRequest<TInput, TOutput>(
 ) {
   const { executeResource, calculateActualCost, createTransaction } = config;
 
-  const { echoControlService } = await authenticateRequest(headers, prisma);
+  const authResult = await authenticateRequest(headers, prisma);
+  
+  if (authResult.isErr()) {
+    throw new HttpError(authResult.error.statusCode, authResult.error.message);
+  }
+
+  const { echoControlService } = authResult.value;
 
   const output = await executeResource(parsedBody);
 
   const actualCost = calculateActualCost(parsedBody, output);
   const transaction = createTransaction(parsedBody, output, actualCost);
 
-  await echoControlService.createTransaction(transaction);
+  const createTxResult = await echoControlService.createTransaction(transaction);
+  
+  if (createTxResult.isErr()) {
+    logger.error('Failed to create transaction', { error: createTxResult.error });
+  }
 
   return output;
 }
@@ -51,7 +62,7 @@ async function handle402Request<TInput, TOutput>(
 
   const settleResult = await settle(req, res, headers, safeMaxCost);
   if (!settleResult) {
-    throw new PaymentRequiredError('Payment required, settle failed');
+    throw new PaymentRequiredError();
   }
 
   const { payload, paymentAmountDecimal } = settleResult;
