@@ -15,12 +15,6 @@ export class UnauthorizedError extends HttpError {
   }
 }
 
-export class PaymentRequiredError extends HttpError {
-  constructor(message: string = 'Payment Required') {
-    super(402, message);
-  }
-}
-
 export class UnknownModelError extends HttpError {
   constructor(message: string = 'Unknown Model argument passed in') {
     super(400, message);
