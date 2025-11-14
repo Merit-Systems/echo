@@ -1,0 +1,566 @@
+## Description : Guidelines and best practices for building Echo Next.js API Key Management applications, including secure key generation, database patterns, and authentication globs: /**/*.ts,/**/*.tsx,**/*.js,**/*.jsx
+
+## Echo Next.js API Key Management Guidelines
+
+## SDK Initialization
+
+### Server-Side Setup
+
+ALWAYS initialize Echo in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+## Database Setup
+
+### Prisma Schema
+
+ALWAYS define API key schema with proper indexing:
+
+```prisma
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  name        String
+  keyHash     String   @unique
+  keyPrefix   String   // First 8 chars for identification
+  userId      String
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  
+  // Metadata
+  permissions String[] // e.g., ["read", "write"]
+  rateLimit   Int      @default(1000) // requests per hour
+  
+  @@index([userId])
+  @@index([keyPrefix])
+  @@index([isActive])
+}
+```
+
+### Database Client
+
+ALWAYS use a singleton Prisma client:
+
+```typescript
+// src/lib/db.ts
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
+```
+
+## API Key Generation
+
+### Secure Key Generation
+
+ALWAYS generate cryptographically secure keys and hash them:
+
+```typescript
+// src/lib/api-keys.ts
+import crypto from 'crypto';
+import { prisma } from './db';
+
+const KEY_PREFIX = 'sk_echo';
+const KEY_LENGTH = 32;
+
+interface CreateKeyOptions {
+  name: string;
+  userId: string;
+  expiresInDays?: number;
+  permissions?: string[];
+  rateLimit?: number;
+}
+
+export async function generateApiKey(options: CreateKeyOptions) {
+  // ✅ Generate cryptographically secure random key
+  const randomBytes = crypto.randomBytes(KEY_LENGTH);
+  const key = `${KEY_PREFIX}_${randomBytes.toString('base64url')}`;
+  
+  // ✅ Hash the key before storing
+  const keyHash = crypto
+    .createHash('sha256')
+    .update(key)
+    .digest('hex');
+  
+  // ✅ Store only the prefix for identification
+  const keyPrefix = key.substring(0, 12);
+  
+  const expiresAt = options.expiresInDays
+    ? new Date(Date.now() + options.expiresInDays * 24 * 60 * 60 * 1000)
+    : null;
+  
+  const apiKey = await prisma.apiKey.create({
+    data: {
+      name: options.name,
+      keyHash,
+      keyPrefix,
+      userId: options.userId,
+      expiresAt,
+      permissions: options.permissions || ['read', 'write'],
+      rateLimit: options.rateLimit || 1000,
+    },
+  });
+  
+  // ✅ Return the plain key ONLY once at creation time
+  return {
+    id: apiKey.id,
+    key, // Only shown once!
+    prefix: keyPrefix,
+    name: apiKey.name,
+    createdAt: apiKey.createdAt,
+  };
+}
+
+export async function validateApiKey(key: string): Promise<ApiKey | null> {
+  // ✅ Hash the provided key
+  const keyHash = crypto
+    .createHash('sha256')
+    .update(key)
+    .digest('hex');
+  
+  const apiKey = await prisma.apiKey.findUnique({
+    where: { keyHash },
+  });
+  
+  if (!apiKey) return null;
+  
+  // ✅ Check if key is active and not expired
+  if (!apiKey.isActive) return null;
+  
+  if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
+    return null;
+  }
+  
+  // Update last used timestamp (async, don't await)
+  prisma.apiKey.update({
+    where: { id: apiKey.id },
+    data: { lastUsedAt: new Date() },
+  }).catch(console.error);
+  
+  return apiKey;
+}
+```
+
+## API Key Management Routes
+
+### Create API Key Endpoint
+
+ALWAYS validate inputs and authenticate users:
+
+```typescript
+// app/api/keys/create/route.ts
+import { generateApiKey } from '@/lib/api-keys';
+import { isSignedIn } from '@/echo';
+
+export async function POST(req: Request) {
+  try {
+    // ✅ ALWAYS authenticate the user
+    const userId = await isSignedIn();
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { name, expiresInDays, permissions } = await req.json();
+
+    // ✅ ALWAYS validate required fields
+    if (!name || typeof name !== 'string') {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Name is required and must be a string',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (name.length > 100) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Name must be less than 100 characters',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const result = await generateApiKey({
+      name,
+      userId,
+      expiresInDays,
+      permissions,
+    });
+
+    return Response.json({
+      success: true,
+      apiKey: result,
+      warning: 'Save this key now. You will not be able to see it again.',
+    });
+  } catch (error) {
+    console.error('API key creation error:', error);
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: 'Failed to create API key',
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+```
+
+### List API Keys Endpoint
+
+NEVER return full keys, only metadata:
+
+```typescript
+// app/api/keys/list/route.ts
+import { prisma } from '@/lib/db';
+import { isSignedIn } from '@/echo';
+
+export async function GET(req: Request) {
+  try {
+    const userId = await isSignedIn();
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ✅ NEVER return keyHash or full key
+    const keys = await prisma.apiKey.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        name: true,
+        keyPrefix: true, // Only show prefix
+        createdAt: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        isActive: true,
+        permissions: true,
+        rateLimit: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return Response.json({
+      success: true,
+      keys,
+    });
+  } catch (error) {
+    console.error('API key list error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to list API keys' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+```
+
+### Revoke API Key Endpoint
+
+ALWAYS verify ownership before revocation:
+
+```typescript
+// app/api/keys/revoke/route.ts
+import { prisma } from '@/lib/db';
+import { isSignedIn } from '@/echo';
+
+export async function POST(req: Request) {
+  try {
+    const userId = await isSignedIn();
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401 }
+      );
+    }
+
+    const { keyId } = await req.json();
+
+    if (!keyId) {
+      return new Response(
+        JSON.stringify({ error: 'keyId is required' }),
+        { status: 400 }
+      );
+    }
+
+    // ✅ ALWAYS verify ownership
+    const key = await prisma.apiKey.findUnique({
+      where: { id: keyId },
+    });
+
+    if (!key) {
+      return new Response(
+        JSON.stringify({ error: 'API key not found' }),
+        { status: 404 }
+      );
+    }
+
+    if (key.userId !== userId) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403 }
+      );
+    }
+
+    // Deactivate the key
+    await prisma.apiKey.update({
+      where: { id: keyId },
+      data: { isActive: false },
+    });
+
+    return Response.json({
+      success: true,
+      message: 'API key revoked successfully',
+    });
+  } catch (error) {
+    console.error('API key revocation error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to revoke API key' }),
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Authentication Middleware
+
+### API Key Authentication
+
+ALWAYS validate API keys server-side:
+
+```typescript
+// src/lib/auth.ts
+import { validateApiKey } from './api-keys';
+
+export async function authenticateApiKey(
+  request: Request
+): Promise<{ valid: boolean; userId?: string; error?: string }> {
+  const authHeader = request.headers.get('Authorization');
+  
+  if (!authHeader) {
+    return { valid: false, error: 'Missing Authorization header' };
+  }
+
+  const [scheme, key] = authHeader.split(' ');
+  
+  if (scheme !== 'Bearer') {
+    return { valid: false, error: 'Invalid authentication scheme' };
+  }
+
+  if (!key) {
+    return { valid: false, error: 'Missing API key' };
+  }
+
+  const apiKey = await validateApiKey(key);
+  
+  if (!apiKey) {
+    return { valid: false, error: 'Invalid or expired API key' };
+  }
+
+  return { valid: true, userId: apiKey.userId };
+}
+```
+
+### Protected Route Example
+
+Use authentication middleware in routes:
+
+```typescript
+// app/api/protected/route.ts
+import { authenticateApiKey } from '@/lib/auth';
+
+export async function GET(req: Request) {
+  const auth = await authenticateApiKey(req);
+  
+  if (!auth.valid) {
+    return new Response(
+      JSON.stringify({ error: auth.error }),
+      { status: 401 }
+    );
+  }
+
+  // User is authenticated, proceed with logic
+  return Response.json({
+    success: true,
+    userId: auth.userId,
+    data: 'Protected data',
+  });
+}
+```
+
+## Environment Variables
+
+ALWAYS use environment variables for database and secrets:
+
+```bash
+# .env.local
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+
+# Optional: Encryption key for additional security
+ENCRYPTION_KEY=your_encryption_key
+```
+
+## TypeScript Types
+
+### API Key Types
+
+ALWAYS define strict types:
+
+```typescript
+// src/lib/types.ts
+export interface ApiKey {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  userId: string;
+  createdAt: Date;
+  lastUsedAt: Date | null;
+  expiresAt: Date | null;
+  isActive: boolean;
+  permissions: string[];
+  rateLimit: number;
+}
+
+export interface CreateApiKeyRequest {
+  name: string;
+  expiresInDays?: number;
+  permissions?: string[];
+  rateLimit?: number;
+}
+
+export interface CreateApiKeyResponse {
+  success: boolean;
+  apiKey?: {
+    id: string;
+    key: string; // Only returned once!
+    prefix: string;
+    name: string;
+    createdAt: Date;
+  };
+  warning?: string;
+  error?: string;
+}
+```
+
+## Feature Flags
+
+### API Key Feature Flags
+
+ALWAYS centralize feature flags:
+
+```typescript
+// src/lib/flags.ts
+export enum ApiKeyFeatureFlags {
+  ENABLE_KEY_ROTATION = 'enable_key_rotation',
+  ENABLE_CUSTOM_PERMISSIONS = 'enable_custom_permissions',
+  ENABLE_RATE_LIMITING = 'enable_rate_limiting',
+  ENABLE_KEY_EXPIRATION = 'enable_key_expiration',
+}
+
+export function validateApiKeyFeatureFlag(flag: string): boolean {
+  return Object.values(ApiKeyFeatureFlags).includes(flag as ApiKeyFeatureFlags);
+}
+```
+
+## Security Best Practices
+
+### Key Security Rules
+
+1. **NEVER store plain-text keys** - Always hash with SHA-256 or better
+2. **Show full key only once** - At creation time only
+3. **Use prefixes** - Store first 8-12 chars for identification (e.g., `sk_echo_abc123...`)
+4. **Verify ownership** - Always check userId before operations
+5. **Hash on every validation** - Hash the incoming key and compare with stored hash
+6. **Audit logs** - Log key creation, usage, and revocation
+7. **Rate limiting** - Implement per-key rate limits
+8. **Expiration** - Support optional key expiration dates
+
+### Hashing Pattern
+
+ALWAYS use this pattern:
+
+```typescript
+// ✅ CORRECT
+const keyHash = crypto.createHash('sha256').update(key).digest('hex');
+
+// ❌ INCORRECT - Never store plain keys
+await db.insert({ key: plainKey });
+```
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── echo/
+│   │   │   └── [...echo]/route.ts
+│   │   ├── keys/
+│   │   │   ├── create/route.ts
+│   │   │   ├── list/route.ts
+│   │   │   └── revoke/route.ts
+│   │   └── protected/route.ts
+│   └── dashboard/
+│       └── keys/page.tsx
+├── components/
+│   ├── api-key-list.tsx
+│   ├── create-key-dialog.tsx
+│   └── key-details.tsx
+├── echo/
+│   └── index.ts
+├── lib/
+│   ├── api-keys.ts          # Key generation and validation
+│   ├── auth.ts              # Authentication middleware
+│   ├── db.ts                # Prisma client
+│   ├── flags.ts             # Feature flags
+│   └── types.ts             # Shared types
+├── prisma/
+│   ├── migrations/
+│   └── schema.prisma
+└── providers.tsx
+```
+
+## Best Practices
+
+1. **Hash Keys**: Always hash keys with SHA-256 before storing
+2. **One-Time Display**: Show full key only once at creation
+3. **Verify Ownership**: Check userId before any key operations
+4. **Audit Logging**: Log all key operations for security
+5. **Rate Limiting**: Implement per-key rate limits
+6. **Expiration**: Support optional key expiration
+7. **Permissions**: Use granular permissions for keys
+8. **Secure Transport**: Always use HTTPS in production
