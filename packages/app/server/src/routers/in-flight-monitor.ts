@@ -30,10 +30,16 @@ inFlightMonitorRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Authenticate the request using the same flow as the main server
-      const { echoControlService } = await authenticateRequest(
+      const authResult = await authenticateRequest(
         req.headers as Record<string, string>,
         prisma
       );
+      
+      if (authResult.isErr()) {
+        throw new UnauthorizedError('Unauthorized Access');
+      }
+
+      const { echoControlService } = authResult.value;
 
       const userId = echoControlService.getUserId();
       const echoAppId = echoControlService.getEchoAppId();

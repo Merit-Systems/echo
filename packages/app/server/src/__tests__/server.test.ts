@@ -3,6 +3,7 @@ import { ReadableStream } from 'stream/web';
 import type express from 'express';
 import request from 'supertest';
 import { vi } from 'vitest';
+import { ok } from 'neverthrow';
 
 import { EchoControlService } from '../services/EchoControlService';
 
@@ -40,12 +41,21 @@ const setupMockEchoControlService = (balance: number = 100) => {
     echoApp: MOCK_ECHO_APP,
   });
 
-  (mockInstance.getBalance as any).mockResolvedValue(balance);
+  (mockInstance.getBalance as any).mockResolvedValue(ok(balance));
   (mockInstance.getUserId as any).mockReturnValue(TEST_USER_ID);
   (mockInstance.getEchoAppId as any).mockReturnValue(TEST_ECHO_APP_ID);
   (mockInstance.getUser as any).mockReturnValue(MOCK_USER);
   (mockInstance.getEchoApp as any).mockReturnValue(MOCK_ECHO_APP);
-  (mockInstance.createTransaction as any).mockResolvedValue(undefined);
+  (mockInstance.createTransaction as any).mockResolvedValue(ok(undefined));
+  (mockInstance.computeTransactionCosts as any).mockResolvedValue(ok({
+    rawTransactionCost: 0.01,
+    totalTransactionCost: 0.01,
+    totalAppProfit: 0,
+    referralProfit: 0,
+    markUpProfit: 0,
+    echoProfit: 0,
+  }));
+  (mockInstance.getOrNoneFreeTierSpendPool as any).mockResolvedValue(ok(null));
 
   MockedEchoControlService.mockImplementation(() => mockInstance);
 

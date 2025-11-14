@@ -33,7 +33,6 @@ const parseSSEAnthropicFormat = (data: string): AnthropicUsage | null => {
       try {
         const parsed = JSON.parse(currentData);
 
-        // Handle message_start event - contains initial usage and model info
         if (parsed.type === 'message_start' && parsed.message) {
           const message = parsed.message;
           if (message.usage && message.id && message.model) {
@@ -46,7 +45,6 @@ const parseSSEAnthropicFormat = (data: string): AnthropicUsage | null => {
           }
         }
 
-        // Handle message_delta event - contains final output token count
         if (parsed.type === 'message_delta' && parsed.usage) {
           messageDeltaUsage = {
             output_tokens: parsed.usage.output_tokens || 0,
@@ -118,74 +116,69 @@ export class AnthropicNativeProvider extends BaseProvider {
   }
 
   override async handleBody(data: string): Promise<Transaction> {
-    try {
-      if (this.getIsStream()) {
-        const usage = parseSSEAnthropicFormat(data);
+    if (this.getIsStream()) {
+      const usage = parseSSEAnthropicFormat(data);
 
-        if (!usage) {
-          logger.error('No usage data found');
-          throw new Error('No usage data found');
-        }
-
-        const model = this.getModel();
-        const metadata: LlmTransactionMetadata = {
-          model: model,
-          providerId: usage.id,
-          provider: this.getType(),
-          inputTokens: usage.input_tokens,
-          outputTokens: usage.output_tokens,
-          totalTokens: usage.input_tokens + usage.output_tokens,
-        };
-        const transaction: Transaction = {
-          metadata: metadata,
-          rawTransactionCost: getCostPerToken(
-            model,
-            usage.input_tokens,
-            usage.output_tokens
-          ),
-          status: 'success',
-        };
-
-        return transaction;
-      } else {
-        const parsed = JSON.parse(data);
-
-        const inputTokens = parsed.usage.input_tokens || 0;
-        const outputTokens = parsed.usage.output_tokens || 0;
-        const totalTokens = inputTokens + outputTokens;
-
-        logger.info(
-          'Usage tokens (input/output/total): ',
-          inputTokens,
-          outputTokens,
-          totalTokens
-        );
-        logger.info(`Message ID: ${parsed.id}`);
-
-        const metadata: LlmTransactionMetadata = {
-          model: this.getModel(),
-          providerId: parsed.id,
-          provider: this.getType(),
-          inputTokens: inputTokens,
-          outputTokens: outputTokens,
-          totalTokens: totalTokens,
-        };
-
-        const transaction: Transaction = {
-          metadata: metadata,
-          rawTransactionCost: getCostPerToken(
-            this.getModel(),
-            inputTokens,
-            outputTokens
-          ),
-          status: 'success',
-        };
-
-        return transaction;
+      if (!usage) {
+        logger.error('No usage data found');
+        throw new Error('No usage data found');
       }
-    } catch (error) {
-      logger.error(`Error processing data: ${error}`);
-      throw error;
+
+      const model = this.getModel();
+      const metadata: LlmTransactionMetadata = {
+        model: model,
+        providerId: usage.id,
+        provider: this.getType(),
+        inputTokens: usage.input_tokens,
+        outputTokens: usage.output_tokens,
+        totalTokens: usage.input_tokens + usage.output_tokens,
+      };
+      const transaction: Transaction = {
+        metadata: metadata,
+        rawTransactionCost: getCostPerToken(
+          model,
+          usage.input_tokens,
+          usage.output_tokens
+        ),
+        status: 'success',
+      };
+
+      return transaction;
+    } else {
+      const parsed = JSON.parse(data);
+
+      const inputTokens = parsed.usage.input_tokens || 0;
+      const outputTokens = parsed.usage.output_tokens || 0;
+      const totalTokens = inputTokens + outputTokens;
+
+      logger.info(
+        'Usage tokens (input/output/total): ',
+        inputTokens,
+        outputTokens,
+        totalTokens
+      );
+      logger.info(`Message ID: ${parsed.id}`);
+
+      const metadata: LlmTransactionMetadata = {
+        model: this.getModel(),
+        providerId: parsed.id,
+        provider: this.getType(),
+        inputTokens: inputTokens,
+        outputTokens: outputTokens,
+        totalTokens: totalTokens,
+      };
+
+      const transaction: Transaction = {
+        metadata: metadata,
+        rawTransactionCost: getCostPerToken(
+          this.getModel(),
+          inputTokens,
+          outputTokens
+        ),
+        status: 'success',
+      };
+
+      return transaction;
     }
   }
 

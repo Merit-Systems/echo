@@ -193,7 +193,7 @@ export class OpenAIVideoProvider extends BaseProvider {
   private async handleSuccessfulVideoGeneration(
     videoId: string
   ): Promise<void> {
-    await prisma.$transaction(async tx => {
+    await prisma.$transaction(async (tx) => {
       const result = await tx.$queryRawUnsafe(
         `SELECT * FROM "video_generation_x402" WHERE "videoId" = $1 FOR UPDATE`,
         videoId

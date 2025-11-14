@@ -1,5 +1,6 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { ok, err, ResultAsync } from 'neverthrow';
 import type {
   ApiKeyValidationResult,
   EchoApp,
@@ -12,7 +13,17 @@ import type {
 import { EchoDbService } from './DbService';
 
 import { Decimal } from '@prisma/client/runtime/library';
-import { PaymentRequiredError, UnauthorizedError } from '../errors/http';
+import { 
+  AppResult, 
+  AppResultAsync,
+  InvalidApiKeyError,
+  ConfigurationError,
+  DatabaseError,
+  AuthenticationError,
+  ValidationError,
+  PaymentRequiredError,
+  safeAsync
+} from '../errors';
 import {
   EnumTransactionType,
   MarkUp,
@@ -40,13 +51,9 @@ export class EchoControlService {
   private freeTierSpendPool: SpendPool | null = null;
 
   constructor(db: PrismaClient, apiKey?: string) {
-    // Check if the generated Prisma client exists
     const generatedPrismaPath = join(__dirname, 'generated', 'prisma');
     if (!existsSync(generatedPrismaPath)) {
-      throw new Error(
-        `Generated Prisma client not found at ${generatedPrismaPath}. ` +
-          'Please run "npm run copy-prisma" to copy the generated client from echo-control.'
-      );
+      logger.error('Generated Prisma client not found', { path: generatedPrismaPath });
     }
 
     this.apiKey = apiKey;
@@ -61,35 +68,55 @@ export class EchoControlService {
    * Uses centralized logic from EchoDbService
    */
   async verifyApiKey(): Promise<ApiKeyValidationResult | null> {
+    const generatedPrismaPath = join(__dirname, 'generated', 'prisma');
+    if (!existsSync(generatedPrismaPath)) {
+      logger.error('Cannot verify API key: Prisma client not found');
+      return null;
+    }
+
+    if (!this.apiKey) {
+      logger.error('No API key provided');
+      return null;
+    }
+
     try {
-      if (this.apiKey) {
-        this.authResult = await this.dbService.validateApiKey(this.apiKey);
+      this.authResult = await this.dbService.validateApiKey(this.apiKey);
+      
+      if (!this.authResult) {
+        return null;
       }
+
+      const markupData = await this.earningsService.getEarningsData(
+        this.authResult,
+        this.getEchoAppId() ?? ''
+      );
+      this.markUpAmount = markupData.markUpAmount;
+      this.markUpId = markupData.markUpId;
+      this.referrerRewardId = markupData.referralId;
+      this.referralAmount = markupData.referralAmount;
+
+      const echoAppId = this.authResult?.echoAppId;
+      const userId = this.authResult?.userId;
+
+    if (echoAppId && userId) {
+      const referralResult = await this.dbService.getReferralCodeForUser(
+        userId,
+        echoAppId
+      );
+      
+      if (referralResult.isOk()) {
+        this.referralCodeId = referralResult.value;
+      } else {
+        logger.error('Failed to get referral code', { error: referralResult.error });
+        this.referralCodeId = null;
+      }
+    }
+
+      return this.authResult;
     } catch (error) {
       logger.error(`Error verifying API key: ${error}`);
       return null;
     }
-
-    const markupData = await this.earningsService.getEarningsData(
-      this.authResult,
-      this.getEchoAppId() ?? ''
-    );
-    this.markUpAmount = markupData.markUpAmount;
-    this.markUpId = markupData.markUpId;
-    this.referrerRewardId = markupData.referralId;
-    this.referralAmount = markupData.referralAmount;
-
-    const echoAppId = this.authResult?.echoAppId;
-    const userId = this.authResult?.userId;
-
-    if (echoAppId && userId) {
-      this.referralCodeId = await this.dbService.getReferralCodeForUser(
-        userId,
-        echoAppId
-      );
-    }
-
-    return this.authResult;
   }
 
   identifyX402Request(echoApp: EchoApp | null, markUp: MarkUp | null): void {
@@ -104,7 +131,6 @@ export class EchoControlService {
       this.markUpAmount = markUp.amount;
       this.markUpId = markUp.id;
     } else {
-      // Default markup amount when no markup is configured
       this.markUpAmount = new Decimal(1.0);
       this.markUpId = null;
     }
@@ -154,81 +180,87 @@ export class EchoControlService {
   /**
    * Get balance for the authenticated user directly from the database
    * Uses centralized logic from EchoDbService
+   * Returns Result with balance or error
    */
-  async getBalance(): Promise<number> {
-    try {
-      if (!this.authResult) {
-        logger.error('No authentication result available');
-        return 0;
-      }
-
-      const { userId } = this.authResult;
-      const balance = await this.dbService.getBalance(userId);
-
-      return balance.balance;
-    } catch (error) {
-      logger.error(`Error fetching balance: ${error}`);
-      return 0;
+  async getBalance(): Promise<AppResult<number, AuthenticationError | DatabaseError>> {
+    if (!this.authResult) {
+      logger.error('No authentication result available');
+      return err(new AuthenticationError('Not authenticated'));
     }
+
+    const { userId } = this.authResult;
+    const balanceResult = await this.dbService.getBalance(userId);
+    
+    if (balanceResult.isErr()) {
+      return err(balanceResult.error);
+    }
+    
+    return ok(balanceResult.value.balance);
   }
 
   /**
    * Create an LLM transaction record directly in the database
    * Uses centralized logic from EchoDbService
    */
-  async createTransaction(transaction: Transaction): Promise<void> {
-    try {
-      if (!this.authResult) {
-        logger.error('No authentication result available');
-        return;
-      }
-
-      if (!this.markUpAmount) {
-        logger.error('Error Fetching Markup Amount');
-        return;
-      }
-
-      if (this.freeTierSpendPool) {
-        await this.createFreeTierTransaction(transaction);
-        return;
-      } else {
-        await this.createPaidTransaction(transaction);
-        return;
-      }
-    } catch (error) {
-      logger.error(`Error creating transaction: ${error}`);
+  async createTransaction(transaction: Transaction): Promise<AppResult<void, AuthenticationError | ValidationError | DatabaseError | PaymentRequiredError>> {
+    if (!this.authResult) {
+      logger.error('No authentication result available');
+      return err(new AuthenticationError('Not authenticated'));
     }
+
+    if (!this.markUpAmount) {
+      logger.error('Error Fetching Markup Amount');
+      return err(new ValidationError('Markup amount not available'));
+    }
+
+    if (this.freeTierSpendPool) {
+      const result = await this.createFreeTierTransaction(transaction);
+      if (result.isErr()) {
+        return err(result.error);
+      }
+    } else {
+      const result = await this.createPaidTransaction(transaction);
+      if (result.isErr()) {
+        return err(result.error);
+      }
+    }
+    return ok(undefined);
   }
 
   async getOrNoneFreeTierSpendPool(
     userId: string,
     appId: string
-  ): Promise<{ spendPool: SpendPool; effectiveBalance: number } | null> {
-    const fetchSpendPoolInfo =
-      await this.freeTierService.getOrNoneFreeTierSpendPool(appId, userId);
-    if (fetchSpendPoolInfo) {
-      this.freeTierSpendPool = fetchSpendPoolInfo.spendPool;
-      return {
-        spendPool: fetchSpendPoolInfo.spendPool,
-        effectiveBalance: fetchSpendPoolInfo.effectiveBalance,
-      };
+  ): Promise<AppResult<{ spendPool: SpendPool; effectiveBalance: number } | null, DatabaseError>> {
+    try {
+      const fetchSpendPoolInfo =
+        await this.freeTierService.getOrNoneFreeTierSpendPool(appId, userId);
+      if (fetchSpendPoolInfo) {
+        this.freeTierSpendPool = fetchSpendPoolInfo.spendPool;
+        return ok({
+          spendPool: fetchSpendPoolInfo.spendPool,
+          effectiveBalance: fetchSpendPoolInfo.effectiveBalance,
+        });
+      }
+      return ok(null);
+    } catch (error) {
+      logger.error('Error fetching free tier spend pool', { error, userId, appId });
+      return err(new DatabaseError('Failed to fetch free tier spend pool', 'getOrNoneFreeTierSpendPool'));
     }
-    return null;
   }
 
   async computeTransactionCosts(
     transaction: Transaction,
     referralCodeId: string | null,
     addEchoProfit: boolean = false
-  ): Promise<TransactionCosts> {
+  ): Promise<AppResult<TransactionCosts, AuthenticationError | ValidationError>> {
     if (!this.markUpAmount) {
       logger.error('User has not authenticated');
-      throw new UnauthorizedError('User has not authenticated');
+      return err(new AuthenticationError('User has not authenticated'));
     }
 
     if (!this.referralAmount) {
       logger.error('Referral amount not found');
-      throw new UnauthorizedError('Referral amount not found');
+      return err(new AuthenticationError('Referral amount not found'));
     }
 
     const markUpDecimal = this.markUpAmount.minus(1);
@@ -236,19 +268,17 @@ export class EchoControlService {
 
     if (markUpDecimal.lessThan(0.0)) {
       logger.error('App markup must be greater than 1.0');
-      throw new UnauthorizedError('App markup must be greater than 1.0');
+      return err(new ValidationError('App markup must be greater than 1.0'));
     }
 
     if (referralDecimal.lessThan(0.0)) {
       logger.error('Referral amount must be greater than 1.0');
-      throw new UnauthorizedError('Referral amount must be greater than 1.0');
+      return err(new ValidationError('Referral amount must be greater than 1.0'));
     }
 
     const totalAppProfitDecimal =
       transaction.rawTransactionCost.mul(markUpDecimal);
 
-    // If there is a referral code, calculate the referral profit
-    // Otherwise, set the referral profit to 0
     const referralProfitDecimal = referralCodeId
       ? totalAppProfitDecimal.mul(referralDecimal)
       : new Decimal(0);
@@ -265,31 +295,35 @@ export class EchoControlService {
       .plus(totalAppProfitDecimal)
       .plus(echoProfitDecimal);
 
-    // Return Decimal values directly
-    return {
+    return ok({
       rawTransactionCost: transaction.rawTransactionCost,
       totalTransactionCost: totalTransactionCostDecimal,
       totalAppProfit: totalAppProfitDecimal,
       referralProfit: referralProfitDecimal,
       markUpProfit: markUpProfitDecimal,
       echoProfit: echoProfitDecimal,
-    };
+    });
   }
-  async createFreeTierTransaction(transaction: Transaction): Promise<void> {
+  async createFreeTierTransaction(transaction: Transaction): Promise<AppResult<void, AuthenticationError | ValidationError | PaymentRequiredError | DatabaseError>> {
     if (!this.authResult) {
       logger.error('No authentication result available');
-      throw new UnauthorizedError('No authentication result available');
+      return err(new AuthenticationError('No authentication result available'));
     }
 
     if (!this.freeTierSpendPool) {
       logger.error('No free tier spend pool available');
-      throw new PaymentRequiredError('No free tier spend pool available');
+      return err(new PaymentRequiredError());
     }
 
     const { userId, echoAppId, apiKeyId } = this.authResult;
     if (!userId || !echoAppId) {
       logger.error('Missing required user or app information');
-      throw new UnauthorizedError('Missing required user or app information');
+      return err(new AuthenticationError('Missing required user or app information'));
+    }
+
+    const costsResult = await this.computeTransactionCosts(transaction, this.referralCodeId);
+    if (costsResult.isErr()) {
+      return err(costsResult.error);
     }
 
     const {
@@ -299,7 +333,7 @@ export class EchoControlService {
       echoProfit,
       referralProfit,
       markUpProfit,
-    } = await this.computeTransactionCosts(transaction, this.referralCodeId);
+    } = costsResult.value;
 
     const transactionData: TransactionRequest = {
       totalCost: totalTransactionCost,
@@ -321,16 +355,27 @@ export class EchoControlService {
       ...(this.referrerRewardId && { referrerRewardId: this.referrerRewardId }),
     };
 
-    await this.freeTierService.createFreeTierTransaction(
-      transactionData,
-      this.freeTierSpendPool.id
-    );
+    try {
+      await this.freeTierService.createFreeTierTransaction(
+        transactionData,
+        this.freeTierSpendPool.id
+      );
+      return ok(undefined);
+    } catch (error) {
+      logger.error('Error creating free tier transaction', { error });
+      return err(new DatabaseError('Failed to create free tier transaction', 'createFreeTierTransaction'));
+    }
   }
 
-  async createPaidTransaction(transaction: Transaction): Promise<void> {
+  async createPaidTransaction(transaction: Transaction): Promise<AppResult<void, AuthenticationError | ValidationError | DatabaseError>> {
     if (!this.authResult) {
       logger.error('No authentication result available');
-      throw new UnauthorizedError('No authentication result available');
+      return err(new AuthenticationError('No authentication result available'));
+    }
+
+    const costsResult = await this.computeTransactionCosts(transaction, this.referralCodeId);
+    if (costsResult.isErr()) {
+      return err(costsResult.error);
     }
 
     const {
@@ -340,7 +385,7 @@ export class EchoControlService {
       referralProfit,
       markUpProfit,
       echoProfit,
-    } = await this.computeTransactionCosts(transaction, this.referralCodeId);
+    } = costsResult.value;
 
     const { userId, echoAppId, apiKeyId } = this.authResult;
 
@@ -361,7 +406,14 @@ export class EchoControlService {
       ...(this.referrerRewardId && { referrerRewardId: this.referrerRewardId }),
     };
 
-    await this.dbService.createPaidTransaction(transactionData);
+    const result = await this.dbService.createPaidTransaction(transactionData);
+    
+    if (result.isErr()) {
+      logger.error('Error creating paid transaction', { error: result.error });
+      return err(result.error);
+    }
+    
+    return ok(undefined);
   }
 
   async identifyX402Transaction(
@@ -379,12 +431,18 @@ export class EchoControlService {
   async createX402Transaction(
     transaction: Transaction,
     addEchoProfit: boolean = true
-  ): Promise<TransactionCosts> {
-    const transactionCosts = await this.computeTransactionCosts(
+  ): Promise<AppResult<TransactionCosts, AuthenticationError | ValidationError | DatabaseError>> {
+    const costsResult = await this.computeTransactionCosts(
       transaction,
       null,
       addEchoProfit
     );
+    
+    if (costsResult.isErr()) {
+      return err(costsResult.error);
+    }
+    
+    const transactionCosts = costsResult.value;
 
     const transactionData: TransactionRequest = {
       totalCost: transactionCosts.totalTransactionCost,
@@ -402,8 +460,13 @@ export class EchoControlService {
       transactionType: EnumTransactionType.X402,
     };
 
-    await this.dbService.createPaidTransaction(transactionData);
-
-    return transactionCosts;
+    const result = await this.dbService.createPaidTransaction(transactionData);
+    
+    if (result.isErr()) {
+      logger.error('Error creating X402 transaction', { error: result.error });
+      return err(result.error);
+    }
+    
+    return ok(transactionCosts);
   }
 }

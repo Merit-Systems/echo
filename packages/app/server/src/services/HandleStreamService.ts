@@ -3,6 +3,8 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeWebReadableStream } from 'node:stream/web';
 import { ReadableStream } from 'stream/web';
+import { ok, err } from 'neverthrow';
+import { AppResult, StreamError, ValidationError } from '../errors';
 import logger from '../logger';
 import { BaseProvider } from '../providers/BaseProvider';
 import { Transaction } from '../types';
@@ -35,16 +37,14 @@ class HandleStreamService {
   ): Promise<Transaction> {
     const bodyStream = response.body as ReadableStream<Uint8Array>;
     if (!bodyStream) {
+      logger.error('No body stream returned from API');
       throw new Error('No body stream returned from API');
     }
 
-    // Duplicate the stream - one for client, one for processing
     const [clientStream, accountingStream] = this.duplicateStream(bodyStream);
 
-    // Promise for streaming data to client
     const streamToClientPromise = this.streamToClient(clientStream, res);
 
-    // Promise for processing data and creating transaction
     const reader2 = accountingStream.getReader();
     const transactionPromise = this.processStreamData(
       req,
@@ -52,20 +52,12 @@ class HandleStreamService {
       provider
     );
 
-    // Wait for both streams to complete before ending response
-    try {
-      const [_, transaction] = await Promise.all([
-        streamToClientPromise,
-        transactionPromise,
-      ]);
-      return transaction;
-    } catch (error) {
-      logger.error(`Error in stream coordination: ${error}`);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Stream processing failed' });
-      }
-      throw error; // Re-throw to be handled by error middleware
-    }
+    const [_, transaction] = await Promise.all([
+      streamToClientPromise,
+      transactionPromise,
+    ]);
+    
+    return transaction;
   }
 
   /**
@@ -92,22 +84,17 @@ class HandleStreamService {
   ): Promise<Transaction> {
     let data = '';
     const decoder = new TextDecoder();
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        data += decoder.decode(value, { stream: true });
-      }
-      // flush any remaining decoder state
-      data += decoder.decode();
-      // Wait for transaction to complete before resolving
-      return await provider.handleBody(data, req.body);
-    } catch (error) {
-      logger.error(`Error processing stream: ${error}`);
-      throw error;
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      data += decoder.decode(value, { stream: true });
     }
+
+    data += decoder.decode();
+    
+    return await provider.handleBody(data, req.body);
   }
 }
 
-// Export singleton instance
 export const handleStreamService = new HandleStreamService();

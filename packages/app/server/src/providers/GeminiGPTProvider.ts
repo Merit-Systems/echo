@@ -61,54 +61,49 @@ export class GeminiGPTProvider extends GPTProvider {
   }
 
   override async handleBody(data: string): Promise<Transaction> {
-    try {
-      let prompt_tokens = 0;
-      let completion_tokens = 0;
-      let total_tokens = 0;
-      let providerId = 'null';
+    let prompt_tokens = 0;
+    let completion_tokens = 0;
+    let total_tokens = 0;
+    let providerId = 'null';
 
-      if (this.getIsStream()) {
-        const chunks = parseSSEGeminiGPTFormat(data);
+    if (this.getIsStream()) {
+      const chunks = parseSSEGeminiGPTFormat(data);
 
-        for (const chunk of chunks) {
-          if (chunk.usage) {
-            prompt_tokens += chunk.usage.prompt_tokens;
-            completion_tokens += chunk.usage.completion_tokens;
-            total_tokens += chunk.usage.total_tokens;
-          }
-          providerId = chunk.id;
+      for (const chunk of chunks) {
+        if (chunk.usage) {
+          prompt_tokens += chunk.usage.prompt_tokens;
+          completion_tokens += chunk.usage.completion_tokens;
+          total_tokens += chunk.usage.total_tokens;
         }
-      } else {
-        const parsed = JSON.parse(data) as CompletionStateBody;
-        prompt_tokens += parsed.usage.prompt_tokens;
-        completion_tokens += parsed.usage.completion_tokens;
-        total_tokens += parsed.usage.total_tokens;
-        providerId = parsed.id;
+        providerId = chunk.id;
       }
-
-      const metadata: LlmTransactionMetadata = {
-        model: this.getModel(),
-        providerId: providerId,
-        provider: this.getType(),
-        inputTokens: prompt_tokens,
-        outputTokens: completion_tokens,
-        totalTokens: total_tokens,
-      };
-
-      const transaction: Transaction = {
-        metadata: metadata,
-        rawTransactionCost: getCostPerToken(
-          this.getModel(),
-          prompt_tokens,
-          completion_tokens
-        ),
-        status: 'success',
-      };
-
-      return transaction;
-    } catch (error) {
-      logger.error(`Error processing data: ${error}`);
-      throw error;
+    } else {
+      const parsed = JSON.parse(data) as CompletionStateBody;
+      prompt_tokens += parsed.usage.prompt_tokens;
+      completion_tokens += parsed.usage.completion_tokens;
+      total_tokens += parsed.usage.total_tokens;
+      providerId = parsed.id;
     }
+
+    const metadata: LlmTransactionMetadata = {
+      model: this.getModel(),
+      providerId: providerId,
+      provider: this.getType(),
+      inputTokens: prompt_tokens,
+      outputTokens: completion_tokens,
+      totalTokens: total_tokens,
+    };
+
+    const transaction: Transaction = {
+      metadata: metadata,
+      rawTransactionCost: getCostPerToken(
+        this.getModel(),
+        prompt_tokens,
+        completion_tokens
+      ),
+      status: 'success',
+    };
+
+    return transaction;
   }
 }

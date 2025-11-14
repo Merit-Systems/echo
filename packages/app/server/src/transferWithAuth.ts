@@ -11,7 +11,13 @@ export async function transfer(
   value: BigInt
 ): Promise<SendUserOperationReturnType> {
   try {
-    const { smartAccount } = await getSmartAccount();
+    const smartAccountResult = await getSmartAccount();
+    
+    if (smartAccountResult.isErr()) {
+      throw new Error(`Failed to get smart account: ${smartAccountResult.error.message}`);
+    }
+
+    const { smartAccount } = smartAccountResult.value;
 
     const result = await smartAccount.sendUserOperation({
       network: 'base',

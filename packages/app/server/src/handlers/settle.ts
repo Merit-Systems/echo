@@ -30,21 +30,23 @@ export async function settle(
 > {
   const network = env.NETWORK as Network;
 
-  let recipient: string;
-  try {
-    recipient = (await getSmartAccount()).smartAccount.address;
-  } catch (error) {
+  const smartAccountResult = await getSmartAccount();
+  
+  if (smartAccountResult.isErr()) {
     buildX402Response(req, res, maxCost);
     return undefined;
   }
 
-  let xPaymentData: PaymentPayload;
-  try {
-    xPaymentData = validateXPaymentHeader(headers, req);
-  } catch (error) {
+  const recipient = smartAccountResult.value.smartAccount.address;
+
+  const paymentHeaderResult = validateXPaymentHeader(headers, req);
+  if (paymentHeaderResult.isErr()) {
+    logger.error('Invalid payment header', { error: paymentHeaderResult.error });
     buildX402Response(req, res, maxCost);
     return undefined;
   }
+
+  const xPaymentData = paymentHeaderResult.value;
 
   const payloadResult = ExactEvmPayloadSchema.safeParse(xPaymentData.payload);
   if (!payloadResult.success) {

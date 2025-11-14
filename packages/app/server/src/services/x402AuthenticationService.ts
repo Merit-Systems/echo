@@ -2,6 +2,7 @@ import { MarkUp, PrismaClient } from '../generated/prisma';
 import { EchoDbService } from './DbService';
 import { EchoApp, Transaction, TransactionCosts } from '../types';
 import { EchoControlService } from './EchoControlService';
+import { AppResult, DatabaseError, AuthenticationError, ValidationError } from '../errors';
 import logger from 'logger';
 import { env } from '../env';
 
@@ -39,18 +40,25 @@ export class X402AuthenticationService {
 
   async createX402Transaction(
     transaction: Transaction
-  ): Promise<TransactionCosts> {
+  ): Promise<AppResult<TransactionCosts, DatabaseError | AuthenticationError | ValidationError>> {
     const applyEchoMarkup = env.APPLY_ECHO_MARKUP === 'true';
-    const transactionCosts =
+    const transactionCostsResult =
       await this.echoControlService.createX402Transaction(
         transaction,
         applyEchoMarkup
       );
 
+    if (transactionCostsResult.isErr()) {
+      logger.error('Failed to create X402 transaction', { 
+        error: transactionCostsResult.error 
+      });
+      return transactionCostsResult;
+    }
+
     logger.info(
       `Created X402 transaction for echo app ${transaction.metadata.provider}`
     );
 
-    return transactionCosts;
+    return transactionCostsResult;
   }
 }
