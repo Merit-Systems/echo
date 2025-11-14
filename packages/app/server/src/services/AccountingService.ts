@@ -6,6 +6,7 @@ import {
   GroqModels,
   OpenAIImageModels,
   SupportedOpenAIResponseToolPricing,
+  GeminiImageGenerationToolPricing,
   SupportedModel,
   SupportedImageModel,
   SupportedVideoModel,
