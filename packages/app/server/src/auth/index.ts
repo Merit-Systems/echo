@@ -2,6 +2,12 @@ import { isX402Request } from 'utils';
 import type { PrismaClient } from '../generated/prisma';
 import { EchoControlService } from '../services/EchoControlService';
 import { verifyUserHeaderCheck } from './headers';
+import { 
+  AppResultAsync, 
+  AuthenticationError, 
+  MissingHeaderError, 
+  InvalidApiKeyError 
+} from '../errors';
 
 /**
  * Handles complete authentication flow including path extraction, header verification, and app ID validation.
@@ -11,26 +17,20 @@ import { verifyUserHeaderCheck } from './headers';
  * 2. Verifies user authentication headers
  * 3. Validates that the authenticated user has permission to use the specified app
  *
- * @param path - The request path
  * @param headers - The request headers
- * @returns Object containing processedHeaders, echoControlService, and forwardingPath
- * @throws UnauthorizedError if authentication fails or app ID validation fails
+ * @param prisma - Prisma client instance
+ * @returns ResultAsync containing object with processedHeaders and echoControlService
  */
-export async function authenticateRequest(
+export function authenticateRequest(
   headers: Record<string, string>,
   prisma: PrismaClient
-): Promise<{
+): AppResultAsync<{
   processedHeaders: Record<string, string>;
   echoControlService: EchoControlService;
-}> {
-  // Process headers and instantiate provider
-  const [processedHeaders, echoControlService] = await verifyUserHeaderCheck(
-    headers,
-    prisma
-  );
-
-  return {
-    processedHeaders,
-    echoControlService,
-  };
+}, AuthenticationError | MissingHeaderError | InvalidApiKeyError> {
+  return verifyUserHeaderCheck(headers, prisma)
+    .map(([processedHeaders, echoControlService]) => ({
+      processedHeaders,
+      echoControlService,
+    }));
 }

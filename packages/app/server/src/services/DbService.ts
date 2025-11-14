@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { createHmac } from 'crypto';
 import { jwtVerify } from 'jose';
+import { ok, err, ResultAsync } from 'neverthrow';
 import {
   PrismaClient,
   Prisma,
@@ -19,6 +20,15 @@ import {
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from '../logger';
 import { env } from '../env';
+import { 
+  AppResult, 
+  AppResultAsync, 
+  InvalidApiKeyError,
+  DatabaseError,
+  AuthenticationError,
+  ValidationError,
+  safeAsync
+} from '../errors';
 
 /**
  * Secret key for deterministic API key hashing (should match echo-control)
@@ -180,31 +190,41 @@ export class EchoDbService {
   async getReferralCodeForUser(
     userId: string,
     echoAppId: string
-  ): Promise<string | null> {
-    const appMembership = await this.db.appMembership.findUnique({
-      where: {
-        userId_echoAppId: {
-          userId,
-          echoAppId,
+  ): Promise<AppResult<string | null, DatabaseError>> {
+    try {
+      const appMembership = await this.db.appMembership.findUnique({
+        where: {
+          userId_echoAppId: {
+            userId,
+            echoAppId,
+          },
         },
-      },
-      select: {
-        referrerId: true,
-      },
-    });
+        select: {
+          referrerId: true,
+        },
+      });
 
-    if (!appMembership) {
-      return null;
+      if (!appMembership) {
+        return ok(null);
+      }
+
+      return ok(appMembership.referrerId);
+    } catch (error) {
+      logger.error('Error fetching referral code', { error, userId, echoAppId });
+      return err(new DatabaseError(
+        'Failed to fetch referral code',
+        'getReferralCodeForUser',
+        { userId, echoAppId, error: String(error) }
+      ));
     }
-
-    return appMembership.referrerId;
   }
 
   /**
    * Calculate total balance for a user across all apps
    * Uses User.totalPaid and User.totalSpent for consistent balance calculation
+   * Returns Result with balance or error
    */
-  async getBalance(userId: string): Promise<Balance> {
+  async getBalance(userId: string): Promise<AppResult<Balance, DatabaseError>> {
     try {
       const user = await this.db.user.findUnique({
         where: { id: userId },
@@ -221,29 +241,25 @@ export class EchoDbService {
 
       if (!user) {
         logger.error(`User not found: ${userId}`);
-        return {
-          balance: 0,
-          totalPaid: 0,
-          totalSpent: 0,
-        };
+        return err(new DatabaseError(`User not found: ${userId}`, 'getBalance'));
       }
 
       const totalPaid = Number(user.totalPaid);
       const totalSpent = Number(user.totalSpent);
       const balance = totalPaid - totalSpent;
 
-      return {
+      return ok({
         balance,
         totalPaid,
         totalSpent,
-      };
+      });
     } catch (error) {
       logger.error(`Error fetching balance: ${error}`);
-      return {
-        balance: 0,
-        totalPaid: 0,
-        totalSpent: 0,
-      };
+      return err(new DatabaseError(
+        'Failed to fetch balance',
+        'getBalance',
+        { userId, error: String(error) }
+      ));
     }
   }
 
@@ -402,13 +418,14 @@ export class EchoDbService {
   /**
    * Create an LLM transaction record and atomically update user's totalSpent
    * Centralized logic for transaction creation with atomic balance updates
+   * Returns Result with transaction or error
    */
   async createPaidTransaction(
     transaction: TransactionRequest
-  ): Promise<Transaction | null> {
+  ): Promise<AppResult<Transaction, DatabaseError>> {
     try {
       // Use a database transaction to atomically create the LLM transaction and update user balance
-      const result = await this.db.$transaction(async tx => {
+      const result = await this.db.$transaction(async (tx) => {
         // Create the LLM transaction record
         const dbTransaction = await this.createTransactionRecord(
           tx,
@@ -435,10 +452,14 @@ export class EchoDbService {
         `Created transaction for model ${transaction.metadata.model}: $${transaction.totalCost}, updated user totalSpent`,
         result.id
       );
-      return result;
+      return ok(result);
     } catch (error) {
       logger.error(`Error creating transaction and updating balance: ${error}`);
-      return null;
+      return err(new DatabaseError(
+        'Failed to create transaction and update balance',
+        'createPaidTransaction',
+        { error: String(error) }
+      ));
     }
   }
 
@@ -456,7 +477,7 @@ export class EchoDbService {
     userSpendPoolUsage: UserSpendPoolUsage | null;
   }> {
     try {
-      return await this.db.$transaction(async tx => {
+      return await this.db.$transaction(async (tx) => {
         // 1. Verify the spend pool exists
         const spendPool = await tx.spendPool.findUnique({
           where: { id: spendPoolId },

@@ -86,7 +86,7 @@ export class TransactionEscrowMiddleware {
     echoAppId: string,
     effectiveBalance: number
   ): Promise<void> {
-    await this.db.$transaction(async tx => {
+    await this.db.$transaction(async (tx) => {
       // Get current in-flight request count
       const currentInFlightRequest = await tx.inFlightRequest.findUnique({
         where: {
@@ -156,7 +156,7 @@ export class TransactionEscrowMiddleware {
     echoAppId: string
   ): Promise<void> {
     try {
-      await this.db.$transaction(async tx => {
+      await this.db.$transaction(async (tx) => {
         const inFlightRequest = await tx.inFlightRequest.findUnique({
           where: {
             userId_echoAppId: {

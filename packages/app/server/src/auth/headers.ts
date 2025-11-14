@@ -1,13 +1,26 @@
 import { context, trace } from '@opentelemetry/api';
-import { UnauthorizedError } from '../errors/http';
+import { ResultAsync } from 'neverthrow';
+import { 
+  AuthenticationError, 
+  MissingHeaderError,
+  InvalidApiKeyError 
+} from '../errors';
+import { AppResultAsync } from '../errors/result-helpers';
 import type { PrismaClient } from '../generated/prisma';
 import logger from '../logger';
 import { EchoControlService } from '../services/EchoControlService';
 
-export const verifyUserHeaderCheck = async (
+/**
+ * Processes authentication headers and returns processed headers with EchoControlService
+ * 
+ * @param headers - Request headers
+ * @param prisma - Prisma client instance
+ * @returns ResultAsync containing tuple of processed headers and EchoControlService
+ */
+export const verifyUserHeaderCheck = (
   headers: Record<string, string>,
   prisma: PrismaClient
-): Promise<[Record<string, string>, EchoControlService]> => {
+): AppResultAsync<[Record<string, string>, EchoControlService], AuthenticationError | MissingHeaderError | InvalidApiKeyError> => {
   /**
    * Process authentication for the user (authenticated with Echo Api Key)
    *
@@ -39,32 +52,47 @@ export const verifyUserHeaderCheck = async (
 
   if (!(authorization || xApiKey || xGoogleApiKey)) {
     logger.error(`Missing authentication headers: ${JSON.stringify(headers)}`);
-    throw new UnauthorizedError('Please include auth headers.');
+    return ResultAsync.fromPromise(
+      Promise.reject(new MissingHeaderError('authentication', 'Please include auth headers.')),
+      (e) => e as MissingHeaderError
+    );
   }
 
   const apiKey = authorization ?? xApiKey ?? xGoogleApiKey;
   const cleanApiKey = apiKey?.replace('Bearer ', '') ?? '';
+  
   const echoControlService = new EchoControlService(prisma, cleanApiKey);
-  const authResult = await echoControlService.verifyApiKey();
+  
+  return ResultAsync.fromPromise(
+    echoControlService.verifyApiKey(),
+    (e) => new InvalidApiKeyError({ apiKey: cleanApiKey.substring(0, 8) + '...' })
+  )
+    .andThen((authResult) => {
+      if (!authResult) {
+        logger.error('API key validation returned null');
+        return ResultAsync.fromPromise(
+          Promise.reject(new InvalidApiKeyError({ apiKey: cleanApiKey.substring(0, 8) + '...' })),
+          (e) => e as InvalidApiKeyError
+        );
+      }
 
-  if (!authResult) {
-    throw new UnauthorizedError('Authentication failed.');
-  }
+      const span = trace.getSpan(context.active());
+      if (span) {
+        span.setAttribute('echo.app.id', authResult.echoApp.id);
+        span.setAttribute('echo.app.name', authResult.echoApp.name);
+        span.setAttribute('echo.user.id', authResult.user.id);
+        span.setAttribute('echo.user.email', authResult.user.email);
+        span.setAttribute('echo.user.name', authResult.user.name ?? '');
+      }
 
-  const span = trace.getSpan(context.active());
-  if (span) {
-    span.setAttribute('echo.app.id', authResult.echoApp.id);
-    span.setAttribute('echo.app.name', authResult.echoApp.name);
-    span.setAttribute('echo.user.id', authResult.user.id);
-    span.setAttribute('echo.user.email', authResult.user.email);
-    span.setAttribute('echo.user.name', authResult.user.name ?? '');
-  }
+      const processedHeaders = {
+        ...restHeaders,
+        'accept-encoding': 'gzip, deflate',
+      };
 
-  return [
-    {
-      ...restHeaders,
-      'accept-encoding': 'gzip, deflate',
-    },
-    echoControlService,
-  ];
+      return ResultAsync.fromPromise(
+        Promise.resolve([processedHeaders, echoControlService] as [Record<string, string>, EchoControlService]),
+        (e) => new AuthenticationError('Failed to create auth result')
+      );
+    });
 };

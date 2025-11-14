@@ -1,5 +1,13 @@
 import { Request, Response } from 'express';
+import { ok, err } from 'neverthrow';
 import { HttpError } from '../errors/http';
+import { 
+  AppResult, 
+  AppResultAsync, 
+  ProviderError, 
+  ValidationError,
+  safeAsync 
+} from '../errors';
 import logger from '../logger';
 import { BaseProvider } from '../providers/BaseProvider';
 import { Transaction } from '../types';
@@ -23,74 +31,85 @@ class ModelRequestService {
     processedHeaders: Record<string, string>,
     provider: BaseProvider,
     isStream: boolean
-  ): Promise<{
+  ): Promise<AppResult<{
     transaction: Transaction;
     data: unknown;
-  }> {
-    // Format authentication headers
-    const authenticatedHeaders =
-      await provider.formatAuthHeaders(processedHeaders);
+  }, ProviderError | ValidationError>> {
+    try {
+      const authenticatedHeaders =
+        await provider.formatAuthHeaders(processedHeaders);
 
-    logger.info(
-      `New outbound request: ${req.method} ${provider.getBaseUrl(req.path)}${req.path}`
-    );
-
-    // Ensure stream usage is set correctly (OpenAI Format)
-    req.body = provider.ensureStreamUsage(req.body, req.path);
-
-    // Apply provider-specific request body transformations
-    req.body = provider.transformRequestBody(req.body, req.path);
-
-    // Format request body and headers based on content type
-    const { requestBody, headers: formattedHeaders } = this.formatRequestBody(
-      req,
-      authenticatedHeaders
-    );
-
-    // this rewrites the base url to the provider's base url and retains the rest
-    const upstreamUrl = formatUpstreamUrl(provider, req);
-
-    // Forward the request to the provider's API
-    const response = await fetch(upstreamUrl, {
-      method: req.method,
-      headers: formattedHeaders,
-      ...(requestBody && { body: requestBody }),
-    });
-
-    // Handle non-200 responses
-    if (response.status !== 200) {
-      const errorMessage = `${response.status} ${response.statusText}`;
-      logger.error(`Error response: ${errorMessage}`);
-
-      const errorBody = await response.text().catch(() => '');
-      const error = this.parseErrorResponse(errorBody, response.status);
-
-      logger.error(`Error details: ${JSON.stringify(error)}`);
-      res.status(response.status).json({ error });
-      throw new HttpError(response.status, JSON.stringify(error));
-    }
-
-    // Handle the successful response based on stream type
-    if (isStream) {
-      const transaction = await handleStreamService.handleStream(
-        response,
-        provider,
-        req,
-        res
+      logger.info(
+        `New outbound request: ${req.method} ${provider.getBaseUrl(req.path)}${req.path}`
       );
-      return {
-        transaction,
-        data: null,
-      };
-    } else {
-      const { transaction, data } =
-        await handleNonStreamingService.handleNonStreaming(
+
+      req.body = provider.ensureStreamUsage(req.body, req.path);
+
+      req.body = provider.transformRequestBody(req.body, req.path);
+
+      const { requestBody, headers: formattedHeaders } = this.formatRequestBody(
+        req,
+        authenticatedHeaders
+      );
+
+      const upstreamUrl = formatUpstreamUrl(provider, req);
+
+      const response = await fetch(upstreamUrl, {
+        method: req.method,
+        headers: formattedHeaders,
+        ...(requestBody && { body: requestBody }),
+      });
+
+      if (response.status !== 200) {
+        const errorMessage = `${response.status} ${response.statusText}`;
+        logger.error(`Error response: ${errorMessage}`);
+
+        const errorBody = await response.text().catch(() => '');
+        const error = this.parseErrorResponse(errorBody, response.status);
+
+        logger.error(`Error details: ${JSON.stringify(error)}`);
+        
+        res.status(response.status).json({ error });
+        
+        return err(new ProviderError(
+          provider.getType(),
+          typeof error === 'object' && error !== null && 'message' in error 
+            ? String(error.message) 
+            : errorMessage,
+          response.status,
+          { errorBody: error }
+        ));
+      }
+
+      if (isStream) {
+        const transaction = await handleStreamService.handleStream(
           response,
           provider,
           req,
           res
         );
-      return { transaction, data };
+        return ok({
+          transaction,
+          data: null,
+        });
+      } else {
+        const { transaction, data } =
+          await handleNonStreamingService.handleNonStreaming(
+            response,
+            provider,
+            req,
+            res
+          );
+        return ok({ transaction, data });
+      }
+    } catch (error) {
+      logger.error('Unexpected error in executeModelRequest', { error });
+      return err(new ProviderError(
+        provider.getType(),
+        error instanceof Error ? error.message : 'Unknown error occurred',
+        500,
+        { originalError: error }
+      ));
     }
   }
 
@@ -121,22 +140,18 @@ class ModelRequestService {
     let finalHeaders = { ...authenticatedHeaders };
 
     if (req.method !== 'GET') {
-      // Check if this is a form data request
       const hasFiles =
         req.files && Array.isArray(req.files) && req.files.length > 0;
       const isMultipart =
         req.get('content-type')?.includes('multipart/form-data') ?? false;
 
       if (hasFiles || isMultipart) {
-        // Create FormData for multipart requests
         const formData = new FormData();
 
-        // Add text fields from req.body
         Object.entries(req.body || {}).forEach(([key, value]) => {
           formData.append(key, String(value));
         });
 
-        // Add files from req.files
         if (req.files && Array.isArray(req.files)) {
           req.files.forEach(file => {
             const blob = new Blob([new Uint8Array(file.buffer)], {
@@ -147,13 +162,11 @@ class ModelRequestService {
         }
 
         requestBody = formData;
-        // Remove content-type header to let fetch set it with boundary
         delete finalHeaders['content-type'];
         delete finalHeaders['Content-Type'];
 
         logger.info('Forwarding form data request with files');
       } else {
-        // Handle as JSON request
         requestBody = JSON.stringify(req.body);
       }
     }
@@ -174,5 +187,4 @@ class ModelRequestService {
   }
 }
 
-// Export singleton instance
 export const modelRequestService = new ModelRequestService();

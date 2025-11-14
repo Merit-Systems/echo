@@ -10,6 +10,7 @@ import { ProviderType } from 'providers/ProviderType';
 import { settle } from 'handlers/settle';
 import { finalize } from 'handlers/finalize';
 import { refund } from 'handlers/refund';
+import { AppResult, ProviderError, ValidationError, DatabaseError } from 'errors';
 
 export async function handleX402Request({
   req,
@@ -24,6 +25,7 @@ export async function handleX402Request({
   if (isPassthroughProxyRoute) {
     return await makeProxyPassthroughRequest(req, res, provider, headers);
   }
+  
   const settleResult = await settle(req, res, headers, maxCost);
   if (!settleResult) {
     return;
@@ -31,16 +33,27 @@ export async function handleX402Request({
 
   const { payload, paymentAmountDecimal } = settleResult;
 
-  try {
-    const transactionResult = await modelRequestService.executeModelRequest(
-      req,
-      res,
-      headers,
-      provider,
-      isStream
-    );
-    const transaction = transactionResult.transaction;
-    if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
+  const transactionResult = await modelRequestService.executeModelRequest(
+    req,
+    res,
+    headers,
+    provider,
+    isStream
+  );
+
+  if (transactionResult.isErr()) {
+    logger.error('Model request failed for X402', { 
+      error: transactionResult.error,
+      type: transactionResult.error.type 
+    });
+    await refund(paymentAmountDecimal, payload);
+    return;
+  }
+
+  const { transaction, data } = transactionResult.value;
+
+  if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
+    try {
       await prisma.videoGenerationX402.create({
         data: {
           videoId: transaction.metadata.providerId,
@@ -49,20 +62,31 @@ export async function handleX402Request({
           expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 1),
         },
       });
+    } catch (error) {
+      logger.error('Failed to create video generation record', { error });
     }
+  }
 
-    modelRequestService.handleResolveResponse(
-      res,
-      isStream,
-      transactionResult.data
-    );
+  modelRequestService.handleResolveResponse(res, isStream, data);
 
-    logger.info(
-      `Creating X402 transaction for app. Metadata: ${JSON.stringify(transaction.metadata)}`
-    );
-    const transactionCosts =
-      await x402AuthenticationService.createX402Transaction(transaction);
+  logger.info(
+    `Creating X402 transaction for app. Metadata: ${JSON.stringify(transaction.metadata)}`
+  );
 
+  const transactionCostsResult =
+    await x402AuthenticationService.createX402Transaction(transaction);
+
+  if (transactionCostsResult.isErr()) {
+    logger.error('Failed to create X402 transaction', { 
+      error: transactionCostsResult.error 
+    });
+    await refund(paymentAmountDecimal, payload);
+    return;
+  }
+
+  const transactionCosts = transactionCostsResult.value;
+
+  try {
     await finalize(
       paymentAmountDecimal,
       transactionCosts.rawTransactionCost,
@@ -71,6 +95,7 @@ export async function handleX402Request({
       payload
     );
   } catch (error) {
+    logger.error('Failed to finalize payment', { error });
     await refund(paymentAmountDecimal, payload);
   }
 }
@@ -93,7 +118,6 @@ export async function handleApiKeyRequest({
 
   const balanceCheckResult = await checkBalance(echoControlService);
 
-  // Step 2: Set up escrow context and apply escrow middleware logic
   transactionEscrowMiddleware.setupEscrowContext(
     req,
     echoControlService.getUserId()!,
@@ -107,8 +131,7 @@ export async function handleApiKeyRequest({
     return await makeProxyPassthroughRequest(req, res, provider, headers);
   }
 
-  // Step 3: Execute business logic
-  const { transaction, data } = await modelRequestService.executeModelRequest(
+  const transactionResult = await modelRequestService.executeModelRequest(
     req,
     res,
     headers,
@@ -116,26 +139,53 @@ export async function handleApiKeyRequest({
     isStream
   );
 
-  // There is no actual refund, this logs if we underestimate the raw cost
+  if (transactionResult.isErr()) {
+    logger.error('Model request failed for API key request', { 
+      error: transactionResult.error,
+      type: transactionResult.error.type 
+    });
+    return;
+  }
+
+  const { transaction, data } = transactionResult.value;
+
   calculateRefundAmount(maxCost, transaction.rawTransactionCost);
 
   modelRequestService.handleResolveResponse(res, isStream, data);
 
-  await echoControlService.createTransaction(transaction);
+  const createTransactionResult = await echoControlService.createTransaction(transaction);
+  
+  if (createTransactionResult.isErr()) {
+    logger.error('Failed to create transaction', { 
+      error: createTransactionResult.error 
+    });
+  }
 
   if (provider.getType() === ProviderType.OPENAI_VIDEOS) {
-    const transactionCost = await echoControlService.computeTransactionCosts(
+    const transactionCostResult = await echoControlService.computeTransactionCosts(
       transaction,
       null
     );
-    await prisma.videoGenerationX402.create({
-      data: {
-        videoId: transaction.metadata.providerId,
-        userId: echoControlService.getUserId()!,
-        echoAppId: echoControlService.getEchoAppId()!,
-        cost: transactionCost.totalTransactionCost,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 1),
-      },
-    });
+    
+    if (transactionCostResult.isErr()) {
+      logger.error('Failed to compute transaction costs for video', { 
+        error: transactionCostResult.error 
+      });
+      return;
+    }
+
+    try {
+      await prisma.videoGenerationX402.create({
+        data: {
+          videoId: transaction.metadata.providerId,
+          userId: echoControlService.getUserId()!,
+          echoAppId: echoControlService.getEchoAppId()!,
+          cost: transactionCostResult.value.totalTransactionCost,
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 1),
+        },
+      });
+    } catch (error) {
+      logger.error('Failed to create video generation record', { error });
+    }
   }
 }

@@ -1,6 +1,8 @@
 import { X402_ERROR_MESSAGE } from '../constants';
-import { PaymentRequiredError, UnauthorizedError } from '../errors/http';
+import { UnauthorizedError } from '../errors/http';
+import { PaymentRequiredError } from '../errors';
 import { EchoControlService } from './EchoControlService';
+import logger from '../logger';
 
 interface BalanceCheckResult {
   enoughBalance: boolean;
@@ -24,20 +26,27 @@ export async function checkBalance(
     throw new UnauthorizedError('Unauthorized');
   }
 
-  // Check for free tier access first
-  const freeTierSpendPoolInfo =
+  const freeTierResult =
     await echoControlService.getOrNoneFreeTierSpendPool(userId, appId);
 
-  if (freeTierSpendPoolInfo) {
+  if (freeTierResult.isErr()) {
+    logger.error('Failed to check free tier', { error: freeTierResult.error });
+  } else if (freeTierResult.value) {
     return {
       enoughBalance: true,
       usingFreeTier: true,
-      effectiveBalance: freeTierSpendPoolInfo.effectiveBalance,
+      effectiveBalance: freeTierResult.value.effectiveBalance,
     };
   }
 
-  // If no free tier, check regular balance
-  const balance = await echoControlService.getBalance();
+  const balanceResult = await echoControlService.getBalance();
+
+  if (balanceResult.isErr()) {
+    logger.error('Failed to check balance', { error: balanceResult.error });
+    throw new PaymentRequiredError();
+  }
+
+  const balance = balanceResult.value;
 
   if (balance > MINIMUM_SPEND_AMOUNT_SAFETY_BUFFER) {
     return {
@@ -46,5 +55,5 @@ export async function checkBalance(
       effectiveBalance: balance,
     };
   }
-  throw new PaymentRequiredError(X402_ERROR_MESSAGE);
+  throw new PaymentRequiredError();
 }
