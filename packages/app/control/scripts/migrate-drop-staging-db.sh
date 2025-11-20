@@ -54,11 +54,11 @@ echo ""
 
 # Reset the database (drops all data and schema)
 echo "📥 Resetting database..."
-pnpx prisma db push --force-reset --accept-data-loss
+pnpm exec prisma db push --force-reset --accept-data-loss
 
 # Generate Prisma client
 echo "🔧 Generating Prisma client..."
-pnpx prisma generate
+pnpm exec prisma generate
 
 echo ""
 echo "✅ Database migration completed successfully!"
@@ -66,5 +66,5 @@ echo "📊 The staging database has been reset and the current schema has been a
 echo ""
 echo "You can now:"
 echo "  - Run your application against the fresh staging database"
-echo "  - Use 'pnpx prisma studio' to view the database"
+echo "  - Use 'pnpm exec prisma studio' to view the database"
 echo "  - Seed the database with test data if needed"
