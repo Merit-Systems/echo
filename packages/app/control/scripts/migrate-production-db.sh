@@ -56,18 +56,18 @@ echo ""
 
 # Check migration status first
 echo "📋 Checking current migration status..."
-pnpx prisma migrate status
+pnpm exec prisma migrate status
 
 echo ""
 echo "🔄 Applying pending migrations..."
 
 # Apply migrations (this is safe - it only applies new migrations)
-pnpx prisma migrate deploy
+pnpm exec prisma migrate deploy
 
 # Generate Prisma client to ensure it's up to date
 echo ""
 echo "🔧 Generating Prisma client..."
-pnpx prisma generate
+pnpm exec prisma generate
 
 echo ""
 echo "✅ Production database migration completed successfully!"
@@ -76,11 +76,11 @@ echo ""
 
 # Show final migration status
 echo "📋 Final migration status:"
-pnpx prisma migrate status
+pnpm exec prisma migrate status
 
 echo ""
 echo "🎉 Production database is now up to date!"
 echo "You can verify the changes by:"
 echo "  - Checking your application logs"
 echo "  - Running health checks on your production application"
-echo "  - Using 'pnpx prisma studio' (with production credentials) to inspect the database"
+echo "  - Using 'pnpm exec prisma studio' (with production credentials) to inspect the database"

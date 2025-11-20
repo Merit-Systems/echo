@@ -40,13 +40,13 @@ fi
 
 # Run Prisma migrations
 echo "🔄 Running Prisma migrations..."
-npx prisma generate
-npx prisma db push
+pnpm exec prisma generate
+pnpm exec prisma db push
 
 echo "🎉 Database setup complete!"
 echo ""
 echo "📊 You can now run:"
 echo "  npm run dev          # Start the application"
-echo "  npx prisma studio    # View the database"
+echo "  pnpm exec prisma studio    # View the database"
 echo "  docker logs local-postgres  # View database logs"
 echo "  docker stop local-postgres  # Stop the database"

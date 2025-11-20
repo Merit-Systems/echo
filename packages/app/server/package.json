@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "copy-schema": "mkdir -p prisma && cp ../control/prisma/schema.prisma prisma/ && cp -r ../control/prisma/migrations prisma/",
-    "prisma:generate": "pnpx prisma generate",
+    "prisma:generate": "pnpm exec prisma generate",
     "setup-prisma": "pnpm run copy-schema && pnpm run prisma:generate",
     "copy-prisma": "pnpm run setup-prisma",
     "copy-prisma-to-dist": "mkdir -p dist/generated && cp -r src/generated/prisma dist/generated/",
@@ -14,7 +14,7 @@
     "prestart": "pnpm run copy-prisma",
     "dev": "pnpm run build && node dist/server.js",
     "start": "node dist/server.js",
-    "prisma:migrate-deploy": "pnpx prisma migrate deploy",
+    "prisma:migrate-deploy": "pnpm exec prisma migrate deploy",
     "anthropic-client": "npx tsx src/clients/anthropic-client.ts",
     "anthropic-gpt-client": "npx tsx src/clients/anthropic-gpt-client.ts",
     "gemini-client": "npx tsx src/clients/gemini-client.ts",
