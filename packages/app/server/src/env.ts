@@ -35,7 +35,7 @@ export const env = createEnv({
     X402RS_FACILITATOR_METHOD_PREFIX: z.string().optional(),
     PAYAI_FACILITATOR_BASE_URL: z.string().url().optional(),
     PAYAI_FACILITATOR_METHOD_PREFIX: z.string().optional(),
-    FACILITATOR_REQUEST_TIMEOUT: z.coerce.number().default(20000),
+    FACILITATOR_REQUEST_TIMEOUT: z.coerce.number().default(60000),
 
     // API Keys - Providers
     ECHO_API_KEY: z.string().optional(),
