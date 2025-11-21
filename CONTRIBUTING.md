@@ -78,10 +78,12 @@ Ready to code? Check our [open issues](https://github.com/Merit-Systems/echo/iss
 
 - **Node.js**: 18.0.0 or higher
 - **pnpm**: 10.0.0 or higher
-- **PostgreSQL**: Required for running Echo Control locally
+- **Docker & Docker Compose**: Required for running PostgreSQL locally
 - **Git**: For version control
 
 ### Initial Setup
+
+The fastest way to get started is using the automated setup script:
 
 1. **Fork and clone the repository**
 
@@ -90,37 +92,51 @@ Ready to code? Check our [open issues](https://github.com/Merit-Systems/echo/iss
    cd echo
    ```
 
-2. **Install dependencies**
+2. **Run the setup script** (recommended)
 
    ```bash
-   pnpm install
+   bash scripts/setup-local.sh
    ```
 
-3. **Set up environment variables**
+   This script will:
+   - Check all prerequisites
+   - Install dependencies
+   - Set up environment variables
+   - Start PostgreSQL in Docker
+   - Run database migrations
+   - Provide next steps
 
-   ```bash
-   pnpm local-setup
-   ```
-
-4. **Set up the database** (for Echo Control)
-
-   ```bash
-   cd packages/app/control
-   ./setup-db.sh
-   # Or manually:
-   npx prisma generate
-   npx prisma db push
-   ```
-
-5. **Start development servers**
-
-   From the root directory:
+3. **Start development servers**
 
    ```bash
    pnpm dev
    ```
 
    This starts both Echo Control (localhost:3000) and Echo Server simultaneously.
+
+   Visit http://localhost:3000 to see Echo running!
+
+### Manual Setup (Alternative)
+
+If you prefer to set up manually or the script encounters issues:
+
+1. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+2. **Set up Echo Control**
+   ```bash
+   cd packages/app/control
+   pnpm local-setup
+   # This generates .env file, AUTH_SECRET, and runs migrations
+   cd ../..
+   ```
+
+3. **Start development**
+   ```bash
+   pnpm dev
+   ```
 
 ## Development Workflow
 
