@@ -163,7 +163,7 @@ type TokenAmount = string;
 type Url = string;
 type Nonce = string;
 
-interface ExactEvmPayloadAuthorization {
+export interface ExactEvmPayloadAuthorization {
   from: Address;
   to: Address;
   value: TokenAmount;
