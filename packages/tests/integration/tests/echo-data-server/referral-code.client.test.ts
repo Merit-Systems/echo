@@ -1,10 +1,10 @@
 import { describe, test, expect, beforeAll } from 'vitest';
 import { TEST_CONFIG, TEST_DATA, TEST_CLIENT_IDS } from '@/config/index';
-import { echoControlApi } from '@/utils/api-client';
+import { echoControlApi, EchoControlApiClient } from '@/utils/api-client';
 import {
-  startOAuthFlow,
-  extractAuthorizationCodeFromUrl,
-  completeOAuthFlow,
+  generateCodeVerifier,
+  generateCodeChallenge,
+  generateState,
 } from '@/utils/auth-helpers';
 
 describe('Referral Code Client', () => {
@@ -14,70 +14,94 @@ describe('Referral Code Client', () => {
   const testAppId = TEST_CLIENT_IDS.primary;
 
   beforeAll(async () => {
-    // Get access tokens for all three test users
+    // Get access tokens via OAuth for all three test users
     // Primary user (has a referral code in seed data)
-    const primaryFlow = await startOAuthFlow({
-      clientId: testAppId,
-    });
+    const codeVerifier1 = generateCodeVerifier();
+    const codeChallenge1 = generateCodeChallenge(codeVerifier1);
+    const state1 = generateState();
+
     const primaryAuthUrl = await echoControlApi.validateOAuthAuthorizeRequest({
-      client_id: primaryFlow.clientId,
-      redirect_uri: primaryFlow.redirectUri,
-      state: primaryFlow.state,
-      code_challenge: primaryFlow.codeChallenge,
+      client_id: testAppId,
+      redirect_uri: 'http://localhost:3000/callback',
+      state: state1,
+      code_challenge: codeChallenge1,
       code_challenge_method: 'S256',
-      scope: primaryFlow.scope,
+      scope: 'llm:invoke offline_access',
+      prompt: 'none',
     });
-    const primaryAuthCode =
-      extractAuthorizationCodeFromUrl(primaryAuthUrl).code;
-    const primaryTokens = await completeOAuthFlow(primaryAuthCode, primaryFlow);
+
+    const primaryCallbackUrl = new URL(primaryAuthUrl);
+    const primaryAuthCode = primaryCallbackUrl.searchParams.get('code');
+    expect(primaryAuthCode).toBeTruthy();
+
+    const primaryTokens = await echoControlApi.exchangeCodeForToken({
+      code: primaryAuthCode!,
+      client_id: testAppId,
+      redirect_uri: 'http://localhost:3000/callback',
+      code_verifier: codeVerifier1,
+    });
     primaryUserAccessToken = primaryTokens.access_token;
 
     // Secondary user (also has a referral code in seed data)
-    const api2 = new (echoControlApi.constructor as any)(
+    const api2 = new EchoControlApiClient(
       TEST_CONFIG.services.echoControl,
       'test-user-2'
     );
-    const secondaryFlow = await startOAuthFlow({
-      clientId: testAppId,
-    });
+    const codeVerifier2 = generateCodeVerifier();
+    const codeChallenge2 = generateCodeChallenge(codeVerifier2);
+    const state2 = generateState();
+
     const secondaryAuthUrl = await api2.validateOAuthAuthorizeRequest({
-      client_id: secondaryFlow.clientId,
-      redirect_uri: secondaryFlow.redirectUri,
-      state: secondaryFlow.state,
-      code_challenge: secondaryFlow.codeChallenge,
+      client_id: testAppId,
+      redirect_uri: 'http://localhost:3000/callback',
+      state: state2,
+      code_challenge: codeChallenge2,
       code_challenge_method: 'S256',
-      scope: secondaryFlow.scope,
+      scope: 'llm:invoke offline_access',
+      prompt: 'none',
     });
-    const secondaryAuthCode =
-      extractAuthorizationCodeFromUrl(secondaryAuthUrl).code;
-    const secondaryTokens = await completeOAuthFlow(
-      secondaryAuthCode,
-      secondaryFlow
-    );
+
+    const secondaryCallbackUrl = new URL(secondaryAuthUrl);
+    const secondaryAuthCode = secondaryCallbackUrl.searchParams.get('code');
+    expect(secondaryAuthCode).toBeTruthy();
+
+    const secondaryTokens = await echoControlApi.exchangeCodeForToken({
+      code: secondaryAuthCode!,
+      client_id: testAppId,
+      redirect_uri: 'http://localhost:3000/callback',
+      code_verifier: codeVerifier2,
+    });
     secondaryUserAccessToken = secondaryTokens.access_token;
 
     // Tertiary user (does not have a referral code yet)
-    const api3 = new (echoControlApi.constructor as any)(
+    const api3 = new EchoControlApiClient(
       TEST_CONFIG.services.echoControl,
       'test-user-3'
     );
-    const tertiaryFlow = await startOAuthFlow({
-      clientId: testAppId,
-    });
+    const codeVerifier3 = generateCodeVerifier();
+    const codeChallenge3 = generateCodeChallenge(codeVerifier3);
+    const state3 = generateState();
+
     const tertiaryAuthUrl = await api3.validateOAuthAuthorizeRequest({
-      client_id: tertiaryFlow.clientId,
-      redirect_uri: tertiaryFlow.redirectUri,
-      state: tertiaryFlow.state,
-      code_challenge: tertiaryFlow.codeChallenge,
+      client_id: testAppId,
+      redirect_uri: 'http://localhost:3000/callback',
+      state: state3,
+      code_challenge: codeChallenge3,
       code_challenge_method: 'S256',
-      scope: tertiaryFlow.scope,
+      scope: 'llm:invoke offline_access',
+      prompt: 'none',
     });
-    const tertiaryAuthCode =
-      extractAuthorizationCodeFromUrl(tertiaryAuthUrl).code;
-    const tertiaryTokens = await completeOAuthFlow(
-      tertiaryAuthCode,
-      tertiaryFlow
-    );
+
+    const tertiaryCallbackUrl = new URL(tertiaryAuthUrl);
+    const tertiaryAuthCode = tertiaryCallbackUrl.searchParams.get('code');
+    expect(tertiaryAuthCode).toBeTruthy();
+
+    const tertiaryTokens = await echoControlApi.exchangeCodeForToken({
+      code: tertiaryAuthCode!,
+      client_id: testAppId,
+      redirect_uri: 'http://localhost:3000/callback',
+      code_verifier: codeVerifier3,
+    });
     tertiaryUserAccessToken = tertiaryTokens.access_token;
   });
 
