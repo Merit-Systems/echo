@@ -25,6 +25,7 @@ export async function seedIntegrationDatabase() {
     await prisma.spendPool.deleteMany();
     await prisma.apiKey.deleteMany();
     await prisma.appMembership.deleteMany();
+    await prisma.referralCode.deleteMany();
     await prisma.echoApp.deleteMany();
     await prisma.user.deleteMany();
 
@@ -171,6 +172,17 @@ export async function seedIntegrationDatabase() {
 
     console.log('🤖 Created test LLM transaction');
 
+    // Create test referral codes
+    await prisma.referralCode.create({
+      data: TEST_DATA.referralCodes.primaryUserCode,
+    });
+
+    await prisma.referralCode.create({
+      data: TEST_DATA.referralCodes.secondaryUserCode,
+    });
+
+    console.log('🎟️ Created test referral codes');
+
     console.log('✅ Integration test database seeded successfully');
     console.log('\n📊 Summary:');
     console.log(`  - Users: 3`);
@@ -181,6 +193,7 @@ export async function seedIntegrationDatabase() {
     console.log(`  - User Spend Pool Usage: 1`);
     console.log(`  - Payments: 1`);
     console.log(`  - LLM Transactions: 1`);
+    console.log(`  - Referral Codes: 2`);
   } catch (error) {
     console.error('❌ Error seeding integration test database:', error);
     throw error;

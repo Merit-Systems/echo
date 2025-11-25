@@ -131,6 +131,26 @@ export const TEST_DATA = {
     },
   },
 
+  // Referral code configurations
+  referralCodes: {
+    primaryUserCode: {
+      id: '88888888-8888-4888-8888-888888888888',
+      code: 'TEST-REFERRAL-CODE-PRIMARY',
+      userId: '11111111-1111-4111-8111-111111111111', // Primary test user
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+      isArchived: false,
+      usedAt: null,
+    },
+    secondaryUserCode: {
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      code: 'TEST-REFERRAL-CODE-SECONDARY',
+      userId: '33333333-3333-4333-8333-333333333333', // Secondary test user
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+      isArchived: false,
+      usedAt: null,
+    },
+  },
+
   // Test timeouts and delays
   timeouts: {
     default: 30000,
@@ -234,6 +254,16 @@ export const TEST_SPEND_POOL_IDS = {
   primary: TEST_DATA.spendPools.primary.id,
 };
 
+export const TEST_REFERRAL_CODE_IDS = {
+  primary: TEST_DATA.referralCodes.primaryUserCode.id,
+  secondary: TEST_DATA.referralCodes.secondaryUserCode.id,
+};
+
+export const TEST_REFERRAL_CODES = {
+  primary: TEST_DATA.referralCodes.primaryUserCode.code,
+  secondary: TEST_DATA.referralCodes.secondaryUserCode.code,
+};
+
 // Type definitions for test data
 export type TestData = typeof TEST_DATA;
 export type TestUser = typeof TEST_DATA.users.primary;
@@ -242,3 +272,4 @@ export type TestApiKey = typeof TEST_DATA.apiKeys.primary;
 export type TestSpendPool = typeof TEST_DATA.spendPools.primary;
 export type TestUserSpendPoolUsage =
   typeof TEST_DATA.userSpendPoolUsage.tertiaryUserPrimaryPool;
+export type TestReferralCode = typeof TEST_DATA.referralCodes.primaryUserCode;
