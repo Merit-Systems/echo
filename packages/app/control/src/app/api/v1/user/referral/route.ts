@@ -1,3 +1,11 @@
+/**
+ * Referral API Routes
+ *
+ * GET /api/v1/user/referral - Retrieves or creates a user's referral code
+ * POST /api/v1/user/referral - Applies a referral code to establish referrer relationship
+ *
+ * See /docs/money/referrals.mdx for full documentation and implementation guide.
+ */
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { appIdSchema } from '@/services/db/apps/lib/schemas';
