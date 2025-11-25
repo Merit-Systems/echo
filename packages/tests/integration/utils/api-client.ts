@@ -258,6 +258,67 @@ export class EchoControlApiClient {
     });
     return await echoClient.balance.getFreeBalance(echoAppId);
   }
+
+  // Referral code endpoints
+  async getUserReferralCode(
+    authToken: string,
+    echoAppId: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    code?: string;
+    referralLinkUrl?: string;
+    expiresAt?: string;
+  }> {
+    const url = `${this.baseUrl}/api/v1/user/referral?echoAppId=${echoAppId}`;
+    const response = await this.fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to get referral code: ${response.status} ${response.statusText}\n${errorText}`
+      );
+    }
+
+    return response.json();
+  }
+
+  async applyReferralCode(
+    authToken: string,
+    echoAppId: string,
+    code: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const url = `${this.baseUrl}/api/v1/user/referral`;
+    const response = await this.fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        echoAppId,
+        code,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to apply referral code: ${response.status} ${response.statusText}\n${errorText}`
+      );
+    }
+
+    return response.json();
+  }
 }
 
 // Export a default instance with test configuration

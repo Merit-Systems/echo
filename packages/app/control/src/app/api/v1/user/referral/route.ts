@@ -3,11 +3,53 @@ import { z } from 'zod';
 import { appIdSchema } from '@/services/db/apps/lib/schemas';
 import { authRoute } from '../../../../../lib/api/auth-route';
 import { setAppMembershipReferrer } from '@/services/db/apps/membership';
+import {
+  getUserAppReferralCode,
+  createAppReferralCode,
+} from '@/services/db/apps/referral-code';
+
+const getUserReferralCodeSchema = z.object({
+  echoAppId: appIdSchema,
+});
 
 const setUserReferrerForAppSchema = z.object({
   echoAppId: appIdSchema,
   code: z.string(),
 });
+
+export const GET = authRoute
+  .query(getUserReferralCodeSchema)
+  .handler(async (_, context) => {
+    const { echoAppId } = context.query;
+    const userId = context.ctx.userId;
+
+    let referralCode = await getUserAppReferralCode(userId, echoAppId);
+
+    if (!referralCode) {
+      referralCode = await createAppReferralCode(userId, {
+        appId: echoAppId,
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      });
+
+      if (!referralCode) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Failed to create referral code',
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Referral code retrieved successfully',
+      code: referralCode.code,
+      referralLinkUrl: referralCode.referralLinkUrl,
+      expiresAt: referralCode.expiresAt,
+    });
+  });
 
 export const POST = authRoute
   .body(setUserReferrerForAppSchema)
