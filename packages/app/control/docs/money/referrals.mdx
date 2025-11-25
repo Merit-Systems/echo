@@ -18,6 +18,150 @@ User referrals allow you to incentivize users to market your application. Set a 
 
 With a 5% referral rate, if a referred user generates $100 in profit for your app, the referrer earns $5.
 
+## Implementation Guide
+
+To implement referrals in your application, you'll need to handle two key flows: generating referral links and processing incoming referrals.
+
+### 1. Generating Referral Links
+
+Allow users to generate and share their referral links using the GET endpoint:
+
+```typescript
+// Fetch user's referral code
+const response = await fetch('/api/v1/user/referral?echoAppId=your_app_id', {
+  headers: {
+    Authorization: `Bearer ${userToken}`,
+  },
+});
+
+const data = await response.json();
+// Returns:
+// {
+//   success: true,
+//   code: "ABC123XYZ",
+//   referralLinkUrl: "https://yourapp.com?referral_code=ABC123XYZ",
+//   expiresAt: "2025-11-25T00:00:00.000Z"
+// }
+```
+
+Display the `referralLinkUrl` in your UI for users to copy and share.
+
+### 2. Processing Incoming Referrals
+
+When users land on your app with a `referral_code` query parameter, automatically register the referral relationship.
+
+Create a client component similar to this:
+
+```tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+interface Props {
+  appId: string;
+}
+
+export const ReferralHandler: React.FC<Props> = ({ appId }) => {
+  const searchParams = useSearchParams();
+  const referralCode = searchParams.get('referral_code');
+  const [processed, setProcessed] = useState(false);
+
+  useEffect(() => {
+    if (!referralCode || processed) return;
+
+    const processReferralCode = async () => {
+      await fetch('/api/v1/user/referral', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userToken}`,
+        },
+        body: JSON.stringify({
+          echoAppId: appId,
+          code: referralCode,
+        }),
+      }).catch(() => {
+        // Silently fail - code may be invalid, expired, or user may already have a referrer
+      });
+
+      setProcessed(true);
+    };
+
+    void processReferralCode();
+  }, [referralCode, appId, processed]);
+
+  return null;
+};
+```
+
+### 3. Placement
+
+Mount the `ReferralHandler` component on key entry points to your app:
+- Sign up pages
+- Landing pages  
+- Dashboard/home pages after authentication
+
+```tsx
+// In your app's main page or layout
+<ReferralHandler appId={yourAppId} />
+```
+
+### API Reference
+
+#### GET /api/v1/user/referral
+
+Retrieves or creates a referral code for the authenticated user.
+
+**Query Parameters:**
+- `echoAppId` (required): The ID of your Echo app
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Referral code retrieved successfully",
+  "code": "ABC123XYZ",
+  "referralLinkUrl": "https://yourapp.com?referral_code=ABC123XYZ",
+  "expiresAt": "2025-11-25T00:00:00.000Z"
+}
+```
+
+#### POST /api/v1/user/referral
+
+Applies a referral code to the authenticated user.
+
+**Request Body:**
+```json
+{
+  "echoAppId": "your_app_id",
+  "code": "ABC123XYZ"
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Referral code applied successfully"
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "success": false,
+  "message": "Referral code could not be applied. It may be invalid, expired, or you may already have a referrer for this app."
+}
+```
+
+### Important Notes
+
+- Referral codes are unique per user per app
+- A user can only have one referrer per app (first come, first served)
+- Invalid or expired codes should fail silently on the client to avoid UX disruption
+- Referral earnings are calculated and paid out automatically by Echo
+
 ## Beta Status
 
 This feature is in early beta and may not work as expected. Reach out in [Discord](https://discord.gg/merit) if you're interested in setting up referrals for your application.

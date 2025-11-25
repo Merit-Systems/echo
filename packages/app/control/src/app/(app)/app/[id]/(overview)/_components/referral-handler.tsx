@@ -1,3 +1,12 @@
+/**
+ * Referral Handler Component
+ *
+ * Processes referral codes from URL query parameters (?referral_code=ABC123) and automatically
+ * registers the referral relationship. Errors are silently caught since codes may be invalid,
+ * expired, or the user may already have a referrer.
+ *
+ * See /docs/money/referrals.mdx for implementation guide.
+ */
 'use client';
 
 import { useEffect, useState } from 'react';
