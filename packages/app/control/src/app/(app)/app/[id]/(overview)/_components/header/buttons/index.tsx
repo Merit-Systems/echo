@@ -12,7 +12,11 @@ interface Props {
 }
 
 export const HeaderButtons: React.FC<Props> = ({ appId }) => {
-  const [isOwner] = api.apps.app.isOwner.useSuspenseQuery(appId);
+  const { data: isOwner, isLoading } = api.apps.app.isOwner.useQuery(appId);
+
+  if (isLoading || isOwner === undefined) {
+    return <LoadingHeaderButtons />;
+  }
 
   return (
     <div className="flex items-center gap-2">
