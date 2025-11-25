@@ -23,6 +23,7 @@ import {
   createAppMembershipSchema,
   updateAppMembershipReferrer,
   updateAppMembershipReferrerSchema,
+  setAppMembershipReferrer,
 } from '@/services/db/apps/membership';
 import {
   listAppsSchema,
@@ -261,6 +262,26 @@ export const appsRouter = createTRPCRouter({
           return await createAppReferralCode(ctx.session.user.id, input);
         }),
     },
+
+    registerReferral: protectedProcedure
+      .input(z.object({ appId: appIdSchema, code: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const success = await setAppMembershipReferrer(
+          ctx.session.user.id,
+          input.appId,
+          input.code
+        );
+
+        if (!success) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message:
+              'Referral code could not be applied. It may be invalid, expired, or you may already have a referrer for this app.',
+          });
+        }
+
+        return { success: true };
+      }),
 
     transactions: {
       list: paginatedProcedure
