@@ -163,21 +163,30 @@ export async function setAppMembershipReferrer(
   echoAppId: string,
   code: string
 ): Promise<boolean> {
-  const appMembership = await db.appMembership.findUnique({
+  // Get or create the app membership
+  const appMembership = await db.appMembership.upsert({
     where: {
       userId_echoAppId: {
         userId,
         echoAppId,
       },
-      referrerId: null,
     },
+    create: {
+      userId,
+      echoAppId,
+      role: AppRole.CUSTOMER,
+      status: MembershipStatus.ACTIVE,
+      totalSpent: 0,
+    },
+    update: {},
   });
 
-  if (appMembership) {
-    // If the user already has a referrer, return false
+  // Check if user already has a referrer
+  if (appMembership.referrerId) {
     return false;
   }
 
+  // Validate the referral code exists
   const referralCode = await db.referralCode.findUnique({
     where: {
       code,
