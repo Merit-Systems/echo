@@ -9,6 +9,7 @@ import { api, HydrateClient } from '@/trpc/server';
 import { HeaderCard, LoadingHeaderCard } from './_components/header';
 import { Setup } from './_components/setup';
 import { Overview } from './_components/overview';
+import { ReferralHandler } from './_components/referral-handler';
 import { userOrRedirect } from '@/auth/user-or-redirect';
 
 export default async function AppPage(props: PageProps<'/app/[id]'>) {
@@ -26,6 +27,7 @@ export default async function AppPage(props: PageProps<'/app/[id]'>) {
 
   return (
     <HydrateClient>
+      <ReferralHandler appId={id} />
       <Body className="gap-0 pt-0">
         <Suspense fallback={<LoadingHeaderCard />}>
           <HeaderCard appId={id} />
