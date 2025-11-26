@@ -121,7 +121,101 @@ Or run `npx echo-start my-app` to choose interactively.
 
 # Development
 
-Fill out `packages/app/control/.env` and `packages/app/server/.env`. Then...
+## Prerequisites
 
-- `pnpm i`
-- `pnpm dev`
+Before starting, ensure you have:
+
+- **Node.js 18+** - Download from [nodejs.org](https://nodejs.org/)
+- **pnpm 10+** - Install with `npm install -g pnpm`
+- **Docker & Docker Compose** - Download from [docker.com](https://www.docker.com/products/docker-desktop)
+
+## Quick Start
+
+### Automated Setup (Recommended)
+
+```bash
+# Run the setup script (handles dependencies, database, and configuration)
+bash scripts/setup-local.sh
+```
+
+Then start development:
+
+```bash
+pnpm dev
+```
+
+Visit [http://localhost:3000](http://localhost:3000) - you should see Echo running!
+
+### Manual Setup
+
+If you prefer manual setup or the script fails:
+
+1. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
+
+2. **Set up Echo Control (frontend/API)**:
+   ```bash
+   cd packages/app/control
+   cp .env.example .env
+   pnpm local-setup
+   ```
+
+3. **Start the development servers**:
+   ```bash
+   cd ../..  # Back to root
+   pnpm dev
+   ```
+
+## Configuration
+
+### Required Environment Variables
+
+**Echo Control** (`packages/app/control/.env`):
+- `AUTH_SECRET` - Generated automatically by the setup script
+- `DATABASE_URL` - PostgreSQL connection string (set to `postgresql://echo_user:echo_password@localhost:5469/echo_control_v2?schema=public`)
+
+**Echo Server** (`packages/app/server/.env`):
+- `DATABASE_URL` - PostgreSQL connection string (set to `postgresql://echo_user:echo_password@localhost:5469/echo_control_v2?schema=public`)
+- `ECHO_CONTROL_BASE_URL` - Set to `http://localhost:3000/`
+
+For local development, most other variables (Stripe, OAuth providers, API keys) are optional and can use mock values.
+
+## Database Management
+
+PostgreSQL runs in Docker. Useful commands:
+
+```bash
+# View database in Prisma Studio
+pnpm -C packages/app/control prisma studio
+
+# View database logs
+docker compose -f packages/app/control/docker-local-db.yml logs postgres
+
+# Stop the database
+docker compose -f packages/app/control/docker-local-db.yml down
+
+# Reset database (WARNING: deletes all data)
+pnpm -C packages/app/control prisma migrate reset
+```
+
+## Troubleshooting
+
+### Docker Connection Error
+Make sure Docker Desktop is running. On Mac/Windows, launch Docker Desktop. On Linux, ensure the Docker daemon is running.
+
+### Port Already in Use
+If port 3000 or 3070 is already in use:
+- Find the process: `lsof -i :3000`
+- Kill it: `kill -9 <PID>`
+- Or change the port in the `.env` files
+
+### Database Connection Failed
+1. Check Docker is running: `docker ps`
+2. Check PostgreSQL is running: `docker ps | grep postgres`
+3. View logs: `docker logs echo-control-postgres-v2`
+4. Reset: `docker compose -f packages/app/control/docker-local-db.yml down -v`
+
+### pnpm command not found
+Install pnpm globally: `npm install -g pnpm@10.11.0`
