@@ -25,6 +25,7 @@ export type {
   ImageGenerationQualityPricing,
   ImageGenerationModelPricing,
   ImageGenerationPricing,
+  GeminiImageGenerationPricing,
   CodeInterpreterPricing,
   FileSearchPricing,
   WebSearchModelPricing,
@@ -37,6 +38,7 @@ export {
   SupportedOpenAIResponseTools,
   SupportedOpenAIResponseToolPricing,
 } from './supported-models/responses/openai';
+export { GeminiImageGenerationToolPricing } from './supported-models/tools/gemini';
 export { OpenAIModels } from './supported-models/chat/openai';
 export type { OpenAIModel } from './supported-models/chat/openai';
 export { AnthropicModels } from './supported-models/chat/anthropic';
