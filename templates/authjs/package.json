@@ -14,7 +14,7 @@
     "@merit-systems/echo-next-sdk": "^0.0.30",
     "@merit-systems/echo-typescript-sdk": "^1.0.23",
     "ai": "^5.0.82",
-    "next": "16.0.1",
+    "next": "16.0.7",
     "next-auth": "5.0.0-beta.30",
     "react": "19.2.0",
     "react-dom": "19.2.0"
