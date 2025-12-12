@@ -4,6 +4,8 @@ import { Transaction } from '../types';
 import { Response } from 'express';
 import { EscrowRequest } from 'middleware/transaction-escrow-middleware';
 import type { ProviderType } from './ProviderType';
+import { EchoDbService } from '../services/DbService';
+import { prisma } from '../server';
 
 export abstract class BaseProvider {
   protected readonly OPENAI_BASE_URL = 'https://api.openai.com/v1';
@@ -114,5 +116,13 @@ export abstract class BaseProvider {
     requestBody: string | FormData | undefined
   ) {
     throw new Error('Not implemented');
+  }
+
+  async confirmAccessControl(
+    userId: string,
+    providerId: string
+  ): Promise<boolean> {
+    const dbService = new EchoDbService(prisma);
+    return await dbService.confirmAccessControl(userId, providerId);
   }
 }

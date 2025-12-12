@@ -6,9 +6,7 @@ import { GoogleAuth } from 'google-auth-library';
 import { HttpError, UnknownModelError } from '../errors/http';
 import logger from '../logger';
 import { EscrowRequest } from '../middleware/transaction-escrow-middleware';
-import { prisma } from '../server';
 import { getVideoModelPrice } from '../services/AccountingService';
-import { EchoDbService } from '../services/DbService';
 import type { EchoControlService } from '../services/EchoControlService';
 import { Transaction } from '../types';
 import { extractOperationId } from '../utils/gemini/string-parsing.js';
@@ -421,14 +419,6 @@ export class VertexAIProvider extends BaseProvider {
     if (!hasAccess) {
       throw new HttpError(403, 'Access denied');
     }
-  }
-
-  async confirmAccessControl(
-    userId: string,
-    providerId: string
-  ): Promise<boolean> {
-    const dbService = new EchoDbService(prisma);
-    return await dbService.confirmAccessControl(userId, providerId);
   }
 
   // ========== Response Parsing ==========

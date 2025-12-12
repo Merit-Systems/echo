@@ -6,8 +6,6 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { EscrowRequest } from '../middleware/transaction-escrow-middleware';
 import { Response } from 'express';
 import { getVideoModelPrice } from '../services/AccountingService';
-import { EchoDbService } from '../services/DbService';
-import { prisma } from '../server';
 import logger from '../logger';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
@@ -224,14 +222,6 @@ export class GeminiVeoProvider extends BaseProvider {
       res.status(500).send('No body in upstream response');
     }
     return;
-  }
-
-  async confirmAccessControl(
-    userId: string,
-    providerId: string
-  ): Promise<boolean> {
-    const dbService = new EchoDbService(prisma);
-    return await dbService.confirmAccessControl(userId, providerId);
   }
 
   parseProviderIdFromResponseBody(data: unknown): string {
