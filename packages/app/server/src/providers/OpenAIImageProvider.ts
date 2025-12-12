@@ -1,11 +1,10 @@
 import { ImagesResponse } from 'openai/resources/images';
 import { LlmTransactionMetadata, Transaction } from '../types';
-import { BaseProvider } from './BaseProvider';
+import { OpenAIBaseProvider } from './OpenAIBaseProvider';
 import { ProviderType } from './ProviderType';
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from '../logger';
 import { getImageModelCost } from '../services/AccountingService';
-import { env } from '../env';
 
 // Use OpenAI SDK's ResponseUsage for non-streaming responses
 
@@ -53,7 +52,7 @@ const parseSSEImageGenerationFormat = (data: string): ImagesResponse[] => {
   return chunks;
 };
 
-export class OpenAIImageProvider extends BaseProvider {
+export class OpenAIImageProvider extends OpenAIBaseProvider {
   getType(): ProviderType {
     return ProviderType.OPENAI_IMAGES;
   }
@@ -63,10 +62,6 @@ export class OpenAIImageProvider extends BaseProvider {
       return this.OPENAI_BASE_URL.replace('/v1', '');
     }
     return this.OPENAI_BASE_URL;
-  }
-
-  getApiKey(): string | undefined {
-    return env.OPENAI_API_KEY;
   }
 
   async handleBody(data: string): Promise<Transaction> {

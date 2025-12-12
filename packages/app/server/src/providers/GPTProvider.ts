@@ -1,9 +1,8 @@
 import { LlmTransactionMetadata, Transaction } from '../types';
 import { getCostPerToken } from '../services/AccountingService';
-import { BaseProvider } from './BaseProvider';
+import { OpenAIBaseProvider } from './OpenAIBaseProvider';
 import { ProviderType } from './ProviderType';
 import logger from '../logger';
-import { env } from '../env';
 
 export interface CompletionStateBody {
   id: string;
@@ -57,17 +56,13 @@ export const parseSSEGPTFormat = (data: string): StreamingChunkBody[] => {
   return chunks;
 };
 
-export class GPTProvider extends BaseProvider {
+export class GPTProvider extends OpenAIBaseProvider {
   getType(): ProviderType {
     return ProviderType.GPT;
   }
 
   getBaseUrl(): string {
     return this.OPENAI_BASE_URL;
-  }
-
-  getApiKey(): string | undefined {
-    return env.OPENAI_API_KEY;
   }
 
   async handleBody(data: string): Promise<Transaction> {

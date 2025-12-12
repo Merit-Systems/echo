@@ -1,4 +1,5 @@
 import { PROXY_PASSTHROUGH_ONLY_MODEL } from './VertexAIProvider';
+import { OpenAIBaseProvider } from './OpenAIBaseProvider';
 import { BaseProvider } from './BaseProvider';
 import { Request } from 'express';
 import { ProviderType } from './ProviderType';
@@ -13,9 +14,8 @@ import { prisma } from '../server';
 import { EchoDbService } from '../services/DbService';
 import logger from '../logger';
 import { decimalToUsdcBigInt } from 'utils';
-import { env } from '../env';
 
-export class OpenAIVideoProvider extends BaseProvider {
+export class OpenAIVideoProvider extends OpenAIBaseProvider {
   static detectPassthroughProxy(
     req: Request,
     extractIsStream: (req: Request) => boolean
@@ -88,10 +88,6 @@ export class OpenAIVideoProvider extends BaseProvider {
       return this.OPENAI_BASE_URL.replace('/v1', '');
     }
     return this.OPENAI_BASE_URL;
-  }
-
-  getApiKey(): string | undefined {
-    return env.OPENAI_API_KEY;
   }
 
   override async handleBody(

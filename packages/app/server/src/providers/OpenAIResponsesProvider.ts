@@ -8,11 +8,10 @@ import {
   calculateToolCost,
 } from '../services/AccountingService';
 import { LlmTransactionMetadata, Transaction } from '../types';
-import { BaseProvider } from './BaseProvider';
+import { OpenAIBaseProvider } from './OpenAIBaseProvider';
 import { ProviderType } from './ProviderType';
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from '../logger';
-import { env } from '../env';
 
 const parseSSEResponsesFormat = (data: string): ResponseStreamEvent[] => {
   // Split by double newlines to separate complete events
@@ -58,17 +57,13 @@ const parseSSEResponsesFormat = (data: string): ResponseStreamEvent[] => {
   return chunks;
 };
 
-export class OpenAIResponsesProvider extends BaseProvider {
+export class OpenAIResponsesProvider extends OpenAIBaseProvider {
   getType(): ProviderType {
     return ProviderType.OPENAI_RESPONSES;
   }
 
   getBaseUrl(): string {
     return this.OPENAI_BASE_URL;
-  }
-
-  getApiKey(): string | undefined {
-    return env.OPENAI_API_KEY;
   }
 
   async handleBody(data: string): Promise<Transaction> {
