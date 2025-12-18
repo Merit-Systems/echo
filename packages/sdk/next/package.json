@@ -55,7 +55,7 @@
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
     "eslint": "^9.29.0",
-    "next": "^15.1.4",
+    "next": "^15.1.11",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "vitest": "^3.2.3",
