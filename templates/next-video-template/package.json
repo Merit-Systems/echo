@@ -28,7 +28,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.263.1",
     "nanoid": "^5.1.5",
-    "next": "15.4.8",
+    "next": "15.4.10",
     "openai": "^5.20.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -41,7 +41,7 @@
     "@types/react": "19.1.10",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.4.7",
+    "eslint-config-next": "15.4.10",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.8",
     "typescript": "^5"

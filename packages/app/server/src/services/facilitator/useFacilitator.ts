@@ -4,17 +4,17 @@ import {
   SettleResponse,
   VerifyResponse,
 } from './x402-types';
-import { facilitatorProxy } from './facilitatorProxy';
+import { coinbaseFacilitator } from './coinbaseFacilitator';
 
 /**
  * Creates a facilitator client for interacting with the X402 payment facilitator service
+ * Uses Coinbase's facilitator API directly
  *
  * @returns An object containing verify and settle functions for interacting with the facilitator
  */
 export function useFacilitator() {
   /**
-   * Verifies a payment payload with the facilitator service
-   * Automatically retries with fallover to backup facilitators on failure
+   * Verifies a payment payload with the Coinbase facilitator service
    *
    * @param payload - The payment payload to verify
    * @param paymentRequirements - The payment requirements to verify against
@@ -24,7 +24,7 @@ export function useFacilitator() {
     payload: PaymentPayload,
     paymentRequirements: PaymentRequirements
   ): Promise<VerifyResponse> {
-    return facilitatorProxy<VerifyResponse>(
+    return coinbaseFacilitator<VerifyResponse>(
       'verify',
       payload,
       paymentRequirements
@@ -32,8 +32,7 @@ export function useFacilitator() {
   }
 
   /**
-   * Settles a payment with the facilitator service
-   * Automatically retries with fallover to backup facilitators on failure
+   * Settles a payment with the Coinbase facilitator service
    *
    * @param payload - The payment payload to settle
    * @param paymentRequirements - The payment requirements for the settlement
@@ -43,7 +42,7 @@ export function useFacilitator() {
     payload: PaymentPayload,
     paymentRequirements: PaymentRequirements
   ): Promise<SettleResponse> {
-    return facilitatorProxy<SettleResponse>(
+    return coinbaseFacilitator<SettleResponse>(
       'settle',
       payload,
       paymentRequirements
