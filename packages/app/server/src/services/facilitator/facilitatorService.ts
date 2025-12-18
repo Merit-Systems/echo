@@ -8,6 +8,9 @@ import { generateJwt } from '@coinbase/cdp-sdk/auth';
 import { useFacilitator } from './useFacilitator';
 import { env } from '../../env';
 
+
+
+
 interface GenerateCdpJwtInput {
   requestMethod: 'POST' | 'GET' | 'PUT' | 'DELETE';
   requestHost?: string;
@@ -15,7 +18,7 @@ interface GenerateCdpJwtInput {
   expiresIn?: number;
 }
 
-const generateCdpJwt = async ({
+export const generateCdpJwt = async ({
   requestMethod,
   requestPath,
   requestHost = 'api.cdp.coinbase.com',
