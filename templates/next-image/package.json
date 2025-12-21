@@ -18,6 +18,7 @@
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@vercel/blob": "^0.25.1",
     "ai": "5.0.47",
     "autonumeric": "^4.10.9",
     "class-variance-authority": "^0.7.1",
