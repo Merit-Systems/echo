@@ -117,6 +117,10 @@ export type CreateStripePaymentLinkBody = {
   successUrl?: string | undefined;
 };
 
+export type GetUserReferralResponse = { success: boolean; message: string };
+
+export type GetUserReferralQuery = { echoAppId: string };
+
 export type CreateUserReferralResponse = { success: boolean; message: string };
 
 export type CreateUserReferralBody = { echoAppId: string; code: string };
@@ -209,6 +213,10 @@ export type ApiRoutes = {
   'POST /stripe/payment-link': {
     response: CreateStripePaymentLinkResponse;
     body: CreateStripePaymentLinkBody;
+  };
+  'GET /user/referral': {
+    response: GetUserReferralResponse;
+    query: GetUserReferralQuery;
   };
   'POST /user/referral': {
     response: CreateUserReferralResponse;

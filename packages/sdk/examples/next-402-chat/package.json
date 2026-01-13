@@ -34,7 +34,7 @@
     "dotenv": "^17.2.3",
     "embla-carousel-react": "^8.6.0",
     "lucide-react": "^0.542.0",
-    "next": "15.5.7",
+    "next": "15.5.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-syntax-highlighter": "^15.6.6",
