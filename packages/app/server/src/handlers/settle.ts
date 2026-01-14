@@ -42,6 +42,12 @@ export async function settle(
   try {
     xPaymentData = validateXPaymentHeader(headers, req);
   } catch (error) {
+    logger.error('Payment header validation failed in settle', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      url: req.url,
+      method: req.method,
+    });
     buildX402Response(req, res, maxCost);
     return undefined;
   }
@@ -92,6 +98,19 @@ export async function settle(
   const settleResult = await facilitatorClient.settle(settleRequest);
 
   if (!settleResult.success || !settleResult.transaction) {
+    logger.error('Payment settlement failed', {
+      errorReason: settleResult.errorReason,
+      payer: settleResult.payer,
+      paymentAmount: paymentAmount,
+      nonce: payload.authorization.nonce,
+      signature: payload.signature.substring(0, 20) + '...', // Log first 20 chars for debugging
+      from: payload.authorization.from,
+      to: payload.authorization.to,
+      validAfter: payload.authorization.validAfter,
+      validBefore: payload.authorization.validBefore,
+      url: req.url,
+      method: req.method,
+    });
     buildX402Response(req, res, maxCost);
     return undefined;
   }
