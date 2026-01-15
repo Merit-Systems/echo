@@ -5,10 +5,12 @@
 import { getEchoToken } from '@/echo';
 import OpenAI from 'openai';
 import { dataUrlToFile } from '@/lib/image-utils';
+import { processImageUrls } from '@/lib/server-blob-utils';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
 /**
  * Handles OpenAI image editing
+ * Converts image URLs to data URLs for processing
  */
 export async function handleOpenAIEdit(
   prompt: string,
@@ -32,7 +34,9 @@ export async function handleOpenAIEdit(
   });
 
   try {
-    const imageFiles = imageUrls.map(url => dataUrlToFile(url, 'image.png'));
+    const dataUrls = await processImageUrls(imageUrls);
+    
+    const imageFiles = dataUrls.map(url => dataUrlToFile(url, 'image.png'));
 
     const result = await openaiClient.images.edit({
       image: imageFiles,

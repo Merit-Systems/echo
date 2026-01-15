@@ -53,7 +53,7 @@ export interface GenerateImageRequest {
  */
 export interface EditImageRequest {
   prompt: string;
-  imageUrls: string[]; // Array of data URLs or regular URLs
+  imageUrls: string[]; // Array of Vercel Blob URLs, data URLs, or regular URLs
   provider: ModelOption;
 }
 

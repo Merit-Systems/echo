@@ -5,25 +5,29 @@
 import { google } from '@/echo';
 import { generateText } from 'ai';
 import { getMediaTypeFromDataUrl } from '@/lib/image-utils';
+import { processImageUrls } from '@/lib/server-blob-utils';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
 /**
  * Handles Google Gemini image editing
+ * Converts image URLs to data URLs for processing
  */
 export async function handleGoogleEdit(
   prompt: string,
   imageUrls: string[]
 ): Promise<Response> {
   try {
+    const dataUrls = await processImageUrls(imageUrls);
+
     const content = [
       {
         type: 'text' as const,
         text: prompt,
       },
-      ...imageUrls.map(imageUrl => ({
+      ...dataUrls.map(dataUrl => ({
         type: 'image' as const,
-        image: imageUrl, // Direct data URL - Gemini handles it
-        mediaType: getMediaTypeFromDataUrl(imageUrl),
+        image: dataUrl,
+        mediaType: getMediaTypeFromDataUrl(dataUrl),
       })),
     ];
 
