@@ -280,8 +280,19 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
 
   const isExternal = isExternalTemplate(template);
 
+  let owner = '';
+  let createLink = 'https://echo.merit.systems/new';
+
   if (isExternal) {
+    const repoPath = resolveTemplateRepo(template);
+    owner = repoPath.split('/')[0] || '';
     log.step(`Using external template: ${template}`);
+    if (owner) {
+      createLink += `?ref=${owner}`;
+      log.step(`Auto-applying referral for template creator: ${owner}. Use the link below when creating a new app to register it.`);
+    } else {
+      log.warning('Could not extract template owner for referral; using default creation link.');
+    }
   } else {
     const templateName = template as TemplateName;
     log.step(`Selected template: ${DEFAULT_TEMPLATES[templateName].title}`);
@@ -294,7 +305,7 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       placeholder: 'Enter your app ID...',
       validate: (value: string) => {
         if (!value.trim()) {
-          return 'Please enter an App ID or create one at https://echo.merit.systems/new';
+          return `Please enter an App ID or create one at ${createLink} to auto-register the referral (if applicable).`;
         }
         return;
       },
@@ -306,6 +317,8 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     }
 
     appId = enteredAppId;
+  } else if (isExternal && owner) {
+    log.warning(`App ID provided via CLI; referral for ${owner} cannot be auto-registered for existing apps. Create new apps via ${createLink} to apply referrals.`);
   }
 
   log.step(`Using App ID: ${appId}`);
@@ -494,7 +507,7 @@ async function main() {
     .argument('[directory]', 'Directory to create the app in')
     .option(
       '-t, --template <template>',
-      `Template to use. Can be a preset (${Object.keys(DEFAULT_TEMPLATES).join(', ')}) or a GitHub repository URL (https://github.com/user/repo)`
+      `Template to use. Can be a preset (${Object.keys(DEFAULT_TEMPLATES).join(', ')}) or a GitHub repository URL[](https://github.com/user/repo)`
     )
     .option('-a, --app-id <appId>', 'Echo App ID to use in the project')
     .option('--skip-install', 'Skip automatic dependency installation')
