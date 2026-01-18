@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 363.81 363.81">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-3 {
+        fill: #02b2bf;
+      }
+
+      .cls-4 {
+        fill: #0199ae;
+      }
+
+      .cls-5 {
+        fill: #05c7cc;
+      }
+
+      .ring {
+        stroke: #262626;
+        fill: transparent;
+      }
+
+      .first-ring {
+        stroke-width: 16;
+        stroke-opacity: 0.5;
+      }
+
+      .second-ring {
+        stroke-width: 12;
+        stroke-opacity: 0.4;
+      }
+
+      .third-ring {
+        stroke-width: 8;
+        stroke-opacity: 0.3;
+      }
+
+      .cls-8 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-1" width="363.81" height="363.81"/>
+    </clipPath>
+  </defs>
+  <g class="cls-8">
+    <g id="Layer_1-2" data-name="Layer 1-2">
+      <g class="ring first-ring">
+        <polygon points="183.23,292.39 88.75,237.84 86.94,236.94 86.94,125.62 183.23,70.03 279.52,125.62 279.52,236.8 183.23,292.39"/>
+      </g>
+      <g class="ring second-ring">
+        <polygon points="181.53,329.96 54.34,256.53 53.31,256.19 53.31,107.88 181.53,33.85 309.75,107.88 309.75,255.94 181.53,329.96"/>
+      </g>
+      <g class="ring third-ring">
+        <polygon points="181.53,362.94 181.09,362.69 24.75,272.43 24.75,91.39 25.19,91.14 181.53,0.87 181.97,1.12 338.32,91.39 338.32,272.43 181.97,362.69 181.53,362.94"/>
+      </g>
+      <polygon class="cls-5" points="122.32 145.8 122.32 217.35 184.29 253.13 184.29 181.58 122.32 145.8"/>
+      <polygon class="cls-3" points="184.29 110.03 184.29 110.03 122.32 145.8 184.29 181.58 246.25 145.8 184.29 110.03"/>
+      <polygon class="cls-4" points="246.33 145.8 184.36 181.58 184.36 253.13 184.37 253.13 246.33 217.35 246.33 145.8"/>
+      
+    </g>
+  </g>
+</svg>
