@@ -1,0 +1,377 @@
+## Description: Guidelines and best practices for building Echo React (Vite) applications, including client OAuth, environment variables, and real-world examples globs: /**/*.ts,/**/*.tsx,**/*.js,**/*.jsx
+
+## Echo React (Vite) Guidelines
+
+## SDK Initialization
+
+### EchoProvider Setup
+
+ALWAYS wrap your application with `EchoProvider` in `src/main.tsx`:
+
+```typescript
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.tsx';
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+### Using Echo Components
+
+Use Echo client components for authentication and token management:
+
+```typescript
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+import './App.css';
+
+function App() {
+  return (
+    <>
+      <h1>Welcome to Echo</h1>
+      <EchoTokens />
+    </>
+  );
+}
+
+export default App;
+```
+
+## Environment Variables
+
+### Vite Environment Variables
+
+ALWAYS prefix client-side environment variables with `VITE_`:
+
+```bash
+# .env
+VITE_ECHO_APP_ID=your_echo_app_id
+```
+
+Access them using `import.meta.env`:
+
+```typescript
+// ✅ CORRECT
+const appId = import.meta.env.VITE_ECHO_APP_ID;
+
+// ❌ INCORRECT
+const appId = process.env.ECHO_APP_ID; // This won't work in Vite
+```
+
+### Security
+
+NEVER place secrets in client-side environment variables. Echo React SDK uses OAuth2 + PKCE for secure browser-based authentication:
+
+```typescript
+// ✅ CORRECT - Echo handles OAuth securely in the browser
+<EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+  <App />
+</EchoProvider>
+
+// ❌ INCORRECT - Never hardcode secrets
+<EchoProvider config={{ appId: 'echo_app_123abc' }}>
+  <App />
+</EchoProvider>
+```
+
+## Client-Side Architecture
+
+### OAuth2 + PKCE
+
+Echo React SDK uses OAuth2 with PKCE (Proof Key for Code Exchange) for secure authentication directly in the browser. This means:
+
+1. **No backend required** for basic AI calls
+2. **Secure token management** handled by the SDK
+3. **User authentication** happens client-side
+
+### When to Use a Backend
+
+Use a separate backend server if you need:
+- Server-side API keys or secrets
+- Database operations
+- Server-side business logic
+- Rate limiting or custom authentication
+
+```typescript
+// ✅ CORRECT - Call your own backend for operations requiring secrets
+async function fetchWithSecret() {
+  const response = await fetch('https://your-api.com/endpoint', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: 'value' }),
+  });
+  return response.json();
+}
+```
+
+## Chat Implementation
+
+### Using the useChat Hook
+
+Use the `useChat` hook from Echo React SDK for chat functionality:
+
+```typescript
+import { useChat, useEcho } from '@merit-systems/echo-react-sdk';
+import { useState } from 'react';
+
+function ChatComponent() {
+  const [input, setInput] = useState('');
+  const { messages, sendMessage, status } = useChat();
+  const { user } = useEcho();
+
+  const isSignedIn = user !== null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() && isSignedIn) {
+      sendMessage({
+        role: 'user',
+        content: input,
+      });
+      setInput('');
+    }
+  };
+
+  return (
+    <div>
+      <div className="messages">
+        {messages.map((message, index) => (
+          <div key={index} className={message.role}>
+            {message.content}
+          </div>
+        ))}
+      </div>
+      
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={!isSignedIn || status === 'pending'}
+          placeholder={isSignedIn ? 'Type a message...' : 'Sign in to chat'}
+        />
+        <button type="submit" disabled={!isSignedIn || status === 'pending'}>
+          Send
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+## Feature Flags and Custom Properties
+
+### Feature Flag Storage
+
+ALWAYS centralize feature flags in a constants file:
+
+```typescript
+// src/lib/flags.ts
+export const FeatureFlags = {
+  ENABLE_VOICE_INPUT: 'enable_voice_input',
+  ENABLE_IMAGE_UPLOAD: 'enable_image_upload',
+  ENABLE_DARK_MODE: 'enable_dark_mode',
+} as const;
+
+export type FeatureFlag = typeof FeatureFlags[keyof typeof FeatureFlags];
+
+// Validate flag values before use
+export function isValidFeatureFlag(flag: string): flag is FeatureFlag {
+  return Object.values(FeatureFlags).includes(flag as FeatureFlag);
+}
+```
+
+### Custom Properties
+
+If a custom property is used in multiple places, define it once:
+
+```typescript
+// src/lib/properties.ts
+export const CustomProperties = {
+  USER_PREFERENCE: 'user_preference',
+  THEME_CHOICE: 'theme_choice',
+  LANGUAGE: 'language',
+} as const;
+
+export type CustomProperty = typeof CustomProperties[keyof typeof CustomProperties];
+```
+
+## TypeScript Guidelines
+
+### Shared Types
+
+ALWAYS export shared types in `src/lib/types.ts`:
+
+```typescript
+// src/lib/types.ts
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: number;
+}
+
+export interface ChatState {
+  messages: Message[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  balance: number;
+}
+```
+
+### Strict Typing
+
+ALWAYS use strict types and avoid `any`:
+
+```typescript
+// ✅ CORRECT
+interface ApiResponse<T> {
+  data: T;
+  error: string | null;
+}
+
+async function fetchData<T>(url: string): Promise<ApiResponse<T>> {
+  const response = await fetch(url);
+  return response.json();
+}
+
+// ❌ INCORRECT
+async function fetchData(url: string): Promise<any> {
+  const response = await fetch(url);
+  return response.json();
+}
+```
+
+## API Integration
+
+### Wrapper Functions
+
+Keep API calls in a dedicated wrapper file:
+
+```typescript
+// src/lib/api.ts
+import type { Message } from './types';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.example.com';
+
+export async function sendChatMessage(message: Message): Promise<Message> {
+  const response = await fetch(`${API_BASE_URL}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(message),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to send message: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+```
+
+## Component Structure
+
+### Recommended Project Structure
+
+```
+src/
+├── components/
+│   ├── Chat.tsx               # Chat UI components
+│   ├── Header.tsx             # App header
+│   └── ui/                    # Reusable UI components
+├── lib/
+│   ├── api.ts                 # API wrapper functions
+│   ├── flags.ts               # Feature flags
+│   ├── properties.ts          # Custom properties
+│   ├── types.ts               # Shared TypeScript types
+│   └── utils.ts               # Utility functions
+├── App.tsx                    # Main app component
+├── main.tsx                   # Entry point with EchoProvider
+└── index.css                  # Global styles
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly:
+
+```typescript
+// ✅ CORRECT
+try {
+  const result = await fetchData('/api/endpoint');
+  return result;
+} catch (error) {
+  console.error('Failed to fetch data:', error);
+  throw new Error('Data fetch failed. Please try again.');
+}
+
+// ❌ INCORRECT
+try {
+  const result = await fetchData('/api/endpoint');
+  return result;
+} catch (error) {
+  // Silent failure - never do this
+}
+```
+
+## State Management
+
+### Component State
+
+Use React hooks for local state management:
+
+```typescript
+import { useState, useEffect } from 'react';
+
+function Component() {
+  const [data, setData] = useState<Data | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const result = await fetchData();
+        setData(result);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!data) return <div>No data</div>;
+
+  return <div>{/* Render data */}</div>;
+}
+```
+
+## Best Practices
+
+1. **OAuth Security**: Echo handles OAuth2 + PKCE securely; never try to implement your own auth
+2. **Environment Variables**: Always prefix with `VITE_` for client-side access
+3. **No Secrets**: Never store server secrets in client code or environment variables
+4. **API Wrappers**: Centralize external API calls in `src/lib/api.ts`
+5. **Type Safety**: Export shared types from `src/lib/types.ts`
+6. **Feature Flags**: Store in one constants file, validate before use
+7. **Error Handling**: Always catch and handle errors explicitly
+8. **Component Structure**: Keep components focused and single-purpose

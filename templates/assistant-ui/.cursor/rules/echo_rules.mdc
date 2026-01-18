@@ -1,0 +1,473 @@
+## Description : Guidelines and best practices for building Echo Assistant UI applications with Next.js, including streaming, component patterns, and tool handling globs: /**/*.ts,/**/*.tsx,**/*.js,**/*.jsx
+
+## Echo Assistant UI Guidelines
+
+## SDK Initialization
+
+### Server-Side Setup
+
+ALWAYS initialize Echo in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap your application with `EchoProvider`:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Assistant UI Integration
+
+### Chat API with Streaming
+
+ALWAYS implement chat routes with streaming for responsive UI:
+
+```typescript
+// app/api/chat/route.ts
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  try {
+    const { messages } = await req.json();
+
+    // ✅ ALWAYS validate messages
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Messages must be an array',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const result = streamText({
+      model: openai('gpt-4o'),
+      messages,
+      // Enable streaming with sources and reasoning
+      experimental_toolCallStreaming: true,
+    });
+
+    return result.toDataStreamResponse();
+  } catch (error) {
+    console.error('Chat API error:', error);
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: 'Failed to process chat request',
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+```
+
+## Assistant UI Components
+
+### Thread Component
+
+Use the assistant-ui Thread component for chat interface:
+
+```typescript
+'use client';
+
+import { Thread } from '@assistant-ui/react';
+import { makeMarkdownText } from '@assistant-ui/react-markdown';
+
+const MarkdownText = makeMarkdownText();
+
+export function ChatInterface() {
+  return (
+    <Thread
+      assistantMessage={{
+        components: {
+          Text: MarkdownText,
+        },
+      }}
+      welcome={{
+        message: 'Hello! How can I help you today?',
+        suggestions: [
+          {
+            text: 'Explain quantum computing',
+            prompt: 'Can you explain quantum computing in simple terms?',
+          },
+          {
+            text: 'Write a poem',
+            prompt: 'Write a short poem about nature',
+          },
+        ],
+      }}
+    />
+  );
+}
+```
+
+### Custom Message Components
+
+ALWAYS create reusable message components:
+
+```typescript
+// components/assistant-ui/message.tsx
+'use client';
+
+import { FC } from 'react';
+import { MessagePrimitive } from '@assistant-ui/react';
+import { cn } from '@/lib/utils';
+
+export const Message: FC = () => {
+  return (
+    <MessagePrimitive.Root className={cn('message-root')}>
+      <MessagePrimitive.If user>
+        <div className="user-message">
+          <MessagePrimitive.Content />
+        </div>
+      </MessagePrimitive.If>
+      
+      <MessagePrimitive.If assistant>
+        <div className="assistant-message">
+          <MessagePrimitive.Content />
+        </div>
+      </MessagePrimitive.If>
+    </MessagePrimitive.Root>
+  );
+};
+```
+
+## Tool Handling
+
+### Define Tools
+
+ALWAYS define tools with proper validation:
+
+```typescript
+// app/api/chat/route.ts
+import { openai } from '@/echo';
+import { streamText, tool } from 'ai';
+import { z } from 'zod';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  const result = streamText({
+    model: openai('gpt-4o'),
+    messages,
+    tools: {
+      // ✅ Define tools with Zod schemas
+      getWeather: tool({
+        description: 'Get the current weather for a location',
+        parameters: z.object({
+          location: z.string().describe('The city and state, e.g. San Francisco, CA'),
+        }),
+        execute: async ({ location }) => {
+          // Implement weather lookup
+          return {
+            location,
+            temperature: 72,
+            conditions: 'Sunny',
+          };
+        },
+      }),
+      
+      searchWeb: tool({
+        description: 'Search the web for information',
+        parameters: z.object({
+          query: z.string().describe('The search query'),
+          maxResults: z.number().optional().describe('Maximum number of results'),
+        }),
+        execute: async ({ query, maxResults = 5 }) => {
+          // Implement web search
+          return {
+            query,
+            results: [
+              { title: 'Result 1', url: 'https://example.com/1' },
+              { title: 'Result 2', url: 'https://example.com/2' },
+            ],
+          };
+        },
+      }),
+    },
+  });
+
+  return result.toDataStreamResponse();
+}
+```
+
+### Tool UI Components
+
+Create custom components for tool rendering:
+
+```typescript
+// components/assistant-ui/tool-fallback.tsx
+'use client';
+
+import { ToolFallback } from '@assistant-ui/react';
+
+export function CustomToolFallback() {
+  return (
+    <ToolFallback
+      render={(toolName, args) => (
+        <div className="tool-executing">
+          <span className="tool-name">{toolName}</span>
+          <span className="tool-args">{JSON.stringify(args)}</span>
+        </div>
+      )}
+    />
+  );
+}
+```
+
+## Markdown Rendering
+
+### Markdown Text Component
+
+ALWAYS use safe markdown rendering:
+
+```typescript
+// components/assistant-ui/markdown-text.tsx
+'use client';
+
+import { makeMarkdownText } from '@assistant-ui/react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+
+export const MarkdownText = makeMarkdownText({
+  remarkPlugins: [remarkGfm],
+  rehypePlugins: [rehypeHighlight],
+  components: {
+    // Custom component overrides
+    code: ({ className, children, ...props }) => {
+      const match = /language-(\w+)/.exec(className || '');
+      return match ? (
+        <pre className={className}>
+          <code {...props}>{children}</code>
+        </pre>
+      ) : (
+        <code className="inline-code" {...props}>
+          {children}
+        </code>
+      );
+    },
+  },
+});
+```
+
+## Environment Variables
+
+ALWAYS use environment variables:
+
+```bash
+# .env.local
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode credentials:
+
+```typescript
+// ✅ CORRECT
+const appId = process.env.ECHO_APP_ID!;
+
+// ❌ INCORRECT
+const appId = 'echo_app_123abc';
+```
+
+## TypeScript Types
+
+### Message and Tool Types
+
+ALWAYS define strict types:
+
+```typescript
+// src/lib/types.ts
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: number;
+  toolCalls?: ToolCall[];
+}
+
+export interface ToolCall {
+  id: string;
+  name: string;
+  arguments: Record<string, any>;
+  result?: any;
+}
+
+export interface Tool {
+  name: string;
+  description: string;
+  parameters: Record<string, any>;
+  execute: (args: any) => Promise<any>;
+}
+```
+
+## Feature Flags
+
+### Assistant UI Feature Flags
+
+ALWAYS centralize feature flags:
+
+```typescript
+// src/lib/flags.ts
+export enum AssistantFeatureFlags {
+  ENABLE_TOOL_CALLING = 'enable_tool_calling',
+  ENABLE_REASONING = 'enable_reasoning',
+  ENABLE_SOURCES = 'enable_sources',
+  ENABLE_MARKDOWN = 'enable_markdown',
+}
+
+export function validateAssistantFeatureFlag(flag: string): boolean {
+  return Object.values(AssistantFeatureFlags).includes(flag as AssistantFeatureFlags);
+}
+```
+
+## Component Organization
+
+### Recommended Structure
+
+Structure assistant components for reusability:
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── chat/
+│   │   │   └── route.ts         # Chat endpoint with tools
+│   │   └── echo/
+│   │       └── [...echo]/route.ts
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   └── assistant-ui/
+│       ├── markdown-text.tsx    # Markdown renderer
+│       ├── thread.tsx           # Thread wrapper
+│       ├── tool-fallback.tsx    # Tool UI fallback
+│       └── tooltip-icon-button.tsx
+├── echo/
+│   └── index.ts                 # Server Echo init
+├── lib/
+│   ├── flags.ts                 # Feature flags
+│   ├── types.ts                 # Shared types
+│   └── utils.ts                 # Utilities
+└── providers.tsx                # Client providers
+```
+
+## Streaming Best Practices
+
+### Proper Streaming Setup
+
+ALWAYS use streaming for responsive UX:
+
+```typescript
+// ✅ CORRECT - Full streaming with tool calls
+const result = streamText({
+  model: openai('gpt-4o'),
+  messages,
+  tools,
+  experimental_toolCallStreaming: true,
+});
+
+return result.toDataStreamResponse();
+
+// ❌ INCORRECT - No streaming
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  messages,
+});
+
+return Response.json({ text });
+```
+
+## Error Handling
+
+ALWAYS handle errors with clear messages:
+
+```typescript
+try {
+  const result = streamText({
+    model: openai('gpt-4o'),
+    messages,
+    tools,
+  });
+  
+  return result.toDataStreamResponse();
+} catch (error) {
+  console.error('Chat error:', error);
+  
+  // Provide specific error messages
+  if (error instanceof AuthenticationError) {
+    return new Response(
+      JSON.stringify({ error: 'Authentication failed' }),
+      { status: 401 }
+    );
+  }
+  
+  if (error instanceof RateLimitError) {
+    return new Response(
+      JSON.stringify({ error: 'Rate limit exceeded' }),
+      { status: 429 }
+    );
+  }
+  
+  return new Response(
+    JSON.stringify({ error: 'Internal server error' }),
+    { status: 500 }
+  );
+}
+```
+
+## Testing
+
+NEVER call external services in tests. ALWAYS mock:
+
+```typescript
+import { vi } from 'vitest';
+
+vi.mock('@/echo', () => ({
+  openai: vi.fn(() => mockOpenAI),
+}));
+
+describe('Chat API with Assistant UI', () => {
+  it('should stream responses', async () => {
+    const response = await POST(mockRequest);
+    expect(response.status).toBe(200);
+  });
+  
+  it('should handle tool calls', async () => {
+    // Test tool execution
+  });
+});
+```
+
+## Best Practices
+
+1. **Streaming First**: Always use streaming for responsive assistant UX
+2. **Tool Definition**: Define tools with Zod schemas for type safety
+3. **Component Reuse**: Create reusable assistant-ui components
+4. **Markdown Safety**: Use safe markdown rendering with plugins
+5. **Error Handling**: Provide specific, actionable error messages
+6. **Type Safety**: Export and use strict TypeScript types
+7. **Feature Flags**: Centralize flags in one file, validate before use
+8. **Testing**: Mock external services and test streaming behavior

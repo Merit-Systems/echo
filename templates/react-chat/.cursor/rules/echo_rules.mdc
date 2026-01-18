@@ -1,0 +1,490 @@
+## Description: Guidelines and best practices for building Echo React Chat applications with Vite, including client OAuth, streaming, and component patterns globs: /**/*.ts,/**/*.tsx,**/*.js,**/*.jsx
+
+## Echo React Chat Guidelines
+
+## SDK Initialization
+
+### EchoProvider Setup
+
+ALWAYS wrap your application with `EchoProvider` in `src/main.tsx`:
+
+```typescript
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.tsx';
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+## Chat Implementation
+
+### Using the useChat Hook
+
+ALWAYS use the `useChat` hook from Echo React SDK:
+
+```typescript
+'use client';
+
+import { useChat, useEcho } from '@merit-systems/echo-react-sdk';
+import { useState } from 'react';
+
+export function ChatInterface() {
+  const [input, setInput] = useState('');
+  const { messages, sendMessage, status, error } = useChat({
+    api: '/api/chat', // If using custom backend
+    // Or use Echo's client-side AI directly (no backend needed)
+  });
+  const { user } = useEcho();
+
+  const isSignedIn = user !== null;
+  const isLoading = status === 'pending';
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isSignedIn) {
+      alert('Please sign in to chat');
+      return;
+    }
+
+    if (!input.trim()) {
+      return;
+    }
+
+    sendMessage({
+      role: 'user',
+      content: input,
+    });
+    
+    setInput('');
+  };
+
+  return (
+    <div className="chat-container">
+      <div className="messages-container">
+        {messages.map((message, index) => (
+          <div 
+            key={index} 
+            className={`message message-${message.role}`}
+          >
+            <div className="message-content">
+              {message.content}
+            </div>
+          </div>
+        ))}
+        
+        {isLoading && (
+          <div className="message message-assistant">
+            <div className="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {error && (
+        <div className="error-message">
+          {error.message || 'An error occurred'}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="input-form">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={!isSignedIn || isLoading}
+          placeholder={isSignedIn ? 'Type a message...' : 'Sign in to chat'}
+          className="message-input"
+        />
+        <button 
+          type="submit" 
+          disabled={!isSignedIn || isLoading || !input.trim()}
+          className="send-button"
+        >
+          {isLoading ? 'Sending...' : 'Send'}
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+## Streaming Responses
+
+### Client-Side Streaming
+
+Echo React SDK handles streaming automatically:
+
+```typescript
+import { useChat } from '@merit-systems/echo-react-sdk';
+
+export function StreamingChat() {
+  const { messages, sendMessage, status } = useChat();
+
+  // Messages automatically update as they stream in
+  // No additional configuration needed!
+  
+  return (
+    <div>
+      {messages.map((msg, i) => (
+        <div key={i}>
+          {msg.content}
+        </div>
+      ))}
+      {status === 'pending' && <LoadingIndicator />}
+    </div>
+  );
+}
+```
+
+## Authentication UI
+
+### Using Echo Components
+
+ALWAYS use Echo's built-in authentication components:
+
+```typescript
+import { EchoTokens, useEcho } from '@merit-systems/echo-react-sdk';
+
+export function Header() {
+  const { user, signOut } = useEcho();
+
+  return (
+    <header>
+      <h1>My Chat App</h1>
+      
+      {user ? (
+        <div className="user-info">
+          <span>{user.email}</span>
+          <button onClick={signOut}>Sign Out</button>
+        </div>
+      ) : (
+        <EchoTokens />
+      )}
+    </header>
+  );
+}
+```
+
+## Environment Variables
+
+### Vite Environment Setup
+
+ALWAYS prefix environment variables with `VITE_`:
+
+```bash
+# .env
+VITE_ECHO_APP_ID=your_echo_app_id
+```
+
+Access them using `import.meta.env`:
+
+```typescript
+// ✅ CORRECT
+const appId = import.meta.env.VITE_ECHO_APP_ID;
+
+// ❌ INCORRECT
+const appId = process.env.ECHO_APP_ID; // Won't work in Vite
+```
+
+NEVER hardcode credentials:
+
+```typescript
+// ✅ CORRECT
+<EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+
+// ❌ INCORRECT
+<EchoProvider config={{ appId: 'echo_app_123abc' }}>
+```
+
+## Message History
+
+### Persisting Messages
+
+Implement message persistence using localStorage:
+
+```typescript
+import { useChat } from '@merit-systems/echo-react-sdk';
+import { useEffect } from 'react';
+
+export function ChatWithHistory() {
+  const { messages, sendMessage } = useChat({
+    // Optionally configure API endpoint
+    initialMessages: loadMessagesFromStorage(),
+  });
+
+  // Save messages to localStorage
+  useEffect(() => {
+    localStorage.setItem('chat-messages', JSON.stringify(messages));
+  }, [messages]);
+
+  return (
+    // Render chat UI
+  );
+}
+
+function loadMessagesFromStorage() {
+  try {
+    const stored = localStorage.getItem('chat-messages');
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+```
+
+## TypeScript Types
+
+### Chat Message Types
+
+ALWAYS define strict types for messages:
+
+```typescript
+// src/lib/types.ts
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: number;
+  metadata?: {
+    model?: string;
+    tokens?: number;
+  };
+}
+
+export interface ChatState {
+  messages: ChatMessage[];
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export interface SendMessageOptions {
+  role: 'user';
+  content: string;
+}
+```
+
+## Feature Flags
+
+### Chat Feature Flags
+
+ALWAYS centralize feature flags:
+
+```typescript
+// src/lib/flags.ts
+export const ChatFeatureFlags = {
+  ENABLE_VOICE_INPUT: 'enable_voice_input',
+  ENABLE_MESSAGE_EDITING: 'enable_message_editing',
+  ENABLE_FILE_UPLOAD: 'enable_file_upload',
+  ENABLE_MARKDOWN: 'enable_markdown',
+} as const;
+
+export type ChatFeatureFlag = typeof ChatFeatureFlags[keyof typeof ChatFeatureFlags];
+
+export function isChatFeatureEnabled(flag: ChatFeatureFlag): boolean {
+  // Check feature flag logic here
+  return true; // Placeholder
+}
+```
+
+## Custom Properties
+
+If a custom property is used multiple times, define it once:
+
+```typescript
+// src/lib/properties.ts
+export const ChatProperties = {
+  CONVERSATION_ID: 'conversation_id',
+  MESSAGE_COUNT: 'message_count',
+  USER_PREFERENCE: 'user_preference',
+} as const;
+
+export type ChatProperty = typeof ChatProperties[keyof typeof ChatProperties];
+```
+
+## Component Organization
+
+### Recommended Structure
+
+```
+src/
+├── components/
+│   ├── chat/
+│   │   ├── ChatInterface.tsx    # Main chat component
+│   │   ├── MessageList.tsx      # Message display
+│   │   ├── MessageInput.tsx     # Input form
+│   │   └── Message.tsx          # Individual message
+│   ├── header/
+│   │   └── Header.tsx           # App header with auth
+│   └── ui/                      # Reusable UI components
+├── lib/
+│   ├── api.ts                   # API wrapper (if needed)
+│   ├── flags.ts                 # Feature flags
+│   ├── properties.ts            # Custom properties
+│   ├── types.ts                 # Shared types
+│   └── utils.ts                 # Utility functions
+├── App.tsx                      # Main app component
+├── main.tsx                     # Entry point with EchoProvider
+└── index.css                    # Global styles
+```
+
+## Error Handling
+
+ALWAYS handle errors gracefully:
+
+```typescript
+import { useChat } from '@merit-systems/echo-react-sdk';
+
+export function ChatWithErrorHandling() {
+  const { messages, sendMessage, error, status } = useChat();
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Something went wrong</h2>
+        <p>{error.message}</p>
+        <button onClick={() => window.location.reload()}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Render chat UI
+}
+```
+
+## State Management
+
+### Using React Hooks
+
+For complex state, use custom hooks:
+
+```typescript
+// src/hooks/useChatState.ts
+import { useState, useCallback } from 'react';
+import { ChatMessage } from '@/lib/types';
+
+export function useChatState() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const addMessage = useCallback((message: ChatMessage) => {
+    setMessages(prev => [...prev, message]);
+  }, []);
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+  }, []);
+
+  return {
+    messages,
+    isLoading,
+    addMessage,
+    clearMessages,
+  };
+}
+```
+
+## Performance Optimization
+
+### Memoization
+
+Use React.memo for message components:
+
+```typescript
+import { memo } from 'react';
+
+interface MessageProps {
+  content: string;
+  role: 'user' | 'assistant';
+  timestamp: number;
+}
+
+export const Message = memo(({ content, role, timestamp }: MessageProps) => {
+  return (
+    <div className={`message message-${role}`}>
+      <div className="message-content">{content}</div>
+      <div className="message-time">
+        {new Date(timestamp).toLocaleTimeString()}
+      </div>
+    </div>
+  );
+});
+
+Message.displayName = 'Message';
+```
+
+## Styling
+
+### Recommended Approach
+
+Use Tailwind CSS or CSS modules for styling:
+
+```typescript
+// With Tailwind
+<div className="flex flex-col h-screen bg-gray-50">
+  <div className="flex-1 overflow-y-auto p-4">
+    {/* Messages */}
+  </div>
+  <form className="border-t p-4">
+    {/* Input */}
+  </form>
+</div>
+
+// With CSS modules
+import styles from './Chat.module.css';
+
+<div className={styles.chatContainer}>
+  {/* Content */}
+</div>
+```
+
+## Testing
+
+ALWAYS test chat components:
+
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { ChatInterface } from './ChatInterface';
+
+describe('ChatInterface', () => {
+  it('should render chat input', () => {
+    render(<ChatInterface />);
+    expect(screen.getByPlaceholderText(/type a message/i)).toBeInTheDocument();
+  });
+
+  it('should send message on submit', async () => {
+    render(<ChatInterface />);
+    const input = screen.getByPlaceholderText(/type a message/i);
+    const button = screen.getByRole('button', { name: /send/i });
+
+    fireEvent.change(input, { target: { value: 'Hello' } });
+    fireEvent.click(button);
+
+    // Assert message was sent
+  });
+});
+```
+
+## Best Practices
+
+1. **OAuth Security**: Echo handles OAuth2 + PKCE securely; use built-in components
+2. **Streaming**: Let Echo SDK handle streaming automatically
+3. **State Management**: Use hooks for complex state logic
+4. **Error Handling**: Always show user-friendly error messages
+5. **Type Safety**: Define strict types for messages and state
+6. **Feature Flags**: Centralize in one file, check before enabling features
+7. **Performance**: Memoize message components to prevent unnecessary re-renders
+8. **Testing**: Write tests for user interactions and error states

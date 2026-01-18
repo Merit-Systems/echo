@@ -1,0 +1,430 @@
+## Description: Guidelines and best practices for building Echo Next.js Image Generation applications, including API routes, file handling, billing, and security globs: /**/*.ts,/**/*.tsx,**/*.js,**/*.jsx
+
+## Echo Next.js Image Generation Guidelines
+
+## SDK Initialization
+
+### Server-Side Setup
+
+ALWAYS initialize Echo in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+## Image Generation API
+
+### Image Generation Route
+
+ALWAYS implement image generation with proper validation and error handling:
+
+```typescript
+// app/api/generate-image/route.ts
+import { openai } from '@/echo';
+import { generateImage } from 'ai';
+
+export const maxDuration = 60; // Image generation may take longer
+
+export async function POST(req: Request) {
+  try {
+    const { prompt, model, size } = await req.json();
+
+    // ✅ ALWAYS validate required parameters
+    if (!prompt || typeof prompt !== 'string') {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Prompt is required and must be a string',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!model) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Model parameter is required',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate size parameter
+    const validSizes = ['1024x1024', '1792x1024', '1024x1792'];
+    if (size && !validSizes.includes(size)) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: `Size must be one of: ${validSizes.join(', ')}`,
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { image } = await generateImage({
+      model: openai.image(model),
+      prompt,
+      size: size || '1024x1024',
+    });
+
+    return Response.json({
+      success: true,
+      image: {
+        url: image.url,
+        prompt,
+        model,
+        size: size || '1024x1024',
+      },
+    });
+  } catch (error) {
+    console.error('Image generation error:', error);
+    
+    if (error instanceof Error && error.message.includes('content_policy')) {
+      return new Response(
+        JSON.stringify({
+          error: 'Content Policy Violation',
+          message: 'The prompt violates the content policy',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: 'Failed to generate image',
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+```
+
+## Client-Side Image Generation
+
+### Using Image Generation Hook
+
+Implement client-side image generation UI with proper loading states:
+
+```typescript
+'use client';
+
+import { useState } from 'react';
+import { useEcho } from '@merit-systems/echo-react-sdk';
+
+interface GeneratedImage {
+  url: string;
+  prompt: string;
+  model: string;
+  size: string;
+}
+
+export function ImageGenerator() {
+  const [prompt, setPrompt] = useState('');
+  const [image, setImage] = useState<GeneratedImage | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useEcho();
+
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      setError('Please sign in to generate images');
+      return;
+    }
+
+    if (!prompt.trim()) {
+      setError('Please enter a prompt');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          model: 'dall-e-3',
+          size: '1024x1024',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate image');
+      }
+
+      const data = await response.json();
+      setImage(data.image);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleGenerate}>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Describe the image you want to generate..."
+          disabled={loading || !user}
+        />
+        <button type="submit" disabled={loading || !user}>
+          {loading ? 'Generating...' : 'Generate Image'}
+        </button>
+      </form>
+
+      {error && <div className="error">{error}</div>}
+      
+      {image && (
+        <div className="result">
+          <img src={image.url} alt={image.prompt} />
+          <p>{image.prompt}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## File Upload and Validation
+
+### Image Upload Endpoint
+
+ALWAYS validate file types and sizes:
+
+```typescript
+// app/api/upload-image/route.ts
+import { NextRequest } from 'next/server';
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+export async function POST(req: NextRequest) {
+  try {
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
+
+    // ✅ ALWAYS validate file presence
+    if (!file) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'File is required',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ✅ ALWAYS validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ✅ ALWAYS validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: `File type must be one of: ${ALLOWED_TYPES.join(', ')}`,
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Process the file
+    const buffer = await file.arrayBuffer();
+    // ... handle upload logic
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error('Upload error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Upload failed' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+```
+
+## Billing and Cost Management
+
+### Cost Constants
+
+ALWAYS centralize billing constants:
+
+```typescript
+// src/lib/constants.ts
+export const ImageGenerationCosts = {
+  'dall-e-3': {
+    '1024x1024': 0.040,
+    '1024x1792': 0.080,
+    '1792x1024': 0.080,
+  },
+  'dall-e-2': {
+    '1024x1024': 0.020,
+    '512x512': 0.018,
+    '256x256': 0.016,
+  },
+} as const;
+
+export type ImageModel = keyof typeof ImageGenerationCosts;
+export type ImageSize<M extends ImageModel> = keyof typeof ImageGenerationCosts[M];
+
+export function getImageCost(model: ImageModel, size: string): number {
+  const modelCosts = ImageGenerationCosts[model];
+  if (!modelCosts) return 0;
+  return (modelCosts as any)[size] || 0;
+}
+```
+
+## Environment Variables
+
+ALWAYS use environment variables for configuration:
+
+```bash
+# .env.local
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+
+# Optional: storage configuration
+STORAGE_BUCKET=your_bucket_name
+```
+
+## TypeScript Types
+
+### Image Types
+
+ALWAYS define shared types for images:
+
+```typescript
+// src/lib/types.ts
+export interface GeneratedImage {
+  id: string;
+  url: string;
+  prompt: string;
+  model: string;
+  size: string;
+  createdAt: number;
+  userId: string;
+}
+
+export interface ImageGenerationRequest {
+  prompt: string;
+  model: 'dall-e-3' | 'dall-e-2';
+  size: '1024x1024' | '1024x1792' | '1792x1024' | '512x512' | '256x256';
+  quality?: 'standard' | 'hd';
+  style?: 'vivid' | 'natural';
+}
+
+export interface ImageGenerationResponse {
+  success: boolean;
+  image?: GeneratedImage;
+  error?: string;
+  cost?: number;
+}
+```
+
+## Feature Flags
+
+### Image Feature Flags
+
+ALWAYS centralize feature flags:
+
+```typescript
+// src/lib/flags.ts
+export enum ImageFeatureFlags {
+  ENABLE_HD_QUALITY = 'enable_hd_quality',
+  ENABLE_STYLE_OPTIONS = 'enable_style_options',
+  ENABLE_BATCH_GENERATION = 'enable_batch_generation',
+  ENABLE_IMAGE_EDITING = 'enable_image_editing',
+}
+
+export function validateImageFeatureFlag(flag: string): boolean {
+  return Object.values(ImageFeatureFlags).includes(flag as ImageFeatureFlags);
+}
+```
+
+## Security Best Practices
+
+### Secure URL Handling
+
+NEVER expose temporary credentials in URLs:
+
+```typescript
+// ✅ CORRECT - Generate signed URLs on the server
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const imageId = searchParams.get('id');
+  
+  // Verify user has access
+  const hasAccess = await verifyUserAccess(imageId);
+  if (!hasAccess) {
+    return new Response('Forbidden', { status: 403 });
+  }
+  
+  // Generate short-lived signed URL
+  const signedUrl = await generateSignedUrl(imageId, { expiresIn: 300 });
+  
+  return Response.json({ url: signedUrl });
+}
+
+// ❌ INCORRECT - Never put secrets in query params
+const url = `/api/image?id=${imageId}&secret=${SECRET_KEY}`;
+```
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── echo/
+│   │   │   └── [...echo]/route.ts
+│   │   ├── generate-image/
+│   │   │   └── route.ts
+│   │   └── upload-image/
+│   │       └── route.ts
+│   └── page.tsx
+├── components/
+│   ├── image-generator.tsx
+│   ├── image-gallery.tsx
+│   └── image-card.tsx
+├── echo/
+│   └── index.ts
+├── lib/
+│   ├── constants.ts         # Billing and size constants
+│   ├── flags.ts             # Feature flags
+│   ├── image-utils.ts       # Image helper functions
+│   └── types.ts             # Shared types
+└── providers.tsx
+```
+
+## Best Practices
+
+1. **Validation**: Always validate prompts, file types, and sizes
+2. **Error Handling**: Provide specific error messages for different failure modes
+3. **Cost Transparency**: Show estimated costs before generation
+4. **Security**: Never expose secrets; use signed URLs for protected content
+5. **Performance**: Use appropriate maxDuration for long-running operations
+6. **Type Safety**: Define strict types for image operations
+7. **Feature Flags**: Centralize and validate before use
+8. **User Experience**: Show clear loading states and error messages
