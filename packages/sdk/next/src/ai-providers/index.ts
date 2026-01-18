@@ -3,3 +3,4 @@ export * from './google';
 export * from './xai';
 export * from './groq';
 export * from './openai';
+export * from './vercel-ai-gateway';

@@ -6,10 +6,15 @@ import {
   GeminiModels,
   OpenRouterModels,
   OpenAIImageModels,
+  VercelAIGatewayModels,
   SupportedModel,
   SupportedImageModel,
   SupportedVideoModel,
+  SupportedSpeechModel,
+  SupportedTranscriptionModel,
   GeminiVideoModels,
+  OpenAISpeechModels,
+  OpenAITranscriptionModels,
 } from '../supported-models';
 
 export class ModelsResource extends BaseResource {
@@ -18,7 +23,7 @@ export class ModelsResource extends BaseResource {
   }
 
   /**
-   * Get supported models as a flat array of model names
+   * Get supported chat models as a flat array
    */
   async listSupportedChatModels(): Promise<SupportedModel[]> {
     const allModels = [
@@ -26,16 +31,39 @@ export class ModelsResource extends BaseResource {
       ...AnthropicModels,
       ...GeminiModels,
       ...OpenRouterModels,
+      ...VercelAIGatewayModels,
     ];
 
     return allModels;
   }
 
+  /**
+   * Get supported image models
+   */
   async listSupportedImageModels(): Promise<SupportedImageModel[]> {
     return OpenAIImageModels;
   }
 
+  /**
+   * Get supported video models
+   */
   async listSupportedVideoModels(): Promise<SupportedVideoModel[]> {
     return GeminiVideoModels;
+  }
+
+  /**
+   * Get supported speech (text-to-speech) models
+   */
+  async listSupportedSpeechModels(): Promise<SupportedSpeechModel[]> {
+    return OpenAISpeechModels;
+  }
+
+  /**
+   * Get supported transcription (speech-to-text) models
+   */
+  async listSupportedTranscriptionModels(): Promise<
+    SupportedTranscriptionModel[]
+  > {
+    return OpenAITranscriptionModels;
   }
 }

@@ -30,6 +30,8 @@ export type {
   WebSearchModelPricing,
   WebSearchPricing,
   SupportedVideoModel,
+  SupportedSpeechModel,
+  SupportedTranscriptionModel,
 } from './supported-models/types';
 
 export {
@@ -49,6 +51,8 @@ export { GroqModels } from './supported-models/chat/groq';
 export type { GroqModel } from './supported-models/chat/groq';
 export { XAIModels } from './supported-models/chat/xai';
 export type { XAIModel } from './supported-models/chat/xai';
+export { VercelAIGatewayModels } from './supported-models/chat/vercel-ai-gateway';
+export type { VercelAIGatewayModel } from './supported-models/chat/vercel-ai-gateway';
 export { OpenAIImageModels } from './supported-models/image/openai';
 export type { OpenAIImageModel } from './supported-models/image/openai';
 export { GeminiVideoModels } from './supported-models/video/gemini';
@@ -57,3 +61,7 @@ export { VertexAIVideoModels } from './supported-models/video/vertex-ai';
 export type { VertexAIVideoModel } from './supported-models/video/vertex-ai';
 export { OpenAIVideoModels } from './supported-models/video/open-ai';
 export type { OpenAIVideoModel } from './supported-models/video/open-ai';
+export { OpenAISpeechModels } from './supported-models/speech/openai';
+export type { OpenAISpeechModel } from './supported-models/speech/openai';
+export { OpenAITranscriptionModels } from './supported-models/transcription/openai';
+export type { OpenAITranscriptionModel } from './supported-models/transcription/openai';

@@ -29,7 +29,8 @@
     "update-models:gemini": "tsx scripts/update-gemini-models.ts",
     "update-models:openrouter": "tsx scripts/update-openrouter-models.ts",
     "update-models:groq": "tsx scripts/update-groq-models.ts",
-    "update-all-models": "pnpm run update-models:openai && pnpm run update-models:anthropic && pnpm run update-models:gemini && pnpm run update-models:openrouter && pnpm run update-models:groq",
+    "update-models:vercel-ai-gateway": "tsx scripts/update-vercel-ai-gateway-models.ts",
+    "update-all-models": "pnpm run update-models:openai && pnpm run update-models:anthropic && pnpm run update-models:gemini && pnpm run update-models:openrouter && pnpm run update-models:groq && pnpm run update-models:vercel-ai-gateway",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
@@ -58,6 +59,7 @@
   ],
   "dependencies": {
     "@ai-sdk/anthropic": "2.0.17",
+    "@ai-sdk/gateway": "^1.0.12",
     "@ai-sdk/google": "2.0.14",
     "@ai-sdk/groq": "2.0.17",
     "@ai-sdk/openai": "2.0.32",
