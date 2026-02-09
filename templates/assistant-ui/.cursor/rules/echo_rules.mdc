@@ -1,6 +1,5 @@
 ---
 description: Rules for working with Echo, the user-pays AI infrastructure SDK by Merit Systems
-globs:
 alwaysApply: true
 ---
 
