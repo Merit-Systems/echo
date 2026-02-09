@@ -1,0 +1,96 @@
+---
+description: Rules for working with Echo, the user-pays AI infrastructure SDK by Merit Systems
+globs:
+alwaysApply: true
+---
+
+# Echo Project Rules
+
+This project uses **Echo** by Merit Systems -- user-pays AI infrastructure that lets end users pay for their own AI usage while developers earn a markup.
+
+Documentation: https://echo.merit.systems/docs
+
+## Architecture Overview
+
+- Echo replaces direct AI SDK provider imports with Echo-wrapped providers that handle authentication, billing, and metering automatically.
+- Users authenticate via OAuth through Echo, receive a balance, and pay per token/request.
+- Developers set a markup percentage and earn revenue on every API call.
+
+## Echo Next.js SDK (`@merit-systems/echo-next-sdk`)
+
+### Initialization
+
+Echo is initialized in a single file (typically `src/echo/index.ts`) that exports all needed utilities:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+- `handlers` -- must be re-exported as `GET` and `POST` in the Echo API catch-all route (`src/app/api/echo/[...echo]/route.ts`).
+- `isSignedIn` -- async function to check if a user is authenticated server-side.
+- `openai`, `anthropic`, `google`, `groq`, `openrouter`, `xai` -- AI provider functions that work as drop-in replacements for their respective AI SDK providers.
+
+### API Route Setup
+
+The Echo catch-all route must exist at `src/app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+Do not add custom logic to this route file. All OAuth and proxy handling is managed internally by Echo.
+
+### AI Provider Usage
+
+Echo providers are used identically to Vercel AI SDK providers:
+
+```typescript
+import { openai } from '@/echo';
+import { generateText, streamText } from 'ai';
+
+const result = await generateText({
+  model: openai('gpt-4o'),
+  prompt: '...',
+});
+```
+
+- Always import providers from the local `@/echo` module, never directly from `@ai-sdk/openai` or similar packages.
+- The Echo providers handle authentication token injection and request routing automatically.
+
+## Echo React SDK (`@merit-systems/echo-react-sdk`)
+
+For client-side React (Vite) applications:
+
+- Wrap the app in `<EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>`.
+- Use `useEchoModelProviders()` hook to get AI provider instances on the client.
+- Use `<EchoSignIn />`, `<EchoSignOut />`, `<EchoTokens />` components for auth and balance UI.
+- Use `useEcho()` for auth state, `useEchoBalance()` for balance info, `useEchoUser()` for user info.
+
+## Environment Variables
+
+- **Next.js templates**: Use `ECHO_APP_ID` (server-side) and `NEXT_PUBLIC_ECHO_APP_ID` (client-side) in `.env.local`.
+- **React/Vite templates**: Use `VITE_ECHO_APP_ID` in `.env.local`.
+- Never hardcode or hallucinate App IDs. Always reference the environment variable.
+- App IDs can be created at https://echo.merit.systems/new.
+
+## Coding Standards
+
+- Use **TypeScript** for all new code with strict mode enabled.
+- Use **kebab-case** for filenames (`user-profile.tsx`, `api-client.ts`).
+- Use **PascalCase** for components and types, **camelCase** for functions and variables.
+- Prefer **absolute imports** with the `@/` alias over relative imports.
+- Use **functional components** with hooks; avoid class components.
+- Group imports: external packages, then internal packages, then local files.
+- Follow the **Vercel AI SDK** patterns for AI interactions (`generateText`, `streamText`, `useChat`).
+
+## Common Mistakes to Avoid
+
+- Do not import AI providers directly from `@ai-sdk/openai`, `@ai-sdk/anthropic`, etc. Always use the Echo-wrapped providers from `@/echo` or via `useEchoModelProviders()`.
+- Do not modify the Echo catch-all API route beyond re-exporting `handlers`.
+- Do not store or expose Echo access tokens in client-side code for Next.js apps; token management is handled server-side by the SDK.
+- Do not call `Echo()` more than once; initialize it in a single file and import from there.
