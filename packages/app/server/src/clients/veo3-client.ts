@@ -16,7 +16,7 @@ async function makeRequest() {
   const prompt = `An anime-style racing scene. A cool looking guy is racing away from villians in a japanese sports car.`;
 
   let operation = await ai.models.generateVideos({
-    model: 'veo-3.0-fast-generate-001',
+    model: 'veo-3.1-fast-generate-001',
     prompt: prompt,
     config: {
       durationSeconds: 4,

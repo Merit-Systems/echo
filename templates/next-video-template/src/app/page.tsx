@@ -8,7 +8,7 @@
  *
  * Key features:
  * 1. Authentication: Automatic login/logout with Echo SDK
- * 2. Video Generation: Support for Veo 3 Fast model
+ * 2. Video Generation: Support for Veo 3.1 and Veo 3 models
  * 3. Duration Control: Adjustable video length (1-60 seconds)
  * 4. History: Persistent video gallery with download/copy actions
  * 5. Responsive Design: Works on desktop and mobile
@@ -16,7 +16,7 @@
  * Usage Examples:
  * - Text-to-Video: "A beautiful sunset over mountains with birds flying"
  * - Duration Control: Adjust slider for video length
- * - Model Selection: Currently supports Veo 3 Fast
+ * - Model Selection: Supports Veo 3.1 Fast (default), Veo 3.1, Veo 3 Fast, and Veo 3
  */
 
 import { isSignedIn } from '@/echo';
