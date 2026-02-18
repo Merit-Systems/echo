@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { fileToDataUrl } from '@/lib/image-utils';
+import { fileToDataUrl, compressImageDataUrl } from '@/lib/image-utils';
 import type {
   EditImageRequest,
   GeneratedImage,
@@ -90,6 +90,20 @@ async function editImage(request: EditImageRequest): Promise<ImageResponse> {
   }
 
   return response.json();
+}
+
+/**
+ * Helper: convert a PromptInput file attachment to a compressed data URL
+ */
+async function attachmentToCompressedDataUrl(
+  fileRef: { url: string; mediaType?: string; filename?: string }
+): Promise<string> {
+  const response = await fetch(fileRef.url);
+  const blob = await response.blob();
+  const raw = await fileToDataUrl(
+    new File([blob], fileRef.filename || 'image', { type: fileRef.mediaType })
+  );
+  return compressImageDataUrl(raw);
 }
 
 /**
@@ -170,13 +184,7 @@ export default function ImageGenerator() {
                 .filter(f => f.mediaType?.startsWith('image/'))
                 .map(async f => {
                   try {
-                    const response = await fetch(f.url);
-                    const blob = await response.blob();
-                    return await fileToDataUrl(
-                      new File([blob], f.filename || 'image', {
-                        type: f.mediaType,
-                      })
-                    );
+                    return await attachmentToCompressedDataUrl(f);
                   } catch (error) {
                     console.error(
                       'Failed to convert attachment to data URL:',
@@ -217,15 +225,9 @@ export default function ImageGenerator() {
           }
 
           try {
+            // Compress images before sending to avoid 413 errors
             const imageUrls = await Promise.all(
-              imageFiles.map(async imageFile => {
-                // Convert blob URL to data URL for API
-                const response = await fetch(imageFile.url);
-                const blob = await response.blob();
-                return await fileToDataUrl(
-                  new File([blob], 'image', { type: imageFile.mediaType })
-                );
-              })
+              imageFiles.map(f => attachmentToCompressedDataUrl(f))
             );
 
             const result = await editImage({
