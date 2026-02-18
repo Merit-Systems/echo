@@ -229,6 +229,31 @@ function readTemplateReferralConfig(
 }
 
 /**
+ * Sanitize a referral code to prevent environment variable injection.
+ * Only allows alphanumeric characters, hyphens, underscores, and dots.
+ * Returns null if the code is invalid or empty after sanitization.
+ */
+function sanitizeReferralCode(code: unknown): string | null {
+  if (typeof code !== 'string' || code.length === 0) {
+    return null;
+  }
+
+  // Strict allowlist: only alphanumeric, hyphens, underscores, dots
+  const SAFE_REFERRAL_PATTERN = /^[a-zA-Z0-9_\-\.]+$/;
+
+  if (!SAFE_REFERRAL_PATTERN.test(code)) {
+    return null;
+  }
+
+  // Enforce a reasonable max length
+  if (code.length > 128) {
+    return null;
+  }
+
+  return code;
+}
+
+/**
  * Extract the GitHub owner (user or org) from a GitHub template URL.
  * e.g. "https://github.com/someuser/my-template" -> "someuser"
  */
@@ -483,7 +508,14 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
     // See: https://echo.merit.systems/docs/money/referrals
     if (isExternal) {
       const templateConfig = readTemplateReferralConfig(absoluteProjectPath);
-      const referralCode = templateConfig?.referralCode;
+      const referralCode = sanitizeReferralCode(templateConfig?.referralCode);
+
+      if (templateConfig?.referralCode && !referralCode) {
+        log.warning(
+          'Template referral code was ignored: contains invalid characters. ' +
+            'Only alphanumeric characters, hyphens, underscores, and dots are allowed.'
+        );
+      }
 
       if (referralCode) {
         const referralEnvVar = detectReferralEnvVarName(absoluteProjectPath);
