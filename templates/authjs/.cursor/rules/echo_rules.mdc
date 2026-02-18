@@ -1,0 +1,92 @@
+---
+description: Guidelines and best practices for building Echo Next.js applications with Auth.js (NextAuth) authentication, including session management and protected routes
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Auth.js (NextAuth) Guidelines
+
+## SDK Initialization
+
+### Server-Side Initialization
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap your application with `EchoProvider`:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Auth.js Integration
+
+This template uses `@merit-systems/echo-authjs-provider` to integrate Echo as a NextAuth provider.
+
+- Configure Auth.js with the Echo provider in your auth configuration
+- Use `next-auth` session management for protected routes
+- Access the Echo session through the NextAuth session object
+
+## Environment Variables
+
+ALWAYS store secrets in `.env.local`:
+
+```bash
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
+```
+
+NEVER hardcode secrets directly in your code.
+
+## Server/Client Boundaries
+
+Use server components for Echo AI calls and auth checks. Use client components ONLY for UI interactions.
+
+```typescript
+// ✅ CORRECT
+'use client';
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+// ❌ INCORRECT - Never import server SDK in client components
+'use client';
+import Echo from '@merit-systems/echo-next-sdk';
+```
+
+## Echo Authentication Handler
+
+ALWAYS register Echo auth handlers at `app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Best Practices
+
+1. **Separation**: Keep server logic in API routes and `src/echo/`, client logic in components
+2. **Environment Variables**: Use server variables for secrets, `NEXT_PUBLIC_` for client-side config
+3. **Auth**: Use middleware or server-side checks for route protection
+4. **Validation**: Always validate inputs in API routes before processing
+5. **Error Handling**: Provide clear error messages and appropriate HTTP status codes
+6. **Type Safety**: Use TypeScript strictly, avoid `any`
+7. **Security**: Never expose server secrets, auth tokens, or API keys to the client

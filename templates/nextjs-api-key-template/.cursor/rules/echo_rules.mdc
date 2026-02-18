@@ -1,0 +1,109 @@
+---
+description: Guidelines and best practices for building Echo Next.js applications with server-side API key management, including database integration and authentication
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js API Key Template Guidelines
+
+## SDK Initialization
+
+### Server-Side Initialization
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap your application with `EchoProvider`:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store secrets in `.env.local`:
+
+```bash
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+DATABASE_URL=your_database_url
+```
+
+NEVER hardcode API keys, app IDs, or database URLs directly in your code.
+
+## Server/Client Boundaries
+
+Use server components for Echo AI calls and database operations. Use client components ONLY for UI interactions.
+
+```typescript
+// ✅ CORRECT
+'use client';
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+// ❌ INCORRECT - Never import server SDK in client components
+'use client';
+import Echo from '@merit-systems/echo-next-sdk';
+```
+
+## Echo Authentication Handler
+
+ALWAYS register Echo auth handlers at `app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Database & API Keys
+
+- Use Prisma for database access
+- Store API keys securely, never expose them to the client
+- Validate and sanitize all user inputs before database operations
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── echo/[...echo]/route.ts   # Echo auth handlers
+│   │   └── keys/route.ts             # API key management
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/                        # UI components
+├── echo/
+│   └── index.ts                       # Server-side Echo init
+├── lib/
+│   └── utils.ts
+└── providers.tsx
+prisma/
+└── schema.prisma                      # Database schema
+```
+
+## Best Practices
+
+1. **Separation**: Keep server logic in API routes and `src/echo/`, client logic in components
+2. **Environment Variables**: Use server variables for secrets, `NEXT_PUBLIC_` for client-side config
+3. **Validation**: Always validate inputs in API routes before processing
+4. **Error Handling**: Provide clear error messages and appropriate HTTP status codes
+5. **Type Safety**: Use TypeScript strictly, avoid `any`
+6. **Security**: Never expose server secrets or API keys to the client
+7. **Database**: Use Prisma migrations for schema changes, validate inputs before writes

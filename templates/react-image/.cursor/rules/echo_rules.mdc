@@ -1,0 +1,67 @@
+---
+description: Guidelines and best practices for building Echo React Image Generation applications with Vite, including provider setup, environment variables, and AI SDK integration
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React Image Generation (Vite) Guidelines
+
+## SDK Initialization
+
+### EchoProvider Setup
+
+ALWAYS wrap your application with `EchoProvider` at the root level:
+
+```typescript
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID }}>
+      <ImageGenerator />
+    </EchoProvider>
+  );
+}
+```
+
+### Using Echo Model Providers
+
+Access AI model providers through the `useEchoModelProviders` hook:
+
+```typescript
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+
+function ImageGenerator() {
+  const { openai } = useEchoModelProviders();
+  // Use model providers for image generation
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local` with the `VITE_` prefix:
+
+```bash
+VITE_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code.
+
+## Project Structure
+
+```
+src/
+├── main.tsx          # App entry point with EchoProvider
+├── App.tsx           # Main application component
+├── components/       # UI components
+├── lib/              # Utility functions
+├── index.css         # Global styles
+└── vite-env.d.ts     # Vite type declarations
+```
+
+## Best Practices
+
+1. **Provider Placement**: Always place `EchoProvider` at the root of your component tree
+2. **Environment Variables**: Use `VITE_` prefix for all client-side environment variables
+3. **Type Safety**: Use TypeScript strictly, avoid `any`
+4. **Error Handling**: Always provide meaningful error messages
+5. **Security**: Remember that all Vite env vars are exposed to the browser

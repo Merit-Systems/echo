@@ -1,0 +1,100 @@
+---
+description: Guidelines and best practices for building Echo React Chat applications with Vite, including streaming responses, provider setup, and AI SDK integration
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React Chat (Vite) Guidelines
+
+## SDK Initialization
+
+### EchoProvider Setup
+
+ALWAYS wrap your application with `EchoProvider` at the root level:
+
+```typescript
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID }}>
+      <ChatWrapper />
+    </EchoProvider>
+  );
+}
+```
+
+### Using Echo Model Providers
+
+Access AI model providers through the `useEchoModelProviders` hook:
+
+```typescript
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+
+function ChatWrapper() {
+  const { openai } = useEchoModelProviders();
+
+  // Use openai provider with the AI SDK
+  const result = streamText({
+    model: openai('gpt-4o'),
+    messages,
+  });
+}
+```
+
+### Chat Provider
+
+Use `EchoChatProvider` for chat-specific state management:
+
+```typescript
+import { EchoChatProvider } from '@merit-systems/echo-react-sdk';
+
+function ChatWrapper() {
+  return (
+    <EchoChatProvider sendFunction={handleSend}>
+      <Chat />
+    </EchoChatProvider>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local` with the `VITE_` prefix:
+
+```bash
+VITE_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code.
+
+## Project Structure
+
+```
+src/
+├── main.tsx          # App entry point
+├── App.tsx           # Main app with EchoProvider and chat setup
+├── chat.tsx          # Chat UI component
+├── header.tsx        # Header component
+├── components/       # Shared UI components
+├── lib/              # Utility functions
+├── index.css         # Global styles
+└── vite-env.d.ts     # Vite type declarations
+```
+
+## TypeScript Guidelines
+
+ALWAYS use strict typing and avoid `any`:
+
+```typescript
+import type { ChatSendParams } from '@merit-systems/echo-react-sdk';
+import type { UIMessage } from 'ai';
+```
+
+## Best Practices
+
+1. **Provider Placement**: Always place `EchoProvider` at the root of your component tree
+2. **Streaming**: Use `streamText` from the AI SDK for chat responses
+3. **Hooks**: Use `useEcho` and `useEchoModelProviders` for accessing Echo state and models
+4. **Environment Variables**: Use `VITE_` prefix for all client-side environment variables
+5. **Type Safety**: Use TypeScript strictly, import types from the SDK
+6. **Security**: Remember that all Vite env vars are exposed to the browser
