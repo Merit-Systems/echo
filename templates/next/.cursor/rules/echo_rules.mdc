@@ -1,0 +1,50 @@
+---
+description: Echo Next.js template rules covering server wiring, client providers, App Router conventions, env handling, TypeScript patterns, and error handling
+globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+---
+
+# Echo Next.js Template Rules
+
+## Server Wiring
+
+- Keep all Echo server setup centralized in `src/echo/index.ts`; never scatter Echo initialization across multiple files.
+- The echo route must remain a thin passthrough — `export const { GET, POST } = handlers` in `src/app/api/echo/[...echo]/route.ts`. Do not add business logic here.
+- Use `ECHO_APP_ID` (no `NEXT_PUBLIC_` prefix) for server-side Echo initialization; this value must never be exposed to the client bundle.
+- Export named helpers (`handlers`, `isSignedIn`, `openai`, `anthropic`) from `src/echo/index.ts` and import them wherever needed.
+
+## Client vs. Server Imports
+
+- In Server Components and Route Handlers: import from `@merit-systems/echo-next-sdk`.
+- In Client Components (`"use client"`): import from `@merit-systems/echo-next-sdk/client`.
+- Never import server-only Echo modules in client components; this will cause build errors or secret leakage.
+
+## Environment Variables
+
+- Use `ECHO_APP_ID` for server-side config.
+- Use `NEXT_PUBLIC_ECHO_APP_ID` only for values that must reach the browser (e.g., client-side provider config).
+- Never commit `.env.local`; verify `.gitignore` includes it.
+- Validate required env vars at startup using a guard like `if (!process.env.ECHO_APP_ID) throw new Error(...)`.
+
+## App Router Conventions
+
+- Follow Next.js App Router file conventions: `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`.
+- Use path alias `@/` (maps to `src/`) for all internal imports; avoid relative `../../` traversal.
+- Keep Server Components as the default; only add `"use client"` when component needs interactivity or browser APIs.
+
+## TypeScript
+
+- Enable strict TypeScript; never use `any` — use `unknown` and narrow with type guards instead.
+- Use the non-null assertion operator (`!`) on env vars only if you guard them above (e.g., `process.env.ECHO_APP_ID!` after a startup check).
+- Prefer `type` over `interface` for plain data shapes; use `interface` for extendable contracts.
+
+## Error Handling
+
+- Use Next.js `error.tsx` boundaries to catch and display errors at the route segment level.
+- Return appropriate HTTP status codes from Route Handlers (`NextResponse.json({...}, { status: 400 })`).
+- Never expose raw error messages from Echo or upstream providers to the client.
+
+## Security
+
+- Route all LLM/model API calls through server Route Handlers; never call provider APIs directly from client code.
+- Use `isSignedIn` middleware from `src/echo/index.ts` to protect routes that require authentication.
+- Do not log sensitive values (tokens, keys, session data) in production code.

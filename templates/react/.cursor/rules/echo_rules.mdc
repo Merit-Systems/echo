@@ -1,0 +1,49 @@
+---
+description: Echo React (Vite) template rules covering EchoProvider setup, hook usage, client-safe env vars, component structure, and TypeScript patterns
+globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+---
+
+# Echo React (Vite) Template Rules
+
+## EchoProvider Setup
+
+- Initialize `EchoProvider` at the app root in `src/main.tsx` (or `src/App.tsx`); pass `config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}`.
+- Never initialize multiple `EchoProvider` instances; there should be exactly one at the React tree root.
+- Do not render the app if `import.meta.env.VITE_ECHO_APP_ID` is missing; add a guard that shows a setup error in development.
+
+## Hook & SDK Usage
+
+- Use `useEcho()` from `@merit-systems/echo-react-sdk` to access the authenticated Echo client, user info, and sign-in state.
+- Use `EchoTokens` from `@merit-systems/echo-react-sdk` to display user token/balance information; do not build a custom balance display unless the SDK component is insufficient.
+- Use `useEchoModelProviders()` to get provider-specific clients (e.g., `openai`); do not construct model clients manually.
+- Do not create custom wrapper hooks around Echo SDK hooks unless you need to add application-specific logic on top.
+
+## Environment Variables (Vite)
+
+- Use `import.meta.env.VITE_ECHO_APP_ID` for the Echo app ID; this is the only Echo-related env var that belongs in client code.
+- Never add provider API keys (OpenAI, Anthropic) to Vite env vars; all model calls must be proxied through a server or Echo's backend.
+- Prefix all custom public env vars with `VITE_`; non-prefixed env vars are not accessible in the browser bundle.
+- Document required env vars in `.env.example`.
+
+## Component Structure
+
+- Keep `src/App.tsx` focused on layout and provider composition; extract feature components into `src/components/`.
+- This is a pure client-side SPA; there is no server-side rendering or Route Handlers. All Echo API calls go through the SDK's client-side hooks.
+- For any operations requiring secrets or server-side logic, create a separate backend (e.g., an Express server or Next.js API route) and call it from the client.
+
+## TypeScript
+
+- Enable strict TypeScript in `tsconfig.app.json`; avoid `any` types.
+- Type component props explicitly; use `React.FC<Props>` or inline function types.
+- Use `as const` for configuration objects passed to providers.
+
+## Styling & Conventions
+
+- Follow existing Vite + React patterns in this template for module paths, component layout, and CSS approach.
+- Use the existing CSS modules or Tailwind setup (whichever this template uses); do not mix styling approaches.
+- Keep `src/main.tsx` minimal — only root rendering, global styles, and provider setup.
+
+## Security
+
+- All credentials and provider secrets must remain server-side; only the public Echo app ID belongs in Vite env vars.
+- If you need to add server-side features, keep them in a separate server package; do not embed backend logic in the Vite client bundle.

@@ -1,0 +1,49 @@
+---
+description: Echo React Image Generation (Vite) template rules covering EchoProvider setup, image generation hooks, prompt handling, display conventions, and client-safe patterns
+globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+---
+
+# Echo React Image Generation (Vite) Template Rules
+
+## Provider Setup
+
+- Initialize `EchoProvider` at the app root (`src/main.tsx` or `src/App.tsx`) with `config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}`.
+- Only one `EchoProvider` instance at the tree root; do not re-initialize it in child components.
+
+## Hook & SDK Usage
+
+- Use `useEcho()` from `@merit-systems/echo-react-sdk` to access the Echo client and auth state.
+- Use `useEchoModelProviders()` to get image-capable provider clients; do not construct provider clients manually.
+- Keep image generation invocations (API calls) in component handlers or custom hooks; do not trigger generation as a side effect of rendering.
+
+## Image Generation UX
+
+- Show a loading spinner or progress indicator during image generation (typically 5–30 seconds); disable the generate button while in-flight.
+- Display generated images using `<img>` with descriptive `alt` text derived from the prompt.
+- Support generating multiple images per request if the provider/template supports it; display them in a responsive grid.
+- Allow users to download generated images; use an anchor tag with `download` attribute pointing to the image URL or blob.
+- Handle generation errors gracefully — show a user-friendly error message with a retry option.
+
+## Prompt Handling
+
+- Validate prompts client-side before submission: require non-empty input, enforce reasonable length limits (e.g., ≤1000 characters).
+- Preserve the last submitted prompt in the input field so users can refine and regenerate.
+- Consider adding a prompt history feature using local state or `localStorage` for convenience.
+
+## Environment Variables (Vite)
+
+- Use `import.meta.env.VITE_ECHO_APP_ID` for the Echo app ID; this is the only Echo-related env var for the client.
+- Never embed provider API keys in the client bundle; image generation is proxied through Echo's backend.
+- Document required env vars in `.env.example`.
+
+## Component Structure
+
+- Keep `src/main.tsx` minimal: root rendering, global styles, and `EchoProvider`.
+- Structure image generation UI into focused components: prompt input, generate button, image gallery, image card.
+- Follow existing Vite + React patterns for module paths, component layout, styling, and TypeScript strictness.
+
+## Security & Rate Limiting
+
+- All image generation calls are proxied through Echo's backend; the client only submits prompts and receives image URLs.
+- Only `VITE_ECHO_APP_ID` belongs in client env vars; all provider keys remain server-side.
+- Consider implementing client-side debounce on the generate button to prevent accidental double-submissions.
