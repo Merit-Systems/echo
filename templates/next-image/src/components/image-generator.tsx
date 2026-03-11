@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { fileToDataUrl } from '@/lib/image-utils';
+import { fileToDataUrl, fileToCompressedDataUrl } from '@/lib/image-utils';
 import type {
   EditImageRequest,
   GeneratedImage,
@@ -219,10 +219,13 @@ export default function ImageGenerator() {
           try {
             const imageUrls = await Promise.all(
               imageFiles.map(async imageFile => {
-                // Convert blob URL to data URL for API
+                // Convert blob URL to a compressed data URL for API submission.
+                // Compression reduces payload size and prevents HTTP 413 errors
+                // when uploading large images. The server-side limit is also
+                // raised in next.config.ts as a belt-and-suspenders fix.
                 const response = await fetch(imageFile.url);
                 const blob = await response.blob();
-                return await fileToDataUrl(
+                return await fileToCompressedDataUrl(
                   new File([blob], 'image', { type: imageFile.mediaType })
                 );
               })

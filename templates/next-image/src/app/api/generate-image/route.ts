@@ -19,13 +19,12 @@ const providers = {
   gemini: handleGoogleGenerate,
 };
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb',
-    },
-  },
-};
+// App Router route segment config
+// `maxDuration` sets the maximum execution time for this route (seconds).
+// Note: the body-size limit for App Router route handlers is configured in
+// next.config.ts via `experimental.serverActions.bodySizeLimit`, NOT via the
+// Pages-Router-only `export const config` pattern which is silently ignored here.
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
