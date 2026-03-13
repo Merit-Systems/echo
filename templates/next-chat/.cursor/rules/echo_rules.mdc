@@ -1,0 +1,100 @@
+---
+description: Guidelines and best practices for building Echo Next.js Chat applications with AI Vercel SDK integration
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Chat Guidelines
+
+## Overview
+Echo Chat is a Next.js AI chatbot powered by Echo's user-pays infrastructure. It combines `@merit-systems/echo-next-sdk` with Vercel AI SDK (`ai`) for streaming chat.
+
+## Project Structure
+- `src/echo/index.ts` — Echo SDK initialization (server-side)
+- `src/providers.tsx` — EchoProvider wrapper (client-side)
+- `src/app/api/echo/[...echo]/route.ts` — Echo API route handlers
+- `src/app/api/chat/route.ts` — Chat API endpoint using AI SDK
+- `src/components/` — Chat UI components (balance, top-up, chat interface)
+
+## Echo SDK Initialization
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+- `openai` and `anthropic` are proxied SDK instances that route billing through Echo
+- NEVER import `openai` or `@anthropic-ai/sdk` directly
+
+## Chat API Route with AI SDK
+```typescript
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const result = streamText({
+    model: openai('gpt-4o'),  // Use Echo-proxied provider
+    messages,
+  });
+  return result.toDataStreamResponse();
+}
+```
+
+### Key Rules:
+- Use Echo's `openai` or `anthropic` as the provider argument to `streamText`
+- `streamText` from `ai` package handles streaming responses
+- Return `result.toDataStreamResponse()` for proper streaming
+
+## Client-Side Chat Components
+
+### EchoProvider Setup
+```typescript
+'use client';
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+### Using Echo Context
+```typescript
+import { type EchoContextValue } from '@merit-systems/echo-react-sdk';
+
+export function EchoBalance({ echo }: { echo: EchoContextValue }) {
+  const { balance, freeTierBalance } = echo;
+  // Display balance information
+}
+
+export function EchoTopUpButton({ echo }: { echo: EchoContextValue }) {
+  const { createPaymentLink } = echo;
+  // Handle top-up flow
+}
+```
+
+### Key Context Properties:
+- `echo.balance` — User's current paid balance
+- `echo.freeTierBalance` — Free tier credits remaining
+- `echo.createPaymentLink()` — Generate payment link for top-up
+- `echo.isSignedIn` — Authentication state
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side app ID
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side app ID
+
+## Dependencies
+- `@merit-systems/echo-next-sdk` — Echo SDK for Next.js
+- `@merit-systems/echo-react-sdk` — React components and context types
+- `ai` — Vercel AI SDK for streaming chat
+
+## Anti-Patterns (DO NOT)
+- ❌ Do NOT import `openai` or `@anthropic-ai/sdk` packages directly
+- ❌ Do NOT build custom billing — Echo handles per-token billing automatically
+- ❌ Do NOT use `fetch` for chat API calls — use Vercel AI SDK `useChat` hook
+- ❌ Do NOT modify the `[...echo]` route handler
+- ❌ Do NOT store AI provider API keys — Echo manages provider access

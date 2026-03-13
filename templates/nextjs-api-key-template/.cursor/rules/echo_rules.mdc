@@ -1,0 +1,52 @@
+---
+description: Guidelines and best practices for building Echo Next.js API Key applications
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js API Key Template Guidelines
+
+## Overview
+This template demonstrates Echo's API key authentication pattern for Next.js. It uses `@merit-systems/echo-next-sdk` with API key-based access.
+
+## Project Structure
+- `src/echo/index.ts` — Echo SDK initialization (server-side)
+- `src/providers.tsx` — EchoProvider wrapper (client-side)
+- `src/app/api/echo/[...echo]/route.ts` — Echo API route handlers
+
+## Echo SDK Initialization
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+## Client-Side Provider
+```typescript
+'use client';
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## API Key Authentication Pattern
+- This template uses API key auth instead of OAuth
+- API keys allow server-to-server or programmatic access to Echo
+- Keys are scoped per-app and per-user
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side app ID
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side app ID
+
+## Anti-Patterns (DO NOT)
+- ❌ Do NOT expose API keys to the client — keep them server-side
+- ❌ Do NOT import AI SDKs directly — use Echo proxies
+- ❌ Do NOT modify the `[...echo]` route handler
+- ❌ Do NOT hardcode API keys in source code

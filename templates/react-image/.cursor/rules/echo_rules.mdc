@@ -1,0 +1,54 @@
+---
+description: Guidelines and best practices for building Echo React Image generation applications
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React Image Template Guidelines
+
+## Overview
+Echo Image is a React (Vite) application for AI-powered image generation using Echo's user-pays infrastructure. It uses `@merit-systems/echo-react-sdk`.
+
+## Project Structure
+- `src/main.tsx` — App entry point with EchoProvider
+- `src/App.tsx` — Main app component with image generation UI
+
+## EchoProvider Setup
+```typescript
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+## Echo UI Components
+```typescript
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <>
+      <EchoTokens />
+      {/* Image generation UI */}
+    </>
+  );
+}
+```
+
+## Key Patterns
+- Use `import.meta.env.VITE_ECHO_APP_ID` for Vite environment variables
+- `EchoTokens` handles auth, balance display, and top-up
+- Echo manages billing for image generation API calls
+
+## Environment Variables
+- `VITE_ECHO_APP_ID` — App ID from the Echo dashboard
+
+## Anti-Patterns (DO NOT)
+- ❌ Do NOT use `process.env` — use `import.meta.env` (Vite)
+- ❌ Do NOT import AI SDKs directly — Echo handles provider access
+- ❌ Do NOT build custom payment flows — use `EchoTokens`
+- ❌ Do NOT render Echo components outside `EchoProvider`

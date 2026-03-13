@@ -1,0 +1,94 @@
+---
+description: Guidelines and best practices for building Echo CLI applications with user-pays AI infrastructure
+globs: **/*.ts,**/*.js
+---
+
+# Echo CLI Guidelines
+
+## Overview
+Echo CLI (`echodex`) is a terminal-based AI chat agent powered by Echo's user-pays infrastructure. It uses `@merit-systems/echo-cli-sdk` with Commander.js and Clack prompts.
+
+## Project Structure
+- `src/index.ts` — CLI entry point with Commander commands
+- `src/auth/` — Authentication (Echo login, wallet login, local wallet)
+- `src/core/` — Core features (chat, profile, model selection, history, wallet)
+- `src/utils/` — Utility functions (auth checks, config)
+- `src/constants/` — Constants (ASCII art, auth options)
+- `src/print/` — Formatted terminal output helpers
+
+## CLI Commands
+The CLI uses Commander.js for command registration:
+```typescript
+import { Command } from 'commander';
+
+const program = new Command();
+program
+  .name('echodex')
+  .description('CLI Coding Agent Powered by Echo')
+  .version('1.0.0');
+
+program
+  .command('chat')
+  .description('Start an AI chat session')
+  .action(async () => {
+    if (!isAuthenticated()) {
+      warning('Please login first: echodex login');
+      process.exit(1);
+    }
+    await startChatSession();
+  });
+```
+
+### Key Rules:
+- Always check `isAuthenticated()` before AI operations
+- Use `process.exit()` with appropriate codes (0 = success, 1 = error)
+- Use `@clack/prompts` for interactive selections (not readline)
+
+## Authentication
+Three auth methods are supported:
+1. **Echo Login** — OAuth-based authentication via Echo platform
+2. **Wallet Login** — Connect existing crypto wallet
+3. **Local Wallet** — Generate and manage a local wallet
+
+```typescript
+import { loginWithEcho, loginWithWallet, initLocalWallet, logout } from '@/auth';
+import { isAuthenticated } from '@/utils';
+```
+
+## Core Features
+```typescript
+import {
+  startChatSession,      // New chat session
+  resumeChatSession,     // Resume from history
+  showProfile,           // User profile info
+  selectModel,           // Choose AI model
+  showConversationHistory,
+  exportConversationHistory,
+  clearConversationHistory,
+  showLocalWalletBalance,
+  showLocalWalletAddress,
+  exportPrivateKey,
+  fundWallet
+} from '@/core';
+```
+
+## Terminal Output
+Use the print helpers for consistent formatting:
+```typescript
+import { info, warning, header } from '@/print';
+
+header('Authentication');  // Section headers
+info('Connected');         // Info messages
+warning('Not logged in');  // Warning messages
+```
+
+## Environment & Configuration
+- Configuration is stored locally (managed by the SDK)
+- No `.env` file needed for CLI — credentials are stored after login
+- Wallet keys are managed securely by the local wallet system
+
+## Anti-Patterns (DO NOT)
+- ❌ Do NOT hardcode API keys — use Echo authentication flow
+- ❌ Do NOT use `console.log` for user output — use `@/print` helpers
+- ❌ Do NOT skip auth checks before AI operations
+- ❌ Do NOT import AI SDKs directly — Echo handles provider access and billing
