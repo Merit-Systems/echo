@@ -14,7 +14,13 @@ import chalk from 'chalk';
 import { spawn } from 'child_process';
 import { Command } from 'commander';
 import degit from 'degit';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from 'fs';
 import path from 'path';
 
 const program = new Command();
@@ -176,6 +182,42 @@ interface CreateAppOptions {
   template?: string;
   appId?: string;
   skipInstall?: boolean;
+}
+
+interface EchoTemplateConfig {
+  referralCode?: string;
+}
+
+const ECHO_CONTROL_URL = 'https://echo.merit.systems';
+
+function readEchoTemplateConfig(projectPath: string): EchoTemplateConfig | null {
+  const configPath = path.join(projectPath, 'echo.json');
+  if (!existsSync(configPath)) return null;
+  try {
+    return JSON.parse(readFileSync(configPath, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+async function registerTemplateReferral(
+  appId: string,
+  referralCode: string
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `${ECHO_CONTROL_URL}/api/v1/apps/template-referral`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ echoAppId: appId, referralCode }),
+      }
+    );
+    const data = (await response.json()) as { success?: boolean };
+    return data.success === true;
+  } catch {
+    return false;
+  }
 }
 
 function isExternalTemplate(template: string): boolean {
@@ -412,6 +454,25 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       const envContent = `${envVarName}=${appId}\n`;
       writeFileSync(envPath, envContent);
       log.message(`Created .env.local with ${envVarName}`);
+    }
+
+    // Register template referral for external templates
+    if (isExternal) {
+      const echoConfig = readEchoTemplateConfig(absoluteProjectPath);
+      if (echoConfig?.referralCode) {
+        const registered = await registerTemplateReferral(
+          appId!,
+          echoConfig.referralCode
+        );
+        if (registered) {
+          log.message('Template creator registered as referrer');
+        }
+        // Remove echo.json from the scaffolded project — it's only for referral tracking
+        const echoConfigPath = path.join(absoluteProjectPath, 'echo.json');
+        if (existsSync(echoConfigPath)) {
+          unlinkSync(echoConfigPath);
+        }
+      }
     }
 
     log.step('Project setup completed successfully');
