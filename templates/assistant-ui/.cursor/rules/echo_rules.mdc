@@ -1,0 +1,170 @@
+---
+description: Guidelines and best practices for building Echo Assistant UI applications with @assistant-ui/react, AI SDK v5, and Next.js server/client boundaries
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Assistant UI Guidelines
+
+## Architecture
+
+This is a Next.js application using `@assistant-ui/react` with Vercel AI SDK v5 and Echo as the AI provider router. It provides a full-featured chat UI with streaming support.
+
+### Key Dependencies
+
+- `@assistant-ui/react` for the chat UI framework
+- `@assistant-ui/react-ai-sdk` for AI SDK integration
+- `@assistant-ui/react-markdown` for markdown rendering
+- `@merit-systems/echo-next-sdk` for Echo AI provider integration
+- `ai` (Vercel AI SDK v5) for model interaction
+- `next` for the application framework
+
+## SDK Initialization
+
+### Echo Server-Side Setup
+
+ALWAYS initialize the Echo SDK in `echo.ts` at the project root:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+const echo = Echo({
+  appId: process.env.NEXT_PUBLIC_ECHO_APP_ID ?? 'ECHO_APP_ID',
+});
+
+export const { getUser, isSignedIn, openai, anthropic, google } = echo;
+export default echo.handlers;
+```
+
+### Echo Route Handler
+
+ALWAYS register Echo authentication handlers at `app/api/echo/[...path]/route.ts`:
+
+```typescript
+import handlers from '@/echo';
+export { handlers as GET, handlers as POST };
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local`:
+
+```bash
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code. ALWAYS use environment variables.
+
+## Chat API Route
+
+The chat API route at `app/api/chat/route.ts` connects Assistant UI to Echo models:
+
+```typescript
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+export async function POST(req: Request) {
+  const { messages, model } = await req.json();
+  const result = streamText({
+    model: openai(model),
+    messages,
+  });
+  return result.toDataStreamResponse();
+}
+```
+
+ALWAYS validate the `model` and `messages` parameters before processing.
+
+## Assistant UI Components
+
+### Runtime Provider
+
+Use `@assistant-ui/react-ai-sdk` to connect the AI SDK runtime to Assistant UI:
+
+```typescript
+'use client';
+
+import { useChat } from '@ai-sdk/react';
+import { useVercelUseChatRuntime } from '@assistant-ui/react-ai-sdk';
+import { AssistantRuntimeProvider } from '@assistant-ui/react';
+
+export function ChatProvider({ children }: { children: React.ReactNode }) {
+  const chat = useChat({ api: '/api/chat' });
+  const runtime = useVercelUseChatRuntime(chat);
+  return (
+    <AssistantRuntimeProvider runtime={runtime}>
+      {children}
+    </AssistantRuntimeProvider>
+  );
+}
+```
+
+### Using Assistant UI Components
+
+Import chat components from `@assistant-ui/react`:
+
+```typescript
+import { Thread } from '@assistant-ui/react';
+
+export function ChatPage() {
+  return <Thread />;
+}
+```
+
+NEVER build custom chat UIs from scratch when Assistant UI provides the component. Use the built-in `Thread`, `ThreadList`, `Composer`, and `Message` components.
+
+## Server/Client Boundaries
+
+- Server components: Echo SDK initialization, API routes, data fetching
+- Client components: Assistant UI components, chat interactions, user input
+
+NEVER import `@merit-systems/echo-next-sdk` in a client component. Only use it in server-side code and API routes.
+
+## Project Structure
+
+Follow this structure:
+
+```
+app/
+  api/
+    chat/route.ts              # Chat API endpoint
+    echo/[...path]/route.ts    # Echo auth handlers
+  layout.tsx
+  page.tsx
+components/                    # Client-side UI components
+echo.ts                        # Server-side Echo initialization
+providers.tsx                  # Client providers
+lib/                           # Shared utilities
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly in API routes:
+
+```typescript
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  return new Response(
+    JSON.stringify({ error: 'Internal server error' }),
+    { status: 500, headers: { 'Content-Type': 'application/json' } }
+  );
+}
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Export explicit types for shared data structures.
+- Use `as const` for string literals in discriminated union types.
+
+## Testing
+
+NEVER call external services directly in unit tests. ALWAYS mock the Echo SDK and Assistant UI runtime:
+
+```typescript
+vi.mock('@/echo', () => ({
+  openai: vi.fn(() => mockModel),
+}));
+```

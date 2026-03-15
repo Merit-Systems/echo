@@ -1,0 +1,161 @@
+---
+description: Guidelines and best practices for building Echo Next.js video generation applications, including SDK initialization, video API integration, Google GenAI usage, and UI patterns
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Video Generation Guidelines
+
+## Architecture
+
+This is a Next.js application for AI-powered video generation using the Echo SDK. It integrates with Google GenAI for video generation, uses React Query for async state management, and provides automatic billing through Echo.
+
+### Key Dependencies
+
+- `@merit-systems/echo-next-sdk` for server-side Echo integration
+- `@merit-systems/echo-react-sdk` for client-side Echo components
+- `@google/genai` for Google AI video generation
+- `@tanstack/react-query` for async state management
+- `ai` (Vercel AI SDK) for model interaction
+- `next` for the application framework
+- Radix UI components for the UI layer
+
+## SDK Initialization
+
+### Server-Side Echo Setup
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local`:
+
+```bash
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs. ALWAYS use environment variables.
+
+## Video Generation
+
+### API Layer
+
+Keep video API calls in `src/lib/api/video-api.ts`. Use server actions or API routes for all generation requests.
+
+ALWAYS use server-side code for video generation API calls. NEVER expose API keys to the client.
+
+### Video Operations
+
+Keep video processing logic in `src/lib/video-operations.ts` and history management in `src/lib/video-history.ts`.
+
+### Custom Hooks
+
+Use the custom hooks in `src/lib/hooks/` for video-related state management:
+
+- `useVideoGeneration.ts` - Video generation state and actions
+- `useVideoHistory.ts` - Video history management
+- `useVideoOperations.ts` - Video processing operations
+
+ALWAYS use React Query (`@tanstack/react-query`) for async state management in video operations.
+
+### Types and Constants
+
+Define video-related types in `src/lib/types.ts` and constants (models, sizes, durations) in `src/lib/constants.ts`.
+
+## Echo UI Components
+
+Use the shared Echo UI components in `src/components/`:
+
+- `echo-button.tsx` - Echo sign-in button
+- `echo-popover.tsx` - Account popover menu
+- `echo-account-next.tsx` - Account management
+- `signin.tsx` - Sign-in page component
+- `video-history.tsx` - Video generation history
+- `video-details-dialog.tsx` - Video detail view
+- `image-details-dialog.tsx` - Image detail view (for thumbnails)
+
+## Server/Client Boundaries
+
+- Server components: Echo SDK initialization, video generation API calls, authentication
+- Client components: Video display, generation UI, Echo provider, React Query
+
+NEVER import `@merit-systems/echo-next-sdk` in client components. Use `@merit-systems/echo-react-sdk` for client-side Echo features.
+
+## Project Structure
+
+Follow this structure:
+
+```
+src/
+  app/
+    api/
+      echo/[...echo]/route.ts     # Echo auth handlers
+    layout.tsx
+    page.tsx
+  components/
+    ui/                            # Reusable UI primitives
+    echo-button.tsx                # Echo integration components
+    video-history.tsx              # Video-specific components
+    video-details-dialog.tsx
+    ai-elements/
+      prompt-input.tsx             # Generation prompt input
+  echo/
+    index.ts                       # Server-side Echo initialization
+  lib/
+    api/
+      video-api.ts                 # Video generation API
+    hooks/
+      useVideoGeneration.ts        # Video generation hook
+      useVideoHistory.ts           # History management hook
+      useVideoOperations.ts        # Video operations hook
+    types.ts                       # Type definitions
+    constants.ts                   # Model and config constants
+    video-operations.ts            # Video processing
+    video-history.ts               # History storage
+    image-actions.ts               # Image generation actions
+    utils.ts                       # Shared utilities
+    currency-utils.ts              # Currency formatting
+```
+
+## Error Handling
+
+ALWAYS handle video generation errors and provide user feedback:
+
+```typescript
+try {
+  const result = await generateVideo(prompt, model);
+  return result;
+} catch (error) {
+  console.error('Video generation failed:', error);
+  // Return user-friendly error
+}
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Define video-related types in `src/lib/types.ts`.
+- Export explicit types for shared data structures.
+- Use `as const` for string literals in discriminated union types.
+
+## Testing
+
+NEVER call external services in unit tests. ALWAYS mock the Echo SDK and video generation APIs:
+
+```typescript
+vi.mock('@/echo', () => ({
+  openai: vi.fn(() => mockModel),
+}));
+
+vi.mock('@google/genai', () => ({
+  // mock implementation
+}));
+```

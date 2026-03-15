@@ -1,0 +1,174 @@
+---
+description: Guidelines and best practices for building Echo React image generation applications with Vite, including SDK initialization, image generation patterns, and component architecture
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React Image Generation (Vite) Guidelines
+
+## Architecture
+
+This is a client-side React application built with Vite for AI-powered image generation using the Echo React SDK. It provides image generation with automatic billing and user management through Echo.
+
+### Key Dependencies
+
+- `@merit-systems/echo-react-sdk` for Echo integration (provider, auth, UI)
+- `@ai-sdk/react` for React hooks
+- `ai` (Vercel AI SDK v5) for model interaction
+- `react` and `react-dom` for the UI framework
+- `vite` for the build tool
+- Radix UI components for the UI layer
+
+## SDK Initialization
+
+### EchoProvider Setup
+
+ALWAYS wrap your application with `EchoProvider` at the root level in `src/main.tsx`:
+
+```typescript
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+import App from './App.tsx';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env`:
+
+```bash
+VITE_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs. ALWAYS use `import.meta.env.VITE_*` environment variables.
+
+Note: Vite only exposes variables prefixed with `VITE_` to client code. NEVER store server secrets in `VITE_` prefixed variables as they are bundled into the client.
+
+## Image Generation
+
+### Image Generation Component
+
+Keep image generation logic in `src/components/ImageGeneration.tsx`:
+
+```typescript
+export function ImageGeneration() {
+  // Image prompt input, model selection, and generated image display
+}
+```
+
+ALWAYS handle loading states and errors during image generation. Display appropriate feedback while images are being generated.
+
+## Client-Side Architecture
+
+This is entirely a client-side application. All Echo interactions happen through the React SDK:
+
+- Use `@merit-systems/echo-react-sdk` for all Echo functionality.
+- The `EchoProvider` manages authentication state and token management.
+- Use Echo UI components for user-facing Echo features.
+
+NEVER attempt to use `@merit-systems/echo-next-sdk` in this project. That package is exclusively for Next.js server-side usage.
+
+## Echo UI Components
+
+Use the shared Echo UI components in `src/components/`:
+
+- `echo-button.tsx` - Echo sign-in button
+- `echo-popover.tsx` - Account popover menu
+- `echo-account-react.tsx` - React-specific account management
+- `echo-account.tsx` - Account display
+- `balance.tsx` - Token balance display
+- `money-input.tsx` - Currency input for top-ups
+- `top-up-button.tsx` - Quick top-up button
+- `logo.tsx` - Echo logo component
+
+### UI Primitives
+
+Reusable UI primitives are in `src/components/ui/`:
+
+- `skeleton.tsx` - Loading skeleton placeholders
+- `input.tsx` - Styled input component
+- `tooltip.tsx` - Tooltip component
+- `popover.tsx` - Popover component
+- `avatar.tsx` - User avatar component
+
+## Component Patterns
+
+### Separation of Concerns
+
+- Keep Echo provider setup in `src/main.tsx`.
+- Keep the main app layout in `src/App.tsx`.
+- Keep image generation in `src/components/ImageGeneration.tsx`.
+- Keep Echo-specific components in `src/components/`.
+- Keep UI primitives in `src/components/ui/`.
+
+## Project Structure
+
+Follow this structure:
+
+```
+src/
+  main.tsx                         # Entry point with EchoProvider
+  App.tsx                          # Root component with layout
+  components/
+    ImageGeneration.tsx            # Image generation component
+    ui/                            # Reusable UI primitives
+    echo-button.tsx                # Echo integration components
+    echo-popover.tsx
+    echo-account-react.tsx
+    echo-account.tsx
+    balance.tsx
+    top-up-button.tsx
+  lib/
+    utils.ts                       # Shared utilities
+    currency-utils.ts              # Currency formatting
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly and provide meaningful feedback:
+
+```typescript
+try {
+  const result = await generateImage(prompt);
+  return result;
+} catch (error) {
+  console.error('Image generation failed:', error);
+  // Show user-friendly error message
+}
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Export explicit types for shared data structures.
+- Use `as const` for string literals in discriminated union types.
+
+## Vite Configuration
+
+Use the standard Vite React configuration:
+
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+});
+```
+
+## Testing
+
+NEVER call external services in unit tests. ALWAYS mock the Echo SDK:
+
+```typescript
+vi.mock('@merit-systems/echo-react-sdk', () => ({
+  EchoProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+```
