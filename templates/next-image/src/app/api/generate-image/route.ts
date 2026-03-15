@@ -5,6 +5,7 @@
  * - Supports both OpenAI and Gemini models
  * - Handles text-to-image generation
  * - Returns base64 encoded images for consistent handling
+ * - Request payloads are kept small (generation only sends text prompts)
  */
 
 import {
@@ -17,14 +18,6 @@ import { handleOpenAIGenerate } from './openai';
 const providers = {
   openai: handleOpenAIGenerate,
   gemini: handleGoogleGenerate,
-};
-
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb',
-    },
-  },
 };
 
 export async function POST(req: Request) {
