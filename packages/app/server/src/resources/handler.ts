@@ -9,8 +9,9 @@ import { finalizeResource } from 'handlers/finalize';
 import { refund } from 'handlers/refund';
 import logger from 'logger';
 import { ExactEvmPayload } from 'services/facilitator/x402-types';
-import { HttpError, PaymentRequiredError } from 'errors/http';
+import { HttpError } from 'errors/http';
 import { ResultAsync, ok, err } from 'neverthrow';
+import type { ResourceError } from '../errors/results';
 
 type ResourceHandlerConfig<TInput, TOutput> = {
   inputSchema: ZodSchema<TInput>;
@@ -21,78 +22,83 @@ type ResourceHandlerConfig<TInput, TOutput> = {
   errorMessage: string;
 };
 
-async function handleApiRequest<TInput, TOutput>(
+function handleApiRequest<TInput, TOutput>(
   parsedBody: TInput,
   headers: Record<string, string>,
   config: ResourceHandlerConfig<TInput, TOutput>
-) {
+): ResultAsync<TOutput, ResourceError> {
   const { executeResource, calculateActualCost, createTransaction } = config;
 
-  const { echoControlService } = await authenticateRequest(headers, prisma);
-
-  const output = await executeResource(parsedBody);
-
-  const actualCost = calculateActualCost(parsedBody, output);
-  const transaction = createTransaction(parsedBody, output, actualCost);
-
-  await echoControlService.createTransaction(transaction);
-
-  return output;
+  return ResultAsync.fromPromise(
+    authenticateRequest(headers, prisma),
+    (cause): ResourceError => ({ type: 'RESOURCE_AUTHENTICATION_FAILED', cause })
+  ).andThen(({ echoControlService }) =>
+    ResultAsync.fromPromise(
+      executeResource(parsedBody),
+      (cause): ResourceError => ({ type: 'RESOURCE_EXECUTION_FAILED', cause })
+    ).andThen(output => {
+      const actualCost = calculateActualCost(parsedBody, output);
+      const transaction = createTransaction(parsedBody, output, actualCost);
+      return ResultAsync.fromPromise(
+        echoControlService.createTransaction(transaction),
+        (cause): ResourceError => ({ type: 'RESOURCE_TRANSACTION_FAILED', cause })
+      ).map(() => output);
+    })
+  );
 }
 
-async function executeResourceWithRefund<TInput, TOutput>(
+function executeResourceWithRefund<TInput, TOutput>(
   parsedBody: TInput,
   executeResource: (input: TInput) => Promise<TOutput>,
   paymentAmountDecimal: Decimal,
   payload: ExactEvmPayload
-): Promise<TOutput> {
-  try {
-    const output = await executeResource(parsedBody);
-    return output;
-  } catch (error) {
+): ResultAsync<TOutput, ResourceError> {
+  return ResultAsync.fromPromise(
+    executeResource(parsedBody),
+    (cause): ResourceError => ({ type: 'RESOURCE_EXECUTION_FAILED', cause })
+  ).mapErr(resourceErr => {
+    // Attempt refund on execution failure; log but don't block the error propagation
     refund(paymentAmountDecimal, payload).mapErr(refundErr => {
-      logger.error('Failed to refund', refundErr);
+      logger.error('Failed to refund after resource execution failure', refundErr);
     });
-    throw error;
-  }
+    return resourceErr;
+  });
 }
 
-async function handle402Request<TInput, TOutput>(
+function handle402Request<TInput, TOutput>(
   req: Request,
   res: Response,
   parsedBody: TInput,
   headers: Record<string, string>,
   safeMaxCost: Decimal,
   config: ResourceHandlerConfig<TInput, TOutput>
-): Promise<TOutput> {
+): ResultAsync<TOutput, ResourceError> {
   const { executeResource, calculateActualCost, createTransaction } = config;
 
-  const settleResult = await settle(req, headers, safeMaxCost);
+  return settle(req, headers, safeMaxCost)
+    .mapErr((cause): ResourceError => ({ type: 'RESOURCE_PAYMENT_FAILED', cause }))
+    .andThen(({ payload, paymentAmountDecimal }) =>
+      executeResourceWithRefund(
+        parsedBody,
+        executeResource,
+        paymentAmountDecimal,
+        payload
+      ).map(output => ({
+        output,
+        payload,
+        paymentAmountDecimal,
+      }))
+    )
+    .map(({ output, payload, paymentAmountDecimal }) => {
+      const actualCost = calculateActualCost(parsedBody, output);
+      const transaction = createTransaction(parsedBody, output, actualCost);
 
-  if (settleResult.isErr()) {
-    const settleErr = settleResult.error;
-    logger.error('settle failed', settleErr);
-    buildX402Response(req, res, safeMaxCost);
-    throw new PaymentRequiredError('Payment required, settle failed');
-  }
+      finalizeResource(paymentAmountDecimal, transaction, payload).catch(error => {
+        logger.error('Failed to finalize transaction', error);
+      });
 
-  const { payload, paymentAmountDecimal } = settleResult.value;
-
-  const output = await executeResourceWithRefund(
-    parsedBody,
-    executeResource,
-    paymentAmountDecimal,
-    payload
-  );
-
-  const actualCost = calculateActualCost(parsedBody, output);
-  const transaction = createTransaction(parsedBody, output, actualCost);
-
-  finalizeResource(paymentAmountDecimal, transaction, payload).catch(error => {
-    logger.error('Failed to finalize transaction', error);
-  });
-
-  return output;
+      return output;
+    });
 }
 
 async function handleResourceRequest<TInput, TOutput>(
@@ -121,34 +127,27 @@ async function handleResourceRequest<TInput, TOutput>(
   const safeMaxCost = calculateMaxCost(parsedBody);
 
   if (isApiRequest(headers)) {
-    try {
-      const output = await handleApiRequest(parsedBody, headers, config);
-      return res.status(200).json(output);
-    } catch (error) {
-      logger.error('Failed to handle API request', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+    return handleApiRequest(parsedBody, headers, config).match(
+      output => res.status(200).json(output),
+      error => {
+        logger.error('Failed to handle API request', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    );
   }
 
   if (isX402Request(headers)) {
-    try {
-      const result = await handle402Request(
-        req,
-        res,
-        parsedBody,
-        headers,
-        safeMaxCost,
-        config
-      );
-      return res.status(200).json(result);
-    } catch (error) {
-      if (error instanceof PaymentRequiredError) {
+    return handle402Request(req, res, parsedBody, headers, safeMaxCost, config).match(
+      result => res.status(200).json(result),
+      error => {
+        if (error.type === 'RESOURCE_PAYMENT_FAILED') {
+          logger.error('Failed to handle 402 request: payment failed', error.cause);
+          return buildX402Response(req, res, safeMaxCost);
+        }
         logger.error('Failed to handle 402 request', error);
-        return buildX402Response(req, res, safeMaxCost);
+        return res.status(500).json({ error: 'Internal server error' });
       }
-      logger.error('Failed to handle 402 request', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+    );
   }
 
   return buildX402Response(req, res, safeMaxCost);
@@ -159,17 +158,17 @@ export async function handleResourceRequestWithErrorHandling<TInput, TOutput>(
   res: Response,
   config: ResourceHandlerConfig<TInput, TOutput>
 ) {
-  try {
-    return await handleResourceRequest(req, res, config);
-  } catch (error) {
-    const { errorMessage } = config;
-    if (error instanceof HttpError) {
-      logger.error(errorMessage, error);
-      return res.status(error.statusCode).json({ error: errorMessage });
+  return ResultAsync.fromPromise(
+    handleResourceRequest(req, res, config),
+    (error): HttpError =>
+      error instanceof HttpError
+        ? error
+        : new HttpError(500, config.errorMessage || 'Internal server error')
+  ).match(
+    result => result,
+    (error: HttpError) => {
+      logger.error(config.errorMessage, error);
+      return res.status(error.statusCode).json({ error: config.errorMessage });
     }
-    logger.error(errorMessage, error);
-    return res
-      .status(500)
-      .json({ error: errorMessage || 'Internal server error' });
-  }
+  );
 }

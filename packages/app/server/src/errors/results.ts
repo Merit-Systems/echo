@@ -28,6 +28,6 @@ export type RefundError =
 
 export type ResourceError =
   | { type: 'RESOURCE_EXECUTION_FAILED'; cause: unknown }
-  | { type: 'RESOURCE_AUTHENTICATION_FAILED'; cause: AuthError }
+  | { type: 'RESOURCE_AUTHENTICATION_FAILED'; cause: unknown }
   | { type: 'RESOURCE_PAYMENT_FAILED'; cause: SettleError }
-  | { type: 'RESOURCE_TRANSACTION_FAILED'; cause: DbError };
+  | { type: 'RESOURCE_TRANSACTION_FAILED'; cause: unknown };
