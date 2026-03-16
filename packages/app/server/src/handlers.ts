@@ -1,7 +1,7 @@
 import { TransactionEscrowMiddleware } from 'middleware/transaction-escrow-middleware';
 import { modelRequestService } from 'services/ModelRequestService';
 import { ApiKeyHandlerInput, X402HandlerInput } from 'types';
-import { calculateRefundAmount } from 'utils';
+import { calculateRefundAmount, buildX402Response } from 'utils';
 import { checkBalance } from 'services/BalanceCheckService';
 import { prisma } from 'server';
 import { makeProxyPassthroughRequest } from 'services/ProxyPassthroughService';
@@ -25,7 +25,7 @@ export async function handleX402Request({
     return await makeProxyPassthroughRequest(req, res, provider, headers);
   }
 
-  const settlePromise = settle(req, res, headers, maxCost);
+  const settlePromise = settle(req, headers, maxCost);
 
   const modelResultPromise = modelRequestService
     .executeModelRequest(req, res, headers, provider, isStream)
@@ -37,13 +37,16 @@ export async function handleX402Request({
     modelResultPromise,
   ]);
 
+  const settleOk = settleResult.isOk();
+
   // Case 1: Settle failed and model failed
-  if (!settleResult && !modelResult.success) {
+  if (!settleOk && !modelResult.success) {
+    buildX402Response(req, res, maxCost);
     return;
   }
 
   // Case 2: Settle failed but model succeeded
-  if (!settleResult && modelResult.success) {
+  if (!settleOk && modelResult.success) {
     const { data } = modelResult;
     logger.error('Settle failed but model request succeeded', {
       provider: provider.getType(),
@@ -62,16 +65,19 @@ export async function handleX402Request({
     return;
   }
 
-  // At this point, settleResult is guaranteed to exist
-  if (!settleResult) {
+  // At this point, settleResult is guaranteed to be ok
+  if (settleResult.isErr()) {
+    buildX402Response(req, res, maxCost);
     return;
   }
 
-  const { payload, paymentAmountDecimal } = settleResult;
+  const { payload, paymentAmountDecimal } = settleResult.value;
 
   // Case 3: Settle succeeded but model failed
   if (!modelResult.success) {
-    await refund(paymentAmountDecimal, payload);
+    refund(paymentAmountDecimal, payload).mapErr(refundErr => {
+      logger.error('Failed to refund', refundErr);
+    });
     return;
   }
 

@@ -10,6 +10,7 @@ import { refund } from 'handlers/refund';
 import logger from 'logger';
 import { ExactEvmPayload } from 'services/facilitator/x402-types';
 import { HttpError, PaymentRequiredError } from 'errors/http';
+import { ResultAsync, ok, err } from 'neverthrow';
 
 type ResourceHandlerConfig<TInput, TOutput> = {
   inputSchema: ZodSchema<TInput>;
@@ -39,6 +40,23 @@ async function handleApiRequest<TInput, TOutput>(
   return output;
 }
 
+async function executeResourceWithRefund<TInput, TOutput>(
+  parsedBody: TInput,
+  executeResource: (input: TInput) => Promise<TOutput>,
+  paymentAmountDecimal: Decimal,
+  payload: ExactEvmPayload
+): Promise<TOutput> {
+  try {
+    const output = await executeResource(parsedBody);
+    return output;
+  } catch (error) {
+    refund(paymentAmountDecimal, payload).mapErr(refundErr => {
+      logger.error('Failed to refund', refundErr);
+    });
+    throw error;
+  }
+}
+
 async function handle402Request<TInput, TOutput>(
   req: Request,
   res: Response,
@@ -49,12 +67,16 @@ async function handle402Request<TInput, TOutput>(
 ): Promise<TOutput> {
   const { executeResource, calculateActualCost, createTransaction } = config;
 
-  const settleResult = await settle(req, res, headers, safeMaxCost);
-  if (!settleResult) {
+  const settleResult = await settle(req, headers, safeMaxCost);
+
+  if (settleResult.isErr()) {
+    const settleErr = settleResult.error;
+    logger.error('settle failed', settleErr);
+    buildX402Response(req, res, safeMaxCost);
     throw new PaymentRequiredError('Payment required, settle failed');
   }
 
-  const { payload, paymentAmountDecimal } = settleResult;
+  const { payload, paymentAmountDecimal } = settleResult.value;
 
   const output = await executeResourceWithRefund(
     parsedBody,
@@ -71,21 +93,6 @@ async function handle402Request<TInput, TOutput>(
   });
 
   return output;
-}
-
-async function executeResourceWithRefund<TInput, TOutput>(
-  parsedBody: TInput,
-  executeResource: (input: TInput) => Promise<TOutput>,
-  paymentAmountDecimal: Decimal,
-  payload: ExactEvmPayload
-): Promise<TOutput> {
-  try {
-    const output = await executeResource(parsedBody);
-    return output;
-  } catch (error) {
-    await refund(paymentAmountDecimal, payload);
-    throw error;
-  }
 }
 
 async function handleResourceRequest<TInput, TOutput>(
