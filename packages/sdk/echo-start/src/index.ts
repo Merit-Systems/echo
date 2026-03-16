@@ -194,7 +194,20 @@ function readEchoTemplateConfig(projectPath: string): EchoTemplateConfig | null 
   const configPath = path.join(projectPath, 'echo.json');
   if (!existsSync(configPath)) return null;
   try {
-    return JSON.parse(readFileSync(configPath, 'utf-8'));
+    const parsed = JSON.parse(readFileSync(configPath, 'utf-8'));
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      return null;
+    }
+    const code = parsed.referralCode;
+    if (code !== undefined && typeof code !== 'string') return null;
+    if (typeof code === 'string') {
+      return { referralCode: code.trim() };
+    }
+    return {};
   } catch {
     return null;
   }
@@ -467,11 +480,15 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
         if (registered) {
           log.message('Template creator registered as referrer');
         }
-        // Remove echo.json from the scaffolded project — it's only for referral tracking
+      }
+      // Always remove echo.json from the scaffolded project — it's only for referral tracking
+      try {
         const echoConfigPath = path.join(absoluteProjectPath, 'echo.json');
         if (existsSync(echoConfigPath)) {
           unlinkSync(echoConfigPath);
         }
+      } catch {
+        log.warning('Could not remove echo.json from scaffolded project');
       }
     }
 
