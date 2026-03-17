@@ -11,10 +11,12 @@ import {
   text,
 } from '@clack/prompts';
 import chalk from 'chalk';
+import { createHash, randomBytes } from 'crypto';
 import { spawn } from 'child_process';
 import { Command } from 'commander';
 import degit from 'degit';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { createServer } from 'http';
 import path from 'path';
 
 const program = new Command();
@@ -81,6 +83,10 @@ const DEFAULT_TEMPLATES = {
 
 type TemplateName = keyof typeof DEFAULT_TEMPLATES;
 type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
+
+const DEFAULT_ECHO_BASE_URL = 'https://echo.merit.systems';
+const REFERRAL_CALLBACK_PATH = '/echo-start-referral-callback';
+const REFERRAL_OAUTH_TIMEOUT_MS = 120_000;
 
 function printHeader(): void {
   console.log();
@@ -200,6 +206,413 @@ function resolveTemplateRepo(template: string): string {
   }
 
   return repo;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function sanitizeReferralCode(code: unknown): string | null {
+  if (typeof code !== 'string') {
+    return null;
+  }
+
+  const trimmedCode = code.trim();
+  if (!trimmedCode) {
+    return null;
+  }
+
+  if (!/^[a-zA-Z0-9_.-]+$/.test(trimmedCode)) {
+    return null;
+  }
+
+  if (trimmedCode.length > 128) {
+    return null;
+  }
+
+  return trimmedCode;
+}
+
+interface TemplateReferralCodeResult {
+  referralCode: string | null;
+  sourcePath: string | null;
+  invalidCodeFound: boolean;
+}
+
+function readJsonFile(filePath: string): unknown {
+  try {
+    return JSON.parse(readFileSync(filePath, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+function extractTemplateReferralCode(
+  projectPath: string
+): TemplateReferralCodeResult {
+  const candidates = [
+    {
+      path: 'echo.config.json',
+      extractor: (value: unknown) => {
+        if (!isObject(value)) {
+          return undefined;
+        }
+        return value.referralCode ?? value.referral_code;
+      },
+    },
+    {
+      path: '.echo/template.json',
+      extractor: (value: unknown) => {
+        if (!isObject(value)) {
+          return undefined;
+        }
+
+        if (value.referralCode || value.referral_code) {
+          return value.referralCode ?? value.referral_code;
+        }
+
+        const template = value.template;
+        if (isObject(template)) {
+          return template.referralCode ?? template.referral_code;
+        }
+
+        return undefined;
+      },
+    },
+    {
+      path: 'echo-template.json',
+      extractor: (value: unknown) => {
+        if (!isObject(value)) {
+          return undefined;
+        }
+        return value.referralCode ?? value.referral_code;
+      },
+    },
+    {
+      path: 'package.json',
+      extractor: (value: unknown) => {
+        if (!isObject(value)) {
+          return undefined;
+        }
+
+        if (value.referralCode || value.referral_code) {
+          return value.referralCode ?? value.referral_code;
+        }
+
+        const echo = value.echo;
+        if (isObject(echo)) {
+          return echo.referralCode ?? echo.referral_code;
+        }
+
+        return undefined;
+      },
+    },
+  ];
+
+  for (const candidate of candidates) {
+    const filePath = path.join(projectPath, candidate.path);
+
+    if (!existsSync(filePath)) {
+      continue;
+    }
+
+    const parsed = readJsonFile(filePath);
+    const rawCode = candidate.extractor(parsed);
+
+    if (rawCode === undefined) {
+      continue;
+    }
+
+    const referralCode = sanitizeReferralCode(rawCode);
+    return {
+      referralCode,
+      sourcePath: candidate.path,
+      invalidCodeFound: referralCode === null,
+    };
+  }
+
+  return {
+    referralCode: null,
+    sourcePath: null,
+    invalidCodeFound: false,
+  };
+}
+
+function resolveEchoBaseUrl(): string {
+  const baseUrl =
+    process.env.ECHO_BASE_URL ||
+    process.env.ECHO_CONTROL_URL ||
+    DEFAULT_ECHO_BASE_URL;
+
+  return baseUrl.replace(/\/+$/, '');
+}
+
+function toBase64Url(buffer: Buffer): string {
+  return buffer
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function createPkcePair(): { verifier: string; challenge: string } {
+  const verifier = toBase64Url(randomBytes(32));
+  const challenge = toBase64Url(
+    createHash('sha256').update(verifier).digest()
+  );
+  return { verifier, challenge };
+}
+
+function getBrowserOpenCommand(url: string): [string, string[]] {
+  if (process.platform === 'darwin') {
+    return ['open', [url]];
+  }
+
+  if (process.platform === 'win32') {
+    return ['cmd', ['/c', 'start', '', url]];
+  }
+
+  return ['xdg-open', [url]];
+}
+
+async function openUrlInBrowser(url: string): Promise<boolean> {
+  const [command, args] = getBrowserOpenCommand(url);
+
+  return new Promise(resolve => {
+    const child = spawn(command, args, {
+      stdio: 'ignore',
+      detached: true,
+    });
+
+    let settled = false;
+    const complete = (result: boolean) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve(result);
+    };
+
+    child.once('error', () => complete(false));
+    child.once('spawn', () => complete(true));
+    setTimeout(() => complete(true), 300);
+    child.unref();
+  });
+}
+
+interface AuthorizationCodeResult {
+  code: string;
+  codeVerifier: string;
+  redirectUri: string;
+}
+
+async function getAuthorizationCode({
+  appId,
+  baseUrl,
+}: {
+  appId: string;
+  baseUrl: string;
+}): Promise<AuthorizationCodeResult | null> {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    return null;
+  }
+
+  return await new Promise(resolve => {
+    const server = createServer((req, res) => {
+      const requestUrl = new URL(req.url || '/', `http://${req.headers.host}`);
+
+      if (requestUrl.pathname !== REFERRAL_CALLBACK_PATH) {
+        res.statusCode = 404;
+        res.end('Not Found');
+        return;
+      }
+
+      const code = requestUrl.searchParams.get('code');
+      const state = requestUrl.searchParams.get('state');
+      const error = requestUrl.searchParams.get('error');
+
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end(
+        '<!doctype html><html><body><p>You can return to your terminal.</p></body></html>'
+      );
+
+      clearTimeout(timeout);
+      server.close();
+
+      if (error || !code || state !== oauthState) {
+        resolve(null);
+        return;
+      }
+
+      resolve({
+        code,
+        codeVerifier,
+        redirectUri,
+      });
+    });
+
+    const timeout = setTimeout(() => {
+      server.close();
+      resolve(null);
+    }, REFERRAL_OAUTH_TIMEOUT_MS);
+
+    const { verifier: codeVerifier, challenge: codeChallenge } = createPkcePair();
+    const oauthState = toBase64Url(randomBytes(24));
+    let redirectUri = '';
+
+    server.on('error', () => {
+      clearTimeout(timeout);
+      resolve(null);
+    });
+
+    server.listen(0, 'localhost', async () => {
+      const address = server.address();
+      if (!address || typeof address !== 'object') {
+        clearTimeout(timeout);
+        server.close();
+        resolve(null);
+        return;
+      }
+
+      redirectUri = `http://localhost:${address.port}${REFERRAL_CALLBACK_PATH}`;
+
+      const authorizationUrl = new URL(`${baseUrl}/api/oauth/authorize`);
+      authorizationUrl.searchParams.set('client_id', appId);
+      authorizationUrl.searchParams.set('redirect_uri', redirectUri);
+      authorizationUrl.searchParams.set('response_type', 'code');
+      authorizationUrl.searchParams.set('code_challenge', codeChallenge);
+      authorizationUrl.searchParams.set('code_challenge_method', 'S256');
+      authorizationUrl.searchParams.set('scope', 'llm:invoke offline_access');
+      authorizationUrl.searchParams.set('state', oauthState);
+
+      const opened = await openUrlInBrowser(authorizationUrl.toString());
+      if (!opened) {
+        log.warning(
+          'Could not open your browser automatically. Open this URL to continue:'
+        );
+        log.message(authorizationUrl.toString());
+      } else {
+        log.message('Complete Echo authorization in your browser to continue.');
+      }
+    });
+  });
+}
+
+async function exchangeAuthorizationCodeForToken({
+  appId,
+  code,
+  codeVerifier,
+  redirectUri,
+  baseUrl,
+}: AuthorizationCodeResult & {
+  appId: string;
+  baseUrl: string;
+}): Promise<string | null> {
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: appId,
+    code,
+    code_verifier: codeVerifier,
+    redirect_uri: redirectUri,
+  });
+
+  const response = await fetch(`${baseUrl}/api/oauth/token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'x-client-user-agent': process.env.npm_config_user_agent || 'echo-start',
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  try {
+    const parsed = (await response.json()) as { access_token?: string };
+    return parsed.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
+async function registerTemplateReferralCode({
+  appId,
+  referralCode,
+}: {
+  appId: string;
+  referralCode: string;
+}): Promise<{ success: boolean; message: string }> {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    return {
+      success: false,
+      message:
+        'Interactive browser authorization is required, but no TTY is available.',
+    };
+  }
+
+  const baseUrl = resolveEchoBaseUrl();
+  const authResult = await getAuthorizationCode({ appId, baseUrl });
+
+  if (!authResult) {
+    return {
+      success: false,
+      message:
+        'Authorization did not complete. Referral registration was skipped.',
+    };
+  }
+
+  const accessToken = await exchangeAuthorizationCodeForToken({
+    ...authResult,
+    appId,
+    baseUrl,
+  });
+
+  if (!accessToken) {
+    return {
+      success: false,
+      message: 'Could not exchange authorization code for an access token.',
+    };
+  }
+
+  const response = await fetch(`${baseUrl}/api/v1/user/referral`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      echoAppId: appId,
+      code: referralCode,
+    }),
+  });
+
+  let payload: { success?: boolean; message?: string } | null = null;
+
+  try {
+    payload = (await response.json()) as {
+      success?: boolean;
+      message?: string;
+    };
+  } catch {
+    payload = null;
+  }
+
+  if (response.ok && payload?.success) {
+    return {
+      success: true,
+      message: payload.message || 'Referral code applied successfully.',
+    };
+  }
+
+  return {
+    success: false,
+    message:
+      payload?.message ||
+      'Referral code could not be applied for this app and user.',
+  };
 }
 
 function detectEnvVarName(projectPath: string): string | null {
@@ -412,6 +825,32 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       const envContent = `${envVarName}=${appId}\n`;
       writeFileSync(envPath, envContent);
       log.message(`Created .env.local with ${envVarName}`);
+    }
+
+    if (isExternal) {
+      const templateReferral = extractTemplateReferralCode(absoluteProjectPath);
+
+      if (templateReferral.invalidCodeFound) {
+        log.warning(
+          `Found a referral code in ${templateReferral.sourcePath}, but it has an invalid format.`
+        );
+      } else if (templateReferral.referralCode) {
+        log.step(
+          `Registering template referral from ${templateReferral.sourcePath}`
+        );
+        const registration = await registerTemplateReferralCode({
+          appId,
+          referralCode: templateReferral.referralCode,
+        });
+
+        if (registration.success) {
+          log.message(registration.message);
+        } else {
+          log.warning(
+            `Could not auto-register template referral: ${registration.message}`
+          );
+        }
+      }
     }
 
     log.step('Project setup completed successfully');
