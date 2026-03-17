@@ -1,0 +1,14 @@
+---
+description: Echo + Next.js starter rules for this template
+globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+---
+
+# Echo Next.js rules
+
+- Use `@merit-systems/echo-next-sdk` as the source of truth for Echo integration.
+- Keep Echo server setup in the template's Echo module (for example `src/echo/index.ts` or `echo.ts`) instead of scattering initialization logic.
+- Read app IDs from environment variables only, following the existing template pattern (`ECHO_APP_ID` and/or `NEXT_PUBLIC_ECHO_APP_ID`).
+- Keep the Echo webhook route as a thin passthrough that re-exports handlers (`export const { GET, POST } = handlers`).
+- Wrap client-side UI that needs Echo auth, balance, or sign-in with `EchoProvider` from `@merit-systems/echo-next-sdk/client`.
+- Reuse model helpers exported by the Echo module (`openai`, `anthropic`, `google` when present) instead of creating ad-hoc provider clients.
+- Never hardcode Echo app IDs, API keys, wallet keys, or test secrets in source files.
