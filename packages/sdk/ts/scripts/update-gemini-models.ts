@@ -20,6 +20,11 @@ interface GeminiApiResponse {
   models: GeminiApiModel[];
 }
 
+const RETIRED_GEMINI_MODELS = new Set([
+  'gemini-2.0-flash-preview-image-generation',
+  'gemini-2.5-flash-image-preview',
+]);
+
 async function fetchGeminiModels(): Promise<string[]> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -68,7 +73,8 @@ async function fetchGeminiModels(): Promise<string[]> {
         // Extract model ID from the full name (e.g., "models/gemini-pro" -> "gemini-pro")
         const modelId = model.name.replace('models/', '');
         return modelId;
-      });
+      })
+      .filter(modelId => !RETIRED_GEMINI_MODELS.has(modelId));
 
     console.log(`📝 Filtered to ${modelIds.length} language models:`);
     modelIds.forEach(id => console.log(`  - ${id}`));
