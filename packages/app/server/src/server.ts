@@ -51,7 +51,9 @@ const upload = multer({
 export const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: env.DATABASE_URL ?? 'postgresql://localhost:5469/echo',
+      url:
+        env.DATABASE_URL ??
+        'postgresql://echo_user:echo_password@localhost:5469/echo_control_v2?schema=public',
     },
   },
   log: ['warn', 'error'],
