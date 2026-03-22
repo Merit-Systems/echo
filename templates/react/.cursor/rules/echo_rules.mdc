@@ -1,0 +1,80 @@
+---
+description: Guidelines and best practices for building Echo-powered React (Vite) applications with user-pays AI infrastructure
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React Guidelines
+
+## What is Echo?
+Echo is a user-pays AI infrastructure SDK by Merit Systems. Instead of fronting AI API costs yourself, users authenticate via Echo and pay for their own usage. You set a markup and earn revenue automatically.
+
+## Project Setup
+- This is a Vite-based React application using Echo
+- The `VITE_ECHO_APP_ID` environment variable must be set in `.env`
+- Echo React SDK provides hooks and components for client-side AI usage
+
+## Echo SDK Usage
+- Import hooks from `@merit-systems/echo-react-sdk`:
+```typescript
+import { useEchoModelProviders, EchoTokens } from '@merit-systems/echo-react-sdk';
+```
+- Use `useEchoModelProviders()` to get model provider instances:
+```typescript
+const { openai, anthropic } = useEchoModelProviders();
+```
+
+## Authentication
+- Echo handles OAuth login — use the `EchoTokens` component for the auth UI:
+```typescript
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return <EchoTokens />;
+}
+```
+
+## Model Usage
+- ALWAYS use Echo model providers from `useEchoModelProviders()`:
+```typescript
+// CORRECT — uses Echo (users pay)
+const { openai } = useEchoModelProviders();
+const response = await generateText({ model: openai('gpt-4o'), prompt: '...' });
+
+// WRONG — uses direct SDK (you pay)
+import { openai } from '@ai-sdk/openai';
+```
+- Echo is compatible with the Vercel AI SDK (`ai` package) — use `generateText`, `streamText`, `useChat`, etc.
+
+## React Hooks
+- Use `useChat` from `@ai-sdk/react` for chat interfaces with Echo models
+- Use `useCompletion` for text completion UIs
+- Pass Echo model providers to these hooks
+
+## Environment Variables
+- `VITE_ECHO_APP_ID` — Your Echo application ID (required)
+- Get your app ID from https://echo.merit.systems
+
+## Common Patterns
+### Chat Interface
+```typescript
+import { useChat } from '@ai-sdk/react';
+
+function Chat() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: '/api/chat',
+  });
+  // render messages and input form
+}
+```
+
+### Text Generation
+```typescript
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { generateText } from 'ai';
+
+const { openai } = useEchoModelProviders();
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  prompt: 'Hello!',
+});
+```

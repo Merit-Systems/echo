@@ -1,0 +1,72 @@
+---
+description: Guidelines and best practices for building Echo-powered CLI applications with user-pays AI infrastructure
+globs: **/*.ts,**/*.js
+---
+
+# Echo CLI Guidelines
+
+## What is Echo?
+Echo is a user-pays AI infrastructure SDK by Merit Systems. Instead of fronting AI API costs yourself, users authenticate via Echo and pay for their own usage. You set a markup and earn revenue automatically.
+
+## Project Setup
+- This is a Node.js CLI application using Echo
+- The `ECHO_APP_ID` environment variable must be set
+- Echo provides server-side model providers for CLI usage
+
+## Echo SDK Usage
+- Initialize Echo and export model providers:
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+const { openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+## Model Usage
+- ALWAYS use Echo model providers instead of direct AI SDK providers:
+```typescript
+// CORRECT — uses Echo (users pay)
+const { openai } = Echo({ appId: process.env.ECHO_APP_ID! });
+const response = await generateText({ model: openai('gpt-4o'), prompt: '...' });
+
+// WRONG — uses direct SDK (you pay)
+import { openai } from '@ai-sdk/openai';
+```
+- Echo is compatible with the Vercel AI SDK (`ai` package)
+
+## Environment Variables
+- `ECHO_APP_ID` — Your Echo application ID (required)
+- Get your app ID from https://echo.merit.systems
+
+## CLI Patterns
+### Interactive Prompt
+```typescript
+import { generateText } from 'ai';
+import readline from 'readline';
+
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+rl.question('Ask anything: ', async (prompt) => {
+  const { text } = await generateText({
+    model: openai('gpt-4o'),
+    prompt,
+  });
+  console.log(text);
+  rl.close();
+});
+```
+
+### Streaming Output
+```typescript
+import { streamText } from 'ai';
+
+const result = streamText({
+  model: openai('gpt-4o'),
+  prompt: 'Tell me a story',
+});
+
+for await (const chunk of result.textStream) {
+  process.stdout.write(chunk);
+}
+```
