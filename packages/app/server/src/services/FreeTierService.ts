@@ -96,15 +96,12 @@ class FreeTierService {
    * Create a free tier transaction and update all related records atomically
    * Delegates to DbService for shared transaction logic
    */
-  async createFreeTierTransaction(
+  createFreeTierTransaction(
     transactionData: TransactionRequest,
     spendPoolId: string
   ) {
     // Delegate to the centralized DbService method
-    return await this.dbService.createFreeTierTransaction(
-      transactionData,
-      spendPoolId
-    );
+    return this.dbService.createFreeTierTransaction(transactionData, spendPoolId);
   }
 }
 

@@ -7,7 +7,7 @@ import { Response } from 'express';
 import { transfer } from 'transferWithAuth';
 import { getVideoModelPrice } from 'services/AccountingService';
 import { HttpError, UnknownModelError } from 'errors/http';
-import { Decimal } from 'generated/prisma/runtime/library';
+import { Decimal } from '../generated/prisma/runtime/library';
 import { Transaction } from '../types';
 import { prisma } from '../server';
 import { EchoDbService } from '../services/DbService';

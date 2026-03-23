@@ -7,6 +7,7 @@ import logger from '../logger';
 import { BaseProvider } from '../providers/BaseProvider';
 import { Transaction } from '../types';
 import { Request } from 'express';
+import { ResultAsync } from 'neverthrow';
 
 class HandleStreamService {
   /**
@@ -53,19 +54,19 @@ class HandleStreamService {
     );
 
     // Wait for both streams to complete before ending response
-    try {
-      const [_, transaction] = await Promise.all([
-        streamToClientPromise,
-        transactionPromise,
-      ]);
-      return transaction;
-    } catch (error) {
-      logger.error(`Error in stream coordination: ${error}`);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Stream processing failed' });
+    return ResultAsync.fromPromise(
+      Promise.all([streamToClientPromise, transactionPromise]),
+      error => error
+    ).match(
+      ([_, transaction]) => transaction,
+      error => {
+        logger.error(`Error in stream coordination: ${error}`);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Stream processing failed' });
+        }
+        throw error; // Re-throw to be handled by error middleware
       }
-      throw error; // Re-throw to be handled by error middleware
-    }
+    );
   }
 
   /**
@@ -92,20 +93,27 @@ class HandleStreamService {
   ): Promise<Transaction> {
     let data = '';
     const decoder = new TextDecoder();
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        data += decoder.decode(value, { stream: true });
+
+    return ResultAsync.fromPromise(
+      (async () => {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          data += decoder.decode(value, { stream: true });
+        }
+        // flush any remaining decoder state
+        data += decoder.decode();
+        // Wait for transaction to complete before resolving
+        return await provider.handleBody(data, req.body);
+      })(),
+      error => error
+    ).match(
+      transaction => transaction,
+      error => {
+        logger.error(`Error processing stream: ${error}`);
+        throw error;
       }
-      // flush any remaining decoder state
-      data += decoder.decode();
-      // Wait for transaction to complete before resolving
-      return await provider.handleBody(data, req.body);
-    } catch (error) {
-      logger.error(`Error processing stream: ${error}`);
-      throw error;
-    }
+    );
   }
 }
 

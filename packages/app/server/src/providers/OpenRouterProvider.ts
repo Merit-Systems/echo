@@ -4,6 +4,7 @@ import { ProviderType } from './ProviderType';
 import { getCostPerToken } from '../services/AccountingService';
 import logger from '../logger';
 import { env } from '../env';
+import { ResultAsync, fromThrowable } from 'neverthrow';
 
 interface CompletionStateBody {
   id: string;
@@ -34,6 +35,7 @@ const parseSSEGPTFormat = (data: string): StreamingChunkBody[] => {
   // Split by double newlines to separate events
   const events = data.split('\n\n');
   const chunks: StreamingChunkBody[] = [];
+  const parseJson = fromThrowable(JSON.parse, error => error);
 
   for (const event of events) {
     if (!event.trim()) continue;
@@ -45,12 +47,13 @@ const parseSSEGPTFormat = (data: string): StreamingChunkBody[] => {
       // Skip [DONE] marker
       if (jsonStr.trim() === '[DONE]') continue;
 
-      try {
-        const parsed = JSON.parse(jsonStr);
-        chunks.push(parsed);
-      } catch (error) {
-        logger.error(`Error parsing SSE chunk: ${error}`);
+      const parsedResult = parseJson(jsonStr);
+      if (parsedResult.isErr()) {
+        logger.error(`Error parsing SSE chunk: ${parsedResult.error}`);
+        continue;
       }
+
+      chunks.push(parsedResult.value as StreamingChunkBody);
     }
   }
 
@@ -71,54 +74,62 @@ export class OpenRouterProvider extends BaseProvider {
   }
 
   async handleBody(data: string): Promise<Transaction> {
-    try {
-      let prompt_tokens = 0;
-      let completion_tokens = 0;
-      let total_tokens = 0;
-      let providerId = 'null';
+    return ResultAsync.fromPromise(
+      (async () => {
+        let prompt_tokens = 0;
+        let completion_tokens = 0;
+        let total_tokens = 0;
+        let providerId = 'null';
 
-      if (this.getIsStream()) {
-        const chunks = parseSSEGPTFormat(data);
+        if (this.getIsStream()) {
+          const chunks = parseSSEGPTFormat(data);
 
-        for (const chunk of chunks) {
-          if (chunk.usage && chunk.usage !== null) {
-            prompt_tokens += chunk.usage.prompt_tokens;
-            completion_tokens += chunk.usage.completion_tokens;
-            total_tokens += chunk.usage.total_tokens;
+          for (const chunk of chunks) {
+            if (chunk.usage && chunk.usage !== null) {
+              prompt_tokens += chunk.usage.prompt_tokens;
+              completion_tokens += chunk.usage.completion_tokens;
+              total_tokens += chunk.usage.total_tokens;
+            }
+            providerId = chunk.id || 'null';
           }
-          providerId = chunk.id || 'null';
+        } else {
+          const parsed = JSON.parse(data) as CompletionStateBody;
+          prompt_tokens += parsed.usage.prompt_tokens;
+          completion_tokens += parsed.usage.completion_tokens;
+          total_tokens += parsed.usage.total_tokens;
+          providerId = parsed.id || 'null';
         }
-      } else {
-        const parsed = JSON.parse(data) as CompletionStateBody;
-        prompt_tokens += parsed.usage.prompt_tokens;
-        completion_tokens += parsed.usage.completion_tokens;
-        total_tokens += parsed.usage.total_tokens;
-        providerId = parsed.id || 'null';
+
+        const cost = getCostPerToken(
+          this.getModel(),
+          prompt_tokens,
+          completion_tokens
+        );
+
+        const metadata: LlmTransactionMetadata = {
+          providerId: providerId,
+          provider: this.getType(),
+          model: this.getModel(),
+          inputTokens: prompt_tokens,
+          outputTokens: completion_tokens,
+          totalTokens: total_tokens,
+        };
+
+        return {
+          metadata: metadata,
+          rawTransactionCost: cost,
+          status: 'success',
+        };
+      })(),
+      error => {
+        logger.error(`Error processing data: ${error}`);
+        return error;
       }
-
-      const cost = getCostPerToken(
-        this.getModel(),
-        prompt_tokens,
-        completion_tokens
-      );
-
-      const metadata: LlmTransactionMetadata = {
-        providerId: providerId,
-        provider: this.getType(),
-        model: this.getModel(),
-        inputTokens: prompt_tokens,
-        outputTokens: completion_tokens,
-        totalTokens: total_tokens,
-      };
-
-      return {
-        metadata: metadata,
-        rawTransactionCost: cost,
-        status: 'success',
-      };
-    } catch (error) {
-      logger.error(`Error processing data: ${error}`);
-      throw error;
-    }
+    ).match(
+      transaction => transaction,
+      error => {
+        throw error;
+      }
+    );
   }
 }

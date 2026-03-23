@@ -4,6 +4,7 @@ import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import logger from '../logger';
 import { env } from '../env';
+import { ResultAsync } from 'neverthrow';
 
 interface AnthropicUsage {
   input_tokens: number;
@@ -118,75 +119,83 @@ export class AnthropicNativeProvider extends BaseProvider {
   }
 
   override async handleBody(data: string): Promise<Transaction> {
-    try {
-      if (this.getIsStream()) {
-        const usage = parseSSEAnthropicFormat(data);
+    return ResultAsync.fromPromise(
+      (async () => {
+        if (this.getIsStream()) {
+          const usage = parseSSEAnthropicFormat(data);
 
-        if (!usage) {
-          logger.error('No usage data found');
-          throw new Error('No usage data found');
-        }
+          if (!usage) {
+            logger.error('No usage data found');
+            throw new Error('No usage data found');
+          }
 
-        const model = this.getModel();
-        const metadata: LlmTransactionMetadata = {
-          model: model,
-          providerId: usage.id,
-          provider: this.getType(),
-          inputTokens: usage.input_tokens,
-          outputTokens: usage.output_tokens,
-          totalTokens: usage.input_tokens + usage.output_tokens,
-        };
-        const transaction: Transaction = {
-          metadata: metadata,
-          rawTransactionCost: getCostPerToken(
-            model,
-            usage.input_tokens,
-            usage.output_tokens
-          ),
-          status: 'success',
-        };
+          const model = this.getModel();
+          const metadata: LlmTransactionMetadata = {
+            model: model,
+            providerId: usage.id,
+            provider: this.getType(),
+            inputTokens: usage.input_tokens,
+            outputTokens: usage.output_tokens,
+            totalTokens: usage.input_tokens + usage.output_tokens,
+          };
+          const transaction: Transaction = {
+            metadata: metadata,
+            rawTransactionCost: getCostPerToken(
+              model,
+              usage.input_tokens,
+              usage.output_tokens
+            ),
+            status: 'success',
+          };
 
-        return transaction;
-      } else {
-        const parsed = JSON.parse(data);
+          return transaction;
+        } else {
+          const parsed = JSON.parse(data);
 
-        const inputTokens = parsed.usage.input_tokens || 0;
-        const outputTokens = parsed.usage.output_tokens || 0;
-        const totalTokens = inputTokens + outputTokens;
+          const inputTokens = parsed.usage.input_tokens || 0;
+          const outputTokens = parsed.usage.output_tokens || 0;
+          const totalTokens = inputTokens + outputTokens;
 
-        logger.info(
-          'Usage tokens (input/output/total): ',
-          inputTokens,
-          outputTokens,
-          totalTokens
-        );
-        logger.info(`Message ID: ${parsed.id}`);
-
-        const metadata: LlmTransactionMetadata = {
-          model: this.getModel(),
-          providerId: parsed.id,
-          provider: this.getType(),
-          inputTokens: inputTokens,
-          outputTokens: outputTokens,
-          totalTokens: totalTokens,
-        };
-
-        const transaction: Transaction = {
-          metadata: metadata,
-          rawTransactionCost: getCostPerToken(
-            this.getModel(),
+          logger.info(
+            'Usage tokens (input/output/total): ',
             inputTokens,
-            outputTokens
-          ),
-          status: 'success',
-        };
+            outputTokens,
+            totalTokens
+          );
+          logger.info(`Message ID: ${parsed.id}`);
 
-        return transaction;
+          const metadata: LlmTransactionMetadata = {
+            model: this.getModel(),
+            providerId: parsed.id,
+            provider: this.getType(),
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            totalTokens: totalTokens,
+          };
+
+          const transaction: Transaction = {
+            metadata: metadata,
+            rawTransactionCost: getCostPerToken(
+              this.getModel(),
+              inputTokens,
+              outputTokens
+            ),
+            status: 'success',
+          };
+
+          return transaction;
+        }
+      })(),
+      error => {
+        logger.error(`Error processing data: ${error}`);
+        return error;
       }
-    } catch (error) {
-      logger.error(`Error processing data: ${error}`);
-      throw error;
-    }
+    ).match(
+      transaction => transaction,
+      error => {
+        throw error;
+      }
+    );
   }
 
   override ensureStreamUsage(

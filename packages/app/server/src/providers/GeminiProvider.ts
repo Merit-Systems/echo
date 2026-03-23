@@ -4,6 +4,7 @@ import { LlmTransactionMetadata, Transaction } from '../types';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
 import { env } from '../env';
+import { ResultAsync } from 'neverthrow';
 
 interface GeminiUsage {
   promptTokenCount: number;
@@ -126,68 +127,76 @@ export class GeminiProvider extends BaseProvider {
   }
 
   async handleBody(data: string): Promise<Transaction> {
-    try {
-      let promptTokens = 0;
-      let candidatesTokens = 0;
-      let totalTokens = 0;
-      let providerId = 'gemini-response';
+    return ResultAsync.fromPromise(
+      (async () => {
+        let promptTokens = 0;
+        let candidatesTokens = 0;
+        let totalTokens = 0;
+        let providerId = 'gemini-response';
 
-      if (this.getIsStream()) {
-        const usage = parseSSEGeminiFormat(data);
+        if (this.getIsStream()) {
+          const usage = parseSSEGeminiFormat(data);
 
-        if (!usage) {
-          console.error('No usage data found in streaming response');
-          throw new Error('No usage data found in streaming response');
+          if (!usage) {
+            console.error('No usage data found in streaming response');
+            throw new Error('No usage data found in streaming response');
+          }
+
+          promptTokens = usage.promptTokenCount;
+          candidatesTokens = usage.candidatesTokenCount;
+          totalTokens = usage.totalTokenCount;
+        } else {
+          const parsed = JSON.parse(data) as GeminiResponse;
+
+          if (parsed?.usageMetadata) {
+            promptTokens = parsed.usageMetadata.promptTokenCount || 0;
+            candidatesTokens = parsed.usageMetadata.candidatesTokenCount || 0;
+            totalTokens = parsed.usageMetadata.totalTokenCount || 0;
+          }
+
+          // Try to get a unique identifier from the response
+          // Gemini doesn't return an ID like OpenAI, so we'll generate one based on content
+          if (parsed?.candidates && parsed.candidates.length > 0) {
+            const content = parsed.candidates[0]?.content?.parts?.[0]?.text || '';
+            providerId = `gemini-${Date.now()}-${content.substring(0, 10).replace(/\s/g, '')}`;
+          }
         }
 
-        promptTokens = usage.promptTokenCount;
-        candidatesTokens = usage.candidatesTokenCount;
-        totalTokens = usage.totalTokenCount;
-      } else {
-        const parsed = JSON.parse(data) as GeminiResponse;
+        logger.info(
+          `Gemini usage tokens (prompt/candidates/total): ${promptTokens}/${candidatesTokens}/${totalTokens}`
+        );
 
-        if (parsed?.usageMetadata) {
-          promptTokens = parsed.usageMetadata.promptTokenCount || 0;
-          candidatesTokens = parsed.usageMetadata.candidatesTokenCount || 0;
-          totalTokens = parsed.usageMetadata.totalTokenCount || 0;
-        }
+        const metadata: LlmTransactionMetadata = {
+          model: this.getModel(),
+          providerId: providerId,
+          provider: this.getType(),
+          inputTokens: promptTokens,
+          outputTokens: candidatesTokens,
+          totalTokens: totalTokens,
+        };
 
-        // Try to get a unique identifier from the response
-        // Gemini doesn't return an ID like OpenAI, so we'll generate one based on content
-        if (parsed?.candidates && parsed.candidates.length > 0) {
-          const content = parsed.candidates[0]?.content?.parts?.[0]?.text || '';
-          providerId = `gemini-${Date.now()}-${content.substring(0, 10).replace(/\s/g, '')}`;
-        }
+        const transaction: Transaction = {
+          metadata: metadata,
+          rawTransactionCost: getCostPerToken(
+            this.getModel(),
+            promptTokens,
+            candidatesTokens
+          ),
+          status: 'success',
+        };
+
+        return transaction;
+      })(),
+      error => {
+        logger.error(`Error processing Gemini response data: ${error}`);
+        return error;
       }
-
-      logger.info(
-        `Gemini usage tokens (prompt/candidates/total): ${promptTokens}/${candidatesTokens}/${totalTokens}`
-      );
-
-      const metadata: LlmTransactionMetadata = {
-        model: this.getModel(),
-        providerId: providerId,
-        provider: this.getType(),
-        inputTokens: promptTokens,
-        outputTokens: candidatesTokens,
-        totalTokens: totalTokens,
-      };
-
-      const transaction: Transaction = {
-        metadata: metadata,
-        rawTransactionCost: getCostPerToken(
-          this.getModel(),
-          promptTokens,
-          candidatesTokens
-        ),
-        status: 'success',
-      };
-
-      return transaction;
-    } catch (error) {
-      logger.error(`Error processing Gemini response data: ${error}`);
-      throw error;
-    }
+    ).match(
+      transaction => transaction,
+      error => {
+        throw error;
+      }
+    );
   }
 
   override ensureStreamUsage(

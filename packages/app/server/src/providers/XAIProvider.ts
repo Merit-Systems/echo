@@ -5,6 +5,7 @@ import { ProviderType } from './ProviderType';
 import { CompletionStateBody, parseSSEGPTFormat } from './GPTProvider';
 import logger from '../logger';
 import { env } from '../env';
+import { ResultAsync } from 'neverthrow';
 
 export class XAIProvider extends BaseProvider {
   private readonly XAI_BASE_URL = 'https://api.x.ai/v1';
@@ -26,56 +27,64 @@ export class XAIProvider extends BaseProvider {
   }
 
   async handleBody(data: string): Promise<Transaction> {
-    try {
-      let prompt_tokens = 0;
-      let completion_tokens = 0;
-      let total_tokens = 0;
-      let providerId = 'null';
+    return ResultAsync.fromPromise(
+      (async () => {
+        let prompt_tokens = 0;
+        let completion_tokens = 0;
+        let total_tokens = 0;
+        let providerId = 'null';
 
-      if (this.getIsStream()) {
-        const chunks = parseSSEGPTFormat(data);
+        if (this.getIsStream()) {
+          const chunks = parseSSEGPTFormat(data);
 
-        for (const chunk of chunks) {
-          if (chunk.usage !== null) {
-            prompt_tokens += chunk.usage.prompt_tokens;
-            completion_tokens += chunk.usage.completion_tokens;
-            total_tokens += chunk.usage.total_tokens;
+          for (const chunk of chunks) {
+            if (chunk.usage !== null) {
+              prompt_tokens += chunk.usage.prompt_tokens;
+              completion_tokens += chunk.usage.completion_tokens;
+              total_tokens += chunk.usage.total_tokens;
+            }
+            providerId = chunk.id || 'null';
           }
-          providerId = chunk.id || 'null';
+        } else {
+          const parsed = JSON.parse(data) as CompletionStateBody;
+          prompt_tokens += parsed.usage.prompt_tokens;
+          completion_tokens += parsed.usage.completion_tokens;
+          total_tokens += parsed.usage.total_tokens;
+          providerId = parsed.id || 'null';
         }
-      } else {
-        const parsed = JSON.parse(data) as CompletionStateBody;
-        prompt_tokens += parsed.usage.prompt_tokens;
-        completion_tokens += parsed.usage.completion_tokens;
-        total_tokens += parsed.usage.total_tokens;
-        providerId = parsed.id || 'null';
+
+        const cost = getCostPerToken(
+          this.getModel(),
+          prompt_tokens,
+          completion_tokens
+        );
+
+        const metadata: LlmTransactionMetadata = {
+          providerId: providerId,
+          provider: this.getType(),
+          model: this.getModel(),
+          inputTokens: prompt_tokens,
+          outputTokens: completion_tokens,
+          totalTokens: total_tokens,
+        };
+
+        const transaction: Transaction = {
+          rawTransactionCost: cost,
+          metadata: metadata,
+          status: 'success',
+        };
+
+        return transaction;
+      })(),
+      error => {
+        logger.error(`Error processing data: ${error}`);
+        return error;
       }
-
-      const cost = getCostPerToken(
-        this.getModel(),
-        prompt_tokens,
-        completion_tokens
-      );
-
-      const metadata: LlmTransactionMetadata = {
-        providerId: providerId,
-        provider: this.getType(),
-        model: this.getModel(),
-        inputTokens: prompt_tokens,
-        outputTokens: completion_tokens,
-        totalTokens: total_tokens,
-      };
-
-      const transaction: Transaction = {
-        rawTransactionCost: cost,
-        metadata: metadata,
-        status: 'success',
-      };
-
-      return transaction;
-    } catch (error) {
-      logger.error(`Error processing data: ${error}`);
-      throw error;
-    }
+    ).match(
+      transaction => transaction,
+      error => {
+        throw error;
+      }
+    );
   }
 }

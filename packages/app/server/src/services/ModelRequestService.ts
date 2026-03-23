@@ -6,6 +6,7 @@ import { Transaction } from '../types';
 import { handleNonStreamingService } from './HandleNonStreamingService';
 import { handleStreamService } from './HandleStreamService';
 import { formatUpstreamUrl } from './RequestDataService';
+import { fromThrowable } from 'neverthrow';
 
 class ModelRequestService {
   /**
@@ -166,11 +167,14 @@ class ModelRequestService {
       return { message: `HTTP ${status} error` };
     }
 
-    try {
-      return JSON.parse(errorBody);
-    } catch {
+    const parseJson = fromThrowable(JSON.parse, () => ({ message: errorBody }));
+    const parsed = parseJson(errorBody);
+
+    if (parsed.isErr()) {
       return { message: errorBody };
     }
+
+    return parsed.value as object;
   }
 }
 

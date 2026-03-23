@@ -19,6 +19,8 @@ import {
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from '../logger';
 import { env } from '../env';
+import { Result, ResultAsync, ok, err } from 'neverthrow';
+import type { DbError, AuthError } from '../errors/results';
 
 /**
  * Secret key for deterministic API key hashing (should match echo-control)
@@ -44,102 +46,111 @@ export class EchoDbService {
   }
 
   /**
-   * Validate an API key and return user/app information
-   * Centralized logic previously duplicated in echo-control and echo-server
+   * Validate an API key and return user/app information.
+   * Returns a ResultAsync with the validation result or a typed AuthError.
+   * Centralized logic previously duplicated in echo-control and echo-server.
    */
-  async validateApiKey(apiKey: string): Promise<ApiKeyValidationResult | null> {
-    try {
-      // Remove Bearer prefix if present
-      const cleanApiKey = apiKey.replace('Bearer ', '');
+  validateApiKey(apiKey: string): ResultAsync<ApiKeyValidationResult, AuthError> {
+    const cleanApiKey = apiKey.replace('Bearer ', '');
+    const isJWT = cleanApiKey.split('.').length === 3;
 
-      const isJWT = cleanApiKey.split('.').length === 3;
-
-      if (isJWT) {
-        const verifyResult = await jwtVerify(cleanApiKey, this.apiJwtSecret);
+    if (isJWT) {
+      return ResultAsync.fromPromise(
+        jwtVerify(cleanApiKey, this.apiJwtSecret),
+        (cause): AuthError => ({ type: 'AUTH_JWT_VERIFICATION_FAILED', cause })
+      ).andThen((verifyResult): Result<EchoAccessJwtPayload, AuthError> => {
         const payload = verifyResult.payload as unknown as EchoAccessJwtPayload;
 
         if (!payload) {
-          return null;
+          return err({ type: 'AUTH_INVALID_API_KEY' });
         }
 
-        // Validate required fields exist
         if (!payload.user_id || !payload.app_id) {
           logger.error(
             `JWT missing required fields: user_id=${payload.user_id}, app_id=${payload.app_id}`
           );
-          return null;
+          return err({
+            type: 'AUTH_MISSING_FIELDS',
+            fields: [
+              ...(!payload.user_id ? ['user_id'] : []),
+              ...(!payload.app_id ? ['app_id'] : []),
+            ],
+          });
         }
 
         if (payload.exp && payload.exp < Date.now() / 1000) {
-          return null;
+          return err({ type: 'AUTH_EXPIRED_JWT' });
         }
 
-        const user = await this.db.user.findUnique({
-          where: {
-            id: payload.user_id,
-          },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            createdAt: true,
-            updatedAt: true,
-            totalPaid: true,
-            totalSpent: true,
-          },
-        });
+        return ok(payload);
+      }).andThen((payload: EchoAccessJwtPayload) =>
+        ResultAsync.fromPromise(
+          Promise.all([
+            this.db.user.findUnique({
+              where: { id: payload.user_id },
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                createdAt: true,
+                updatedAt: true,
+                totalPaid: true,
+                totalSpent: true,
+              },
+            }),
+            this.db.echoApp.findUnique({
+              where: { id: payload.app_id },
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                isArchived: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            }),
+          ]),
+          (cause): AuthError => ({ type: 'AUTH_JWT_VERIFICATION_FAILED', cause })
+        ).andThen(([user, app]: [any, any]): Result<ApiKeyValidationResult, AuthError> => {
+          if (!user || !app) {
+            return err({ type: 'AUTH_INVALID_API_KEY' });
+          }
 
-        const app = await this.db.echoApp.findUnique({
-          where: {
-            id: payload.app_id,
-          },
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            isArchived: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        });
+          return ok({
+            userId: payload.user_id,
+            echoAppId: payload.app_id,
+            user: {
+              id: user.id,
+              email: user.email,
+              ...(user.name && { name: user.name }),
+              createdAt: user.createdAt.toISOString(),
+              updatedAt: user.updatedAt.toISOString(),
+            },
+            echoApp: {
+              id: app.id,
+              name: app.name,
+              ...(app.description && { description: app.description }),
+              createdAt: app.createdAt.toISOString(),
+              updatedAt: app.updatedAt.toISOString(),
+            },
+          });
+        })
+      );
+    }
 
-        if (!user || !app) {
-          return null;
-        }
+    // Hash the provided API key for direct O(1) lookup
+    const keyHash = hashApiKey(cleanApiKey);
 
-        return {
-          userId: payload.user_id,
-          echoAppId: payload.app_id,
-          user: {
-            id: user.id,
-            email: user.email,
-            ...(user.name && { name: user.name }),
-            createdAt: user.createdAt.toISOString(),
-            updatedAt: user.updatedAt.toISOString(),
-          },
-          echoApp: {
-            id: app.id,
-            name: app.name,
-            ...(app.description && { description: app.description }),
-            createdAt: app.createdAt.toISOString(),
-            updatedAt: app.updatedAt.toISOString(),
-          },
-        };
-      }
-      // Hash the provided API key for direct O(1) lookup
-      const keyHash = hashApiKey(cleanApiKey);
-
-      // Direct lookup by keyHash - O(1) operation!
-      const apiKeyRecord = await this.db.apiKey.findUnique({
-        where: {
-          keyHash,
-        },
+    return ResultAsync.fromPromise(
+      this.db.apiKey.findUnique({
+        where: { keyHash },
         include: {
           user: true,
           echoApp: true,
         },
-      });
-
+      }),
+      (cause): AuthError => ({ type: 'AUTH_JWT_VERIFICATION_FAILED', cause })
+    ).andThen((apiKeyRecord: any): Result<ApiKeyValidationResult, AuthError> => {
       // Verify the API key is valid and all related entities are active
       if (
         !apiKeyRecord ||
@@ -147,10 +158,10 @@ export class EchoDbService {
         apiKeyRecord.user.isArchived ||
         apiKeyRecord.echoApp.isArchived
       ) {
-        return null;
+        return err({ type: 'AUTH_INVALID_API_KEY' });
       }
 
-      return {
+      return ok({
         userId: apiKeyRecord.userId,
         echoAppId: apiKeyRecord.echoAppId,
         user: {
@@ -170,11 +181,8 @@ export class EchoDbService {
           updatedAt: apiKeyRecord.echoApp.updatedAt.toISOString(),
         },
         apiKeyId: apiKeyRecord.id,
-      };
-    } catch (error) {
-      logger.error(`Error validating API key: ${error}`);
-      return null;
-    }
+      });
+    });
   }
 
   async getReferralCodeForUser(
@@ -201,12 +209,13 @@ export class EchoDbService {
   }
 
   /**
-   * Calculate total balance for a user across all apps
-   * Uses User.totalPaid and User.totalSpent for consistent balance calculation
+   * Calculate total balance for a user across all apps.
+   * Returns a ResultAsync with the Balance or a typed DbError.
+   * Uses User.totalPaid and User.totalSpent for consistent balance calculation.
    */
-  async getBalance(userId: string): Promise<Balance> {
-    try {
-      const user = await this.db.user.findUnique({
+  getBalance(userId: string): ResultAsync<Balance, DbError> {
+    return ResultAsync.fromPromise(
+      this.db.user.findUnique({
         where: { id: userId },
         select: {
           id: true,
@@ -217,34 +226,20 @@ export class EchoDbService {
           totalPaid: true,
           totalSpent: true,
         },
-      });
-
+      }),
+      (cause): DbError => ({ type: 'DB_QUERY_FAILED', cause })
+    ).andThen((user: any): Result<Balance, DbError> => {
       if (!user) {
         logger.error(`User not found: ${userId}`);
-        return {
-          balance: 0,
-          totalPaid: 0,
-          totalSpent: 0,
-        };
+        return err({ type: 'DB_NOT_FOUND', entity: 'User', id: userId });
       }
 
       const totalPaid = Number(user.totalPaid);
       const totalSpent = Number(user.totalSpent);
       const balance = totalPaid - totalSpent;
 
-      return {
-        balance,
-        totalPaid,
-        totalSpent,
-      };
-    } catch (error) {
-      logger.error(`Error fetching balance: ${error}`);
-      return {
-        balance: 0,
-        totalPaid: 0,
-        totalSpent: 0,
-      };
-    }
+      return ok({ balance, totalPaid, totalSpent });
+    });
   }
 
   /**
@@ -400,28 +395,21 @@ export class EchoDbService {
   }
 
   /**
-   * Create an LLM transaction record and atomically update user's totalSpent
-   * Centralized logic for transaction creation with atomic balance updates
+   * Create an LLM transaction record and atomically update user's totalSpent.
+   * Returns a ResultAsync with the created Transaction or a typed DbError.
+   * Centralized logic for transaction creation with atomic balance updates.
    */
-  async createPaidTransaction(
+  createPaidTransaction(
     transaction: TransactionRequest
-  ): Promise<Transaction | null> {
-    try {
-      // Use a database transaction to atomically create the LLM transaction and update user balance
-      const result = await this.db.$transaction(async tx => {
+  ): ResultAsync<Transaction, DbError> {
+    return ResultAsync.fromPromise<Transaction, DbError>(
+      this.db.$transaction(async (tx: Prisma.TransactionClient) => {
         // Create the LLM transaction record
-        const dbTransaction = await this.createTransactionRecord(
-          tx,
-          transaction
-        );
+        const dbTransaction = await this.createTransactionRecord(tx, transaction);
 
         if (transaction.userId) {
           // Update user's total spent amount
-          await this.updateUserTotalSpent(
-            tx,
-            transaction.userId,
-            transaction.totalCost
-          );
+          await this.updateUserTotalSpent(tx, transaction.userId, transaction.totalCost);
         }
         // Update API key's last used timestamp if provided
         if (transaction.apiKeyId) {
@@ -429,34 +417,29 @@ export class EchoDbService {
         }
 
         return dbTransaction;
-      });
-
+      }),
+      (cause): DbError => ({ type: 'DB_TRANSACTION_FAILED', cause })
+    ).map((result: Transaction) => {
       logger.info(
         `Created transaction for model ${transaction.metadata.model}: $${transaction.totalCost}, updated user totalSpent`,
         result.id
       );
       return result;
-    } catch (error) {
-      logger.error(`Error creating transaction and updating balance: ${error}`);
-      return null;
-    }
+    });
   }
 
   /**
-   * Create a free tier transaction and update all related records atomically
-   * @param userId - The user ID
-   * @param spendPoolId - The spend pool ID
+   * Create a free tier transaction and update all related records atomically.
+   * Returns a ResultAsync with the transaction and usage records or a typed DbError.
    * @param transactionData - The transaction data to create
+   * @param spendPoolId - The spend pool ID
    */
-  async createFreeTierTransaction(
+  createFreeTierTransaction(
     transactionData: TransactionRequest,
     spendPoolId: string
-  ): Promise<{
-    transaction: Transaction;
-    userSpendPoolUsage: UserSpendPoolUsage | null;
-  }> {
-    try {
-      return await this.db.$transaction(async tx => {
+  ): ResultAsync<{ transaction: Transaction; userSpendPoolUsage: UserSpendPoolUsage | null }, DbError> {
+    return ResultAsync.fromPromise<{ transaction: Transaction; userSpendPoolUsage: UserSpendPoolUsage | null }, DbError>(
+      this.db.$transaction(async (tx: Prisma.TransactionClient) => {
         // 1. Verify the spend pool exists
         const spendPool = await tx.spendPool.findUnique({
           where: { id: spendPoolId },
@@ -476,10 +459,7 @@ export class EchoDbService {
             )
           : null;
         // 3. Create the transaction record
-        const transaction = await this.createTransactionRecord(
-          tx,
-          transactionData
-        );
+        const transaction = await this.createTransactionRecord(tx, transactionData);
 
         // 4. Update API key lastUsed if apiKeyId is provided
         if (transactionData.apiKeyId) {
@@ -487,26 +467,17 @@ export class EchoDbService {
         }
 
         // 5. Update totalSpent on the SpendPool using helper
-        await this.updateSpendPoolTotalSpent(
-          tx,
-          spendPoolId,
-          transactionData.totalCost
-        );
+        await this.updateSpendPoolTotalSpent(tx, spendPoolId, transactionData.totalCost);
 
         logger.info(
           `Created free tier transaction for model ${transactionData.metadata.model}: $${transactionData.totalCost}`,
           transaction.id
         );
 
-        return {
-          transaction,
-          userSpendPoolUsage,
-        };
-      });
-    } catch (error) {
-      logger.error(`Error creating free tier transaction: ${error}`);
-      throw error;
-    }
+        return { transaction, userSpendPoolUsage };
+      }),
+      (cause): DbError => ({ type: 'DB_TRANSACTION_FAILED', cause })
+    );
   }
 
   async confirmAccessControl(

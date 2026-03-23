@@ -22,7 +22,7 @@ import {
   X402_REALM,
   USDC_MULTIPLIER,
 } from './constants';
-import { Decimal } from 'generated/prisma/runtime/library';
+import { Decimal } from './generated/prisma/runtime/library';
 import { USDC_ADDRESS } from 'services/fund-repo/constants';
 import crypto from 'crypto';
 import logger from 'logger';
