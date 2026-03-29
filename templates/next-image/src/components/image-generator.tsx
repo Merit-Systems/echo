@@ -27,12 +27,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fileToDataUrl } from '@/lib/image-utils';
 import type {
-  EditImageRequest,
   GeneratedImage,
   GenerateImageRequest,
   ImageResponse,
-  ModelConfig,
   ModelOption,
+  ModelConfig,
 } from '@/lib/types';
 import { ImageHistory } from './image-history';
 
@@ -77,11 +76,19 @@ async function generateImage(
   return response.json();
 }
 
-async function editImage(request: EditImageRequest): Promise<ImageResponse> {
+async function editImage(request: {
+  prompt: string;
+  provider: ModelOption;
+  imageFiles: File[];
+}): Promise<ImageResponse> {
+  const body = new FormData();
+  body.set('prompt', request.prompt);
+  body.set('provider', request.provider);
+  request.imageFiles.forEach(image => body.append('images', image));
+
   const response = await fetch('/api/edit-image', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
+    body,
   });
 
   if (!response.ok) {
@@ -217,20 +224,19 @@ export default function ImageGenerator() {
           }
 
           try {
-            const imageUrls = await Promise.all(
+            const imageUploads = await Promise.all(
               imageFiles.map(async imageFile => {
-                // Convert blob URL to data URL for API
                 const response = await fetch(imageFile.url);
                 const blob = await response.blob();
-                return await fileToDataUrl(
-                  new File([blob], 'image', { type: imageFile.mediaType })
-                );
+                return new File([blob], imageFile.filename || 'image', {
+                  type: imageFile.mediaType || blob.type || 'image/png',
+                });
               })
             );
 
             const result = await editImage({
               prompt,
-              imageUrls,
+              imageFiles: imageUploads,
               provider: model,
             });
             imageUrl = result.imageUrl;

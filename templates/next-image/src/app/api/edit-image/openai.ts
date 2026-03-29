@@ -14,6 +14,14 @@ export async function handleOpenAIEdit(
   prompt: string,
   imageUrls: string[]
 ): Promise<Response> {
+  const imageFiles = imageUrls.map((url) => dataUrlToFile(url, 'image.png'));
+  return handleOpenAIFileEdit(prompt, imageFiles);
+}
+
+export async function handleOpenAIFileEdit(
+  prompt: string,
+  imageFiles: File[]
+): Promise<Response> {
   const token = await getEchoToken();
 
   if (!token) {
@@ -32,8 +40,6 @@ export async function handleOpenAIEdit(
   });
 
   try {
-    const imageFiles = imageUrls.map(url => dataUrlToFile(url, 'image.png'));
-
     const result = await openaiClient.images.edit({
       image: imageFiles,
       prompt,

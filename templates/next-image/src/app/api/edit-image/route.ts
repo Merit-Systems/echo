@@ -8,25 +8,45 @@
  * - Returns edited images in appropriate format
  */
 
-import { EditImageRequest, validateEditImageRequest } from './validation';
-import { handleGoogleEdit } from './google';
-import { handleOpenAIEdit } from './openai';
-
-const providers = {
-  openai: handleOpenAIEdit,
-  gemini: handleGoogleEdit,
-};
-
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb',
-    },
-  },
-};
+import {
+  EditImageRequest,
+  validateEditImageRequest,
+  validateMultipartEditImageRequest,
+} from './validation';
+import { handleGoogleEdit, handleGoogleFileEdit } from './google';
+import { handleOpenAIEdit, handleOpenAIFileEdit } from './openai';
 
 export async function POST(req: Request) {
   try {
+    const contentType = req.headers.get('content-type') ?? '';
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      const validation = validateMultipartEditImageRequest(formData);
+      if (!validation.isValid) {
+        return Response.json(
+          { error: validation.error!.message },
+          { status: validation.error!.status }
+        );
+      }
+
+      const { prompt, imageFiles, provider } = validation.data;
+
+      if (provider === 'openai') {
+        return handleOpenAIFileEdit(prompt, imageFiles);
+      }
+
+      const googleFiles = await Promise.all(
+        imageFiles.map(async (file: File, index: number) => ({
+          bytes: new Uint8Array(await file.arrayBuffer()),
+          mediaType: file.type || 'image/png',
+          filename: file.name || `image-${index}.png`,
+        }))
+      );
+
+      return handleGoogleFileEdit(prompt, googleFiles);
+    }
+
     const body = await req.json();
 
     const validation = validateEditImageRequest(body);
@@ -38,16 +58,9 @@ export async function POST(req: Request) {
     }
 
     const { prompt, imageUrls, provider } = body as EditImageRequest;
-    const handler = providers[provider];
-
-    if (!handler) {
-      return Response.json(
-        { error: `Unsupported provider: ${provider}` },
-        { status: 400 }
-      );
-    }
-
-    return handler(prompt, imageUrls);
+    return provider === 'openai'
+      ? handleOpenAIEdit(prompt, imageUrls)
+      : handleGoogleEdit(prompt, imageUrls);
   } catch (error) {
     console.error('Image editing error:', error);
 

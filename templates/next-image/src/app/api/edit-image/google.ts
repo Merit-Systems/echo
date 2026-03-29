@@ -14,16 +14,31 @@ export async function handleGoogleEdit(
   prompt: string,
   imageUrls: string[]
 ): Promise<Response> {
+  const files = imageUrls.map((imageUrl, index) => ({
+    bytes: Uint8Array.from(atob(imageUrl.split(',')[1] ?? ''), char =>
+      char.charCodeAt(0)
+    ),
+    mediaType: getMediaTypeFromDataUrl(imageUrl),
+    filename: `image-${index}.png`,
+  }));
+
+  return handleGoogleFileEdit(prompt, files);
+}
+
+export async function handleGoogleFileEdit(
+  prompt: string,
+  files: Array<{ bytes: Uint8Array; mediaType: string; filename: string }>
+): Promise<Response> {
   try {
     const content = [
       {
         type: 'text' as const,
         text: prompt,
       },
-      ...imageUrls.map(imageUrl => ({
+      ...files.map((file) => ({
         type: 'image' as const,
-        image: imageUrl, // Direct data URL - Gemini handles it
-        mediaType: getMediaTypeFromDataUrl(imageUrl),
+        image: file.bytes,
+        mediaType: file.mediaType,
       })),
     ];
 
@@ -37,7 +52,7 @@ export async function handleGoogleEdit(
       ],
     });
 
-    const imageFile = result.files?.find(file =>
+    const imageFile = result.files?.find((file) =>
       file.mediaType?.startsWith('image/')
     );
 
