@@ -14,7 +14,7 @@ export async function handleOpenAIEdit(
   prompt: string,
   imageUrls: string[]
 ): Promise<Response> {
-  const imageFiles = imageUrls.map(url => dataUrlToFile(url, 'image.png'));
+  const imageFiles = imageUrls.map((url) => dataUrlToFile(url, 'image.png'));
   return handleOpenAIFileEdit(prompt, imageFiles);
 }
 

@@ -35,7 +35,7 @@ export async function handleGoogleFileEdit(
         type: 'text' as const,
         text: prompt,
       },
-      ...files.map(file => ({
+      ...files.map((file) => ({
         type: 'image' as const,
         image: file.bytes,
         mediaType: file.mediaType,
@@ -52,7 +52,7 @@ export async function handleGoogleFileEdit(
       ],
     });
 
-    const imageFile = result.files?.find(file =>
+    const imageFile = result.files?.find((file) =>
       file.mediaType?.startsWith('image/')
     );
 

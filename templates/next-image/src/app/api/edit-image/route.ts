@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       }
 
       const googleFiles = await Promise.all(
-        imageFiles.map(async (file, index) => ({
+        imageFiles.map(async (file: File, index: number) => ({
           bytes: new Uint8Array(await file.arrayBuffer()),
           mediaType: file.type || 'image/png',
           filename: file.name || `image-${index}.png`,

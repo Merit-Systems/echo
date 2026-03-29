@@ -2,10 +2,24 @@ import { ModelOption } from '@/lib/types';
 
 export type { EditImageRequest } from '@/lib/types';
 
-export interface ValidationResult {
-  isValid: boolean;
-  error?: { message: string; status: number };
+export interface ValidationError {
+  message: string;
+  status: number;
 }
+
+export interface ValidationFailure {
+  isValid: false;
+  error: ValidationError;
+}
+
+export interface ValidationSuccess<TData = undefined> {
+  isValid: true;
+  data: TData;
+}
+
+export type ValidationResult<TData = undefined> =
+  | ValidationFailure
+  | ValidationSuccess<TData>;
 
 export interface ParsedMultipartEditImageRequest {
   prompt: string;
@@ -13,7 +27,9 @@ export interface ParsedMultipartEditImageRequest {
   imageFiles: File[];
 }
 
-export function validateEditImageRequest(body: unknown): ValidationResult {
+export function validateEditImageRequest(
+  body: unknown
+): ValidationResult<undefined> {
   if (!body || typeof body !== 'object') {
     return {
       isValid: false,
@@ -62,14 +78,12 @@ export function validateEditImageRequest(body: unknown): ValidationResult {
     };
   }
 
-  return { isValid: true };
+  return { isValid: true, data: undefined };
 }
 
 export function validateMultipartEditImageRequest(
   formData: FormData
-):
-  | (ValidationResult & { data: ParsedMultipartEditImageRequest })
-  | ValidationResult {
+): ValidationResult<ParsedMultipartEditImageRequest> {
   const prompt = formData.get('prompt');
   const provider = formData.get('provider');
   const imageFiles = formData
@@ -108,7 +122,7 @@ export function validateMultipartEditImageRequest(
     };
   }
 
-  if (imageFiles.some(file => !file.type.startsWith('image/'))) {
+  if (imageFiles.some((file) => !file.type.startsWith('image/'))) {
     return {
       isValid: false,
       error: { message: 'All uploaded files must be images', status: 400 },
