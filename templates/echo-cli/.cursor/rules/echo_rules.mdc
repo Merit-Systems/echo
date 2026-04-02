@@ -1,51 +1,24 @@
 ---
-description: Echo CLI template rules covering command architecture, auth flows, wallet handling, config management, output conventions, and error handling
-globs: **/*.{ts,js,mjs,cjs}
+description: Guidelines for building Echo-powered CLI applications, including SDK setup, authentication flows, wallet integration, and AI chat sessions
+globs: **/*.ts,**/*.js
 ---
 
-# Echo CLI Template Rules
+# Echo CLI Guidelines
 
-## Command Architecture
+## SDK Setup
+- Use `@merit-systems/echo-typescript-sdk` for server/CLI contexts
+- Use `@merit-systems/ai-x402` for x402 payment protocol integration
+- Use `@ai-sdk/openai` and `ai` for CLI chat
 
-- Define all CLI commands in `src/index.ts` using Commander; keep command `.action()` handlers thin — delegate to modules in `src/core/`, `src/auth/`, or `src/utils/`.
-- Organize business logic by domain: `src/core/` for chat/session logic, `src/auth/` for login/logout flows, `src/utils/` for shared helpers, `src/config/` for persistence.
-- Use `src/constants.ts` for all magic strings, ASCII art, and option arrays; never hardcode repeated values inline.
-- Register sub-commands as separate `program.command(...)` calls; do not nest all logic in a single giant command.
+## Authentication
+- Echo OAuth — Browser-based OAuth with PKCE
+- Crypto Wallet — WalletConnect or local wallet with private key
+- Use `conf` package for persistent configuration storage
 
-## Authentication Flows
+## CLI Framework
+- Use `commander` for command definitions
+- Use `@clack/prompts` for interactive selection
+- Use `chalk` for colored output, `ora` for spinners, `cli-table3` for tables
 
-- Gate commands that require authentication with the `isAuthenticated()` utility from `src/utils`; show a clear login prompt if the user is unauthenticated.
-- Use `loginWithEcho` and `loginWithWallet` from `src/auth` for the two supported auth modes; do not implement auth logic outside these modules.
-- Use `@clack/prompts` (`select`, `text`, `confirm`, `isCancel`) for all interactive prompts; always check `isCancel(result)` and exit cleanly with `process.exit(0)`.
-- Persist session/token data using the existing secure keychain/storage paths in `src/config`; never store sensitive values in plain files or env vars.
-
-## Wallet Handling
-
-- Use `initLocalWallet` and `exportPrivateKey` from `src/auth` for wallet creation/export; never generate or log key material outside these functions.
-- Show explicit user confirmation prompts before any wallet-destructive operations (export private key, fund wallet).
-- Display wallet addresses and balances using the print utilities in `src/print`; never construct raw `console.log` output for structured data.
-
-## Config & Environment
-
-- Read `ECHO_APP_ID` via the centralized constant in `src/constants.ts`; do not use `process.env.ECHO_APP_ID` directly in command handlers.
-- Store user preferences and session state in the config module (`src/config`); do not use ad-hoc files or global variables.
-- Validate required config at startup; surface clear error messages if `ECHO_APP_ID` or other required values are missing.
-
-## Output & UX Conventions
-
-- Use `info`, `warning`, `header`, and error utilities from `src/print` for all user-facing output; keep console output consistent in style.
-- Display the `ECHODEX_ASCII_ART` banner via `header()` at program startup and on appropriate subcommands.
-- Use `@clack/prompts` spinners for async operations that may take >1 second (network, wallet ops).
-- Handle `process.exit` semantics carefully: exit code `0` for user cancellation/clean exit, non-zero for errors.
-
-## Error Handling
-
-- Wrap async command handlers in try/catch; surface actionable error messages via `warning()` or `info()` — never raw stack traces in production mode.
-- For network failures (Echo API, wallet RPC), retry with backoff where appropriate; otherwise present a clear retry suggestion to the user.
-- Never crash silently; always give the user a next step (re-authenticate, check network, contact support).
-
-## TypeScript
-
-- Use strict TypeScript; add `@types/node` to `devDependencies` when using Node.js built-ins.
-- Type all function signatures explicitly; avoid inferred `any` from async operations.
-- Use `as const` for option arrays passed to `@clack/prompts` to get proper literal types.
+## Environment Variables
+- `ECHO_APP_ID` — Echo application identifier

@@ -1,51 +1,25 @@
 ---
-description: Echo React Chat (Vite) template rules covering EchoProvider + EchoChatProvider setup, chat hooks, streaming message state, AI SDK usage, and client-safe patterns
-globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+description: Guidelines for building Echo-powered React chat applications with Vite, AI SDK streaming, and shadcn/ui components
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
 ---
 
-# Echo React Chat (Vite) Template Rules
+# Echo React Chat Guidelines
 
-## Provider Setup
+## SDK Setup
+- Wrap app with `EchoProvider` from `@merit-systems/echo-react-sdk`
+- Use `import.meta.env.VITE_ECHO_APP_ID` for the Echo app identifier
+- Use `EchoTokens` component for authentication and token management
 
-- Wrap the app root with `EchoProvider` first, then `EchoChatProvider` as a child; pass `config={{ appId: import.meta.env.VITE_ECHO_APP_ID }}` to `EchoProvider`.
-- Never nest providers in the wrong order; `EchoChatProvider` depends on the Echo context provided by `EchoProvider`.
-- Do not create redundant providers; one `EchoProvider` at root is sufficient for the entire app.
+## Chat Integration
+- Use `useChat` hook from `@ai-sdk/react`
 
-## Hook & SDK Usage
+## UI Components
+- Use shadcn/ui components
+- Tailwind CSS for styling
 
-- Use `useEcho()` from `@merit-systems/echo-react-sdk` to access authentication state and user info.
-- Use `useEchoModelProviders()` to get the `openai` (and other) provider clients; pass them to AI SDK functions like `streamText`.
-- Use `useChat` from `@merit-systems/echo-react-sdk` for chat session management where applicable; do not rebuild chat state from scratch.
-- Keep streaming and message-state logic within existing component boundaries (e.g., `ChatWrapper`); do not lift streaming state into global context.
+## Environment Variables
+- `VITE_ECHO_APP_ID` — Client-side Echo identifier (Vite prefix required)
 
-## Streaming Chat Pattern
-
-- Pass `ChatSendParams` (containing `messages`) to the chat send handler; use `convertToModelMessages` from the AI SDK to normalize message format.
-- Use `streamText` from the AI SDK with the Echo-provided model client; return `result.toUIMessageStream()` as the response.
-- Handle in-flight requests with a loading state; disable the input/send button while a message is being streamed.
-- Support request cancellation via `AbortController` when the user navigates away or sends a new message.
-
-## Message UX
-
-- Display messages in chronological order; new messages append to the bottom.
-- Show a typing indicator while the stream is active.
-- Handle empty states (no messages yet) with a friendly prompt.
-- Render assistant messages with markdown formatting if the template supports it.
-
-## Environment Variables (Vite)
-
-- Use `import.meta.env.VITE_ECHO_APP_ID` for the Echo app ID; prefix all public env vars with `VITE_`.
-- Never embed provider API keys in the client bundle; all model calls are proxied through Echo's backend.
-- Document required env vars in `.env.example` or README.
-
-## Component Structure
-
-- Keep `src/App.tsx` as the root provider + layout shell.
-- Split chat UI into focused components: `Chat` (container), message list, message item, input area.
-- Follow existing Vite + React patterns for module paths, component layout, styling, and TypeScript strictness.
-
-## Security
-
-- All LLM inference is proxied through Echo's backend; the client only sends prompts and receives streamed text.
-- Only `VITE_ECHO_APP_ID` belongs in client env vars; keep all other credentials server-side.
-- Sanitize rendered assistant output if displaying as HTML; prefer a markdown renderer with safe defaults.
+## Build & Development
+- Dev: `npm run dev` (Vite)
+- This is a client-side only app — no SSR

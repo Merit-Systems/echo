@@ -1,49 +1,24 @@
 ---
-description: Echo Next.js Chat template rules covering Echo server wiring, streaming chat, AI SDK patterns, client providers, message state, and env safety
-globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+description: Guidelines for building Echo-powered Next.js chat applications with AI SDK streaming, shadcn/ui components, and real-time message handling
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
 ---
 
-# Echo Next.js Chat Template Rules
+# Echo Next.js Chat Guidelines
 
-## Echo Server Wiring
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Use `EchoTokens` component for authentication and token management
 
-- Keep Echo initialization in `src/echo/index.ts`; export `handlers`, `isSignedIn`, `openai`, `anthropic` from there.
-- The echo route (`src/app/api/echo/[...echo]/route.ts`) must be a thin passthrough: `export const { GET, POST } = handlers`.
-- Import `@merit-systems/echo-next-sdk` in server code; use `@merit-systems/echo-next-sdk/client` in Client Components only.
+## Chat Integration
+- Use `useChat` hook from `@ai-sdk/react`
+- Use `streamText` from `ai` with Echo-proxied models in API routes
+- Always verify authentication with `isSignedIn()` before AI calls
 
-## Streaming Chat Architecture
-
-- Use the AI SDK (`streamText`, `convertToModelMessages`) for streaming responses; return `result.toUIMessageStream()` from server actions or route handlers.
-- Keep streaming logic within existing component boundaries (e.g., `ChatWrapper`); do not lift streaming state into layouts or global providers.
-- Handle stream errors at the component level with appropriate loading and error states; do not let unhandled promise rejections crash the UI.
-- Use `EchoChatProvider` from `@merit-systems/echo-react-sdk` to manage chat session state; do not build custom message state if the provider covers your use case.
-
-## Client Providers
-
-- Wrap the app root with `EchoProvider` (and `EchoChatProvider` where needed); pass `appId: import.meta.env.VITE_ECHO_APP_ID` (Vite) or `process.env.NEXT_PUBLIC_ECHO_APP_ID` (Next.js).
-- Use `useEcho()` and `useEchoModelProviders()` hooks to access the authenticated Echo client and model instances in Client Components.
-- Do not create additional provider wrappers unless you need to override default behavior; compose with existing providers instead.
-
-## Message State & UX
-
-- Maintain chat message history within the chat component or `EchoChatProvider`; do not persist messages to global state unless the template's existing pattern does so.
-- Show typing/loading indicators during streaming; disable the send button while a message is in-flight to prevent duplicate submissions.
-- Support graceful cancellation of in-flight streams via AbortController when the user navigates away or triggers a new request.
+## UI Components
+- Use shadcn/ui components
+- Use Tailwind CSS v4 for styling
 
 ## Environment Variables
-
-- `ECHO_APP_ID` — server-side only, for `src/echo/index.ts`.
-- `NEXT_PUBLIC_ECHO_APP_ID` — client-side provider config only.
-- Never embed provider API keys (OpenAI, Anthropic) in client code; route all model calls through the Echo server handler.
-
-## App Router Conventions
-
-- Use `@/` path alias for internal imports; never use deep relative paths.
-- Keep Server Components as the default; add `"use client"` only for interactive chat UI and hook consumers.
-- Use `loading.tsx` and `error.tsx` at appropriate route segments.
-
-## Security
-
-- All LLM inference calls must be proxied through the Echo server Route Handler; never call OpenAI/Anthropic APIs directly from the client.
-- Use `isSignedIn` to gate the chat route if authentication is required.
-- Sanitize user input before displaying it; avoid `dangerouslySetInnerHTML` with user-provided content.
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

@@ -1,50 +1,24 @@
 ---
-description: Echo Next.js Video Generation template rules covering Echo server wiring, video generation flows, multi-provider config (openai/anthropic/google), async job handling, and env safety
-globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+description: Guidelines for building Echo-powered Next.js video generation applications with AI video models and video player components
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
 ---
 
-# Echo Next.js Video Generation Template Rules
+# Echo Next.js Video Generation Guidelines
 
-## Echo Server Wiring
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Use `EchoTokens` component for authentication and token management
 
-- Keep Echo initialization in `src/echo/index.ts`; export `handlers`, `isSignedIn`, `openai`, `anthropic`, `google`, `getUser`, `getEchoToken` from there.
-- The echo route (`src/app/api/echo/[...echo]/route.ts`) must remain a thin passthrough: `export const { GET, POST } = handlers`.
-- Use `ECHO_APP_ID` for server-side initialization; never expose this to the client.
-- Import from `@merit-systems/echo-next-sdk` in server code; use `@merit-systems/echo-next-sdk/client` in Client Components only.
+## Video Generation
+- Use Echo-proxied models for video generation
+- Build a custom video player or use HTML5 `<video>` element
+- Support playback controls: play, pause, seek, volume
 
-## Video Generation Flows
-
-- Invoke video generation through Echo-proxied provider clients (`openai`, `google`, `anthropic` from `src/echo/index.ts`); never call Sora, Veo, or other video provider APIs directly from client code.
-- Video generation is long-running; implement an async job pattern — submit the generation request, return a job ID, and poll for completion or use webhooks.
-- Return job status and video URLs from Route Handlers, not raw provider response payloads.
-- Validate prompt inputs server-side: enforce length limits, reject banned content categories, and normalize whitespace before forwarding.
-
-## Multi-Provider Handling
-
-- This template may use OpenAI (Sora), Google (Veo), or other providers; keep provider selection configurable via request parameters or environment variables.
-- Abstract provider-specific request shapes behind a shared server function; do not scatter provider-specific code across multiple route files.
-- Document which providers are enabled by which env vars; fail fast with clear errors when a requested provider is not configured.
-
-## Async Job Management
-
-- Track generation jobs server-side (in-memory for development, persistent storage for production); associate jobs with the requesting user via `getUser()` from Echo.
-- Implement job status polling endpoint at a well-known path; return `{ status: 'pending' | 'complete' | 'failed', url?: string, error?: string }`.
-- Clean up completed or failed job records after a reasonable TTL to prevent memory/storage leaks.
-
-## File & Asset Handling
-
-- Store generated videos in external object storage (S3, GCS, R2); do not stream large video blobs through Next.js responses.
-- Use signed URLs with appropriate expiry for video delivery; do not expose storage bucket paths directly.
-- Use Next.js `<video>` element with proper `controls`, `preload`, and `poster` attributes for video playback.
+## UI Components
+- Use shadcn/ui components
+- Build a video gallery with thumbnails
 
 ## Environment Variables
-
-- `ECHO_APP_ID` — server-side Echo app identifier.
-- `NEXT_PUBLIC_ECHO_APP_ID` — client-side provider config only.
-- Add provider-specific keys to `.env.example`; document the required format and where to obtain them.
-
-## Security & Rate Limiting
-
-- Implement per-user rate limiting on video generation routes; video generation is expensive.
-- Use `isSignedIn` from Echo or `getUser()` to authenticate all generation requests; reject unauthenticated requests with 401.
-- Do not log full provider responses; they may contain billing metadata or PII.
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

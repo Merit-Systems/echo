@@ -1,50 +1,24 @@
 ---
-description: Echo Next.js Image Generation template rules covering Echo server wiring, image generation flows, provider config, file handling, and env safety
-globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+description: Guidelines for building Echo-powered Next.js image generation applications with AI SDK, image models, and gallery components
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
 ---
 
-# Echo Next.js Image Generation Template Rules
+# Echo Next.js Image Generation Guidelines
 
-## Echo Server Wiring
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Use `EchoTokens` component for authentication and token management
 
-- Keep Echo initialization in `src/echo/index.ts`; export `handlers`, `isSignedIn`, `openai`, `anthropic`, `google` and other provider helpers from there.
-- The echo route (`src/app/api/echo/[...echo]/route.ts`) must be a thin passthrough: `export const { GET, POST } = handlers`.
-- Use `ECHO_APP_ID` for server-side initialization; never expose it to the client bundle.
-- Import from `@merit-systems/echo-next-sdk` in server code; use `@merit-systems/echo-next-sdk/client` in Client Components only.
+## Image Generation
+- Use `experimental_generateImage` from `ai` for image generation
+- Display generated images with proper loading states
+- Use `next/image` for optimized image rendering when possible
 
-## Image Generation Flows
-
-- Invoke image generation through the Echo-proxied provider client (e.g., `openai`, `google` from `src/echo/index.ts`); never call provider image APIs directly from client code.
-- Handle image generation as an async server-side operation; return URLs or base64 data from Route Handlers, not the raw provider response object.
-- Validate prompt inputs server-side before forwarding to the provider; reject empty or excessively long prompts with appropriate HTTP error responses.
-- Include model-specific parameters (size, quality, style, n) as named options; document supported values in a comment near the call site.
-
-## File & Asset Handling
-
-- Store generated images using Next.js public folder conventions or an external storage service; do not store binary data in the database.
-- Use Next.js `<Image>` component for displaying generated images to benefit from automatic optimization and lazy loading.
-- Set appropriate `alt` text on all generated images for accessibility.
+## UI Components
+- Use shadcn/ui components
+- Build a gallery component for displaying generated images
 
 ## Environment Variables
-
-- `ECHO_APP_ID` — server-side Echo app identifier.
-- `NEXT_PUBLIC_ECHO_APP_ID` — client-side provider config only.
-- Add any additional provider-specific keys (e.g., `GOOGLE_API_KEY`) to `.env.local` and document them in `.env.example`; never commit real values.
-
-## Client vs. Server
-
-- Trigger image generation from Server Actions or Route Handlers; client code should only submit the prompt and display results.
-- In client components, use `useEcho()` or `useEchoModelProviders()` hooks from `@merit-systems/echo-next-sdk/client` or `@merit-systems/echo-react-sdk`.
-- Show progress/loading state during generation (image generation typically takes 5–30 seconds).
-
-## App Router Conventions
-
-- Use `@/` path alias for all internal imports.
-- Use Server Components for data fetching and generation triggers; use Client Components only for interactive UI (prompt form, image gallery).
-- Handle generation errors in `error.tsx` or inline with try/catch in Server Actions.
-
-## Security
-
-- Implement rate limiting on image generation routes to prevent abuse.
-- Do not pass raw user input as system prompts; sanitize or constrain prompt inputs before forwarding.
-- Log generation requests for audit purposes but never log the full provider API response including billing metadata.
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

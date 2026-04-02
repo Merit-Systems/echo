@@ -1,52 +1,26 @@
 ---
-description: Echo Next.js API-key template rules covering Echo + Prisma wiring, createEchoOpenAI usage, user API key storage, streaming chat, database patterns, and env safety
-globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+description: Guidelines for building Echo-powered Next.js applications with server-side API key management, PostgreSQL database, and Prisma ORM
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.prisma
 ---
 
-# Echo Next.js API Key Template Rules
+# Echo Next.js API Key Template Guidelines
 
-## Echo Server Wiring
+## SDK Setup
+- Server-side: Initialize Echo in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Also uses `@merit-systems/echo-typescript-sdk` for server-side API calls
 
-- Keep Echo initialization in `src/echo/index.ts`; export `handlers`, `isSignedIn`, `getUser` from there.
-- The echo route (`src/app/api/echo/[...echo]/route.ts`) must be a thin passthrough: `export const { GET, POST } = handlers`.
-- Use `ECHO_APP_ID` for server-side Echo config; never expose to the client.
+## Database (Prisma + PostgreSQL)
+- Define models in `prisma/schema.prisma`
+- Use `@prisma/client` for database queries
+- Use global singleton pattern to prevent too many connections in development
 
-## createEchoOpenAI Pattern
-
-- Use `createEchoOpenAI` from `@merit-systems/echo-typescript-sdk` in Route Handlers to create a per-request OpenAI-compatible client that uses the user's stored API key.
-- Pass a callback that retrieves the API key from the database (via Prisma); never hardcode or inline API keys.
-- Pass an insufficient-funds callback as the third argument; return an appropriate `Response` with HTTP 402 and a clear error message.
-- Always validate that `getUser()` returns a non-null user before querying their API key; throw with a descriptive error if not.
-
-## API Key Storage & Management
-
-- Store user API keys in the database (Prisma `db.user`) using the existing `apiKey` field; never store keys in cookies or local storage.
-- Use the `useValidApiKey` hook from `src/app/_components/accept-api-key/hooks` to check API key status in client components; do not re-implement this logic inline.
-- Show appropriate onboarding UI when `requiresSetup` is true; gate the main chat interface on `hasValidApiKey`.
-- Encrypt API keys at rest if the deployment handles sensitive provider keys; document the encryption approach in the README.
-
-## Streaming Chat Route
-
-- Keep the chat Route Handler (`src/app/api/chat/route.ts`) as the single entry point for LLM inference.
-- Validate `model` and `messages` parameters before forwarding to the provider; return HTTP 400 with a descriptive message for missing/invalid params.
-- Use `streamText` from the AI SDK with `convertToModelMessages` for message normalization; return `result.toUIMessageStreamResponse({ sendSources: true, sendReasoning: true })`.
-- Set `export const maxDuration = 30` (or higher) on streaming routes to prevent Vercel timeout errors.
-
-## Database Patterns (Prisma)
-
-- Use `src/lib/db.ts` as the single Prisma client instance; never instantiate `PrismaClient` elsewhere.
-- Use `db.user.findUnique` with `select` to fetch only the fields you need; avoid fetching entire user objects when only `apiKey` is required.
-- Handle Prisma errors explicitly; distinguish between "not found" (null return) and actual database errors.
+## API Key Management
+- Store API keys securely in the database (hashed)
+- Validate API keys on each request
+- Support key rotation and revocation
 
 ## Environment Variables
-
-- `ECHO_APP_ID` — server-side Echo app identifier.
-- `DATABASE_URL` — Prisma database connection string; never commit to source control.
-- `NEXT_PUBLIC_ECHO_APP_ID` — only if needed for client-side Echo provider.
-- Document all required env vars in `.env.example`.
-
-## Security
-
-- Use `getUser()` from Echo to authenticate every API route; return 401 for unauthenticated requests.
-- Never log API keys, even partially; treat them as secrets throughout the codebase.
-- Validate and sanitize the `model` parameter against an allowlist to prevent model enumeration or abuse.
+- `ECHO_APP_ID` — Server-side Echo app identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo app identifier
+- `DATABASE_URL` — PostgreSQL connection string

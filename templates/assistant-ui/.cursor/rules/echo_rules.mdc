@@ -1,43 +1,28 @@
 ---
-description: Echo assistant-ui template rules covering Echo handler setup, App Router echo route, NEXT_PUBLIC vs server env vars, client-side provider config, and component conventions
-globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+description: Guidelines for building Echo-powered chat applications with assistant-ui, AI SDK v5, and the assistant-ui React component library
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
 ---
 
-# Echo assistant-ui Template Rules
+# Echo Assistant-UI Guidelines
 
-## Echo Server Wiring
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
 
-- Echo is initialized in the root `echo.ts` file (not `src/echo/index.ts` — this template uses `echo.ts` at the project root).
-- The `echo.ts` default export is `echo.handlers`; named exports include `getUser`, `isSignedIn`, `openai`, `anthropic`, `google`.
-- The echo route (typically `app/api/echo/[...path]/route.ts` or `app/api/echo/[...echo]/route.ts`) must stay as a thin passthrough — import `handlers` from `@/echo` (the root `echo.ts`) and export `{ GET, POST }`.
-- Do not move or rename `echo.ts`; the assistant-ui components and API routes depend on its location.
+## Assistant-UI Integration
+
+### Runtime Provider
+- Use `AssistantRuntimeProvider` and `useEdgeRuntime` from `@assistant-ui/react`
+- Use `@assistant-ui/react-markdown` for rendering markdown in messages
+- Use `@assistant-ui/react-ai-sdk` for AI SDK v5 integration
+
+### Chat Components
+- Use `@assistant-ui/react` primitives: `Thread`, `ThreadWelcome`, `Composer`, `AssistantMessage`, `UserMessage`
+
+### Streaming API Route
+- Use `streamText` from `ai` with Echo-proxied models
+- Import models from `@/echo`, not directly from `@ai-sdk/openai`
 
 ## Environment Variables
-
-- This template uses `NEXT_PUBLIC_ECHO_APP_ID` (not `ECHO_APP_ID`) for the Echo `appId`; this is intentional for the assistant-ui client-side provider.
-- Validate that `NEXT_PUBLIC_ECHO_APP_ID` is set before rendering the assistant UI; show a clear setup error if missing.
-- Never add server-only secrets to `NEXT_PUBLIC_` env vars; only the Echo app ID is safe to expose here.
-
-## assistant-ui Component Conventions
-
-- Keep assistant-ui component wiring (`<Thread>`, `<AssistantModal>`, providers) in the designated layout or page component; do not scatter provider setup across multiple files.
-- Use assistant-ui's built-in primitives for message rendering, input handling, and tool call display; avoid building custom replacements unless the template pattern requires it.
-- Pass the Echo-configured model (from `openai`, `anthropic`, or `google`) to the assistant runtime; do not configure model providers independently of Echo.
-
-## Client vs. Server
-
-- Keep `echo.ts` as server-only; import it only from Route Handlers and Server Components.
-- In Client Components, use the assistant-ui hooks and context rather than importing from `echo.ts` directly.
-- Use `@/` path alias for all internal imports.
-
-## App Router Conventions
-
-- Follow Next.js App Router structure with `page.tsx`, `layout.tsx`, `route.ts` conventions.
-- Default to Server Components; use `"use client"` only for assistant-ui interactive components.
-- Preserve the existing component structure in `app/` and `components/`; use the `lib/` folder for shared utilities.
-
-## Security
-
-- Route all model inference through the Echo server handler; the client receives streamed output, never raw API responses.
-- Use `isSignedIn` from `echo.ts` to gate any routes that require an authenticated Echo session.
-- Do not log or return `getUser()` data in client-visible error responses.
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

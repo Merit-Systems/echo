@@ -1,46 +1,24 @@
 ---
-description: Echo Next.js + Auth.js template rules covering Echo server wiring, Auth.js session handling, protected routes, client providers, and env safety
-globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+description: Guidelines for building Echo-powered Next.js applications with Auth.js (NextAuth v5) authentication, including provider setup and session management
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
 ---
 
-# Echo Next.js + Auth.js Template Rules
+# Echo Auth.js Integration Guidelines
 
-## Echo Server Wiring
+## SDK Setup
+- Server-side: Initialize Echo in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Auth: Configure Auth.js with the Echo provider
 
-- Keep Echo server setup centralized in `src/echo/index.ts`; export `handlers`, `isSignedIn`, `openai`, `anthropic` from there.
-- The echo route (`src/app/api/echo/[...echo]/route.ts`) must stay as a thin passthrough: `export const { GET, POST } = handlers`.
-- Import from `@merit-systems/echo-next-sdk` in server code; use `@merit-systems/echo-next-sdk/client` in Client Components only.
+## Auth.js Configuration
+- Use `EchoProvider` from `@merit-systems/echo-authjs-provider`
+- Mount Auth.js handlers at `src/app/api/auth/[...nextauth]/route.ts`
+- Server components: `const session = await auth()`
+- Client components: Use `useSession()` from `next-auth/react`
 
-## Auth.js Integration
-
-- Define your Auth.js config in `src/auth.ts` (or `src/auth/index.ts`); export `auth`, `signIn`, `signOut`, and `handlers` from there.
-- Protect server routes and Server Components using the `auth()` helper — check `session.user` before proceeding.
-- Use `isSignedIn` from Echo (`src/echo/index.ts`) to additionally gate Echo-specific API usage; combine with Auth.js session checks when both are required.
-- Keep Auth.js providers, callbacks, and adapter config within the auth config file; do not scatter them across API routes.
-- For the Auth.js route, use `src/app/api/auth/[...nextauth]/route.ts` as a passthrough: `export const { GET, POST } = handlers`.
+## Echo TypeScript SDK
+- Use `@merit-systems/echo-typescript-sdk` for server-side Echo API calls
 
 ## Environment Variables
-
-- `ECHO_APP_ID` — server-side Echo app identifier (never expose to client).
-- `NEXTAUTH_SECRET` — required by Auth.js; must be a strong random string in production.
-- `NEXTAUTH_URL` — set to the canonical deployment URL; required for OAuth redirects.
-- `NEXT_PUBLIC_ECHO_APP_ID` — only if needed for client-side Echo provider initialization.
-- Validate all required env vars at startup; fail fast with clear error messages.
-
-## Session & Protected Pages
-
-- Use `auth()` in Server Components/layouts to get the session and redirect unauthenticated users via `redirect('/login')`.
-- Do not trust client-supplied user identity; always derive user info from the server-side session.
-- Use middleware (`src/middleware.ts`) to protect entire route groups rather than repeating auth checks in each page.
-
-## App Router Conventions
-
-- Follow Next.js App Router structure: `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `route.ts`.
-- Use `@/` path alias for all internal imports.
-- Default to Server Components; add `"use client"` only for interactive UI components.
-
-## Security
-
-- Never return raw provider tokens or internal error details to the client.
-- Rotate `NEXTAUTH_SECRET` on credential compromise; update all deployed environments.
-- Route all LLM calls through server Route Handlers authenticated via session or `isSignedIn`.
+- `ECHO_APP_ID` — Echo application identifier (also used as Auth.js client ID)
+- `AUTH_SECRET` — NextAuth secret for session encryption
+- `NEXTAUTH_URL` — Deployment URL for Auth.js callbacks
