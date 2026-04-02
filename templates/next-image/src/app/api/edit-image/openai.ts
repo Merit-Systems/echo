@@ -8,11 +8,12 @@ import { dataUrlToFile } from '@/lib/image-utils';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
 /**
- * Handles OpenAI image editing
+ * Handles OpenAI image editing using File objects directly.
+ * This avoids base64 data URL bloat in the request body.
  */
-export async function handleOpenAIEdit(
+export async function handleOpenAIFileEdit(
   prompt: string,
-  imageUrls: string[]
+  imageFiles: File[]
 ): Promise<Response> {
   const token = await getEchoToken();
 
@@ -23,17 +24,12 @@ export async function handleOpenAIEdit(
     );
   }
 
-  // OpenAI editImage API is not supported through Vercel AI SDK, so we must construct
-  // a raw TS OpenAI client.
-  // https://platform.openai.com/docs/api-reference/images/createEdit
   const openaiClient = new OpenAI({
     apiKey: token,
     baseURL: 'https://echo.router.merit.systems',
   });
 
   try {
-    const imageFiles = imageUrls.map(url => dataUrlToFile(url, 'image.png'));
-
     const result = await openaiClient.images.edit({
       image: imageFiles,
       prompt,
@@ -64,4 +60,16 @@ export async function handleOpenAIEdit(
       { status: 500 }
     );
   }
+}
+
+/**
+ * Handles OpenAI image editing from data URLs (legacy/fallback).
+ * Converts data URLs to File objects and delegates to handleOpenAIFileEdit.
+ */
+export async function handleOpenAIEdit(
+  prompt: string,
+  imageUrls: string[]
+): Promise<Response> {
+  const imageFiles = imageUrls.map(url => dataUrlToFile(url, 'image.png'));
+  return handleOpenAIFileEdit(prompt, imageFiles);
 }
