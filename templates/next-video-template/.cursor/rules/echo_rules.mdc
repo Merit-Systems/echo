@@ -1,0 +1,41 @@
+---
+description: Guidelines for building Echo-powered Next.js video generation applications with AI video models and video player components
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Video Generation Guidelines
+
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Use `EchoTokens` component for authentication and token management
+
+## Video Generation
+
+### API Route for Video Generation
+```typescript
+import { openai } from '@/echo';
+import { isSignedIn } from '@/echo';
+
+export async function POST(req: Request) {
+  await isSignedIn();
+  const { prompt } = await req.json();
+  // Use the Echo-proxied model for video generation
+  // The specific model depends on your Echo app configuration
+  return Response.json({ videoUrl: result.url });
+}
+```
+
+### Video Player Component
+- Build a custom video player or use HTML5 `<video>` element
+- Handle video loading states and error fallbacks
+- Support playback controls: play, pause, seek, volume
+
+## UI Components
+- Use shadcn/ui components (`class-variance-authority` for variants)
+- Build a video gallery with thumbnails
+- Include prompt input, generate button, and progress indicator
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

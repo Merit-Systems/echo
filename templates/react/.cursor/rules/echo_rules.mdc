@@ -1,0 +1,75 @@
+---
+description: Guidelines and best practices for building Echo-powered React applications with Vite, including SDK setup, provider configuration, and AI integration
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React (Vite) Guidelines
+
+## SDK Setup
+
+### Provider Configuration
+- Wrap your app with `EchoProvider` in `src/main.tsx`:
+```typescript
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID }}>
+    <App />
+  </EchoProvider>
+);
+```
+- Use `import.meta.env.VITE_ECHO_APP_ID` for environment variables (Vite convention)
+- All client-exposed env vars must be prefixed with `VITE_`
+
+### Authentication UI
+- Use the `EchoTokens` component for user auth and token purchases:
+```typescript
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return <EchoTokens />;
+}
+```
+
+## AI Integration
+
+### Using AI SDK v5 with Echo
+- Use `@ai-sdk/react` hooks for chat and completion UIs:
+```typescript
+import { useChat } from '@ai-sdk/react';
+
+function ChatComponent() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: '/api/chat',
+  });
+}
+```
+- AI SDK v5 is pinned — always use the version specified in `package.json`
+- Use `overrides` in `package.json` to prevent version conflicts between SDK packages
+
+### React SDK Imports
+```typescript
+// ✅ Correct — client-side imports
+import { EchoProvider, EchoTokens } from '@merit-systems/echo-react-sdk';
+```
+
+## Environment Variables
+- `VITE_ECHO_APP_ID` — Echo app identifier (client-side, exposed to browser)
+- Store in `.env.local` file at project root
+- Never commit `.env.local` to version control
+
+## Project Structure
+```
+src/
+  main.tsx            # App entry with EchoProvider
+  App.tsx             # Main application component
+  App.css             # Application styles
+  components/         # React components
+```
+
+## Common Patterns
+- Use Vite for dev server: `vite` or `npm run dev`
+- Build with: `tsc -b && vite build`
+- React 19 is used — leverage new features like `use()` hook
+- No server-side rendering — this is a pure client-side app
+- Use `npm dedupe` (via `postinstall`) to resolve duplicate dependency versions
