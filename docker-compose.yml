@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword # IMPORTANT: Use a strong, unique password for production environments!
+      POSTGRES_DB: echo_dev
+    ports:
+      - "5432:5432" # Expose PostgreSQL port to the host
+    volumes:
+      # Persist data to a named volume to prevent data loss on container removal
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d echo_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+    driver: local
