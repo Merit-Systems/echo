@@ -1,0 +1,14 @@
+---
+description: Guidelines and best practices for building API routes using the echo service, including defining handlers, request/response patterns, and error handling.
+globs: templates/**/app/api/echo/**/*.ts,templates/**/app/api/echo/**/*.tsx
+---
+
+# Echo API Route Guidelines
+
+This document provides guidelines for working with `echo` API routes within this project. The `echo` service is typically used to expose a set of API endpoints.
+
+## Defining Echo Handlers
+
+Echo API routes are generally defined by importing `handlers` from `@/echo` and exporting `GET`, `POST`, `PUT`, `DELETE`, etc., from `route.ts` files in Next.js API route directories.
+
+Example `route.ts` for an echo endpoint:
