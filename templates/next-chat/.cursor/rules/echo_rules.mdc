@@ -1,14 +1,68 @@
 ---
-description: Guidelines and best practices for building API routes using the echo service, including defining handlers, request/response patterns, and error handling.
-globs: templates/**/app/api/echo/**/*.ts,templates/**/app/api/echo/**/*.tsx
+description: Guidelines for the Echo next-chat template — streaming chat routes, message history, and real-time UI with the AI SDK useChat hook.
+globs: **/*.ts,**/*.tsx
 ---
 
-# Echo API Route Guidelines
+# Echo Next-Chat Guidelines
 
-This document provides guidelines for working with `echo` API routes within this project. The `echo` service is typically used to expose a set of API endpoints.
+This template is a Next.js chat application using Echo for AI-powered streaming responses.
 
-## Defining Echo Handlers
+## Echo API Route
 
-Echo API routes are generally defined by importing `handlers` from `@/echo` and exporting `GET`, `POST`, `PUT`, `DELETE`, etc., from `route.ts` files in Next.js API route directories.
+```ts
+// src/app/api/echo/[...echo]/route.ts
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
 
-Example `route.ts` for an echo endpoint:
+## Streaming Chat Route
+
+```ts
+// src/app/api/chat/route.ts
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const result = streamText({
+    model: openai('gpt-4o'),
+    system: 'You are a helpful assistant.',
+    messages,
+  });
+  return result.toDataStreamResponse();
+}
+```
+
+## Frontend Hook
+
+Use the AI SDK `useChat` hook to connect to `/api/chat`:
+
+```tsx
+'use client';
+import { useChat } from 'ai/react';
+
+export function Chat() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat();
+  return (
+    <form onSubmit={handleSubmit}>
+      {messages.map(m => (
+        <div key={m.id}><strong>{m.role}:</strong> {m.content}</div>
+      ))}
+      <input value={input} onChange={handleInputChange} disabled={isLoading} />
+      <button type="submit" disabled={isLoading}>Send</button>
+    </form>
+  );
+}
+```
+
+## Key Rules
+
+- Always stream responses — use `streamText` + `toDataStreamResponse()`, never `generateText`.
+- Pass the full `messages` array (not just the latest message) to maintain conversation context.
+- Use `system` prompt in `streamText` for persistent assistant personality/instructions.
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_ECHO_APP_ID=your-echo-app-id
+```

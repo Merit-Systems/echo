@@ -1,14 +1,60 @@
 ---
-description: Guidelines and best practices for building API routes using the echo service, including defining handlers, request/response patterns, and error handling.
-globs: templates/**/app/api/echo/**/*.ts,templates/**/app/api/echo/**/*.tsx
+description: Guidelines for the base Echo Next.js template — minimal echo route setup, API patterns, and environment configuration.
+globs: **/*.ts,**/*.tsx
 ---
 
-# Echo API Route Guidelines
+# Echo Next.js Guidelines
 
-This document provides guidelines for working with `echo` API routes within this project. The `echo` service is typically used to expose a set of API endpoints.
+This is the minimal Next.js Echo template. It mounts the Echo catch-all handler and is the starting point for building AI-powered Next.js apps.
 
-## Defining Echo Handlers
+## Echo API Route
 
-Echo API routes are generally defined by importing `handlers` from `@/echo` and exporting `GET`, `POST`, `PUT`, `DELETE`, etc., from `route.ts` files in Next.js API route directories.
+```ts
+// src/app/api/echo/[...echo]/route.ts
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
 
-Example `route.ts` for an echo endpoint:
+This single file is all that's needed to expose the full Echo API surface.
+
+## Adding Your First AI Route
+
+```ts
+// src/app/api/generate/route.ts
+import { openai } from '@/echo';
+import { generateText } from 'ai';
+
+export async function POST(req: Request) {
+  const { prompt } = await req.json();
+  const { text } = await generateText({
+    model: openai('gpt-4o-mini'),
+    prompt,
+  });
+  return Response.json({ text });
+}
+```
+
+For streaming, swap `generateText` for `streamText` and return `result.toDataStreamResponse()`.
+
+## Echo Path Alias
+
+The `@/echo` alias resolves to `src/lib/echo.ts` (or `echo.ts` at the root). Define it once:
+
+```ts
+import Echo from '@merit-systems/echo-next-sdk';
+const echo = Echo({ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! });
+export const { openai, anthropic, google, getUser, isSignedIn } = echo;
+export const { handlers } = echo;
+```
+
+## Key Rules
+
+- The `[...echo]` catch-all route must exist for the Echo SDK to function.
+- Do not create per-method route files (`GET.ts`, `POST.ts`) — export from one `route.ts`.
+- Use `NEXT_PUBLIC_ECHO_APP_ID` only for the app ID; keep API keys server-side.
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_ECHO_APP_ID=your-echo-app-id
+```

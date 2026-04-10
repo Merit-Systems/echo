@@ -1,14 +1,75 @@
 ---
-description: Guidelines and best practices for building API routes using the echo service, including defining handlers, request/response patterns, and error handling.
-globs: templates/**/app/api/echo/**/*.ts,templates/**/app/api/echo/**/*.tsx
+description: Guidelines for the Echo API-key template — API key authentication, per-key user lookup, and protected AI routes.
+globs: **/*.ts,**/*.tsx
 ---
 
-# Echo API Route Guidelines
+# Echo Nextjs API-Key Template Guidelines
 
-This document provides guidelines for working with `echo` API routes within this project. The `echo` service is typically used to expose a set of API endpoints.
+This template uses API keys (instead of session cookies) to authenticate requests to Echo-powered AI routes.
 
-## Defining Echo Handlers
+## Echo API Route
 
-Echo API routes are generally defined by importing `handlers` from `@/echo` and exporting `GET`, `POST`, `PUT`, `DELETE`, etc., from `route.ts` files in Next.js API route directories.
+```ts
+// src/app/api/echo/[...echo]/route.ts
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
 
-Example `route.ts` for an echo endpoint:
+## API Key Validation Middleware
+
+Validate the `Authorization: Bearer <key>` header before processing AI requests:
+
+```ts
+// src/lib/auth.ts
+export async function validateApiKey(req: Request): Promise<{ userId: string } | null> {
+  const auth = req.headers.get('authorization');
+  if (!auth?.startsWith('Bearer ')) return null;
+  const key = auth.slice(7);
+  // Look up key in your database / Echo user store
+  const user = await getUserByApiKey(key);
+  return user ?? null;
+}
+```
+
+## Protected Chat Route
+
+```ts
+// src/app/api/chat/route.ts
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+import { validateApiKey } from '@/lib/auth';
+
+export async function POST(req: Request) {
+  const user = await validateApiKey(req);
+  if (!user) return new Response('Unauthorized', { status: 401 });
+
+  const { messages } = await req.json();
+  const result = streamText({ model: openai('gpt-4o'), messages });
+  return result.toDataStreamResponse();
+}
+```
+
+## User Route
+
+```ts
+// src/app/api/user/route.ts
+import { getUser } from '@/echo';
+
+export async function GET(req: Request) {
+  const user = await getUser(req);
+  if (!user) return new Response('Unauthorized', { status: 401 });
+  return Response.json({ id: user.id, email: user.email });
+}
+```
+
+## Key Rules
+
+- Never log or expose API keys in responses or error messages.
+- Always return `401` (not `403`) for missing or invalid keys to avoid leaking existence info.
+- Use `getUser()` from `@/echo` as the primary identity source for Echo-authenticated requests.
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_ECHO_APP_ID=your-echo-app-id
+```

@@ -1,0 +1,62 @@
+---
+description: Guidelines for the Echo CLI template — Node.js CLI scripting with Commander.js, Echo authentication, and AI-powered chat sessions.
+globs: **/*.ts
+---
+
+# Echo CLI Guidelines
+
+This is a Node.js CLI application (`echodex`) built with Commander.js and the Echo SDK. There are no HTTP API routes — all Echo interactions happen in Node.js scripts.
+
+## CLI Entry Point (`src/index.ts`)
+
+```ts
+#!/usr/bin/env node
+import { Command } from 'commander';
+const program = new Command();
+program.name('echodex').description('CLI tool powered by Echo').version('1.0.0');
+program.command('chat').description('Start a chat session').action(startChatSession);
+program.parse(process.argv);
+```
+
+## Echo Authentication
+
+Use the auth helpers from `@/auth`, not raw SDK calls:
+
+```ts
+import { loginWithEcho, logout, isAuthenticated } from '@/auth';
+// Check auth before any AI operation:
+if (!await isAuthenticated()) await loginWithEcho();
+```
+
+## AI Streaming in CLI
+
+Use `streamText` from the `ai` package and pipe output to stdout:
+
+```ts
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+async function chat(prompt: string) {
+  const { textStream } = streamText({ model: openai('gpt-4o'), prompt });
+  for await (const chunk of textStream) process.stdout.write(chunk);
+  console.log();
+}
+```
+
+## Config & Environment
+
+- Config lives in `src/config/` — never hardcode API keys in scripts.
+- Use `.env.local` at the project root; load with `dotenv` in `src/index.ts`.
+- The `VITE_ECHO_APP_ID` / `ECHO_APP_ID` env var must be set before running.
+
+## Key Rules
+
+- Always handle `isCancel()` from `@clack/prompts` to gracefully exit on Ctrl+C.
+- Use the `print.ts` helpers (`info`, `warning`, `header`) for consistent CLI output styling.
+- Wallet operations (`fundWallet`, `exportPrivateKey`) must confirm with the user before executing.
+
+## Environment Variables
+
+```
+ECHO_APP_ID=your-echo-app-id
+```

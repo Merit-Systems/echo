@@ -1,14 +1,67 @@
 ---
-description: Guidelines and best practices for building API routes using the echo service, including defining handlers, request/response patterns, and error handling.
-globs: templates/**/app/api/echo/**/*.ts,templates/**/app/api/echo/**/*.tsx
+description: Guidelines for the Echo assistant-ui template — multi-provider AI (OpenAI, Anthropic, Google), streaming chat, and tool calling via the AI SDK.
+globs: **/*.ts,**/*.tsx
 ---
 
-# Echo API Route Guidelines
+# Echo Assistant-UI Guidelines
 
-This document provides guidelines for working with `echo` API routes within this project. The `echo` service is typically used to expose a set of API endpoints.
+This template exposes multiple AI providers through a single `echo.ts` at the project root.
 
-## Defining Echo Handlers
+## Echo Setup (`echo.ts`)
 
-Echo API routes are generally defined by importing `handlers` from `@/echo` and exporting `GET`, `POST`, `PUT`, `DELETE`, etc., from `route.ts` files in Next.js API route directories.
+```ts
+import Echo from '@merit-systems/echo-next-sdk';
+const echo = Echo({ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID ?? 'ECHO_APP_ID' });
+export const { getUser, isSignedIn, openai, anthropic, google } = echo;
+export default echo.handlers;
+```
 
-Example `route.ts` for an echo endpoint:
+- Import `openai`, `anthropic`, or `google` from `@/echo` — never directly from provider SDKs.
+- The default export `echo.handlers` mounts to `app/api/echo/[...path]/route.ts`.
+
+## Echo Catch-All Route
+
+```ts
+// app/api/echo/[...path]/route.ts
+import handlers from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Chat Route with Tools
+
+```ts
+// app/api/chat/route.ts
+import { openai } from '@/echo';
+import { streamText, tool } from 'ai';
+import { z } from 'zod';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const result = streamText({
+    model: openai('gpt-4o'),
+    messages,
+    tools: {
+      lookup: tool({
+        description: 'Look up structured data',
+        parameters: z.object({ query: z.string() }),
+        execute: async ({ query }) => ({ data: `result for ${query}` }),
+      }),
+    },
+  });
+  return result.toDataStreamResponse();
+}
+```
+
+## Provider Selection
+
+| Use case | Client |
+|----------|--------|
+| Tool / function calling | `openai('gpt-4o')` |
+| Long context, document analysis | `anthropic('claude-3-5-sonnet-20241022')` |
+| Vision / multimodal | `google('gemini-2.0-flash')` |
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_ECHO_APP_ID=your-echo-app-id
+```

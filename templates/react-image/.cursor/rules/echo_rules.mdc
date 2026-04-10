@@ -1,0 +1,65 @@
+---
+description: Guidelines for the Echo react-image (Vite) template — client-side AI image generation using the Echo React SDK.
+globs: **/*.ts,**/*.tsx
+---
+
+# Echo React-Image Guidelines
+
+This is a client-side Vite/React app for AI image generation using the Echo React SDK.
+
+## Provider Setup
+
+```tsx
+// src/main.tsx
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+createRoot(document.getElementById('root')!).render(
+  <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID }}>
+    <App />
+  </EchoProvider>
+);
+```
+
+## Image Generation Hook
+
+```tsx
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { experimental_generateImage as generateImage } from 'ai';
+
+export function useImageGenerator() {
+  const { openai } = useEchoModelProviders();
+
+  async function generate(prompt: string): Promise<string> {
+    const { image } = await generateImage({
+      model: openai.image('dall-e-3'),
+      prompt,
+      size: '1024x1024',
+    });
+    return image.url;
+  }
+
+  return { generate };
+}
+```
+
+## Displaying Images
+
+```tsx
+function GeneratedImage({ url }: { url: string }) {
+  return <img src={url} alt="AI generated" style={{ maxWidth: '100%' }} />;
+}
+```
+
+Note: Unlike Next.js, Vite apps use plain `<img>` (no `next/image` optimisation layer).
+
+## Key Rules
+
+- All env vars must be prefixed `VITE_` — this is a Vite app, not Next.js.
+- `useEchoModelProviders` must be called inside a component under `EchoProvider`.
+- Show a loading state while generation is in progress — `generateImage` takes 5–15 seconds.
+
+## Environment Variables
+
+```
+VITE_ECHO_APP_ID=your-echo-app-id
+```
