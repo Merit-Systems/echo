@@ -1,0 +1,48 @@
+---
+description: Echo SDK guidelines for CLI tools — user-pays AI infrastructure
+globs: **/*.ts,**/*.js
+---
+
+# Echo SDK Guidelines (CLI)
+
+Echo lets CLI tools authenticate users and let them pay for their own AI usage.
+
+## Authentication
+
+Use Echo's auth functions for CLI login flow:
+
+```typescript
+import { loginWithEcho, logout, isAuthenticated } from '@/auth';
+
+// Login
+await loginWithEcho();
+
+// Check auth
+if (await isAuthenticated()) {
+  // proceed
+}
+
+// Logout
+await logout();
+```
+
+## Wallet management
+
+```typescript
+import { 
+  initLocalWallet, 
+  loginWithWallet,
+  showLocalWalletBalance,
+  showLocalWalletAddress,
+  exportPrivateKey,
+  fundWallet
+} from '@/core';
+```
+
+## Key rules
+
+- Use `@merit-systems/echo-sdk` for CLI applications
+- Use `commander` for CLI argument parsing
+- Use `@clack/prompts` for interactive prompts
+- Handle `isCancel` from prompts to allow graceful exit
+- Store auth tokens securely, never log them
