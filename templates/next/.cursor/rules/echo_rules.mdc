@@ -1,0 +1,89 @@
+---
+description: Echo SDK guidelines for Next.js — user-pays AI infrastructure
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo SDK Guidelines (Next.js)
+
+Echo lets users pay for their own AI usage — you never front API costs. Replace standard AI SDK imports with Echo and earn revenue via markup.
+
+## Setup
+
+### Server-side configuration
+Create `src/echo/index.ts` and initialize Echo:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-side provider
+Wrap your app in `EchoProvider` in your layout or providers file:
+
+```typescript
+'use client';
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+### Environment variables
+- `ECHO_APP_ID` — Server-side app ID (from echo.merit.systems)
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side app ID (same value, must be prefixed with NEXT_PUBLIC_)
+
+## Using Echo model providers
+
+Import model providers from your Echo config instead of directly from the AI SDK:
+
+```typescript
+import { openai, anthropic } from '@/echo';
+import { generateText } from 'ai';
+
+const response = await generateText({
+  model: openai('gpt-4o'),
+  prompt: '...',
+});
+```
+
+Do NOT hardcode API keys — Echo handles authentication and billing.
+
+## UI components
+
+### Token balance display
+Use `EchoTokens` to show user balance and login:
+
+```typescript
+'use client';
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+export function EchoButton() {
+  return <EchoTokens />;
+}
+```
+
+## API routes
+
+Register the Echo auth handler in `src/app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Key rules
+
+- ALWAYS use `@merit-systems/echo-next-sdk` for Next.js apps (not the React or plain SDK)
+- ALWAYS wrap the app in `EchoProvider` on the client side
+- ALWAYS use the server-side Echo config for AI model providers
+- NEVER hardcode API keys — Echo manages authentication
+- Use `'use client'` directive for components importing from `echo-next-sdk/client`
+- The `EchoTokens` component handles OAuth login flow and balance display
