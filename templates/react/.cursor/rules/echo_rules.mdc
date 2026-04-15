@@ -1,0 +1,69 @@
+---
+description: Echo SDK guidelines for React — user-pays AI infrastructure
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo SDK Guidelines (React)
+
+Echo lets users pay for their own AI usage — you never front API costs. Replace standard AI SDK imports with Echo and earn revenue via markup.
+
+## Setup
+
+### Provider setup
+Wrap your app in `EchoProvider` in `main.tsx`:
+
+```typescript
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+### Environment variables
+- `VITE_ECHO_APP_ID` — App ID from echo.merit.systems (Vite requires VITE_ prefix)
+
+## Using Echo model providers
+
+```typescript
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { generateText } from 'ai';
+
+function MyComponent() {
+  const { openai } = useEchoModelProviders();
+
+  const handleGenerate = async () => {
+    const response = await generateText({
+      model: openai('gpt-4o'),
+      prompt: '...',
+    });
+  };
+}
+```
+
+## UI components
+
+```typescript
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <>
+      <h1>My App</h1>
+      <EchoTokens />
+    </>
+  );
+}
+```
+
+## Key rules
+
+- ALWAYS use `@merit-systems/echo-react-sdk` for React apps (not the Next.js SDK)
+- ALWAYS wrap the app in `EchoProvider` at the root
+- Use `useEchoModelProviders()` hook to get AI model providers
+- NEVER hardcode API keys — Echo manages authentication
+- Use `EchoTokens` component for user balance and login UI
