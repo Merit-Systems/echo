@@ -1,0 +1,176 @@
+---
+description: Guidelines and best practices for building applications with Echo, the user-pays AI infrastructure
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Guidelines
+
+## Overview
+Echo is a user-pays AI infrastructure that allows developers to integrate AI without fronting API costs. Users authenticate once, get a balance, and pay for their own usage. Developers set a markup and earn revenue automatically.
+
+## Core Concepts
+
+### How Echo Works
+1. **User Authentication**: Users authenticate via OAuth to get a universal balance across all Echo apps
+2. **Model Providers**: Replace AI SDK imports with Echo's model providers
+3. **Automatic Billing**: Users pay providers directly through Echo, developers never proxy requests or front bills
+4. **Revenue Generation**: Set a markup percentage, every token generates profit automatically
+
+### Key Benefits
+- **No hosting costs**: Users pay providers directly
+- **Better UX**: One OAuth login replaces complex BYOK flows
+- **Instant revenue**: Set markup percentage for automatic profit
+- **Zero infrastructure**: No payment processing, usage tracking, or key validation needed
+
+## SDK Usage
+
+### React SDK
+```typescript
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { generateText } from 'ai';
+
+const { openai } = useEchoModelProviders();
+const response = await generateText({
+  model: openai('gpt-5'),
+  prompt: '...',
+});
+```
+
+### Next.js SDK
+```typescript
+import { createEchoServerClient } from '@merit-systems/echo-next-sdk';
+
+const echoClient = createEchoServerClient({
+  appId: process.env.ECHO_APP_ID,
+  appSecret: process.env.ECHO_APP_SECRET,
+});
+```
+
+## Best Practices
+
+### Authentication
+- Always use Echo's OAuth flow for user authentication
+- Never store user API keys - Echo handles this automatically
+- Use the universal balance system for cross-app compatibility
+
+### Model Provider Usage
+- Import model providers from Echo SDK, not directly from AI providers
+- Use the same AI SDK functions (generateText, streamText, etc.) with Echo providers
+- Let Echo handle rate limiting and usage tracking
+
+### Revenue Configuration
+- Set appropriate markup percentages in the Echo dashboard
+- Monitor usage and adjust pricing as needed
+- Use Echo's analytics to understand user behavior
+
+### Error Handling
+- Handle authentication errors gracefully
+- Provide clear error messages for insufficient balance
+- Implement retry logic for transient failures
+
+## Common Patterns
+
+### Setting Up Echo Provider (React)
+```typescript
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <EchoProvider appId="your-app-id">
+      {/* Your app components */}
+    </EchoProvider>
+  );
+}
+```
+
+### Server-Side Integration (Next.js)
+```typescript
+import { echoAuth } from '@merit-systems/echo-next-sdk';
+
+export async function GET(request: Request) {
+  const session = await echoAuth(request);
+  if (!session) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  // Use session.user and session.accessToken
+}
+```
+
+### Streaming Responses
+```typescript
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { streamText } from 'ai';
+
+const { openai } = useEchoModelProviders();
+
+const { textStream } = streamText({
+  model: openai('gpt-5'),
+  prompt: 'Write a story about...',
+});
+
+for await (const textPart of textStream) {
+  process.stdout.write(textPart);
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+1. **Authentication Failed**: Check app ID and secret configuration
+2. **Insufficient Balance**: User needs to top up their Echo balance
+3. **Rate Limiting**: Echo handles this automatically, but check for 429 errors
+4. **Model Not Available**: Verify model is supported in your Echo plan
+
+### Debugging Tips
+- Check browser console for authentication errors
+- Verify environment variables are set correctly
+- Use Echo's dashboard to monitor usage and errors
+- Test with a small balance first before production deployment
+
+## Resources
+- [Echo Documentation](https://echo.merit.systems/docs)
+- [Echo Dashboard](https://echo.merit.systems/dashboard)
+- [GitHub Repository](https://github.com/Merit-Systems/echo)
+- [Discord Community](https://discord.gg/merit)
+
+## Next.js Specific Guidelines
+
+### App Router Integration
+- Use `createEchoServerClient` for server components
+- Implement API routes with Echo authentication
+- Use middleware for route protection
+
+### Server Components
+```typescript
+import { createEchoServerClient } from '@merit-systems/echo-next-sdk';
+
+export default async function Page() {
+  const echoClient = createEchoServerClient({
+    appId: process.env.ECHO_APP_ID!,
+    appSecret: process.env.ECHO_APP_SECRET!,
+  });
+  
+  const models = await echoClient.getAvailableModels();
+  return <div>Available models: {models.length}</div>;
+}
+```
+
+### API Routes
+```typescript
+import { echoAuth } from '@merit-systems/echo-next-sdk';
+
+export async function POST(request: Request) {
+  const session = await echoAuth(request);
+  if (!session) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  const { prompt } = await request.json();
+  // Use session.accessToken with Echo model providers
+}
+```
+
+### Environment Variables
+- `ECHO_APP_ID`: Your Echo application ID
+- `ECHO_APP_SECRET`: Your Echo application secret
+- `NEXT_PUBLIC_ECHO_APP_ID`: Public app ID for client-side
