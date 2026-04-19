@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { fileToDataUrl } from '@/lib/image-utils';
+import { fileToDataUrl, resizeImageFile } from '@/lib/image-utils';
 import type {
   EditImageRequest,
   GeneratedImage,
@@ -219,12 +219,14 @@ export default function ImageGenerator() {
           try {
             const imageUrls = await Promise.all(
               imageFiles.map(async imageFile => {
-                // Convert blob URL to data URL for API
+                // Convert blob URL to resized data URL for API
+                // Resizing prevents 413 Request Entity Too Large errors
                 const response = await fetch(imageFile.url);
                 const blob = await response.blob();
-                return await fileToDataUrl(
-                  new File([blob], 'image', { type: imageFile.mediaType })
-                );
+                const file = new File([blob], 'image', {
+                  type: imageFile.mediaType,
+                });
+                return await resizeImageFile(file);
               })
             );
 
