@@ -1,0 +1,71 @@
+---
+description: Guidelines and best practices for building Echo-powered CLI applications
+globs: **/*.ts,**/*.js
+---
+
+# Echo CLI Guidelines
+
+## Authentication
+- Use `loginWithEcho` for OAuth-based authentication
+- Use `loginWithWallet` for wallet-based authentication
+- Check authentication status with `isAuthenticated()` utility
+- Handle logout with the `logout` command
+
+## Echo TypeScript SDK
+- Initialize client with: `EchoClient({ apiKey: process.env.ECHO_API_KEY })`
+- For OAuth tokens, use `OAuthTokenProvider`
+- For API keys, use `ApiKeyTokenProvider`
+
+## CLI Framework
+- Use `commander` for command structure
+- Use `@clack/prompts` for interactive prompts
+- Always check `isCancel()` after prompts to handle cancellation
+- Example command structure:
+```typescript
+import { Command } from 'commander';
+import { select, isCancel } from '@clack/prompts';
+
+const program = new Command();
+program
+  .command('login')
+  .description('Authenticate with Echo')
+  .action(async () => {
+    const method = await select({
+      message: 'Choose auth method:',
+      options: [
+        { value: 'echo', label: 'Echo OAuth' },
+        { value: 'wallet', label: 'Wallet' },
+      ],
+    });
+    if (isCancel(method)) process.exit(0);
+    // Handle login...
+  });
+```
+
+## Model Selection
+- Use `selectModel` function for model selection
+- Support multiple AI providers through Echo
+- Display available models to user before selection
+
+## Chat Sessions
+- Use `startChatSession` for new conversations
+- Use `resumeChatSession` to continue existing conversations
+- Store conversation history locally with `showConversationHistory`
+- Support export with `exportConversationHistory`
+
+## Wallet Operations
+- Show balance with `showLocalWalletBalance`
+- Display address with `showLocalWalletAddress`
+- Support funding with `fundWallet`
+- Allow private key export with `exportPrivateKey`
+
+## Error Handling
+- Always wrap async operations in try/catch
+- Display user-friendly error messages
+- Handle network errors gracefully
+- Provide retry options for failed operations
+
+## Output Formatting
+- Use the `info`, `warning`, and `header` utilities from `@/print`
+- Display ASCII art header with `ECHODEX_ASCII_ART`
+- Keep output clean and readable
