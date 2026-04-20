@@ -44,6 +44,8 @@ import { VideoHistory } from './video-history';
 const models: VideoModelConfig[] = [
   { id: 'veo-3.0-fast-generate-preview', name: 'Veo 3 Fast' },
   { id: 'veo-3.0-generate-preview', name: 'Veo 3' },
+  { id: 'veo-3.1-fast-generate-preview', name: 'Veo 3.1 Fast' },
+  { id: 'veo-3.1-generate-preview', name: 'Veo 3.1' },
 ];
 
 /**
