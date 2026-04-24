@@ -121,7 +121,66 @@ Or run `npx echo-start my-app` to choose interactively.
 
 # Development
 
-Fill out `packages/app/control/.env` and `packages/app/server/.env`. Then...
+## Prerequisites
 
-- `pnpm i`
-- `pnpm dev`
+Before running Echo locally, ensure you have:
+
+- **Node.js 18+** ([download](https://nodejs.org/))
+- **pnpm 10+** - Install via `npm install -g pnpm` or `corepack enable && corepack prepare pnpm@latest --activate`
+- **Docker Desktop** ([download](https://www.docker.com/products/docker-desktop/)) with Docker Compose plugin
+- **Git** ([download](https://git-scm.com/downloads))
+
+> **Windows Users**: See [WINDOWS-SETUP.md](./WINDOWS-SETUP.md) for detailed Windows-specific instructions and troubleshooting.
+
+## Quick Start
+
+1. **Clone and install dependencies**
+   ```bash
+   git clone https://github.com/Merit-Systems/Echo.git
+   cd Echo
+   pnpm install
+   ```
+
+2. **Start development servers**
+   ```bash
+   pnpm dev
+   ```
+
+   This command automatically:
+   - Starts PostgreSQL in Docker
+   - Generates Prisma client
+   - Runs database migrations  
+   - Starts Echo Control (port 3000) and Echo Server
+
+3. **Open Echo in your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## Manual Setup (if needed)
+
+If you prefer to set up components individually:
+
+```bash
+# Set up Echo Control
+cd packages/app/control
+./scripts/setup.sh              # Linux/Mac/Git Bash
+# OR
+.\scripts\setup-windows.ps1     # Windows PowerShell
+
+# Start everything from repo root
+cd ../../..
+pnpm dev
+```
+
+## Common Issues
+
+### `pnpm: command not found`
+Install pnpm: `npm install -g pnpm`
+
+### Docker daemon not running
+Start Docker Desktop and wait for it to be ready (green icon in system tray)
+
+### Port conflicts
+If port 3000 or 5469 is in use, stop conflicting services or change ports in config files
+
+### Windows-specific issues
+See [WINDOWS-SETUP.md](./WINDOWS-SETUP.md) for PowerShell scripts, execution policy fixes, and line-ending configuration
