@@ -106,6 +106,8 @@ model EchoApp {
   currentReferralRewardId String?             @db.Uuid // Reference to current active referral reward
   currentReferralReward   ReferralReward?     @relation("CurrentReferralReward", fields: [currentReferralRewardId], references: [id])
   ReferralRewards         ReferralReward[]    @relation("AppReferralRewards") // All referral rewards for this app
+  templateReferrerCodeId  String?             @db.Uuid // Referral code of the external template creator
+  templateReferrerCode    ReferralCode?       @relation("TemplateReferrer", fields: [templateReferrerCodeId], references: [id])
   appSessions             AppSession[]
   payouts                 Payout[]
   OutboundEmailSent       OutboundEmailSent[]
@@ -412,7 +414,8 @@ model ReferralCode {
   createdAt  DateTime  @default(now()) @db.Timestamptz
   updatedAt  DateTime  @updatedAt @db.Timestamptz
 
-  appMemberships AppMembership[]
+  appMemberships       AppMembership[]
+  templateReferredApps EchoApp[]       @relation("TemplateReferrer")
 
   user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   Transaction Transaction[]
