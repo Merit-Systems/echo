@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/blob": "^0.27.0",
     "@merit-systems/echo-next-sdk": "latest",
     "@merit-systems/echo-react-sdk": "latest",
     "@radix-ui/react-avatar": "^1.1.10",

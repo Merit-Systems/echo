@@ -3,9 +3,9 @@
  *
  * This route demonstrates Echo SDK integration with AI image editing:
  * - Uses both Google Gemini and OpenAI for image editing
- * - Supports both data URLs (base64) and regular URLs
+ * - Accepts hosted image URLs (stored via /api/upload-image) instead of base64
+ * - Returns hosted image URLs instead of base64 to avoid HTTP 413 errors
  * - Validates input images and prompts
- * - Returns edited images in appropriate format
  */
 
 import { EditImageRequest, validateEditImageRequest } from './validation';
@@ -17,13 +17,8 @@ const providers = {
   gemini: handleGoogleEdit,
 };
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb',
-    },
-  },
-};
+// Allow up to 60 seconds for image editing on Vercel
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
