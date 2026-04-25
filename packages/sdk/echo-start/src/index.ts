@@ -14,7 +14,7 @@ import chalk from 'chalk';
 import { spawn } from 'child_process';
 import { Command } from 'commander';
 import degit from 'degit';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import path from 'path';
 
 const program = new Command();
@@ -176,6 +176,84 @@ interface CreateAppOptions {
   template?: string;
   appId?: string;
   skipInstall?: boolean;
+}
+
+const ECHO_CONTROL_URL = 'https://echo.merit.systems';
+
+interface EchoTemplateConfig {
+  referralCode?: string;
+}
+
+/**
+ * Read echo.config.json from a scaffolded template directory.
+ * Template creators can include this file to specify their referral code,
+ * which will be auto-registered when a user scaffolds from the template.
+ */
+function readTemplateConfig(projectPath: string): EchoTemplateConfig | null {
+  const configPath = path.join(projectPath, 'echo.config.json');
+  if (!existsSync(configPath)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(configPath, 'utf-8'));
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return null;
+    }
+    const code = parsed.referralCode;
+    if (code !== undefined && typeof code !== 'string') {
+      return null;
+    }
+    return { referralCode: typeof code === 'string' ? code.trim() : undefined };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sanitize a referral code to prevent environment variable injection.
+ * Only allows alphanumeric characters, hyphens, underscores, and dots.
+ */
+function sanitizeReferralCode(code: unknown): string | null {
+  if (typeof code !== 'string' || code.length === 0) {
+    return null;
+  }
+
+  const SAFE_REFERRAL_PATTERN = /^[a-zA-Z0-9_\-.]+$/;
+  if (!SAFE_REFERRAL_PATTERN.test(code)) {
+    return null;
+  }
+
+  if (code.length > 128) {
+    return null;
+  }
+
+  return code;
+}
+
+/**
+ * Register the template creator as a referrer for the new app.
+ * Called immediately after scaffolding an external template.
+ * Silently fails — referral registration is best-effort.
+ */
+async function registerTemplateReferral(
+  appId: string,
+  referralCode: string
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `${ECHO_CONTROL_URL}/api/v1/apps/template-referral`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ echoAppId: appId, referralCode }),
+      }
+    );
+    const data = (await response.json()) as { success?: boolean };
+    return data.success === true;
+  } catch {
+    return false;
+  }
 }
 
 function isExternalTemplate(template: string): boolean {
@@ -412,6 +490,41 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       const envContent = `${envVarName}=${appId}\n`;
       writeFileSync(envPath, envContent);
       log.message(`Created .env.local with ${envVarName}`);
+    }
+
+    // Handle template referral system for external templates.
+    // If the template includes an echo.config.json with a referralCode,
+    // register the template creator as referrer via the Echo API.
+    // See: https://echo.merit.systems/docs/money/referrals
+    if (isExternal) {
+      const templateConfig = readTemplateConfig(absoluteProjectPath);
+      const rawCode = templateConfig?.referralCode;
+      const referralCode = sanitizeReferralCode(rawCode);
+
+      if (rawCode && !referralCode) {
+        log.warning(
+          'Template referral code was ignored: contains invalid characters. ' +
+            'Only alphanumeric characters, hyphens, underscores, and dots are allowed.'
+        );
+      }
+
+      if (referralCode && appId) {
+        const registered = await registerTemplateReferral(appId, referralCode);
+        if (registered) {
+          log.message('Template creator registered as referrer for this app');
+        }
+        // Silently continue even if registration fails — it's non-critical
+      }
+
+      // Always clean up echo.config.json — it's template metadata, not app code
+      const echoConfigPath = path.join(absoluteProjectPath, 'echo.config.json');
+      if (existsSync(echoConfigPath)) {
+        try {
+          unlinkSync(echoConfigPath);
+        } catch {
+          // Non-critical cleanup — ignore errors
+        }
+      }
     }
 
     log.step('Project setup completed successfully');
