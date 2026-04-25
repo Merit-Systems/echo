@@ -4,8 +4,33 @@
 
 import { getEchoToken } from '@/echo';
 import OpenAI from 'openai';
-import { dataUrlToFile } from '@/lib/image-utils';
 import { ERROR_MESSAGES } from '@/lib/constants';
+
+/**
+ * Fetches a hosted URL and returns a File object.
+ * Falls back to treating url as a data URL if it starts with "data:".
+ */
+async function urlToFile(url: string, filename: string): Promise<File> {
+  if (url.startsWith('data:')) {
+    // Data URL path
+    const [header, base64] = url.split(',');
+    const mime = header.match(/:(.*?);/)?.[1] || 'image/png';
+    const bytes = atob(base64);
+    const array = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) {
+      array[i] = bytes.charCodeAt(i);
+    }
+    return new File([array], filename, { type: mime });
+  } else {
+    // Hosted URL path – fetch the image
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image from ${url}: ${response.status}`);
+    }
+    const blob = await response.blob();
+    return new File([blob], filename, { type: blob.type || 'image/png' });
+  }
+}
 
 /**
  * Handles OpenAI image editing
@@ -32,7 +57,9 @@ export async function handleOpenAIEdit(
   });
 
   try {
-    const imageFiles = imageUrls.map(url => dataUrlToFile(url, 'image.png'));
+    const imageFiles = await Promise.all(
+      imageUrls.map((url, i) => urlToFile(url, `image_${i}.png`))
+    );
 
     const result = await openaiClient.images.edit({
       image: imageFiles,

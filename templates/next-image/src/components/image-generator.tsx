@@ -77,6 +77,26 @@ async function generateImage(
   return response.json();
 }
 
+/**
+ * Uploads an image file to Vercel Blob via the upload endpoint.
+ * Returns a hosted URL that can be passed to the edit API without
+ * triggering HTTP 413 errors caused by large base64 payloads.
+ */
+async function uploadImageFile(file: File): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+  const response = await fetch('/api/upload-image', {
+    method: 'POST',
+    body: form,
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Upload failed ${response.status}: ${errorText}`);
+  }
+  const { url } = await response.json();
+  return url as string;
+}
+
 async function editImage(request: EditImageRequest): Promise<ImageResponse> {
   const response = await fetch('/api/edit-image', {
     method: 'POST',
@@ -217,14 +237,15 @@ export default function ImageGenerator() {
           }
 
           try {
+            // Upload images to Vercel Blob and get hosted URLs.
+            // This avoids sending large base64 payloads in the JSON body
+            // which would exceed Vercel's function payload limit (HTTP 413).
             const imageUrls = await Promise.all(
               imageFiles.map(async imageFile => {
-                // Convert blob URL to data URL for API
                 const response = await fetch(imageFile.url);
                 const blob = await response.blob();
-                return await fileToDataUrl(
-                  new File([blob], 'image', { type: imageFile.mediaType })
-                );
+                const file = new File([blob], 'image', { type: imageFile.mediaType });
+                return await uploadImageFile(file);
               })
             );
 

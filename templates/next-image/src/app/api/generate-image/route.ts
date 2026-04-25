@@ -3,8 +3,8 @@
  *
  * This route demonstrates Echo SDK integration with AI image generation:
  * - Supports both OpenAI and Gemini models
- * - Handles text-to-image generation
- * - Returns base64 encoded images for consistent handling
+ * - Generates images and stores them in Vercel Blob to return hosted URLs
+ * - Avoids HTTP 413 errors caused by large base64 payloads
  */
 
 import {
@@ -19,13 +19,8 @@ const providers = {
   gemini: handleGoogleGenerate,
 };
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb',
-    },
-  },
-};
+// Allow up to 60 seconds for image generation on Vercel
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {

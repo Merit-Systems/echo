@@ -12,6 +12,24 @@ npx echo-start@latest --template next-image
 
 You'll be prompted for your Echo App ID. Don't have one? Get it at [echo.merit.systems/new](https://echo.merit.systems/new).
 
+## Prerequisites
+
+- Node.js 18+
+- pnpm (`npm install -g pnpm`)
+- A [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) store for image hosting (required to avoid HTTP 413 payload errors)
+
+## Environment Variables
+
+Copy `.env.local` and fill in your values:
+
+| Variable | Description |
+|---|---|
+| `ECHO_APP_ID` | Your Echo App ID from [echo.merit.systems/new](https://echo.merit.systems/new) |
+| `NEXT_PUBLIC_ECHO_APP_ID` | Same value as `ECHO_APP_ID` |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token from your Vercel dashboard → Storage → Blob |
+
+> **Why Vercel Blob?** AI image models return large base64-encoded images. Passing these between client and server exceeds Vercel's function payload limit (HTTP 413). Images are now stored in Vercel Blob and URLs are returned instead.
+
 ## Getting Started
 
 First, run the development server:

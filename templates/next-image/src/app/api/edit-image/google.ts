@@ -1,14 +1,18 @@
 /**
  * Google Gemini image editing handler
+ *
+ * Accepts hosted image URLs (stored in Vercel Blob via /api/upload-image),
+ * edits them, and stores results back in Vercel Blob to avoid HTTP 413 errors.
  */
 
 import { google } from '@/echo';
 import { generateText } from 'ai';
-import { getMediaTypeFromDataUrl } from '@/lib/image-utils';
+import { put } from '@vercel/blob';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
 /**
  * Handles Google Gemini image editing
+ * Gemini accepts regular URLs directly, so no conversion needed for input.
  */
 export async function handleGoogleEdit(
   prompt: string,
@@ -22,8 +26,7 @@ export async function handleGoogleEdit(
       },
       ...imageUrls.map(imageUrl => ({
         type: 'image' as const,
-        image: imageUrl, // Direct data URL - Gemini handles it
-        mediaType: getMediaTypeFromDataUrl(imageUrl),
+        image: imageUrl, // Hosted URL - Gemini handles it directly
       })),
     ];
 
@@ -48,9 +51,14 @@ export async function handleGoogleEdit(
       );
     }
 
-    return Response.json({
-      imageUrl: `data:${imageFile.mediaType};base64,${imageFile.base64}`,
+    // Store result in Vercel Blob and return hosted URL
+    const buffer = Buffer.from(imageFile.base64, 'base64');
+    const blob = await put(`edited-${Date.now()}.png`, buffer, {
+      access: 'public',
+      contentType: imageFile.mediaType || 'image/png',
     });
+
+    return Response.json({ imageUrl: blob.url });
   } catch (error) {
     console.error('Google image editing error:', error);
     return Response.json(
