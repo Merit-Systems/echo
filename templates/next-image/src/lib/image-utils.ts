@@ -1,7 +1,7 @@
 /**
  * Minimal Image Utilities
  *
- * Simple, clean API with just data URLs. No complex conversions.
+ * Handles both data URLs (data:...) and hosted URLs (https://...).
  */
 
 /**
@@ -33,31 +33,57 @@ export function dataUrlToFile(dataUrl: string, filename: string): File {
 }
 
 /**
- * Downloads an image from a data URL
+ * Downloads an image from a URL (data URL or hosted URL)
  */
-export function downloadDataUrl(dataUrl: string, filename: string): void {
+export async function downloadDataUrl(url: string, filename: string): Promise<void> {
+  let href: string;
+  let objectUrl: string | undefined;
+
+  if (url.startsWith('data:')) {
+    href = url;
+  } else {
+    // Hosted URL – fetch the image blob to trigger download correctly
+    const response = await fetch(url);
+    const blob = await response.blob();
+    objectUrl = URL.createObjectURL(blob);
+    href = objectUrl;
+  }
+
   const link = document.createElement('a');
-  link.href = dataUrl;
+  link.href = href;
   link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+
+  if (objectUrl) {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 /**
- * Copies an image to the clipboard from a data URL
+ * Copies an image to the clipboard from a URL (data URL or hosted URL)
  */
-export async function copyDataUrlToClipboard(dataUrl: string): Promise<void> {
-  const [header, base64] = dataUrl.split(',');
-  const mime = header.match(/:(.*?);/)?.[1] || 'image/png';
-  const bytes = atob(base64);
-  const array = new Uint8Array(bytes.length);
+export async function copyDataUrlToClipboard(url: string): Promise<void> {
+  let mime: string;
+  let blob: Blob;
 
-  for (let i = 0; i < bytes.length; i++) {
-    array[i] = bytes.charCodeAt(i);
+  if (url.startsWith('data:')) {
+    const [header, base64] = url.split(',');
+    mime = header.match(/:(.*?);/)?.[1] || 'image/png';
+    const bytes = atob(base64);
+    const array = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) {
+      array[i] = bytes.charCodeAt(i);
+    }
+    blob = new Blob([array], { type: mime });
+  } else {
+    // Hosted URL – fetch the image
+    const response = await fetch(url);
+    blob = await response.blob();
+    mime = blob.type || 'image/png';
   }
 
-  const blob = new Blob([array], { type: mime });
   await navigator.clipboard.write([new ClipboardItem({ [mime]: blob })]);
 }
 
@@ -69,9 +95,20 @@ export function generateFilename(imageId: string): string {
 }
 
 /**
- * Extracts media type from a data URL
+ * Extracts media type from a data URL or hosted URL
  */
-export function getMediaTypeFromDataUrl(dataUrl: string): string {
-  if (!dataUrl.startsWith('data:')) return 'image/jpeg';
-  return dataUrl.match(/^data:([^;]+);base64,/)?.[1] || 'image/jpeg';
+export function getMediaTypeFromDataUrl(url: string): string {
+  if (url.startsWith('data:')) {
+    return url.match(/^data:([^;]+);base64,/)?.[1] || 'image/jpeg';
+  }
+  // For hosted URLs, infer from extension or default to jpeg
+  const ext = url.split('.').pop()?.toLowerCase();
+  const extMap: Record<string, string> = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+  };
+  return extMap[ext || ''] || 'image/jpeg';
 }
