@@ -2,7 +2,7 @@ import { LlmTransactionMetadata, Transaction } from '../types';
 import { getCostPerToken } from '../services/AccountingService';
 import { BaseProvider } from './BaseProvider';
 import { ProviderType } from './ProviderType';
-import { CompletionStateBody, parseSSEGPTFormat } from './GPTProvider';
+import { parseSSEGPTFormat } from './GPTProvider';
 import logger from '../logger';
 import { env } from '../env';
 
@@ -12,12 +12,18 @@ interface AIGatewayUsage {
   totalTokens?: number;
 }
 
+interface OpenAICompatibleUsage {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+}
+
 interface AIGatewayResponseBody {
   id?: string;
   response?: {
     id?: string;
   };
-  usage?: AIGatewayUsage;
+  usage?: AIGatewayUsage | OpenAICompatibleUsage;
 }
 
 interface AIGatewayStreamPart {
@@ -35,6 +41,17 @@ function toVercelModelId(model: string): string {
   return model.startsWith(ECHO_VERCEL_MODEL_PREFIX)
     ? model.slice(ECHO_VERCEL_MODEL_PREFIX.length)
     : model;
+}
+
+function isAIGatewayUsage(
+  usage: AIGatewayUsage | OpenAICompatibleUsage | undefined
+): usage is AIGatewayUsage {
+  return (
+    usage !== undefined &&
+    ('inputTokens' in usage ||
+      'outputTokens' in usage ||
+      'totalTokens' in usage)
+  );
 }
 
 function parseSSEJsonObjects(data: string): unknown[] {
@@ -195,19 +212,19 @@ export class VercelAIGatewayProvider extends BaseProvider {
           }
         }
       } else {
-        const parsed = JSON.parse(data) as CompletionStateBody &
-          AIGatewayResponseBody;
+        const parsed = JSON.parse(data) as AIGatewayResponseBody;
 
-        if (parsed.usage?.inputTokens !== undefined) {
+        if (isAIGatewayUsage(parsed.usage)) {
           const usage = this.getUsageFromAIResponse(parsed.usage);
           prompt_tokens += usage.promptTokens;
           completion_tokens += usage.completionTokens;
           total_tokens += usage.totalTokens;
           providerId = parsed.response?.id ?? parsed.id ?? 'null';
         } else if (parsed.usage) {
-          prompt_tokens += parsed.usage.prompt_tokens;
-          completion_tokens += parsed.usage.completion_tokens;
-          total_tokens += parsed.usage.total_tokens;
+          prompt_tokens += parsed.usage.prompt_tokens ?? 0;
+          completion_tokens += parsed.usage.completion_tokens ?? 0;
+          total_tokens +=
+            parsed.usage.total_tokens ?? prompt_tokens + completion_tokens;
           providerId = parsed.id || 'null';
         } else {
           providerId = parsed.response?.id ?? parsed.id ?? 'null';
