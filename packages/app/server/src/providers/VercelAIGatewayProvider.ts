@@ -204,11 +204,13 @@ export class VercelAIGatewayProvider extends BaseProvider {
           completion_tokens += usage.completionTokens;
           total_tokens += usage.totalTokens;
           providerId = parsed.response?.id ?? parsed.id ?? 'null';
-        } else {
+        } else if (parsed.usage) {
           prompt_tokens += parsed.usage.prompt_tokens;
           completion_tokens += parsed.usage.completion_tokens;
           total_tokens += parsed.usage.total_tokens;
           providerId = parsed.id || 'null';
+        } else {
+          providerId = parsed.response?.id ?? parsed.id ?? 'null';
         }
       }
 
