@@ -9,6 +9,7 @@ import { createEchoOpenAI } from 'ai-providers/openai';
 import { createEchoOpenRouter } from 'ai-providers/openrouter';
 import { createEchoGroq } from 'ai-providers/groq';
 import { createEchoXAI } from 'ai-providers/xai';
+import { createEchoVercelAIGateway } from 'ai-providers/vercel';
 
 import {
   CreateOauthTokenResponse,
@@ -118,5 +119,6 @@ export default function Echo(config: EchoConfig): EchoResult {
     groq: createEchoGroq(config),
     openrouter: createEchoOpenRouter(config),
     xai: createEchoXAI(config),
+    vercel: createEchoVercelAIGateway(config),
   };
 }

@@ -5,6 +5,7 @@ import {
   AnthropicModels,
   GeminiModels,
   OpenRouterModels,
+  VercelAIGatewayModels,
   OpenAIImageModels,
   SupportedModel,
   SupportedImageModel,
@@ -26,6 +27,7 @@ export class ModelsResource extends BaseResource {
       ...AnthropicModels,
       ...GeminiModels,
       ...OpenRouterModels,
+      ...VercelAIGatewayModels,
     ];
 
     return allModels;

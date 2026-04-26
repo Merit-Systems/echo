@@ -2,7 +2,15 @@ export interface SupportedModel {
   model_id: string;
   input_cost_per_token: number;
   output_cost_per_token: number;
+  input_cost_per_token_tiers?: TokenPricingTier[];
+  output_cost_per_token_tiers?: TokenPricingTier[];
   provider: string;
+}
+
+export interface TokenPricingTier {
+  cost: number;
+  min: number;
+  max?: number;
 }
 
 export interface SupportedImageModel {

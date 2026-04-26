@@ -4,6 +4,7 @@ import {
   createEchoGroq,
   createEchoOpenAI,
   createEchoOpenRouter,
+  createEchoVercelAIGateway,
   createEchoXAI,
 } from '@merit-systems/echo-typescript-sdk';
 import { useMemo } from 'react';
@@ -30,6 +31,11 @@ export const useEchoModelProviders = () => {
         onInsufficientFunds
       ),
       groq: createEchoGroq(baseConfig, getToken, onInsufficientFunds),
+      vercel: createEchoVercelAIGateway(
+        baseConfig,
+        getToken,
+        onInsufficientFunds
+      ),
       xai: createEchoXAI(baseConfig, getToken, onInsufficientFunds),
     };
   }, [getToken, config.appId, config.baseRouterUrl, setIsInsufficientFunds]);

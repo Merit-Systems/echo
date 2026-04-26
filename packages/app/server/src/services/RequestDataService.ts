@@ -13,6 +13,11 @@ export function extractModelName(req: Request): string | undefined {
     return model;
   }
 
+  const gatewayModel = req.headers['ai-language-model-id'];
+  if (typeof gatewayModel === 'string' && gatewayModel.length > 0) {
+    return gatewayModel;
+  }
+
   const modelFromPath = extractGeminiModelName(req);
 
   if (modelFromPath && modelFromPath !== undefined) {
@@ -27,6 +32,11 @@ export function extractMaxOutputTokens(req: Request): number {
   const maxOutputTokens = req.body.max_output_tokens;
   if (maxOutputTokens && maxOutputTokens !== undefined) {
     return maxOutputTokens;
+  }
+  // AI SDK Gateway protocol
+  const aiSdkMaxOutputTokens = req.body.maxOutputTokens;
+  if (aiSdkMaxOutputTokens && aiSdkMaxOutputTokens !== undefined) {
+    return aiSdkMaxOutputTokens;
   }
   // Anthropic Format
   const maxTokens = req.body.max_tokens;
@@ -53,6 +63,11 @@ export function extractIsStream(req: Request): boolean {
 
   if (stream && stream !== undefined) {
     return stream;
+  }
+
+  const aiSdkGatewayStream = req.headers['ai-language-model-streaming'];
+  if (typeof aiSdkGatewayStream === 'string') {
+    return aiSdkGatewayStream === 'true';
   }
 
   if (isGeminiStreamingPath(req.path)) {
