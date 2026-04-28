@@ -1,0 +1,6 @@
+Echo Framework Rules:
+1. Ensure all API endpoints follow consistent naming conventions.
+2. Use TypeScript for type safety and better DX.
+3. Prefer async/await over callbacks where possible.
+4. Maintain modular component design in React components.
+5. Keep dependency graph shallow to avoid circular dependencies.
