@@ -1,0 +1,38 @@
+---
+description: Guidelines and best practices for building Echo-integrated Next.js applications
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+alwaysApply: true
+---
+
+# Echo + Next.js Guidelines
+
+## Project Setup
+- This project uses [Echo](https://echo.merit.systems) for AI billing, authentication, and user management
+- The Echo SDK is initialized in `src/echo/` or `src/app/api/echo/`
+- All API routes that require authentication should use the Echo auth middleware
+
+## Echo SDK Usage
+- Import Echo functions from `@merit/echo-start` or the local `echo.ts` file
+- Use `echo.billing()` to check credits and manage billing
+- Use `echo.auth()` for session management and user authentication
+- Never hardcode API keys - always use environment variables
+
+## API Routes
+- Protected routes should verify the session using Echo's `getSession()` helper
+- Billing-related endpoints should check credits before processing AI operations
+- Return proper error responses for insufficient credits or unauthenticated requests
+
+## Frontend Components
+- Use the Echo provider wrapping the app
+- Access Echo context via the `useEcho()` hook
+- Display credit balance and billing status in the UI when relevant
+
+## Styling and UI
+- Follow the existing component patterns in the project
+- Use Tailwind CSS classes for styling
+- Maintain consistent spacing, typography, and color usage
+
+## Environment Variables
+- `NEXT_PUBLIC_ECHO_APP_ID` - Your Echo application ID (public)
+- `ECHO_SECRET_KEY` - Secret key for server-side operations (never expose to client)
+- Never commit `.env.local` or any file containing secrets

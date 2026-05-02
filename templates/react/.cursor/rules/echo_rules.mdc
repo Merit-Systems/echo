@@ -1,0 +1,38 @@
+---
+description: Guidelines and best practices for building Echo-integrated React applications, including billing, authentication, and component patterns
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+alwaysApply: true
+---
+
+# Echo + React Guidelines
+
+## Project Setup
+- This project uses [Echo](https://echo.merit.systems) for AI billing, authentication, and user management
+- The Echo SDK is initialized via the Echo Provider in the root component
+- All components that need Echo features must be wrapped in the Echo Provider
+
+## Echo SDK Usage
+- Import Echo functions from `@merit/echo-start` or the local `echo.ts` file
+- Use `echo.billing()` to check credits and manage billing
+- Use `echo.auth()` for session management and user authentication
+- Never hardcode API keys — always use environment variables (`VITE_ECHO_APP_ID`)
+
+## Components
+- Use the `useEcho()` hook to access billing state and auth status
+- Display credit balance in relevant UI locations
+- Handle loading states while Echo initializes
+- Gracefully handle unauthenticated states with sign-in prompts
+
+## API Integration
+- Send the Echo session token with API requests for authenticated endpoints
+- Check `echo.billing().hasCredits()` before making AI-powered requests
+- Handle billing errors gracefully in the UI
+
+## Styling and UI
+- Follow existing component patterns in the project
+- Use Tailwind CSS classes for styling
+- Maintain consistent design language with Echo's default components
+
+## Environment Variables
+- `VITE_ECHO_APP_ID` — Your Echo application ID (public, Vite convention)
+- Never commit `.env.local` or any file containing secrets
