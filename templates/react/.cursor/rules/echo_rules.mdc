@@ -1,0 +1,22 @@
+---
+description: Echo template rules for React (Vite) projects.
+globs: "**/*.{ts,tsx,js,jsx,md,mdx,json}"
+alwaysApply: true
+---
+
+# Echo + React template rules
+
+## Project shape
+- This is a React + Vite project.
+- Prefer colocating UI components under `src/components`.
+
+## Env configuration
+- Never invent API keys. Use values from `.env.local` / `.env.example`.
+- Keep `.env.example` up to date.
+
+## TypeScript
+- Avoid `any`; prefer explicit types.
+
+## Echo integration
+- If adding API calls, keep them in a small client module (e.g. `src/lib/echo.ts`).
+- Handle network errors and show useful UI fallbacks.

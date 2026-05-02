@@ -1,0 +1,19 @@
+---
+description: Echo template rules for Node.js CLI projects.
+globs: "**/*.{ts,js,md,json}"
+alwaysApply: true
+---
+
+# Echo CLI template rules
+
+## Runtime
+- This is a Node.js CLI.
+- Prefer small pure functions and keep side-effects near the entrypoint.
+
+## Config + secrets
+- Never invent API keys. Read configuration from `.env.local` or other documented config files.
+- Do not log secrets.
+
+## UX
+- CLI output should be concise and actionable.
+- Always return non-zero exit codes on failure.
