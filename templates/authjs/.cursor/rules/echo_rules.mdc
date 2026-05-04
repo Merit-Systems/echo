@@ -1,0 +1,32 @@
+---
+description: Guidelines and best practices for building Echo-integrated Next.js applications with Auth.js authentication
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+alwaysApply: true
+---
+
+# Echo + Next.js (Auth.js) Guidelines
+
+## Project Setup
+- This project uses [Echo](https://echo.merit.systems) for AI billing and [Auth.js](https://authjs.dev) for authentication
+- Auth.js is configured in `src/app/api/auth/[...nextauth]/route.ts` or `src/lib/auth.ts`
+- Echo SDK handles billing while Auth.js handles session management
+
+## Authentication
+- Use Auth.js `getServerSession()` for server-side auth checks
+- Use `useSession()` hook on the client side
+- Configure Echo to work with Auth.js session tokens
+
+## Echo SDK Usage
+- Import Echo functions from `@merit/echo-start`
+- Use `echo.billing()` to check credits before AI operations
+- Never hardcode API keys - always use environment variables
+
+## Protected Routes
+- Combine Auth.js session checks with Echo billing verification
+- Return 401 for unauthenticated requests, 402 for insufficient credits
+
+## Environment Variables
+- `NEXT_PUBLIC_ECHO_APP_ID` - Echo application ID (public)
+- `ECHO_SECRET_KEY` - Echo secret key (server-side only)
+- `AUTH_SECRET` - Auth.js secret (server-side only)
+- `NEXTAUTH_URL` - Base URL for Auth.js callbacks

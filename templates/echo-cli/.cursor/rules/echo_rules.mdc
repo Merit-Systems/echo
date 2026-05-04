@@ -1,0 +1,33 @@
+---
+description: Guidelines and best practices for building Echo CLI tools, including authentication, API calls, and command patterns
+globs: **/*.ts,**/*.js
+alwaysApply: true
+---
+
+# Echo CLI Guidelines
+
+## Project Setup
+- This project uses [Echo](https://echo.merit.systems) for AI billing and authentication
+- The CLI is built with Node.js/TypeScript
+- Configuration is stored in `~/.echo/` or the project's `.env` file
+
+## CLI Patterns
+- Use `commander` or `yargs` for argument parsing (check existing `package.json`)
+- All commands that require billing should check credits before execution
+- Provide clear error messages for insufficient credits or missing auth
+
+## Echo SDK Usage
+- Initialize Echo with `ECHO_APP_ID` and `ECHO_SECRET_KEY` from environment
+- Use `echo.billing()` to check and deduct credits for AI operations
+- Store auth tokens securely, never log or expose them
+
+## Error Handling
+- Catch and display user-friendly errors for network failures
+- Handle rate limiting with retry logic and backoff
+- Validate input before making API calls
+
+## Best Practices
+- Use TypeScript for type safety
+- Follow existing command patterns in `src/` or `scripts/`
+- Keep commands focused and composable
+- Provide `--help` flags with descriptive usage text
