@@ -4,6 +4,7 @@
 
 import { getEchoToken } from '@/echo';
 import { ERROR_MESSAGES } from '@/lib/constants';
+import type { VideoModelOption } from '@/lib/types';
 import {
   GenerateVideosOperation,
   GenerateVideosParameters,
@@ -14,11 +15,7 @@ import {
  */
 export async function handleGeminiGenerate(
   prompt: string,
-  model:
-    | 'veo-3.1-fast-generate-preview'
-    | 'veo-3.1-generate-preview'
-    | 'veo-3.0-fast-generate-preview'
-    | 'veo-3.0-generate-preview',
+  model: VideoModelOption,
   durationSeconds: number = 4,
   generateAudio: boolean = false,
   image?: string, // Base64 encoded image or data URL (first frame)
