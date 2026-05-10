@@ -9,7 +9,7 @@ export type VertexAIVideoModel =
  * Vertex AI video models with official pricing information
  * Based on: https://cloud.google.com/vertex-ai/generative-ai/pricing
  *
- * Veo 3.1: $0.40/second with audio
+ * Veo 3.1: $0.40/second with audio, $0.20/second video only
  * Veo 3: $0.40/second with audio, $0.20/second video only
  * Veo 3 Fast: $0.15/second with audio, $0.10/second video only
  */
