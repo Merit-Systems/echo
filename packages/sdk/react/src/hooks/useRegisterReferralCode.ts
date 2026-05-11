@@ -8,9 +8,43 @@ interface UseRegisterReferralCodeOptions {
   onError?: (error: string) => void;
 }
 
+function readPublicEnv(name: string): string | undefined {
+  const maybeGlobal = globalThis as unknown as {
+    import?: { meta?: { env?: Record<string, string | undefined> } };
+    process?: { env?: Record<string, string | undefined> };
+  };
+
+  return maybeGlobal.import?.meta?.env?.[name] || maybeGlobal.process?.env?.[name];
+}
+
+function getConfiguredReferralCode(): string | null {
+  if (typeof window === 'undefined') return null;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  return (
+    urlParams.get('referral_code') ||
+    urlParams.get('referralCode') ||
+    readPublicEnv('VITE_ECHO_REFERRAL_CODE') ||
+    readPublicEnv('NEXT_PUBLIC_ECHO_REFERRAL_CODE') ||
+    readPublicEnv('REACT_APP_ECHO_REFERRAL_CODE') ||
+    null
+  );
+}
+
+function removeReferralParamsFromUrl(): void {
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.delete('referral_code');
+  urlParams.delete('referralCode');
+  window.history.replaceState(
+    {},
+    '',
+    `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ''}`
+  );
+}
+
 /**
- * Custom hook to handle referral code registration from URL parameters.
- * Automatically checks for referralCode parameter in the URL and registers it for the given app.
+ * Custom hook to handle referral code registration from URL parameters or
+ * framework-public environment variables injected by echo-start external templates.
  */
 export function useRegisterReferralCode({
   appId,
@@ -22,8 +56,7 @@ export function useRegisterReferralCode({
     const registerReferralCode = async () => {
       if (typeof window === 'undefined') return;
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const referralCode = urlParams.get('referralCode');
+      const referralCode = getConfiguredReferralCode();
 
       if (!referralCode) return;
 
@@ -34,13 +67,8 @@ export function useRegisterReferralCode({
 
       if (!result) return;
 
-      // Clean up URL parameter
-      urlParams.delete('referralCode');
-      window.history.replaceState(
-        {},
-        '',
-        `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ''}`
-      );
+      // Clean up URL parameters while leaving env-provided referral codes intact.
+      removeReferralParamsFromUrl();
 
       if (result.success) {
         onSuccess?.();
