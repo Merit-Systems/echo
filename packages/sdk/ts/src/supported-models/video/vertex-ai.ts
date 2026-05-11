@@ -1,6 +1,8 @@
 import type { SupportedVideoModel } from '../types';
 
 export type VertexAIVideoModel =
+  | 'veo-3.1-fast-generate-preview'
+  | 'veo-3.1-generate-preview'
   | 'veo-3.0-fast-generate-preview'
   | 'veo-3.0-generate-preview';
 /**
@@ -11,6 +13,18 @@ export type VertexAIVideoModel =
  * Veo 3 Fast: $0.15/second with audio, $0.10/second video only
  */
 export const VertexAIVideoModels: SupportedVideoModel[] = [
+  {
+    model_id: 'veo-3.1-fast-generate-preview',
+    cost_per_second_with_audio: 0.1,
+    cost_per_second_without_audio: 0.08,
+    provider: 'VertexAI',
+  },
+  {
+    model_id: 'veo-3.1-generate-preview',
+    cost_per_second_with_audio: 0.4,
+    cost_per_second_without_audio: 0.2,
+    provider: 'VertexAI',
+  },
   {
     model_id: 'veo-3.0-fast-generate-preview',
     cost_per_second_with_audio: 0.15,
