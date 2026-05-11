@@ -7,7 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "biome check --write",
-    "postinstall": "npm dedupe || true"
+    "postinstall": "node -e \"if (!(process.env.npm_config_user_agent || '').includes('pnpm')) require('child_process').execSync('npm dedupe', { stdio: 'inherit' })\" || true"
   },
   "dependencies": {
     "@ai-sdk/openai": "2.0.16",
