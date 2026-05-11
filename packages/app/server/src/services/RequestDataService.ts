@@ -13,6 +13,11 @@ export function extractModelName(req: Request): string | undefined {
     return model;
   }
 
+  const gatewayModel = req.headers['ai-language-model-id'];
+  if (typeof gatewayModel === 'string' && gatewayModel.length > 0) {
+    return gatewayModel;
+  }
+
   const modelFromPath = extractGeminiModelName(req);
 
   if (modelFromPath && modelFromPath !== undefined) {
@@ -53,6 +58,11 @@ export function extractIsStream(req: Request): boolean {
 
   if (stream && stream !== undefined) {
     return stream;
+  }
+
+  const gatewayStream = req.headers['ai-language-model-streaming'];
+  if (gatewayStream === 'true') {
+    return true;
   }
 
   if (isGeminiStreamingPath(req.path)) {
