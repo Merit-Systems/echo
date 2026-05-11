@@ -49,6 +49,13 @@ export function isFilesPath(path: string): boolean {
 
 export function extractGeminiModelName(req: Request): string | undefined {
   const path = req.path;
+  const vertexProjectPathMatch = path.match(
+    /^\/v[^/]*\/projects\/[^/]+\/locations\/[^/]+\/publishers\/google\/models\/([^/:]+)(?::predictLongRunning)?$/
+  );
+
+  if (vertexProjectPathMatch?.[1]) {
+    return vertexProjectPathMatch[1];
+  }
 
   // Expected format: /v1beta/models/{model-name}:streamGenerateContent or /v1beta/models/{model-name}:generateContent
   // OR: /models/{model-name}:streamGenerateContent or /models/{model-name}:generateContent

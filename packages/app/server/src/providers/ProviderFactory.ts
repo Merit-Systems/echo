@@ -97,6 +97,49 @@ const createVideoModelToProviderMapping = (): Record<string, ProviderType> => {
   return mapping;
 };
 
+const createVideoModelProviders = (): Record<string, Set<string>> => {
+  const mapping: Record<string, Set<string>> = {};
+
+  for (const modelConfig of ALL_SUPPORTED_VIDEO_MODELS) {
+    if (!modelConfig.provider) {
+      continue;
+    }
+
+    const providers = mapping[modelConfig.model_id] ?? new Set<string>();
+    providers.add(modelConfig.provider);
+    mapping[modelConfig.model_id] = providers;
+  }
+
+  return mapping;
+};
+
+const isVertexAIVideoPath = (completionPath: string): boolean => {
+  return completionPath.includes('/publishers/google/models/');
+};
+
+const videoModelHasProvider = (model: string, provider: string): boolean => {
+  return VIDEO_MODEL_PROVIDERS[model]?.has(provider) ?? false;
+};
+
+const resolveVideoProviderType = (
+  model: string,
+  defaultType: ProviderType,
+  completionPath: string
+): ProviderType => {
+  if (
+    isVertexAIVideoPath(completionPath) &&
+    videoModelHasProvider(model, 'VertexAI')
+  ) {
+    return ProviderType.VERTEX_AI;
+  }
+
+  if (videoModelHasProvider(model, 'Gemini')) {
+    return ProviderType.GEMINI_VEO;
+  }
+
+  return defaultType;
+};
+
 /**
  * Model-to-provider mapping loaded from model_prices_and_context_window.json
  * This replaces the previous hardcoded mapping and automatically includes all
@@ -110,6 +153,11 @@ const IMAGE_MODEL_TO_PROVIDER: Record<string, ProviderType> =
 
 const VIDEO_MODEL_TO_PROVIDER: Record<string, ProviderType> =
   createVideoModelToProviderMapping();
+
+const VIDEO_MODEL_PROVIDERS: Record<
+  string,
+  Set<string>
+> = createVideoModelProviders();
 
 export const getProvider = (
   model: string,
@@ -126,7 +174,7 @@ export const getProvider = (
 
   const videoType = VIDEO_MODEL_TO_PROVIDER[model];
   if (videoType) {
-    type = videoType;
+    type = resolveVideoProviderType(model, videoType, completionPath);
   }
 
   if (model === GeminiVeoProxyPassthroughOnlyModel) {

@@ -42,6 +42,10 @@ import { FileInputManager } from './FileInputManager';
 import { VideoHistory } from './video-history';
 
 const models: VideoModelConfig[] = [
+  { id: 'veo-3.1-fast-generate-001', name: 'Veo 3.1 Fast' },
+  { id: 'veo-3.1-generate-001', name: 'Veo 3.1' },
+  { id: 'veo-3.1-fast-generate-preview', name: 'Veo 3.1 Fast Preview' },
+  { id: 'veo-3.1-generate-preview', name: 'Veo 3.1 Preview' },
   { id: 'veo-3.0-fast-generate-preview', name: 'Veo 3 Fast' },
   { id: 'veo-3.0-generate-preview', name: 'Veo 3' },
 ];
@@ -57,7 +61,7 @@ const models: VideoModelConfig[] = [
  */
 export default function VideoGenerator() {
   const [model, setModel] = useState<VideoModelOption>(
-    'veo-3.0-fast-generate-preview'
+    'veo-3.1-fast-generate-001'
   );
   const [durationSeconds, setDurationSeconds] = useState<4 | 6 | 8>(4);
   const [generateAudio, setGenerateAudio] = useState<boolean>(false);

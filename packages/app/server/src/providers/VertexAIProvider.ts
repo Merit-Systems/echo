@@ -19,6 +19,10 @@ import { env } from '../env';
 // Constants
 export const PROXY_PASSTHROUGH_ONLY_MODEL = 'PROXY_PLACEHOLDER_VERTEX_AI';
 const VEO3_MODELS = [
+  'veo-3.1-fast-generate-001',
+  'veo-3.1-generate-001',
+  'veo-3.1-fast-generate-preview',
+  'veo-3.1-generate-preview',
   'veo-3.0-fast-generate-preview',
   'veo-3.0-generate-preview',
 ];
@@ -71,14 +75,21 @@ export class VertexAIProvider extends BaseProvider {
   }
 
   override formatUpstreamUrl(req: { path: string; url: string }): string {
-    const pathWithoutV1 = req.path.replace(/^\/v1/, '');
     const project = this.getRequiredEnvVar('GOOGLE_CLOUD_PROJECT');
     const location = env.GOOGLE_CLOUD_LOCATION || 'global';
     const queryString = req.url.includes('?')
       ? req.url.substring(req.url.indexOf('?'))
       : '';
+    const pathAfterPublisher = req.path
+      .replace(
+        /^\/v[^/]*\/projects\/[^/]+\/locations\/[^/]+\/publishers\/google/,
+        ''
+      )
+      .replace(/^\/v[^/]*\/publishers\/google/, '')
+      .replace(/^\/publishers\/google/, '')
+      .replace(/^\/v[^/]*/, '');
 
-    return `https://aiplatform.googleapis.com/v1/projects/${project}/locations/${location}${pathWithoutV1}${queryString}`;
+    return `https://aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google${pathAfterPublisher}${queryString}`;
   }
 
   override supportsStream(): boolean {
