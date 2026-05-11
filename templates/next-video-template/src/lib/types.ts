@@ -14,6 +14,10 @@ export type ModelOption = 'openai' | 'gemini';
  * Available AI models for video generation
  */
 export type VideoModelOption =
+  | 'veo-3.1-fast-generate-001'
+  | 'veo-3.1-generate-001'
+  | 'veo-3.1-fast-generate-preview'
+  | 'veo-3.1-generate-preview'
   | 'veo-3.0-fast-generate-preview'
   | 'veo-3.0-generate-preview';
 
