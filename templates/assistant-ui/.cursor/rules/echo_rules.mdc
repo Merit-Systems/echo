@@ -1,0 +1,46 @@
+---
+description: Echo guidelines for this template: Assistant UI chat template. Covers Echo SDK usage, framework boundaries, environment variables, model calls, payments/auth, and project conventions.
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.mjs,**/*.cjs
+---
+
+# Echo template rules
+
+These rules apply when editing this Echo starter template. Prefer small, typed changes that preserve the existing template shape and developer experience.
+
+## Universal Echo rules
+
+- Keep Echo app IDs, API keys, wallet secrets, provider keys, and tokens in environment variables. Never hardcode secrets.
+- Use the Echo SDK helpers already present in the template instead of creating parallel clients or raw fetch wrappers.
+- Validate request bodies before calling model providers or payment/auth helpers. Return clear HTTP errors for bad input.
+- Keep provider/model names in one typed place when a template exposes model selection.
+- Do not call paid/model APIs from unit tests. Mock SDK/provider calls.
+- Preserve TypeScript strictness: avoid `any`, export shared types, and keep runtime validation aligned with TypeScript types.
+- Keep example code copy-pasteable for new Echo users.
+
+## Next.js rules
+
+- Keep server-only Echo initialization in server files such as `src/echo`, API routes, or server actions.
+- Put client-only Echo UI/provider components behind `'use client'`.
+- Never import server-only Echo helpers into client components. Use API routes for browser initiated generation/payment work.
+- Register Echo route handlers at the path expected by the template and keep route exports explicit (`GET`, `POST`).
+- Use `process.env.ECHO_APP_ID` for server-side configuration and `NEXT_PUBLIC_ECHO_APP_ID` only for public client config.
+- For streaming responses, return the AI SDK response helper directly and set route runtime/max duration intentionally.
+
+## Chat template rules
+
+- Keep message objects typed with explicit `role` and `content` fields.
+- Validate incoming `messages` arrays before streaming/generating responses.
+- Centralize selectable model IDs and provider labels.
+- Preserve streaming behavior and avoid buffering full responses unless the template already does so.
+
+## Assistant UI rules
+
+- Keep assistant state, transport configuration, and Echo/provider calls separated from presentational components.
+- Preserve streaming UX, cancellation, loading states, and error messages.
+- Keep tool/model configuration typed and centralized.
+
+## Editing checklist
+
+- Keep changes minimal and framework-specific.
+- Run the narrowest relevant build/type-check before submitting.
+- Update this rule file when template conventions change.
