@@ -1,0 +1,27 @@
+---
+description: Guidelines for building with Echo using API key auth in Next.js
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + Next.js API Key Template Guidelines
+
+## What Echo does
+Echo is a user-pays AI layer. In this template, users authenticate with an API key rather than the hosted payment widget. Users pre-fund their account and calls are debited automatically.
+
+## Auth pattern
+```ts
+// Pass the user's Echo API key in the Authorization header
+const client = new EchoClient({ apiKey: userApiKey });
+```
+
+## Setup
+- `ECHO_SECRET_KEY` is your platform key (server-only).
+- Users provide their own Echo API key — store it in the session or pass it per-request.
+- Never log or persist user API keys beyond what the session needs.
+
+## Rules
+- Validate the user API key format before forwarding to Echo — keys follow the `echo_*` prefix pattern.
+- Return `401` for missing/invalid keys, `402` for insufficient credits, `429` for rate limits.
+- Don't hardcode a fallback API key — if the user has no key, surface a clear setup prompt.
+- Keep all Echo client instantiation in Route Handlers or server actions, never in client components.

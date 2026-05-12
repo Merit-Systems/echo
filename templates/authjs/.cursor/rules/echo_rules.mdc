@@ -1,0 +1,49 @@
+---
+description: Guidelines for building with Echo and Auth.js (NextAuth) in Next.js
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + Auth.js (NextAuth) Guidelines
+
+## What Echo does
+Echo is a user-pays AI layer. In this template, Auth.js handles user identity and Echo handles AI billing. The user's Echo API key is stored in the session after sign-in.
+
+## Auth flow
+1. User signs in via Auth.js (e.g., GitHub OAuth).
+2. During the `jwt` callback, attach the user's Echo API key to the token.
+3. Route Handlers read the key from the session and pass it to `EchoClient`.
+
+## Session extension
+```ts
+// auth.ts — store Echo key in JWT
+callbacks: {
+  jwt({ token, account }) {
+    if (account?.echoApiKey) token.echoApiKey = account.echoApiKey;
+    return token;
+  },
+  session({ session, token }) {
+    session.echoApiKey = token.echoApiKey as string;
+    return session;
+  }
+}
+```
+
+## Route Handler pattern
+```ts
+import { auth } from '@/auth';
+import { EchoClient } from '@merit-systems/echo-typescript-sdk';
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session) return new Response('Unauthorized', { status: 401 });
+  const client = new EchoClient({ apiKey: session.echoApiKey });
+  // ...
+}
+```
+
+## Rules
+- Never expose `echoApiKey` to the client — access it only in Route Handlers and Server Actions.
+- Protect all AI routes with `auth()` — return `401` before attempting any Echo call.
+- Handle `402` (no credits) separately from `401` (not authenticated) in client error handling.
+- Extend `Session` and `JWT` TypeScript types in `next-auth.d.ts` to include `echoApiKey`.

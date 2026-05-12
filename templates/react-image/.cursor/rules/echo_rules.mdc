@@ -1,0 +1,41 @@
+---
+description: Guidelines for building with Echo in a React (Vite) image generation app
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + React Image Generation Guidelines
+
+## What Echo does
+Echo is a user-pays AI layer. Users spend their own credits on image generation. `<EchoTokens />` handles top-ups.
+
+## Setup
+- AI calls must go through a backend — never call image generation APIs from the browser.
+- Set `ECHO_SECRET_KEY` server-side only.
+- Use `@merit-systems/echo-react-sdk` for `<EchoTokens />`.
+
+## Supported image models (current)
+- OpenAI: `dall-e-3`, `dall-e-2`, `gpt-image-1`
+- Google: `gemini-2.5-flash-image` (not the deprecated `-preview` variants)
+
+## React usage
+```tsx
+const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+async function generate(prompt: string) {
+  const res = await fetch('/api/generate-image', {
+    method: 'POST',
+    body: JSON.stringify({ prompt, model: 'dall-e-3' }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (res.status === 402) { /* prompt top-up */ return; }
+  const { base64 } = await res.json();
+  setImageUrl(`data:image/png;base64,${base64}`);
+}
+```
+
+## Rules
+- Show a loading spinner during generation (can take 5-15 seconds).
+- Distinguish `402` (no credits) from `400` (content policy violation) in error handling.
+- Don't use deprecated Gemini preview model IDs — use `gemini-2.5-flash-image`.
+- Render `<EchoTokens />` somewhere accessible in the app.

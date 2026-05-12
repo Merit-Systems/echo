@@ -1,0 +1,34 @@
+---
+description: Guidelines for building with Echo in a Next.js app
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + Next.js Guidelines
+
+## What Echo does
+Echo is a user-pays AI infrastructure layer. Your users fund their own API calls — you never pay for their usage. The `<EchoTokens />` component handles the entire payment and token top-up flow.
+
+## Setup
+- Echo SDK is initialised in `src/echo.ts`. Import providers from there (`openai`, `anthropic`, etc.) — never import directly from `ai` SDK or provider packages for model calls.
+- Set `ECHO_SECRET_KEY` in `.env.local`. Never expose it to the client.
+
+## Making AI calls
+```ts
+// In a Next.js Route Handler (src/app/api/*/route.ts)
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const result = streamText({ model: openai('gpt-4o'), messages });
+  return result.toDataStreamResponse();
+}
+```
+
+## Rules
+- AI calls belong in Route Handlers (`src/app/api/`), never in Server Components or client components.
+- Always stream responses with `toDataStreamResponse()` — don't await the full response.
+- The `<EchoTokens />` component must be rendered somewhere in the layout so users can top up.
+- Don't hardcode model names in multiple places — define a `DEFAULT_MODEL` constant.
+- Handle the `402 Payment Required` response: it means the user is out of credits. Prompt them to top up.

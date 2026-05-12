@@ -1,0 +1,38 @@
+---
+description: Guidelines for building with Echo in a Next.js image generation app
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + Next.js Image Generation Guidelines
+
+## What Echo does
+Echo is a user-pays AI layer. Users spend their own credits on image generation — you pay nothing per image. `<EchoTokens />` handles top-ups.
+
+## Supported image models (current)
+- OpenAI: `dall-e-3`, `dall-e-2`, `gpt-image-1`
+- Google: `gemini-2.5-flash-image` (use this, not the `-preview` variant which is deprecated)
+- Stability AI: `stable-diffusion-v3-*`
+
+## Route pattern
+```ts
+// src/app/api/generate-image/route.ts
+import { openai } from '@/echo';
+import { experimental_generateImage as generateImage } from 'ai';
+
+export async function POST(req: Request) {
+  const { prompt, model } = await req.json();
+  const { image } = await generateImage({
+    model: openai.image(model ?? 'dall-e-3'),
+    prompt,
+  });
+  return Response.json({ base64: image.base64 });
+}
+```
+
+## Rules
+- Never use deprecated preview model IDs like `gemini-2.5-flash-image-preview` or `gemini-2.0-flash-preview-image-generation` — use `gemini-2.5-flash-image`.
+- Image routes are non-streaming — use `generateImage`, not `streamText`.
+- Validate `prompt` length server-side (DALL-E 3 max is 4000 chars).
+- Return base64 from the route; let the client convert to a blob URL if needed.
+- Handle `402` (no credits) and `400` (content policy) distinctly in the UI.

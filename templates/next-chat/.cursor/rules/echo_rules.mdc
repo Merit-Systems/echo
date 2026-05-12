@@ -1,0 +1,40 @@
+---
+description: Guidelines for building with Echo in a Next.js AI chat app
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + Next.js Chat Guidelines
+
+## What Echo does
+Echo is a user-pays AI layer. Users buy their own credits — you never pay for their usage. The `<EchoTokens />` component handles top-ups.
+
+## Setup
+- Echo providers live in `src/echo.ts`. Always import `openai`, `anthropic`, etc. from `@/echo`, not directly from provider packages.
+- `ECHO_SECRET_KEY` goes in `.env.local`. Never expose it client-side.
+
+## Chat route pattern
+```ts
+// src/app/api/chat/route.ts
+import { openai } from '@/echo';
+import { convertToModelMessages, streamText } from 'ai';
+
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  const { messages, model } = await req.json();
+  const result = streamText({
+    model: openai(model ?? 'gpt-4o-mini'),
+    messages: convertToModelMessages(messages),
+  });
+  return result.toDataStreamResponse();
+}
+```
+
+## Rules
+- Validate `model` and `messages` before calling `streamText` — return 400 for missing params.
+- Always use `convertToModelMessages` to normalise `UIMessage[]` before passing to the model.
+- Stream with `toDataStreamResponse()` — don't buffer.
+- Catch `402` errors and surface a "top up credits" message in the UI.
+- The `<EchoTokens />` component must be reachable from the chat page (typically in the layout or nav).
+- Let users select the model in the UI — pass it as a request body field, not hardcoded in the route.

@@ -1,0 +1,28 @@
+---
+description: Guidelines for building with Echo in a React (Vite) chat app
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + React Chat Guidelines
+
+## What Echo does
+Echo is a user-pays AI layer. Your users buy credits and spend them on AI calls — you have zero per-request costs. The `<EchoTokens />` component handles credit top-ups.
+
+## Setup
+- Frontend: `@merit-systems/echo-react-sdk` — provides `<EchoTokens />` and hooks.
+- AI calls must go through a backend (Express, Hono, etc.) — never call AI APIs directly from the browser.
+- Set `ECHO_SECRET_KEY` as a server-only environment variable.
+
+## Chat flow
+1. User types a message in the React UI.
+2. React sends `POST /api/chat` with `{ messages, model }`.
+3. Backend calls `streamText` via an Echo-wrapped provider.
+4. Backend returns `toDataStreamResponse()`.
+5. React consumes the stream with `useChat` from `ai/react`.
+
+## Rules
+- Use `useChat` from `ai/react` for streaming state management — don't hand-roll fetch + ReadableStream.
+- Validate `model` and `messages` server-side before forwarding to the AI.
+- Surface `402` errors as a "buy credits" prompt, not a generic error toast.
+- `<EchoTokens />` should be visible from the chat UI, not buried in settings.

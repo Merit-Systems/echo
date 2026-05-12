@@ -1,0 +1,34 @@
+---
+description: Guidelines for building with the Echo CLI SDK
+globs: ["**/*.ts"]
+alwaysApply: true
+---
+
+# Echo CLI SDK Guidelines
+
+## What Echo does
+Echo is a user-pays AI infrastructure layer. The CLI SDK (`@merit-systems/echo-typescript-sdk`) lets you call AI models from Node.js scripts and CLIs, billed to the authenticated user's Echo account.
+
+## Setup
+```ts
+import { EchoClient } from '@merit-systems/echo-typescript-sdk';
+
+// Uses stored credentials from `echo login`, or pass apiKey explicitly
+const client = new EchoClient();
+```
+
+## Common patterns
+```ts
+// Check balance
+const { balance } = await client.getBalance();
+
+// Create a payment/top-up link
+const { paymentLink } = await client.createPaymentLink({ amount: 10.0 });
+```
+
+## Rules
+- Never hardcode API keys — use `echo login` for interactive auth or `ECHO_API_KEY` env var for CI.
+- Wrap calls in try/catch and handle `402` (no credits) explicitly: print a message with the top-up URL.
+- For long-running CLI tools, check balance before starting a batch job to avoid mid-run failures.
+- Log token usage after each call when in verbose mode so users can track spend.
+- Keep `EchoClient` instantiation at the top of the script/command, not inside loops.

@@ -1,0 +1,29 @@
+---
+description: Guidelines for building with Echo in a React (Vite) app
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + React (Vite) Guidelines
+
+## What Echo does
+Echo is a user-pays AI infrastructure layer. Users fund their own API calls with Echo credits. The `<EchoTokens />` component handles the payment UI.
+
+## Setup
+- Echo React SDK: `@merit-systems/echo-react-sdk`
+- Wrap your app with the Echo provider so `<EchoTokens />` has context.
+- API keys must never live in client-side code. If you need to call an AI model, proxy through a backend.
+
+## Component usage
+```tsx
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+
+// Render somewhere accessible in your app
+<EchoTokens />
+```
+
+## Rules
+- `<EchoTokens />` must render so users can purchase credits before hitting AI features.
+- Never call AI provider APIs directly from the browser — always use a backend proxy route.
+- If you add a Vite proxy (`vite.config.ts`) to forward `/api` to a backend, ensure the Echo secret key is only set on the server.
+- Keep model configuration in a single `constants.ts` file, not scattered across components.

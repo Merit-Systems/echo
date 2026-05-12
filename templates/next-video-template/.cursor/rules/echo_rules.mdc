@@ -1,0 +1,37 @@
+---
+description: Guidelines for building with Echo in a Next.js video generation app
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + Next.js Video Generation Guidelines
+
+## What Echo does
+Echo is a user-pays AI layer. Users spend credits on video generation — you have no per-video cost. `<EchoTokens />` handles top-ups.
+
+## Key differences from image generation
+- Video generation is asynchronous: submit a job, poll for completion.
+- Jobs can take 30 seconds to several minutes — never block a request waiting for completion.
+- Return a job ID immediately; let the client poll `GET /api/video-status/[jobId]`.
+
+## Route pattern
+```ts
+// src/app/api/generate-video/route.ts — submit job
+export async function POST(req: Request) {
+  const { prompt, model } = await req.json();
+  // submit to video model, return job id
+  return Response.json({ jobId });
+}
+
+// src/app/api/video-status/[jobId]/route.ts — poll status
+export async function GET(req: Request, { params }) {
+  // check job status, return { status, videoUrl? }
+}
+```
+
+## Rules
+- Never use long-polling or blocking waits inside a Route Handler — Next.js has a default 30s timeout.
+- Use `maxDuration` export only if your hosting plan supports extended timeouts.
+- Poll from the client on a reasonable interval (3-5 seconds) with exponential backoff.
+- Handle `402` (no credits) at the submit step, before the job is created.
+- `<EchoTokens />` should be accessible from the generation UI.

@@ -1,0 +1,40 @@
+---
+description: Guidelines for building with Echo and assistant-ui components
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Echo + assistant-ui Guidelines
+
+## What Echo does
+Echo is a user-pays AI layer. Users fund their own AI calls. `<EchoTokens />` handles credit top-ups.
+
+## assistant-ui integration
+This template uses [assistant-ui](https://www.assistant-ui.com/) for the chat interface and Echo for the AI backend.
+
+- The `AssistantRuntimeProvider` wraps the chat interface with a runtime that calls your Echo-backed route.
+- Keep the Echo route handler pattern the same as in `next-chat` — `streamText` + `toDataStreamResponse()`.
+
+## Pattern
+```tsx
+// src/app/layout.tsx
+import { AssistantRuntimeProvider } from '@assistant-ui/react';
+import { useVercelUseChatRuntime } from '@assistant-ui/react-ai-sdk';
+import { useChat } from 'ai/react';
+
+function Providers({ children }) {
+  const chat = useChat({ api: '/api/chat' });
+  const runtime = useVercelUseChatRuntime(chat);
+  return (
+    <AssistantRuntimeProvider runtime={runtime}>
+      {children}
+    </AssistantRuntimeProvider>
+  );
+}
+```
+
+## Rules
+- The Echo route handler is the same as `next-chat` — don't duplicate model logic in the runtime config.
+- Place `<EchoTokens />` in the layout or sidebar, not inside the thread component.
+- Don't override assistant-ui's default streaming behaviour — it's compatible with `toDataStreamResponse()`.
+- Handle `402` errors in the `onError` callback of `useChat` to show a credits prompt.
