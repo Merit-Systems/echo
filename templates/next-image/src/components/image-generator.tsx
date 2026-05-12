@@ -25,9 +25,8 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { fileToDataUrl } from '@/lib/image-utils';
+import { compressImageFile, fileToDataUrl } from '@/lib/image-utils';
 import type {
-  EditImageRequest,
   GeneratedImage,
   GenerateImageRequest,
   ImageResponse,
@@ -60,6 +59,29 @@ const models: ModelConfig[] = [
  */
 
 // ===== API FUNCTIONS =====
+async function parseImageResponse(response: Response): Promise<ImageResponse> {
+  if (!response.ok) {
+    const errorText = await response.text();
+    let error = errorText;
+
+    try {
+      error = JSON.parse(errorText).error || errorText;
+    } catch {
+      // Keep the original response text when the server returns a plain error.
+    }
+
+    throw new Error(`HTTP ${response.status}: ${error}`);
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    return response.json();
+  }
+
+  const blob = await response.blob();
+  return { imageUrl: URL.createObjectURL(blob) };
+}
+
 async function generateImage(
   request: GenerateImageRequest
 ): Promise<ImageResponse> {
@@ -69,27 +91,28 @@ async function generateImage(
     body: JSON.stringify(request),
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status}: ${errorText}`);
-  }
-
-  return response.json();
+  return parseImageResponse(response);
 }
 
-async function editImage(request: EditImageRequest): Promise<ImageResponse> {
-  const response = await fetch('/api/edit-image', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
+async function editImage(request: {
+  prompt: string;
+  imageFiles: File[];
+  provider: ModelOption;
+}): Promise<ImageResponse> {
+  const formData = new FormData();
+  formData.set('prompt', request.prompt);
+  formData.set('provider', request.provider);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status}: ${errorText}`);
+  for (const imageFile of request.imageFiles) {
+    formData.append('images', imageFile, imageFile.name);
   }
 
-  return response.json();
+  const response = await fetch('/api/edit-image', {
+    method: 'POST',
+    body: formData,
+  });
+
+  return parseImageResponse(response);
 }
 
 /**
@@ -217,20 +240,21 @@ export default function ImageGenerator() {
           }
 
           try {
-            const imageUrls = await Promise.all(
+            const uploadedImages = await Promise.all(
               imageFiles.map(async imageFile => {
-                // Convert blob URL to data URL for API
                 const response = await fetch(imageFile.url);
                 const blob = await response.blob();
-                return await fileToDataUrl(
-                  new File([blob], 'image', { type: imageFile.mediaType })
+                return await compressImageFile(
+                  new File([blob], imageFile.filename || 'image', {
+                    type: imageFile.mediaType,
+                  })
                 );
               })
             );
 
             const result = await editImage({
               prompt,
-              imageUrls,
+              imageFiles: uploadedImages,
               provider: model,
             });
             imageUrl = result.imageUrl;

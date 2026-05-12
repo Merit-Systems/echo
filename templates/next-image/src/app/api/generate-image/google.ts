@@ -5,6 +5,7 @@
 import { google } from '@/echo';
 import { generateText } from 'ai';
 import { ERROR_MESSAGES } from '@/lib/constants';
+import { imageResponseFromBase64 } from '../image-response';
 
 /**
  * Handles Google Gemini image generation
@@ -27,9 +28,10 @@ export async function handleGoogleGenerate(prompt: string): Promise<Response> {
       );
     }
 
-    return Response.json({
-      imageUrl: `data:${imageFile.mediaType};base64,${imageFile.base64}`,
-    });
+    return imageResponseFromBase64(
+      imageFile.base64,
+      imageFile.mediaType || 'image/png'
+    );
   } catch (error) {
     console.error('Google image generation error:', error);
     return Response.json(

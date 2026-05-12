@@ -30,10 +30,10 @@ export function ImageDetailsDialog({
   onClose,
   onAddToInput,
 }: ImageDetailsDialogProps) {
-  const handleAddToInput = useCallback(() => {
+  const handleAddToInput = useCallback(async () => {
     if (!image || !isImageActionable(image)) return;
 
-    const file = handleImageToFile(image.imageUrl!, image.id);
+    const file = await handleImageToFile(image.imageUrl!, image.id);
     onAddToInput([file]);
     onClose();
   }, [image, onAddToInput, onClose]);

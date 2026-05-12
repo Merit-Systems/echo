@@ -50,10 +50,10 @@ const ImageHistoryItem = React.memo(function ImageHistoryItem({
   onAddToInput,
   onImageClick,
 }: ImageHistoryItemProps) {
-  const handleAddToInput = useCallback(() => {
+  const handleAddToInput = useCallback(async () => {
     if (!isImageActionable(image)) return;
 
-    const file = handleImageToFile(image.imageUrl!, image.id);
+    const file = await handleImageToFile(image.imageUrl!, image.id);
     onAddToInput([file]);
   }, [image, onAddToInput]);
 
