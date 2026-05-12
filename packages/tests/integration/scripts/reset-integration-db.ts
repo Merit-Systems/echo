@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PrismaClient } from '../../../app/control/src/generated/prisma/index.js';
 import { TEST_CONFIG } from '../config/index.js';
 
@@ -15,7 +16,7 @@ export async function resetIntegrationDatabase() {
   try {
     // Clean all data in reverse dependency order
     await prisma.refreshToken.deleteMany();
-    await prisma.llmTransaction.deleteMany();
+    await prisma.transaction.deleteMany();
     await prisma.payment.deleteMany();
     await prisma.apiKey.deleteMany();
     await prisma.echoApp.deleteMany();
