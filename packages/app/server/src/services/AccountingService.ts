@@ -3,6 +3,7 @@ import {
   AnthropicModels,
   GeminiModels,
   OpenRouterModels,
+  VercelModels,
   GroqModels,
   OpenAIImageModels,
   SupportedOpenAIResponseToolPricing,
@@ -28,6 +29,7 @@ export const ALL_SUPPORTED_MODELS: SupportedModel[] = [
   ...AnthropicModels,
   ...GeminiModels,
   ...OpenRouterModels,
+  ...VercelModels,
   ...GroqModels,
   ...XAIModels,
 ];
