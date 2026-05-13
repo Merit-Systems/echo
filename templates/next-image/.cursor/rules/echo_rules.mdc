@@ -1,0 +1,40 @@
+---
+description: Guidelines for building Next.js apps with Echo
+globs: **/*.ts,**/*.tsx
+alwaysApply: true
+---
+
+# Echo + Next.js guidelines
+
+## Echo integration
+
+- Use Echo through the official `echo` package already included in this template.
+- Keep Echo client/server setup centralized in the existing Echo-related files instead of duplicating setup logic across routes or components.
+- Do not hard-code Echo app IDs, API keys, or wallet secrets. Read them from environment variables.
+- Use `NEXT_PUBLIC_ECHO_APP_ID` only for values that are safe to expose to the browser.
+- Keep server-only secrets in non-public environment variables and access them only from server code.
+
+## Next.js routing and components
+
+- Prefer App Router patterns when editing files under `src/app` or `app`.
+- Use Server Components by default. Add `"use client"` only when browser APIs, hooks, or interactive state are required.
+- Keep Echo provider/client components small and colocated with the existing provider setup.
+- Do not move Echo calls into client components if the same work can be performed safely on the server.
+
+## AI SDK usage
+
+- When using Echo with the Vercel AI SDK, preserve streaming behavior and existing response shapes.
+- Keep model/provider selection configurable rather than hard-coded.
+- Surface errors with helpful user-facing messages while avoiding leakage of secrets or internal stack traces.
+
+## Environment variables
+
+- Update `.env.example` whenever a new Echo-related variable is introduced.
+- Never commit real API keys, wallet private keys, app IDs intended to remain private, or generated credentials.
+- Validate required environment variables close to startup or request handling so failures are explicit.
+
+## Code quality
+
+- Keep TypeScript strict and avoid `any` unless the upstream SDK type is unavailable and the cast is narrowly scoped.
+- Preserve existing file structure and template conventions.
+- Keep examples minimal, copy-pasteable, and easy for new Echo users to understand.
