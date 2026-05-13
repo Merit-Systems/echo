@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Echo Chat',
-  description: 'AI-powered chat application with Echo billing integration',
+  description: 'Chat with AI models using Echo credits or wallet payments',
 };
 
 export default function RootLayout({

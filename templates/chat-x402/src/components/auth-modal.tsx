@@ -12,7 +12,7 @@ import {
 import { useEcho } from '@merit-systems/echo-next-sdk/client';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Wallet } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAccount } from 'wagmi';
 
 interface AuthModalProps {
@@ -28,13 +28,10 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const isEchoConnected = !!user;
   const isWalletConnected = isConnected;
 
-  useEffect(() => {
-    if ((isEchoConnected || isWalletConnected) && open) {
+  if (isEchoConnected || isWalletConnected) {
+    if (open) {
       onOpenChange(false);
     }
-  }, [isEchoConnected, isWalletConnected, open, onOpenChange]);
-
-  if (isEchoConnected || isWalletConnected) {
     return null;
   }
 

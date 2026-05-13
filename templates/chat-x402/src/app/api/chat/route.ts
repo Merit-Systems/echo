@@ -99,7 +99,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // TODO: Validate x-payment header with your payment processor in production.
     const result = streamText({
       model: openai(model),
       messages: convertToModelMessages(messages),

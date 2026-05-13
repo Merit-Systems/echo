@@ -42,14 +42,14 @@ This demo application demonstrates:
 ### Application Structure
 
 ```
+.env.example                      # Environment variable template
 src/
-├── .env.example                  # Environment variable template
-├── src/providers.tsx             # Provider stack (Wagmi/RainbowKit/React Query/Echo)
-├── src/lib/
+├── providers.tsx                 # Provider stack (Wagmi/RainbowKit/React Query/Echo)
+├── lib/
 │   ├── wagmi-config.ts           # Wallet + chain configuration
 │   └── 402/
 │       └── createPaymentHeader.ts # x402 payment header helper
-├── src/components/
+├── components/
 │   ├── auth-guard.tsx            # Dual-auth route guard (Echo or wallet)
 │   ├── auth-modal.tsx            # Echo vs wallet connection modal
 │   ├── connect-button.tsx        # Rainbow wallet connect button
@@ -65,7 +65,7 @@ src/
 │   │   └── header.tsx            # App header with auth state
 │   ├── api/
 │   │   ├── chat/
-│   │   │   └── route.ts          # Chat API endpoint using Echo OpenAI
+│   │   │   └── route.ts          # Chat API with x402 payment gate
 │   │   └── echo/
 │   │       └── [...echo]/
 │   │           └── route.ts      # Echo webhook handlers
@@ -136,7 +136,7 @@ import { openai } from '@/echo';
 
 // Use OpenAI models with automatic billing
 const result = streamText({
-  model: openai('gpt-4o'), // or "gpt-5-nano"
+  model: openai('gpt-4o'), // or 'gpt-5'
   messages: convertToModelMessages(messages),
 });
 ```
@@ -229,7 +229,7 @@ Copy `.env.example` to `.env.local` and set:
 
 1. **User Authentication**: Users sign in through Echo's secure authentication system
 2. **Balance Check**: App displays user's current balance in real-time
-3. **AI Interaction**: Users chat with AI models (GPT-4o, GPT-5 nano)
+3. **AI Interaction**: Users chat with AI models (GPT-4o, GPT-5)
 4. **Automatic Billing**: Each AI request is automatically tracked and billed
 5. **Balance Updates**: User balance is updated in real-time after each request
 
@@ -249,7 +249,6 @@ This app can be deployed to any platform that supports Next.js:
 - **Vercel** (recommended): `vercel deploy`
 - **Netlify**: Connect your git repository
 - **Railway**: `railway deploy`
-- **Docker**: Use the included Dockerfile
 
 Make sure to update your Echo app configuration with your production domain.
 
