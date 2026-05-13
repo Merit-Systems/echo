@@ -1,0 +1,201 @@
+---
+description: Guidelines and best practices for building Echo Next.js applications, including Echo SDK initialization, server/client boundaries, environment variables, API routes, auth patterns, and real-world examples
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.mdc
+---
+
+# Echo Next.js Guidelines
+
+## SDK Initialization
+
+### Server-Side Initialization
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts` for server-side usage:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+- The `ECHO_APP_ID` environment variable MUST be set in `.env.local`
+- Export `handlers` for API routes, `isSignedIn` for auth checks
+- Export AI provider clients (`openai`, `anthropic`) pre-configured with Echo billing
+
+### Client-Side Provider
+
+Wrap your app with `EchoProvider` in a client component (e.g., `src/providers.tsx`):
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+- Use `NEXT_PUBLIC_ECHO_APP_ID` for client-side (prefixed with `NEXT_PUBLIC_`)
+- ALWAYS place `<EchoProvider>` in the root layout
+
+## Server/Client Boundaries
+
+### 'use client' Directive
+
+- Mark components that use React hooks (`useState`, `useEffect`, `useChat`, etc.) with `'use client'`
+- Server components do NOT need this directive and can be `async`
+- Keep data fetching on the server side when possible
+
+### API Routes
+
+ALWAYS use Next.js App Router API routes under `src/app/api/`:
+
+```typescript
+// src/app/api/chat/route.ts
+import { openai } from '@/echo';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const result = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages,
+  });
+  return result.toDataStreamResponse();
+}
+```
+
+- Import AI clients from `@/echo` (NOT directly from OpenAI/Anthropic SDKs)
+- Echo SDK handles billing, metering, and token counting automatically
+- Use `result.toDataStreamResponse()` for streaming responses
+
+### Auth Patterns
+
+Check authentication in server components using `isSignedIn()`:
+
+```typescript
+import { isSignedIn } from '@/echo';
+import SignInButton from '@/app/_components/echo/sign-in-button';
+
+export default async function Page() {
+  const signedIn = await isSignedIn();
+  if (!signedIn) {
+    return <SignInButton />;
+  }
+  return <MainContent />;
+}
+```
+
+- `isSignedIn()` is async and must be awaited
+- Import `SignInButton` from `@/app/_components/echo/sign-in-button`
+- Auth is handled automatically by Echo SDK via API keys or WalletConnect
+
+## Environment Variables
+
+Required environment variables:
+
+| Variable | Location | Required | Description |
+|----------|----------|----------|-------------|
+| `ECHO_APP_ID` | `.env.local` | Yes | Echo application ID |
+| `NEXT_PUBLIC_ECHO_APP_ID` | `.env.local` | Yes | Public Echo app ID for client |
+| `MERIT_REPO_ID` | `.env.local` | Optional | GitHub repo ID for fund-repo feature |
+
+- NEVER commit `.env.local` to version control
+- Use `.env.local` (not `.env`) for local development
+- Prefix client-side variables with `NEXT_PUBLIC_`
+
+## TypeScript Configuration
+
+- ALWAYS use TypeScript strict mode
+- Use explicit types for all public APIs and components
+- Prefer `interface` for component props, `type` for utility types
+- Use kebab-case for filenames: `sign-in-button.tsx`, `echo-account.tsx`
+- Use `@/` alias for absolute imports (NOT relative paths)
+
+```typescript
+// ✅ Good
+import { Button } from '@/components/ui/button';
+import { isSignedIn } from '@/echo';
+
+// ❌ Bad
+import { Button } from '../../../components/ui/button';
+import { isSignedIn } from '../../echo';
+```
+
+## React Component Patterns
+
+### Functional Components
+
+ALWAYS use functional components with hooks:
+
+```typescript
+interface UserAvatarProps {
+  user: { name: string; image?: string };
+  size?: 'sm' | 'md' | 'lg';
+}
+
+export function UserAvatar({ user, size = 'md' }: UserAvatarProps) {
+  const dimensions = { sm: 32, md: 48, lg: 64 };
+  return (
+    <img
+      src={user.image ?? '/default-avatar.png'}
+      alt={user.name}
+      width={dimensions[size]}
+      height={dimensions[size]}
+      className="rounded-full"
+    />
+  );
+}
+```
+
+- Use named exports for components
+- Define props interface above the component
+- Use default parameter values instead of defaultProps
+
+## Testing
+
+- Use Vitest for unit tests
+- Write tests for all API routes and SDK usage
+- Test both success and error scenarios
+- Use the Arrange-Act-Assert pattern
+
+## Error Handling
+
+- Handle all async operations with try/catch
+- Return meaningful error messages to the client
+- Use Echo SDK's built-in error types
+- Log errors server-side with context
+
+## Styling
+
+- Use Tailwind CSS for all styling
+- Follow the existing design system (see `components/ui/` for base components)
+- Use CSS variables for theming: `dark:` prefix for dark mode
+- Keep components responsive using Tailwind breakpoints
+
+## CLI Patterns
+
+For CLI tools, use the Echo CLI template as reference:
+
+```typescript
+import { EchoClient } from '@merit-systems/echo-ts-sdk';
+
+const echo = new EchoClient({
+  appId: process.env.ECHO_APP_ID!,
+  apiKey: process.env.ECHO_API_KEY,
+});
+
+const result = await echo.generateText({
+  model: 'gpt-4o',
+  prompt: 'Hello, world!',
+});
+```
+
+- ALWAYS initialize EchoClient with appId and apiKey from environment
+- Use `echo.generateText()` for non-streaming, `echo.streamText()` for streaming
+- Handle API errors gracefully
