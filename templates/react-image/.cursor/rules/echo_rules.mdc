@@ -1,0 +1,43 @@
+---
+description: Echo template rules for building monetized AI applications with safe typed SDK usage, clear payment UX, and maintainable TypeScript
+globs: **/*.{ts,tsx,js,jsx,json,md,css}
+alwaysApply: true
+---
+
+# Echo template development rules
+
+Echo apps combine normal product code with metered AI/API calls. Treat payment, identity, and streaming paths as product-critical code: keep them explicit, typed, and easy to audit.
+
+## Core Echo guidelines
+
+- Keep Echo-related configuration in environment variables documented by the template README or `.env.example`; never hard-code API keys, app IDs, secrets, wallet addresses, or private endpoints.
+- Preserve the template's existing Echo SDK boundaries. Extend the existing Echo provider, client, route handler, or CLI wrapper rather than creating duplicate payment/auth plumbing.
+- Validate all user-controlled input before it reaches paid AI/API calls. Prefer typed schemas, narrow interfaces, and explicit error messages.
+- Surface pricing, balance, top-up, and payment-required states in the UI or CLI before retrying paid operations.
+- Keep server-only Echo secrets in server files. Do not expose secret values through `NEXT_PUBLIC_*`, Vite client variables, logs, React props, or serialized responses.
+- When adding an Echo-protected action, include a safe failure path for insufficient funds, missing credentials, provider errors, and cancelled requests.
+- Prefer small composable components/functions over large generated files. Keep Echo-specific code easy to locate and review.
+- Add or update README notes when introducing a new required environment variable, provider, model, route, command, or payment flow.
+
+## TypeScript and quality rules
+
+- Use strict TypeScript types for request bodies, SDK responses, and component props. Avoid `any` unless the third-party SDK forces it and add a narrowing wrapper immediately.
+- Keep async flows cancellable where practical by threading `AbortSignal` through fetch, model, or SDK calls.
+- Do not swallow Echo or provider errors. Normalize them into user-safe messages while preserving useful diagnostics for developers.
+- Prefer named exports for reusable Echo helpers and UI components.
+- Run the template's lint, type-check, and build scripts after changing implementation files.
+
+## React and Vite rules
+
+- Client-visible Vite variables must use the template's existing `VITE_` names and may only contain public identifiers such as app IDs or public base URLs.
+- Keep paid actions behind clear button/form states: idle, validating, paying/generating, success, and error.
+- Use React state for user-facing status and keep Echo account/balance components mounted near actions that can spend credits.
+- Avoid starting paid requests during render, hydration, or unguarded `useEffect`; require an explicit user action unless the template already documents otherwise.
+- Keep fetch helpers in `src/lib` and UI-only concerns in `src/components` or `src/App.tsx`.
+
+## Image generation rules
+
+- Validate prompt text, model, size, count, and provider options before spending credits.
+- Show clear pending and completion states, including a safe empty state when no image has been generated yet.
+- Treat generated image URLs and blobs as untrusted external content. Avoid injecting them into raw HTML.
+- Keep prompt-building helpers deterministic and easy to review; do not hide paid prompt expansion in unrelated UI code.

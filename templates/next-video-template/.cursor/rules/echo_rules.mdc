@@ -1,0 +1,44 @@
+---
+description: Echo template rules for building monetized AI applications with safe typed SDK usage, clear payment UX, and maintainable TypeScript
+globs: **/*.{ts,tsx,js,jsx,json,md,css}
+alwaysApply: true
+---
+
+# Echo template development rules
+
+Echo apps combine normal product code with metered AI/API calls. Treat payment, identity, and streaming paths as product-critical code: keep them explicit, typed, and easy to audit.
+
+## Core Echo guidelines
+
+- Keep Echo-related configuration in environment variables documented by the template README or `.env.example`; never hard-code API keys, app IDs, secrets, wallet addresses, or private endpoints.
+- Preserve the template's existing Echo SDK boundaries. Extend the existing Echo provider, client, route handler, or CLI wrapper rather than creating duplicate payment/auth plumbing.
+- Validate all user-controlled input before it reaches paid AI/API calls. Prefer typed schemas, narrow interfaces, and explicit error messages.
+- Surface pricing, balance, top-up, and payment-required states in the UI or CLI before retrying paid operations.
+- Keep server-only Echo secrets in server files. Do not expose secret values through `NEXT_PUBLIC_*`, Vite client variables, logs, React props, or serialized responses.
+- When adding an Echo-protected action, include a safe failure path for insufficient funds, missing credentials, provider errors, and cancelled requests.
+- Prefer small composable components/functions over large generated files. Keep Echo-specific code easy to locate and review.
+- Add or update README notes when introducing a new required environment variable, provider, model, route, command, or payment flow.
+
+## TypeScript and quality rules
+
+- Use strict TypeScript types for request bodies, SDK responses, and component props. Avoid `any` unless the third-party SDK forces it and add a narrowing wrapper immediately.
+- Keep async flows cancellable where practical by threading `AbortSignal` through fetch, model, or SDK calls.
+- Do not swallow Echo or provider errors. Normalize them into user-safe messages while preserving useful diagnostics for developers.
+- Prefer named exports for reusable Echo helpers and UI components.
+- Run the template's lint, type-check, and build scripts after changing implementation files.
+
+## Next.js App Router rules
+
+- Keep Echo secrets and paid provider calls in server-only files: route handlers, server actions, or modules that are not imported by client components.
+- Use `'use client'` only for interactive components that need browser APIs, state, or event handlers. Keep server components as the default.
+- Validate route handler input before calling Echo or model providers, and return structured error responses for missing credentials, invalid payloads, and payment-required states.
+- Avoid leaking stack traces, tokens, request headers, cookies, or raw provider responses to the browser.
+- When streaming AI responses, handle aborts and provider errors without leaving the UI in a paid-but-stuck state.
+- Keep Next config, middleware, and API routes aligned with the template README so `echo-start` users can copy the example directly.
+
+## Video generation rules
+
+- Video jobs may be long-running and expensive. Expose queued, processing, complete, failed, and cancelled states explicitly.
+- Keep polling intervals bounded and stop polling when the component unmounts or the job reaches a terminal state.
+- Validate prompt, duration, aspect ratio, and provider-specific options before creating a paid job.
+- Store only the job metadata needed by the template; do not persist provider secrets or signed URLs longer than necessary.
