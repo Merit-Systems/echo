@@ -1,0 +1,24 @@
+---
+description: Echo, Next.js, and AI SDK rules for the chat template
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# Echo Next.js Chat Guidelines
+
+## Chat architecture
+- Keep Echo configuration in `src/echo/index.ts`.
+- Keep chat transport and model calls in `src/app/api/chat/route.ts` or nearby server modules.
+- Use Echo-wrapped providers for streamed model responses so usage is billed and tracked.
+- Preserve the template's AI SDK message shapes when changing chat state or route handlers.
+
+## Echo billing and auth
+- Do not call OpenAI, Anthropic, or other model providers directly from browser components.
+- Use Echo account, balance, and sign-in components already present in the template.
+- Show a clear empty, loading, error, and insufficient-balance state for paid chat actions.
+- Never store API keys, Echo app IDs, or wallet secrets in component state or committed files.
+
+## UI rules
+- Keep chat controls responsive and keyboard accessible.
+- Preserve streaming behavior when adding tools, attachments, or citations.
+- Keep money and balance display formatting centralized in the existing currency helpers.
+- Prefer existing shadcn/ui and AI element components over adding new UI primitives.

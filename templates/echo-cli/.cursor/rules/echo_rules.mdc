@@ -1,0 +1,24 @@
+---
+description: Echo CLI rules for the Echodex command-line template
+globs: **/*.{ts,js}
+---
+
+# Echo CLI Guidelines
+
+## CLI architecture
+- Keep command registration in `src/index.ts`.
+- Keep auth flows in `src/auth/**`, core chat/history/profile behavior in `src/core/**`, and reusable helpers in `src/utils/**`.
+- Keep configuration constants in `src/constants.ts` and typed config modules.
+- Preserve non-interactive command behavior for scripts and CI.
+
+## Echo usage
+- Support Echo API key, WalletConnect, and local wallet flows without mixing credential storage paths.
+- Store API keys and private keys only through the OS keychain helpers.
+- Never log secrets, private keys, raw auth tokens, or signed payloads.
+- Keep X402 and wallet payment flows explicit and user-confirmed.
+
+## Implementation rules
+- Validate command inputs with existing Zod schemas before executing actions.
+- Keep long-running network or wallet calls cancellable and visibly pending.
+- Return actionable errors for auth, network, balance, and provider failures.
+- Keep conversation history export free of secrets and local credential metadata.

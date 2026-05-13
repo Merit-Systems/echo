@@ -1,0 +1,24 @@
+---
+description: Echo and Vite React rules for the minimal React template
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# Echo React Guidelines
+
+## App structure
+- Keep Echo client setup in `src/echo/index.ts`.
+- Use Vite environment variables with the `VITE_` prefix for public app configuration.
+- Keep provider setup near the app root so Echo context is available to child components.
+- Keep browser-only Echo OAuth logic in React components or hooks.
+
+## Echo usage
+- Use the configured Echo React SDK client instead of creating duplicate clients.
+- Do not place provider API keys, wallet private keys, or server secrets in Vite client code.
+- Surface sign-in, balance, insufficient-credit, and request errors in the UI.
+- Keep paid AI actions tied to clear user interactions.
+
+## UI rules
+- Prefer existing components and helpers before adding new abstractions.
+- Keep loading, disabled, and error states accessible.
+- Keep currency formatting centralized in shared utilities.
+- Avoid server-only APIs and Node.js modules in Vite browser code.

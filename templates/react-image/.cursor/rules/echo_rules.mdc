@@ -1,0 +1,24 @@
+---
+description: Echo and Vite React image-generation template rules
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# Echo React Image Guidelines
+
+## Image-generation flow
+- Keep Echo client setup in `src/echo/index.ts`.
+- Keep image generation UI in the existing image components.
+- Validate prompt text, image options, and selected files before starting paid work.
+- Keep image previews and history state in the existing component structure.
+
+## Echo usage
+- Use Echo React SDK flows for auth, balance, and paid image actions.
+- Do not commit provider API keys, wallet private keys, or server secrets into Vite code.
+- Use `VITE_` environment variables only for public Echo app configuration.
+- Show sign-in, balance, loading, insufficient-credit, and provider-error states.
+
+## UI rules
+- Reuse existing Echo account, balance, image generation, and history components.
+- Keep previews responsive and stable while generation is pending.
+- Make download and details actions explicit.
+- Keep currency formatting in shared helpers.

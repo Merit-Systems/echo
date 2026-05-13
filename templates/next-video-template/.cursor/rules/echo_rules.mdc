@@ -1,0 +1,24 @@
+---
+description: Echo and Next.js video-generation template rules
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# Echo Next.js Video Guidelines
+
+## Video-generation flow
+- Keep video provider calls in `src/app/api/generate-video/route.ts` and status polling in `src/app/api/check-video-status/route.ts`.
+- Validate prompt text, image inputs, duration, aspect ratio, and model options before billing work.
+- Use Echo-backed provider calls so video generation is billed and usage is tracked.
+- Keep long-running job state in existing video hooks and history helpers.
+
+## Echo usage
+- Keep Echo configuration in `src/echo/index.ts`.
+- Do not expose provider keys, Echo secrets, wallet data, or raw payment details to client code.
+- Handle pending, failed, timeout, insufficient-balance, and completed states explicitly.
+- Avoid duplicate billing by making retry and polling behavior idempotent.
+
+## UI rules
+- Reuse existing video generator, history, details dialog, and Echo account components.
+- Keep preview containers stable while jobs are running.
+- Make file uploads, generation, cancel, refresh, and download actions accessible.
+- Keep currency formatting in shared helpers.

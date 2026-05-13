@@ -1,0 +1,24 @@
+---
+description: Echo and Next.js App Router rules for the minimal Echo starter template
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# Echo Next.js Guidelines
+
+## App structure
+- Keep Echo setup in `src/echo/index.ts` and import the exported Echo helpers from there.
+- Use App Router conventions for pages, layouts, and route handlers.
+- Keep server-only Echo calls in server components, server actions, or `app/api/**/route.ts`.
+- Keep client components marked with `"use client"` when they use hooks, browser APIs, or interactive Echo UI.
+
+## Echo usage
+- Use the configured Echo SDK exports instead of constructing duplicate Echo clients.
+- Keep `ECHO_APP_ID` and other secrets in environment variables, never inline credentials in components.
+- Route user-facing paid AI calls through Echo so balance, auth, and usage tracking stay consistent.
+- Surface Echo auth and billing errors as actionable UI states instead of swallowing them.
+
+## Implementation style
+- Prefer small server route handlers over putting network logic directly in UI components.
+- Validate request payloads before calling model providers.
+- Keep generated UI accessible with semantic buttons, labels, loading states, and error states.
+- Do not bypass Echo billing with direct provider SDK calls unless the template explicitly documents it.

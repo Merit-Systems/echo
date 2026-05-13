@@ -236,6 +236,7 @@ Each template follows a consistent structure:
 
 ```
 template-name/
+├── .cursor/rules/echo_rules.mdc # Cursor rules tailored to the template stack
 ├── src/                  # Source code
 │   ├── app/             # Application pages (Next.js)
 │   ├── components/      # React components
