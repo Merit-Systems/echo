@@ -1,0 +1,11 @@
+---
+description: Guidelines and best practices for building Echo projects, including SDK usage, API design, and implementation patterns
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo SDK Guidelines
+
+## Core Concepts
+
+### Echo Client Initialization
+- ALWAYS initialize the Echo client with an API key from environment variables:
