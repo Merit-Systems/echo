@@ -1,0 +1,42 @@
+---
+description: Guidelines for building Echo-powered applications with Assistant UI
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo + Assistant UI Guidelines
+
+## Setup
+
+- This template combines Echo with the Assistant UI component library.
+- Use `@merit-systems/echo-next-sdk` for server-side Echo integration.
+- Use `@merit-systems/echo-react-sdk` for client-side auth and providers.
+
+## Using AI Models
+
+- Use `useEchoModelProviders()` to get Echo-wrapped providers:
+
+```tsx
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+
+const { openai } = useEchoModelProviders();
+```
+
+- NEVER import AI providers directly. Always use Echo-wrapped versions.
+
+## Authentication
+
+- Wrap your app with `<EchoProvider>`.
+- Use `<EchoSignIn />` / `<EchoSignOut />` for auth.
+- Assistant UI components only render for authenticated users.
+
+## Environment Variables
+
+- `NEXT_PUBLIC_ECHO_APP_ID` — Echo app ID (client-safe).
+- `ECHO_APP_SECRET` — Echo app secret (server-only).
+
+## Best Practices
+
+- Echo handles billing and metering; do not add custom usage tracking.
+- Use `<InsufficientFundsModal />` for low balance handling.
+- All AI requests are proxied through Echo for metering — do not bypass.
+- Let Assistant UI handle the chat interface; focus on business logic.

@@ -1,0 +1,57 @@
+---
+description: Guidelines for building Echo-powered React SPA applications
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React SDK Guidelines
+
+## Setup
+
+- Use `@merit-systems/echo-react-sdk` for client-side React SPA integration.
+- Wrap your app root with `<EchoProvider>`:
+
+```tsx
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <EchoProvider appId={import.meta.env.VITE_ECHO_APP_ID}>
+      <YourApp />
+    </EchoProvider>
+  );
+}
+```
+
+## Authentication
+
+- Use `<EchoSignIn />` and `<EchoSignOut />` for auth flows.
+- The user authenticates once via OAuth and gets a universal Echo balance.
+
+## Using AI Models
+
+- Use `useEchoModelProviders()` to get Echo-wrapped provider instances:
+
+```tsx
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { generateText } from 'ai';
+
+const { openai, anthropic, google } = useEchoModelProviders();
+const response = await generateText({
+  model: openai('gpt-4o'),
+  prompt: '...',
+});
+```
+
+- NEVER import AI providers directly. Always use the Echo-wrapped versions.
+
+## Environment Variables
+
+- `VITE_ECHO_APP_ID` — Your Echo app ID (client-side).
+- Store in `.env.local`, never commit to git.
+
+## Best Practices
+
+- Echo handles all billing and metering; do not implement custom usage tracking.
+- Use `<InsufficientFundsModal />` for handling low balance scenarios.
+- Use `useEcho()` hook to check user auth state and balance.
+- All AI requests route through Echo's proxy for metering — do not bypass.

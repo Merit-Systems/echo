@@ -1,0 +1,63 @@
+---
+description: Guidelines for building Echo-powered Next.js chat applications with Vercel AI SDK
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Chat Guidelines
+
+## Setup
+
+- Use `@merit-systems/echo-next-sdk` for the server-side handler.
+- Use `@merit-systems/echo-react-sdk` for client-side chat components.
+
+## Chat Implementation
+
+- Use `useChat()` from the Echo React SDK for streaming chat:
+
+```tsx
+import { useChat } from '@merit-systems/echo-react-sdk';
+
+function ChatUI() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat();
+  return (
+    <form onSubmit={handleSubmit}>
+      {messages.map(m => <div key={m.id}>{m.content}</div>)}
+      <input value={input} onChange={handleInputChange} />
+    </form>
+  );
+}
+```
+
+- For server-side streaming, use Echo-wrapped providers in your API route:
+
+```ts
+import { streamText } from 'ai';
+import { createEchoOpenAI } from '@merit-systems/echo-next-sdk';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const openai = createEchoOpenAI(req);
+  const result = streamText({
+    model: openai('gpt-4o'),
+    messages,
+  });
+  return result.toDataStreamResponse();
+}
+```
+
+## Authentication
+
+- Wrap with `<EchoProvider>` and use `<EchoSignIn />` for login.
+- Chat is only available to authenticated users with sufficient balance.
+
+## Environment Variables
+
+- `NEXT_PUBLIC_ECHO_APP_ID` — Echo app ID (client-safe).
+- `ECHO_APP_SECRET` — Echo app secret (server-only).
+
+## Best Practices
+
+- NEVER import `@ai-sdk/openai` or other providers directly; use Echo wrappers.
+- Handle insufficient funds gracefully with `<InsufficientFundsModal />`.
+- Echo meters every streamed token; no custom billing code needed.
+- Use `EchoChatProvider` for full-featured chat context management.
