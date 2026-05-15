@@ -1,44 +1,41 @@
 ---
-description: Echo template rules for building monetized AI applications with safe typed SDK usage, clear payment UX, and maintainable TypeScript
+description: React Echo chat rules for explicit paid sends, streaming status, and safe Vite client configuration
 globs: **/*.{ts,tsx,js,jsx,json,md,css}
 alwaysApply: true
 ---
 
-# Echo template development rules
+# Echo React chat template rules
 
-Echo apps combine normal product code with metered AI/API calls. Treat payment, identity, and streaming paths as product-critical code: keep them explicit, typed, and easy to audit.
+Echo apps combine product code with metered AI/API calls. Treat payment, identity, and streaming paths as product-critical code: keep them explicit, typed, and easy to audit.
 
-## Core Echo guidelines
+## Core Echo rules
 
-- Keep Echo-related configuration in environment variables documented by the template README or `.env.example`; never hard-code API keys, app IDs, secrets, wallet addresses, or private endpoints.
-- Preserve the template's existing Echo SDK boundaries. Extend the existing Echo provider, client, route handler, or CLI wrapper rather than creating duplicate payment/auth plumbing.
-- Validate all user-controlled input before it reaches paid AI/API calls. Prefer typed schemas, narrow interfaces, and explicit error messages.
-- Surface pricing, balance, top-up, and payment-required states in the UI or CLI before retrying paid operations.
-- Keep server-only Echo secrets in server files. Do not expose secret values through `NEXT_PUBLIC_*`, Vite client variables, logs, React props, or serialized responses.
-- When adding an Echo-protected action, include a safe failure path for insufficient funds, missing credentials, provider errors, and cancelled requests.
-- Prefer small composable components/functions over large generated files. Keep Echo-specific code easy to locate and review.
-- Add or update README notes when introducing a new required environment variable, provider, model, route, command, or payment flow.
+- Keep Echo configuration in the template's documented environment variables; never hard-code API keys, app IDs, secrets, wallet addresses, or private endpoints.
+- Preserve the template's existing Echo SDK boundary instead of adding duplicate payment, auth, route, or client plumbing.
+- Validate user-controlled input before paid AI/API calls and return user-safe errors for invalid payloads, missing credentials, insufficient funds, provider failures, and cancelled requests.
+- Make payment state visible before retrying paid operations: pricing, balance/top-up, payment required, generating, success, and error states should be clear in the relevant UI or CLI output.
+- Keep secrets server-only. Do not expose secret values through client env vars, browser props, serialized responses, logs, debug output, examples, or generated files.
+- Add or update README or `.env.example` notes when introducing a required provider, model, route, command, or environment variable.
 
 ## TypeScript and quality rules
 
-- Use strict TypeScript types for request bodies, SDK responses, and component props. Avoid `any` unless the third-party SDK forces it and add a narrowing wrapper immediately.
-- Keep async flows cancellable where practical by threading `AbortSignal` through fetch, model, or SDK calls.
-- Do not swallow Echo or provider errors. Normalize them into user-safe messages while preserving useful diagnostics for developers.
-- Prefer named exports for reusable Echo helpers and UI components.
+- Use strict TypeScript types for request bodies, SDK responses, route results, command options, and component props. Avoid `any` unless a third-party SDK forces it, then narrow immediately.
+- Keep async flows cancellable where practical by passing `AbortSignal` through fetch, model, or SDK calls.
+- Normalize provider/Echo errors into user-safe messages while preserving useful developer diagnostics without secrets.
+- Prefer small named helpers/components over large generated files so Echo-specific code remains easy to review.
 - Run the template's lint, type-check, and build scripts after changing implementation files.
 
 ## React and Vite rules
 
 - Client-visible Vite variables must use the template's existing `VITE_` names and may only contain public identifiers such as app IDs or public base URLs.
-- Keep paid actions behind clear button/form states: idle, validating, paying/generating, success, and error.
+- Keep paid actions behind explicit user intent with clear button/form states: idle, validating, paying/generating, success, and error.
 - Use React state for user-facing status and keep Echo account/balance components mounted near actions that can spend credits.
 - Avoid starting paid requests during render, hydration, or unguarded `useEffect`; require an explicit user action unless the template already documents otherwise.
 - Keep fetch helpers in `src/lib` and UI-only concerns in `src/components` or `src/App.tsx`.
 
-## Chat and agent UI rules
+## React chat template rules
 
-- Treat chat messages, attachments, and tool inputs as untrusted. Validate or sanitize before forwarding them to paid model/tool calls.
-- Keep message IDs stable and append assistant/tool messages in order so streaming, retry, and payment states remain understandable.
-- Do not log full conversation content by default; redact secrets and personal data in diagnostics.
-- Make model/provider selection explicit and keep defaults in one place.
-- Show a recoverable error when a paid chat request fails so the user can edit or retry without losing the conversation.
+- Require an explicit send action before paid chat work; avoid duplicate sends from re-renders, reconnects, or stale event handlers.
+- Keep message, payment, streaming, cancellation, and error states visible in the chat UI.
+- Validate prompt/message length and attachment metadata before starting a paid request.
+- Keep chat API helpers separate from presentational message components so payment and provider logic remains auditable.

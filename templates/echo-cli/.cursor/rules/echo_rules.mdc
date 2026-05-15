@@ -1,36 +1,35 @@
 ---
-description: Echo template rules for building monetized AI applications with safe typed SDK usage, clear payment UX, and maintainable TypeScript
-globs: **/*.{ts,tsx,js,jsx,json,md,css}
+description: Echo CLI template rules for scriptable paid commands, safe stderr/stdout usage, and secret-free logs
+globs: **/*.{ts,js,json,md}
 alwaysApply: true
 ---
 
-# Echo template development rules
+# Echo CLI template rules
 
-Echo apps combine normal product code with metered AI/API calls. Treat payment, identity, and streaming paths as product-critical code: keep them explicit, typed, and easy to audit.
+Echo apps combine product code with metered AI/API calls. Treat payment, identity, and streaming paths as product-critical code: keep them explicit, typed, and easy to audit.
 
-## Core Echo guidelines
+## Core Echo rules
 
-- Keep Echo-related configuration in environment variables documented by the template README or `.env.example`; never hard-code API keys, app IDs, secrets, wallet addresses, or private endpoints.
-- Preserve the template's existing Echo SDK boundaries. Extend the existing Echo provider, client, route handler, or CLI wrapper rather than creating duplicate payment/auth plumbing.
-- Validate all user-controlled input before it reaches paid AI/API calls. Prefer typed schemas, narrow interfaces, and explicit error messages.
-- Surface pricing, balance, top-up, and payment-required states in the UI or CLI before retrying paid operations.
-- Keep server-only Echo secrets in server files. Do not expose secret values through `NEXT_PUBLIC_*`, Vite client variables, logs, React props, or serialized responses.
-- When adding an Echo-protected action, include a safe failure path for insufficient funds, missing credentials, provider errors, and cancelled requests.
-- Prefer small composable components/functions over large generated files. Keep Echo-specific code easy to locate and review.
-- Add or update README notes when introducing a new required environment variable, provider, model, route, command, or payment flow.
+- Keep Echo configuration in the template's documented environment variables; never hard-code API keys, app IDs, secrets, wallet addresses, or private endpoints.
+- Preserve the template's existing Echo SDK boundary instead of adding duplicate payment, auth, route, or client plumbing.
+- Validate user-controlled input before paid AI/API calls and return user-safe errors for invalid payloads, missing credentials, insufficient funds, provider failures, and cancelled requests.
+- Make payment state visible before retrying paid operations: pricing, balance/top-up, payment required, generating, success, and error states should be clear in the relevant UI or CLI output.
+- Keep secrets server-only. Do not expose secret values through client env vars, browser props, serialized responses, logs, debug output, examples, or generated files.
+- Add or update README or `.env.example` notes when introducing a required provider, model, route, command, or environment variable.
 
 ## TypeScript and quality rules
 
-- Use strict TypeScript types for request bodies, SDK responses, and component props. Avoid `any` unless the third-party SDK forces it and add a narrowing wrapper immediately.
-- Keep async flows cancellable where practical by threading `AbortSignal` through fetch, model, or SDK calls.
-- Do not swallow Echo or provider errors. Normalize them into user-safe messages while preserving useful diagnostics for developers.
-- Prefer named exports for reusable Echo helpers and UI components.
+- Use strict TypeScript types for request bodies, SDK responses, route results, command options, and component props. Avoid `any` unless a third-party SDK forces it, then narrow immediately.
+- Keep async flows cancellable where practical by passing `AbortSignal` through fetch, model, or SDK calls.
+- Normalize provider/Echo errors into user-safe messages while preserving useful developer diagnostics without secrets.
+- Prefer small named helpers/components over large generated files so Echo-specific code remains easy to review.
 - Run the template's lint, type-check, and build scripts after changing implementation files.
 
 ## CLI template rules
 
 - Read Echo configuration from environment variables or documented flags, never from hard-coded constants.
-- Exit with non-zero status for invalid input, missing credentials, failed paid calls, and provider errors.
-- Print human-readable progress to stderr and machine-readable command output to stdout when adding scriptable commands.
-- Avoid logging secrets in errors, debug output, shell examples, or generated files.
 - Keep command handlers small: parse arguments, validate, call the Echo/client helper, then format output.
+- Exit with non-zero status for invalid input, missing credentials, failed paid calls, payment-required states, and provider errors.
+- Print human-readable progress and diagnostics to stderr; keep machine-readable command output on stdout when adding scriptable commands.
+- Avoid logging secrets in errors, debug output, shell examples, generated files, or test snapshots.
+- Make retries explicit and safe so a shell loop or transient network retry does not accidentally duplicate paid work.
