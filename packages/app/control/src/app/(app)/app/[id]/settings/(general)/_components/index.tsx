@@ -88,6 +88,7 @@ export const GeneralAppSettings: React.FC<Props> = async ({ appId }) => {
         title="Profile Picture"
         action={updateApp}
         defaultValues={{ profilePictureUrl: app.profilePictureUrl ?? '' }}
+        validationMode="onChange"
       >
         <FormCard
           title="Profile Picture"

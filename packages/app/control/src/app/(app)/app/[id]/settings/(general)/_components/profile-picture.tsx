@@ -18,12 +18,13 @@ export const AppProfilePicture = () => {
 
   const { mutate: uploadImage, isPending: isUploading } =
     api.upload.image.useMutation({
-      onSuccess: ({ url }) =>
+      onSuccess: ({ url }) => {
         form.setValue('profilePictureUrl', url, {
           shouldValidate: true,
           shouldDirty: true,
           shouldTouch: true,
-        }),
+        });
+      },
     });
 
   return (
