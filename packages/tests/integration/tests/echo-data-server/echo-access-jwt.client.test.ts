@@ -4,6 +4,7 @@ import {
   TEST_CONFIG,
   echoControlApi,
   TEST_CLIENT_IDS,
+  waitForBalanceUpdate,
 } from '../../utils/index.js';
 import { EchoControlApiClient } from '../../utils/api-client.js';
 
@@ -178,8 +179,9 @@ describe('Echo Data Server Client Integration Tests', () => {
 
       accessToken = await getAccessTokenForPaidUser();
 
-      const secondBalanceCheck = await echoControlApi.getBalance(
-        accessToken.access_token
+      const secondBalanceCheck = await waitForBalanceUpdate(
+        () => echoControlApi.getBalance(accessToken.access_token),
+        balanceCheck
       );
       expect(secondBalanceCheck.totalPaid).toBe(balanceCheck.totalPaid);
       expect(secondBalanceCheck.totalSpent).toBeGreaterThan(
@@ -233,8 +235,9 @@ describe('Echo Data Server Client Integration Tests', () => {
 
         accessToken = await getAccessTokenForPaidUser();
 
-        const secondBalanceCheck = await echoControlApi.getBalance(
-          accessToken.access_token
+        const secondBalanceCheck = await waitForBalanceUpdate(
+          () => echoControlApi.getBalance(accessToken.access_token),
+          balanceCheck
         );
         expect(secondBalanceCheck.totalPaid).toBe(balanceCheck.totalPaid);
         expect(secondBalanceCheck.totalSpent).toBeGreaterThan(
