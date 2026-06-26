@@ -46,44 +46,47 @@ A comprehensive Next.js application for managing Echo applications, API keys, an
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL database
-- pnpm
+- Docker & Docker Compose (PostgreSQL runs in Docker)
+- pnpm 10+
 
-### Installation
+### Quick Start (From Root)
 
-1. **Clone and navigate to the project**:
+The easiest way is to use the root setup script:
 
+```bash
+bash scripts/setup-local.sh
+```
+
+Then:
+```bash
+pnpm dev
+```
+
+### Manual Setup (From echo-control directory)
+
+1. **Navigate to this directory**:
    ```bash
-   cd echo-control
+   cd packages/app/control
    ```
 
-2. **Install dependencies**:
-
+2. **Create .env file**:
    ```bash
-   pnpm install
-   ```
-
-3. **Create .env file**:
-
-   ```bash
-   # Generate .env file
+   cp .env.example .env
    pnpm local-setup
    ```
 
-4. **Run database migrations**:
+   This script will:
+   - Generate an AUTH_SECRET if not present
+   - Set database connection string
+   - Start PostgreSQL in Docker
+   - Run Prisma migrations
 
+3. **Start the development server**:
    ```bash
-   npx prisma generate
-   npx prisma db push
+   pnpm dev
    ```
 
-5. **Start the development server**:
-
-   ```bash
-   pnpm run dev
-   ```
-
-6. **Open the application**:
+4. **Open the application**:
    Visit [http://localhost:3000](http://localhost:3000)
 
 ## Features Overview
