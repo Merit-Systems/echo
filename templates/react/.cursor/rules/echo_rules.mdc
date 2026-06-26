@@ -1,0 +1,31 @@
+---
+description: Echo guidelines for this template: React/Vite app template. Covers Echo SDK usage, framework boundaries, environment variables, model calls, payments/auth, and project conventions.
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.mjs,**/*.cjs
+---
+
+# Echo template rules
+
+These rules apply when editing this Echo starter template. Prefer small, typed changes that preserve the existing template shape and developer experience.
+
+## Universal Echo rules
+
+- Keep Echo app IDs, API keys, wallet secrets, provider keys, and tokens in environment variables. Never hardcode secrets.
+- Use the Echo SDK helpers already present in the template instead of creating parallel clients or raw fetch wrappers.
+- Validate request bodies before calling model providers or payment/auth helpers. Return clear HTTP errors for bad input.
+- Keep provider/model names in one typed place when a template exposes model selection.
+- Do not call paid/model APIs from unit tests. Mock SDK/provider calls.
+- Preserve TypeScript strictness: avoid `any`, export shared types, and keep runtime validation aligned with TypeScript types.
+- Keep example code copy-pasteable for new Echo users.
+
+## React/Vite rules
+
+- Keep public Echo config in `VITE_` environment variables only. Never expose server-only secrets to the browser.
+- Route paid/model work through the configured Echo client or backend API; do not add raw provider API keys to React components.
+- Keep reusable Echo UI in components and shared request/model types in `src/lib` or an equivalent template-local folder.
+- Handle loading, success, empty, and error states explicitly for Echo-powered actions.
+
+## Editing checklist
+
+- Keep changes minimal and framework-specific.
+- Run the narrowest relevant build/type-check before submitting.
+- Update this rule file when template conventions change.
