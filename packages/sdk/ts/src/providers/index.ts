@@ -4,6 +4,7 @@ export * from './groq';
 export * from './xai';
 export * from './openai';
 export * from './openrouter';
+export * from './vercel-ai-gateway';
 
 export function echoFetch(
   originalFetch: typeof fetch,
@@ -62,4 +63,5 @@ export { type GoogleGenerativeAIProvider } from '@ai-sdk/google';
 export { type GroqProvider } from '@ai-sdk/groq';
 export { type OpenAIProvider } from '@ai-sdk/openai';
 export { type OpenRouterProvider } from '@openrouter/ai-sdk-provider';
+export { type GatewayProvider } from '@ai-sdk/gateway';
 export { type XaiProvider } from '@ai-sdk/xai';

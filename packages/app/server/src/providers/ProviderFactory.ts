@@ -20,6 +20,7 @@ import { GPTProvider } from './GPTProvider';
 import { OpenAIImageProvider } from './OpenAIImageProvider';
 import { OpenAIResponsesProvider } from './OpenAIResponsesProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
+import { VercelAIGatewayProvider } from './VercelAIGatewayProvider';
 import { ProviderType } from './ProviderType';
 import { XAIProvider } from './XAIProvider';
 import {
@@ -49,6 +50,9 @@ const createChatModelToProviderMapping = (): Record<string, ProviderType> => {
           break;
         case 'OpenRouter':
           mapping[modelConfig.model_id] = ProviderType.OPENROUTER;
+          break;
+        case 'VercelAIGateway':
+          mapping[modelConfig.model_id] = ProviderType.VERCEL_AI_GATEWAY;
           break;
         case 'Groq':
           mapping[modelConfig.model_id] = ProviderType.GROQ;
@@ -192,6 +196,8 @@ export const getProvider = (
       return new GroqProvider(stream, model);
     case ProviderType.XAI:
       return new XAIProvider(stream, model);
+    case ProviderType.VERCEL_AI_GATEWAY:
+      return new VercelAIGatewayProvider(stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }
