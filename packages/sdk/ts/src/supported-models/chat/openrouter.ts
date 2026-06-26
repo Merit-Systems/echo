@@ -28,6 +28,7 @@ export type OpenRouterModel =
   | 'anthropic/claude-opus-4.1'
   | 'anthropic/claude-sonnet-4'
   | 'anthropic/claude-sonnet-4.5'
+  | 'anthropic/claude-sonnet-4.6'
   | 'arcee-ai/afm-4.5b'
   | 'arcee-ai/coder-large'
   | 'arcee-ai/maestro-reasoning'
@@ -429,6 +430,12 @@ export const OpenRouterModels: SupportedModel[] = [
   },
   {
     model_id: 'anthropic/claude-sonnet-4.5',
+    input_cost_per_token: 0.000003,
+    output_cost_per_token: 0.000015,
+    provider: 'OpenRouter',
+  },
+  {
+    model_id: 'anthropic/claude-sonnet-4.6',
     input_cost_per_token: 0.000003,
     output_cost_per_token: 0.000015,
     provider: 'OpenRouter',
