@@ -14,7 +14,7 @@ import chalk from 'chalk';
 import { spawn } from 'child_process';
 import { Command } from 'commander';
 import degit from 'degit';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import path from 'path';
 
 const program = new Command();
@@ -200,6 +200,76 @@ function resolveTemplateRepo(template: string): string {
   }
 
   return repo;
+}
+
+
+interface EchoTemplateConfig {
+  referralCode?: unknown;
+  referral_code?: unknown;
+}
+
+const SAFE_REFERRAL_CODE_PATTERN = /^[a-zA-Z0-9_\-.]+$/;
+
+function sanitizeReferralCode(code: unknown): string | null {
+  if (typeof code !== 'string') return null;
+  const trimmed = code.trim();
+  if (!trimmed || trimmed.length > 128) return null;
+  if (!SAFE_REFERRAL_CODE_PATTERN.test(trimmed)) return null;
+  return trimmed;
+}
+
+function readTemplateReferralCode(projectPath: string): string | null {
+  const configPath = path.join(projectPath, 'echo.config.json');
+  if (!existsSync(configPath)) return null;
+
+  try {
+    const config = JSON.parse(
+      readFileSync(configPath, 'utf-8')
+    ) as EchoTemplateConfig;
+    return sanitizeReferralCode(config.referralCode ?? config.referral_code);
+  } catch {
+    log.warning('Could not parse echo.config.json referral metadata');
+    return null;
+  }
+}
+
+function detectReferralEnvVarName(projectPath: string): string {
+  const appIdEnvVar = detectEnvVarName(projectPath) ?? detectFrameworkEnvVarName(projectPath);
+
+  if (appIdEnvVar.startsWith('NEXT_PUBLIC_')) {
+    return 'NEXT_PUBLIC_ECHO_REFERRAL_CODE';
+  }
+  if (appIdEnvVar.startsWith('VITE_')) {
+    return 'VITE_ECHO_REFERRAL_CODE';
+  }
+  if (appIdEnvVar.startsWith('REACT_APP_')) {
+    return 'REACT_APP_ECHO_REFERRAL_CODE';
+  }
+
+  return 'ECHO_REFERRAL_CODE';
+}
+
+function upsertEnvVar(envPath: string, name: string, value: string): void {
+  const line = `${name}=${value}`;
+  if (!existsSync(envPath)) {
+    writeFileSync(envPath, `${line}\n`);
+    return;
+  }
+
+  const current = readFileSync(envPath, 'utf-8');
+  const pattern = new RegExp(`^${name}\\s*=.*$`, 'm');
+  const updated = pattern.test(current)
+    ? current.replace(pattern, line)
+    : `${current.trimEnd()}\n${line}\n`;
+
+  writeFileSync(envPath, updated);
+}
+
+function removeTemplateConfig(projectPath: string): void {
+  const configPath = path.join(projectPath, 'echo.config.json');
+  if (existsSync(configPath)) {
+    unlinkSync(configPath);
+  }
 }
 
 function detectEnvVarName(projectPath: string): string | null {
