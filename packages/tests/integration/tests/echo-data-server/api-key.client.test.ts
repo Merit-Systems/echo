@@ -2,6 +2,7 @@ import { TEST_CONFIG } from '@/config/test-config';
 import { describe, test, expect } from 'vitest';
 import { TEST_CLIENT_IDS, TEST_USER_API_KEYS } from '@/config/test-data';
 import { echoControlApi } from '@/utils/api-client';
+import { waitForBalanceUpdate } from '@/utils/balance-helpers';
 import OpenAI from 'openai';
 
 describe('API Key Client', () => {
@@ -39,9 +40,10 @@ describe('API Key Client', () => {
     expect(chunkCount).toBeGreaterThan(0);
     expect(receivedContent.length).toBeGreaterThan(0);
 
-    // await new Promise(resolve => setTimeout(resolve, 1000)); /// TODO BEN REALLY TODO: SPEED UP THE BALANCE UPDATE SO WE DON'T HAVE TO WAIT FOR 2 SECONDS
-
-    const secondBalanceCheck = await echoControlApi.getBalance(apiKey);
+    const secondBalanceCheck = await waitForBalanceUpdate(
+      () => echoControlApi.getBalance(apiKey),
+      balanceCheck
+    );
     console.log('🔄 Second balance check: ', secondBalanceCheck);
 
     expect(secondBalanceCheck.totalPaid).toBe(balanceCheck.totalPaid);
@@ -76,7 +78,10 @@ describe('API Key Client', () => {
     expect(completion.choices).toBeDefined();
     expect(completion.choices[0]?.message?.content).toBeDefined();
 
-    const secondBalanceCheck = await echoControlApi.getBalance(apiKey);
+    const secondBalanceCheck = await waitForBalanceUpdate(
+      () => echoControlApi.getBalance(apiKey),
+      balanceCheck
+    );
     expect(secondBalanceCheck.totalPaid).toBe(balanceCheck.totalPaid);
     expect(secondBalanceCheck.totalSpent).toBeGreaterThanOrEqual(
       balanceCheck.totalSpent

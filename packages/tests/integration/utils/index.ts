@@ -4,6 +4,7 @@ export * from './api-client';
 export * from './auth-helpers';
 export * from './test-data-factory';
 export * from './browser-helpers';
+export * from './balance-helpers';
 
 // Re-export configuration and test data
 export * from '../config/index.js';
