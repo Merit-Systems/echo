@@ -84,10 +84,17 @@ jobs:
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
 
-          echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
-          pnpm publish --access public --tag test --no-git-checks
-          echo "published=true" >> $GITHUB_OUTPUT
-          echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "🔍 Validating $PACKAGE_NAME@$PACKAGE_VERSION with publish dry-run..."
+            pnpm publish --dry-run --access public --tag test --no-git-checks
+            echo "published=false" >> $GITHUB_OUTPUT
+            echo "✅ Successfully validated $PACKAGE_NAME publish"
+          else
+            echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
+            pnpm publish --access public --tag test --no-git-checks
+            echo "published=true" >> $GITHUB_OUTPUT
+            echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          fi
 
       # React SDK
       - name: Version and build React SDK
@@ -126,10 +133,17 @@ jobs:
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
 
-          echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
-          pnpm publish --access public --tag test --no-git-checks
-          echo "published=true" >> $GITHUB_OUTPUT
-          echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "🔍 Validating $PACKAGE_NAME@$PACKAGE_VERSION with publish dry-run..."
+            pnpm publish --dry-run --access public --tag test --no-git-checks
+            echo "published=false" >> $GITHUB_OUTPUT
+            echo "✅ Successfully validated $PACKAGE_NAME publish"
+          else
+            echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
+            pnpm publish --access public --tag test --no-git-checks
+            echo "published=true" >> $GITHUB_OUTPUT
+            echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          fi
 
       # Next.js SDK
       - name: Version and build Next.js SDK
@@ -168,10 +182,17 @@ jobs:
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
 
-          echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
-          pnpm publish --access public --tag test --no-git-checks
-          echo "published=true" >> $GITHUB_OUTPUT
-          echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "🔍 Validating $PACKAGE_NAME@$PACKAGE_VERSION with publish dry-run..."
+            pnpm publish --dry-run --access public --tag test --no-git-checks
+            echo "published=false" >> $GITHUB_OUTPUT
+            echo "✅ Successfully validated $PACKAGE_NAME publish"
+          else
+            echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
+            pnpm publish --access public --tag test --no-git-checks
+            echo "published=true" >> $GITHUB_OUTPUT
+            echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          fi
 
       # AIx402 SDK
       - name: Version and build AIx402 SDK
@@ -210,10 +231,17 @@ jobs:
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
 
-          echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
-          pnpm publish --access public --tag test --no-git-checks
-          echo "published=true" >> $GITHUB_OUTPUT
-          echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "🔍 Validating $PACKAGE_NAME@$PACKAGE_VERSION with publish dry-run..."
+            pnpm publish --dry-run --access public --tag test --no-git-checks
+            echo "published=false" >> $GITHUB_OUTPUT
+            echo "✅ Successfully validated $PACKAGE_NAME publish"
+          else
+            echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
+            pnpm publish --access public --tag test --no-git-checks
+            echo "published=true" >> $GITHUB_OUTPUT
+            echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          fi
 
       # Echo Start CLI
       - name: Version and build Echo Start CLI
@@ -252,14 +280,25 @@ jobs:
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
 
-          echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
-          pnpm publish --access public --tag test --no-git-checks
-          echo "published=true" >> $GITHUB_OUTPUT
-          echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "🔍 Validating $PACKAGE_NAME@$PACKAGE_VERSION with publish dry-run..."
+            pnpm publish --dry-run --access public --tag test --no-git-checks
+            echo "published=false" >> $GITHUB_OUTPUT
+            echo "✅ Successfully validated $PACKAGE_NAME publish"
+          else
+            echo "🚀 Publishing $PACKAGE_NAME@$PACKAGE_VERSION to test tag..."
+            pnpm publish --access public --tag test --no-git-checks
+            echo "published=true" >> $GITHUB_OUTPUT
+            echo "✅ Successfully published $PACKAGE_NAME to test tag"
+          fi
 
       - name: Summary
         run: |
-          echo "✅ Test version published successfully!"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "✅ Test version validated successfully!"
+          else
+            echo "✅ Test version published successfully!"
+          fi
           echo "📦 Version: ${{ steps.get-version.outputs.version }}"
           echo "🏷️  Tag: test"
           echo ""
