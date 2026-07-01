@@ -1,0 +1,62 @@
+---
+description: Guidelines for building Echo-powered Next.js applications with the Vercel AI SDK
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js SDK Guidelines
+
+## Setup
+
+- Use `@merit-systems/echo-next-sdk` for Next.js App Router integration.
+- Configure Echo in your API route using `createEchoNextHandler`:
+
+```ts
+import { createEchoNextHandler } from '@merit-systems/echo-next-sdk';
+
+export const { GET, POST } = createEchoNextHandler({
+  appId: process.env.NEXT_PUBLIC_ECHO_APP_ID!,
+  appSecret: process.env.ECHO_APP_SECRET!,
+});
+```
+
+## Authentication
+
+- Wrap your app with `<EchoProvider>` from `@merit-systems/echo-react-sdk`.
+- Use `<EchoSignIn />` and `<EchoSignOut />` components for auth UI.
+- Never store or expose `ECHO_APP_SECRET` on the client side.
+
+## Using AI Models
+
+- Use `useEchoModelProviders()` to get provider instances that route through Echo:
+
+```tsx
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { generateText } from 'ai';
+
+const { openai, anthropic, google } = useEchoModelProviders();
+const response = await generateText({
+  model: openai('gpt-4o'),
+  prompt: '...',
+});
+```
+
+- NEVER import AI providers directly (e.g., `@ai-sdk/openai`). Always use the Echo-wrapped versions.
+- Echo handles authentication, metering, and billing automatically.
+
+## Environment Variables
+
+- `NEXT_PUBLIC_ECHO_APP_ID` — Your Echo app ID (safe for client).
+- `ECHO_APP_SECRET` — Your Echo app secret (server-only, never expose to client).
+- Store these in `.env.local`, never commit them to git.
+
+## Error Handling
+
+- Handle insufficient funds with the `<InsufficientFundsModal />` component.
+- Use `useEcho()` hook to check user balance and session state.
+
+## Best Practices
+
+- Let Echo manage API keys — do not pass API keys to providers manually.
+- Set a markup percentage in the Echo dashboard to earn revenue per token.
+- Use streaming responses via `useChat()` from the Echo React SDK for chat UIs.
+- All AI requests are proxied through Echo for metering; do not bypass the proxy.

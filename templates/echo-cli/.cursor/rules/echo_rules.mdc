@@ -1,0 +1,55 @@
+---
+description: Guidelines for building Echo-powered CLI applications
+globs: **/*.ts,**/*.js
+---
+
+# Echo CLI Guidelines
+
+## Setup
+
+- Use `@merit-systems/echo-typescript-sdk` for CLI/Node.js integration.
+- Authenticate using API keys or OAuth token providers:
+
+```ts
+import { EchoClient, ApiKeyTokenProvider } from '@merit-systems/echo-typescript-sdk';
+
+const client = new EchoClient({
+  appId: process.env.ECHO_APP_ID!,
+  tokenProvider: new ApiKeyTokenProvider(process.env.ECHO_API_KEY!),
+});
+```
+
+## Using AI Models
+
+- Use the Echo client to create provider instances:
+
+```ts
+import { createEchoOpenAI } from '@merit-systems/echo-typescript-sdk';
+
+const openai = createEchoOpenAI(client);
+const response = await generateText({
+  model: openai('gpt-4o'),
+  prompt: '...',
+});
+```
+
+- NEVER use provider API keys directly. All requests must route through Echo.
+
+## Authentication
+
+- CLI supports both API key auth and OAuth flows.
+- For API key auth, use `ApiKeyTokenProvider`.
+- For OAuth, use `OAuthTokenProvider` with the appropriate flow.
+
+## Environment Variables
+
+- `ECHO_APP_ID` — Your Echo app ID.
+- `ECHO_API_KEY` — API key for authentication.
+- Store in `.env` file, never commit to git.
+
+## Best Practices
+
+- Echo handles metering and billing for all AI requests.
+- Handle errors gracefully — check for insufficient funds errors.
+- Use streaming when possible for better UX in terminal output.
+- Do not bypass the Echo proxy for AI requests.
