@@ -1,0 +1,42 @@
+---
+description: Assistant UI Echo rules for paid chat streaming, tool calls, and server-only model routes
+globs: **/*.{ts,tsx,js,jsx,json,md,css}
+alwaysApply: true
+---
+
+# Echo Assistant UI template rules
+
+Echo apps combine product code with metered AI/API calls. Treat payment, identity, and streaming paths as product-critical code: keep them explicit, typed, and easy to audit.
+
+## Core Echo rules
+
+- Keep Echo configuration in the template's documented environment variables; never hard-code API keys, app IDs, secrets, wallet addresses, or private endpoints.
+- Preserve the template's existing Echo SDK boundary instead of adding duplicate payment, auth, route, or client plumbing.
+- Validate user-controlled input before paid AI/API calls and return user-safe errors for invalid payloads, missing credentials, insufficient funds, provider failures, and cancelled requests.
+- Make payment state visible before retrying paid operations: pricing, balance/top-up, payment required, generating, success, and error states should be clear in the relevant UI or CLI output.
+- Keep secrets server-only. Do not expose secret values through client env vars, browser props, serialized responses, logs, debug output, examples, or generated files.
+- Add or update README or `.env.example` notes when introducing a required provider, model, route, command, or environment variable.
+
+## TypeScript and quality rules
+
+- Use strict TypeScript types for request bodies, SDK responses, route results, command options, and component props. Avoid `any` unless a third-party SDK forces it, then narrow immediately.
+- Keep async flows cancellable where practical by passing `AbortSignal` through fetch, model, or SDK calls.
+- Normalize provider/Echo errors into user-safe messages while preserving useful developer diagnostics without secrets.
+- Prefer small named helpers/components over large generated files so Echo-specific code remains easy to review.
+- Run the template's lint, type-check, and build scripts after changing implementation files.
+
+## Next.js App Router rules
+
+- Keep paid provider calls in route handlers, server actions, or server-only modules; client components should call those boundaries rather than importing secret-bearing code.
+- Use `'use client'` only for interactive components that need browser APIs, state, or event handlers; keep server components as the default.
+- Validate route handler input before calling Echo or model providers, and return structured error responses for missing credentials, invalid payloads, payment-required states, and upstream failures.
+- Avoid leaking stack traces, tokens, request headers, cookies, or raw provider responses to the browser.
+- When streaming AI responses, handle aborts and provider errors without leaving the UI in a paid-but-stuck state.
+- Keep Next config, middleware, and API routes aligned with the template README so `echo-start` users can copy the example directly.
+
+## Assistant UI template rules
+
+- Keep assistant model calls, tool execution, and Echo payment checks behind server routes/actions; UI components should only manage presentation and user intent.
+- Preserve Assistant UI message/thread abstractions and add Echo state as explicit metadata rather than ad-hoc global state.
+- Validate tool inputs and attachment metadata before paid calls, and render tool/provider/payment failures as recoverable assistant states.
+- Prevent duplicate paid runs from optimistic UI updates, reconnects, or repeated submit events.

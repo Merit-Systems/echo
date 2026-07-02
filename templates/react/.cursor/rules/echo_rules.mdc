@@ -1,0 +1,40 @@
+---
+description: React Echo starter rules for explicit paid actions, public Vite env vars, and safe client state
+globs: **/*.{ts,tsx,js,jsx,json,md,css}
+alwaysApply: true
+---
+
+# Echo React starter rules
+
+Echo apps combine product code with metered AI/API calls. Treat payment, identity, and streaming paths as product-critical code: keep them explicit, typed, and easy to audit.
+
+## Core Echo rules
+
+- Keep Echo configuration in the template's documented environment variables; never hard-code API keys, app IDs, secrets, wallet addresses, or private endpoints.
+- Preserve the template's existing Echo SDK boundary instead of adding duplicate payment, auth, route, or client plumbing.
+- Validate user-controlled input before paid AI/API calls and return user-safe errors for invalid payloads, missing credentials, insufficient funds, provider failures, and cancelled requests.
+- Make payment state visible before retrying paid operations: pricing, balance/top-up, payment required, generating, success, and error states should be clear in the relevant UI or CLI output.
+- Keep secrets server-only. Do not expose secret values through client env vars, browser props, serialized responses, logs, debug output, examples, or generated files.
+- Add or update README or `.env.example` notes when introducing a required provider, model, route, command, or environment variable.
+
+## TypeScript and quality rules
+
+- Use strict TypeScript types for request bodies, SDK responses, route results, command options, and component props. Avoid `any` unless a third-party SDK forces it, then narrow immediately.
+- Keep async flows cancellable where practical by passing `AbortSignal` through fetch, model, or SDK calls.
+- Normalize provider/Echo errors into user-safe messages while preserving useful developer diagnostics without secrets.
+- Prefer small named helpers/components over large generated files so Echo-specific code remains easy to review.
+- Run the template's lint, type-check, and build scripts after changing implementation files.
+
+## React and Vite rules
+
+- Client-visible Vite variables must use the template's existing `VITE_` names and may only contain public identifiers such as app IDs or public base URLs.
+- Keep paid actions behind explicit user intent with clear button/form states: idle, validating, paying/generating, success, and error.
+- Use React state for user-facing status and keep Echo account/balance components mounted near actions that can spend credits.
+- Avoid starting paid requests during render, hydration, or unguarded `useEffect`; require an explicit user action unless the template already documents otherwise.
+- Keep fetch helpers in `src/lib` and UI-only concerns in `src/components` or `src/App.tsx`.
+
+## Basic React starter rules
+
+- Keep the starter minimal: one obvious paid action, one result area, and one documented Echo configuration path.
+- Put Echo fetch/client helpers in the existing source structure and keep UI code focused on state transitions.
+- Prefer comments that explain Echo-specific payment flow over comments that restate ordinary React syntax.
