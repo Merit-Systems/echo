@@ -1,0 +1,30 @@
+---
+description: Guidelines for the Echo React/Vite chat template.
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.mjs,**/*.cjs
+---
+
+# Echo template guidelines
+
+## Echo principles
+- Keep Echo as the billing/auth boundary: do not bypass Echo model providers with direct OpenAI, Anthropic, or Google SDK calls unless this template already demonstrates a non-Echo provider for a specific reason.
+- Keep Echo App IDs in environment variables. Never hard-code real app IDs, API keys, private keys, wallet keys, or webhook secrets.
+- Prefer the Echo SDK package that matches this template (`@merit-systems/echo-next-sdk`, `@merit-systems/echo-react-sdk`, `@merit-systems/echo-typescript-sdk`, or Auth.js provider) instead of mixing SDKs.
+- Preserve the template's package manager, import aliases, styling stack, and file structure.
+- Keep examples minimal and copy-pasteable for users who generated the template with `echo-start`.
+
+## TypeScript and AI SDK conventions
+- Use explicit TypeScript types for public helpers, route handlers, and SDK wrappers.
+- Keep streaming AI responses compatible with the Vercel AI SDK patterns already used by the template.
+- Prefer existing model provider exports/hooks from the template (`openai`, `anthropic`, `useEchoModelProviders`, or configured clients) over creating new clients.
+- Do not log full prompts, user secrets, API keys, access tokens, payment links, or wallet/private-key data.
+
+## Verification before finishing changes
+- Run the template's local check when practical: lint, build, or typecheck according to `package.json`.
+- If a check depends on external Echo credentials, document that limitation instead of replacing real credentials with fake checked-in values.
+
+## React/Vite chat specifics
+- Use `EchoProvider`, `EchoChatProvider`, `useEcho`, `useChat`, and `useEchoModelProviders` from `@merit-systems/echo-react-sdk` as the integration surface.
+- Keep model provider selection inside the Echo provider context so AI calls remain metered.
+- Use `VITE_ECHO_APP_ID` for browser configuration and do not add server-only env names to client code.
+- Preserve the shared account, balance, top-up, and chat components under `src/components` and `src/chat.tsx`.
+- Handle unauthenticated and zero-balance states explicitly before allowing chat actions.
