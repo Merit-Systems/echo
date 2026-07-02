@@ -6,15 +6,19 @@ import { google } from '@/echo';
 import { generateText } from 'ai';
 import { getMediaTypeFromDataUrl } from '@/lib/image-utils';
 import { ERROR_MESSAGES } from '@/lib/constants';
+import { imageResponseFromBase64 } from '../image-response';
+import { editInputToDataUrl } from './image-input';
+import type { EditImageInput } from './types';
 
 /**
  * Handles Google Gemini image editing
  */
 export async function handleGoogleEdit(
   prompt: string,
-  imageUrls: string[]
+  images: EditImageInput[]
 ): Promise<Response> {
   try {
+    const imageUrls = await Promise.all(images.map(editInputToDataUrl));
     const content = [
       {
         type: 'text' as const,
@@ -48,9 +52,10 @@ export async function handleGoogleEdit(
       );
     }
 
-    return Response.json({
-      imageUrl: `data:${imageFile.mediaType};base64,${imageFile.base64}`,
-    });
+    return imageResponseFromBase64(
+      imageFile.base64,
+      imageFile.mediaType || 'image/png'
+    );
   } catch (error) {
     console.error('Google image editing error:', error);
     return Response.json(

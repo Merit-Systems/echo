@@ -4,15 +4,17 @@
 
 import { getEchoToken } from '@/echo';
 import OpenAI from 'openai';
-import { dataUrlToFile } from '@/lib/image-utils';
 import { ERROR_MESSAGES } from '@/lib/constants';
+import { imageResponseFromBase64 } from '../image-response';
+import { editInputToFile } from './image-input';
+import type { EditImageInput } from './types';
 
 /**
  * Handles OpenAI image editing
  */
 export async function handleOpenAIEdit(
   prompt: string,
-  imageUrls: string[]
+  images: EditImageInput[]
 ): Promise<Response> {
   const token = await getEchoToken();
 
@@ -32,7 +34,7 @@ export async function handleOpenAIEdit(
   });
 
   try {
-    const imageFiles = imageUrls.map(url => dataUrlToFile(url, 'image.png'));
+    const imageFiles = images.map(editInputToFile);
 
     const result = await openaiClient.images.edit({
       image: imageFiles,
@@ -49,9 +51,15 @@ export async function handleOpenAIEdit(
       );
     }
 
-    return Response.json({
-      imageUrl: `data:image/png;base64,${result.data[0]?.b64_json}`,
-    });
+    const imageBase64 = result.data[0]?.b64_json;
+    if (!imageBase64) {
+      return Response.json(
+        { error: ERROR_MESSAGES.NO_EDITED_IMAGE },
+        { status: 500 }
+      );
+    }
+
+    return imageResponseFromBase64(imageBase64, 'image/png');
   } catch (error) {
     console.error('OpenAI image editing error:', error);
     return Response.json(

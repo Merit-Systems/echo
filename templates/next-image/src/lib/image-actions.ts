@@ -4,10 +4,10 @@
  */
 
 import {
-  dataUrlToFile,
   downloadDataUrl,
   copyDataUrlToClipboard,
   generateFilename,
+  imageUrlToFile,
 } from './image-utils';
 import type { GeneratedImage } from './types';
 
@@ -29,9 +29,12 @@ export async function handleImageCopy(imageUrl: string): Promise<void> {
 /**
  * Converts image data to a File object for adding to input
  */
-export function handleImageToFile(imageUrl: string, imageId: string): File {
+export async function handleImageToFile(
+  imageUrl: string,
+  imageId: string
+): Promise<File> {
   const filename = generateFilename(imageId);
-  return dataUrlToFile(imageUrl, filename);
+  return imageUrlToFile(imageUrl, filename);
 }
 
 /**

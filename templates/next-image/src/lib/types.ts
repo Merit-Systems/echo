@@ -22,7 +22,7 @@ export interface ModelConfig {
 export interface GeneratedImage {
   /** Unique identifier for the image */
   id: string;
-  /** The actual image as data URL (undefined if still loading or error) */
+  /** Browser-readable image URL (undefined if still loading or error) */
   imageUrl?: string;
   /** User prompt that generated this image */
   prompt: string;
@@ -49,7 +49,8 @@ export interface GenerateImageRequest {
 }
 
 /**
- * Request payload for image editing API
+ * Legacy JSON request payload for image editing API.
+ * The browser UI sends multipart uploads to avoid large base64 JSON bodies.
  */
 export interface EditImageRequest {
   prompt: string;
@@ -58,10 +59,10 @@ export interface EditImageRequest {
 }
 
 /**
- * Response from image generation/editing APIs
+ * Parsed response from image generation/editing APIs
  */
 export interface ImageResponse {
-  imageUrl: string; // data URL
+  imageUrl: string;
 }
 
 /**
