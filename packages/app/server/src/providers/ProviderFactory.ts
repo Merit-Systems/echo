@@ -21,6 +21,7 @@ import { OpenAIImageProvider } from './OpenAIImageProvider';
 import { OpenAIResponsesProvider } from './OpenAIResponsesProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { ProviderType } from './ProviderType';
+import { VercelAIGatewayProvider } from './VercelAIGatewayProvider';
 import { XAIProvider } from './XAIProvider';
 import {
   VertexAIProvider,
@@ -49,6 +50,9 @@ const createChatModelToProviderMapping = (): Record<string, ProviderType> => {
           break;
         case 'OpenRouter':
           mapping[modelConfig.model_id] = ProviderType.OPENROUTER;
+          break;
+        case 'Vercel':
+          mapping[modelConfig.model_id] = ProviderType.VERCEL_AI_GATEWAY;
           break;
         case 'Groq':
           mapping[modelConfig.model_id] = ProviderType.GROQ;
@@ -180,6 +184,8 @@ export const getProvider = (
       return new OpenAIResponsesProvider(stream, model);
     case ProviderType.OPENROUTER:
       return new OpenRouterProvider(stream, model);
+    case ProviderType.VERCEL_AI_GATEWAY:
+      return new VercelAIGatewayProvider(stream, model);
     case ProviderType.OPENAI_IMAGES:
       return new OpenAIImageProvider(stream, model);
     case ProviderType.GEMINI_VEO:

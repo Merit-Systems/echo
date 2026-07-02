@@ -28,8 +28,9 @@
     "update-models:anthropic": "tsx scripts/update-anthropic-models.ts",
     "update-models:gemini": "tsx scripts/update-gemini-models.ts",
     "update-models:openrouter": "tsx scripts/update-openrouter-models.ts",
+    "update-models:vercel": "tsx scripts/update-vercel-models.ts",
     "update-models:groq": "tsx scripts/update-groq-models.ts",
-    "update-all-models": "pnpm run update-models:openai && pnpm run update-models:anthropic && pnpm run update-models:gemini && pnpm run update-models:openrouter && pnpm run update-models:groq",
+    "update-all-models": "pnpm run update-models:openai && pnpm run update-models:anthropic && pnpm run update-models:gemini && pnpm run update-models:openrouter && pnpm run update-models:vercel && pnpm run update-models:groq",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
