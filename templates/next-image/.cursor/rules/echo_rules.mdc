@@ -1,0 +1,24 @@
+---
+description: Echo and Next.js image-generation template rules
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# Echo Next.js Image Guidelines
+
+## Image-generation flow
+- Keep provider calls in `src/app/api/generate-image/route.ts` and `src/app/api/edit-image/route.ts`.
+- Validate prompts, image inputs, model options, and file payloads before invoking providers.
+- Use Echo-wrapped provider flows so each image generation or edit is billed and tracked.
+- Keep generated image history and UI state in the existing hooks and components.
+
+## Echo usage
+- Keep Echo configuration in `src/echo/index.ts`.
+- Do not call image providers directly from browser components.
+- Show balance, sign-in, insufficient-credit, loading, and provider-error states clearly.
+- Never commit API keys, Echo credentials, wallet secrets, or generated private data.
+
+## UI rules
+- Reuse existing image generator, history, details dialog, and Echo account components.
+- Keep image previews responsive and avoid layout shifts while generation is pending.
+- Make download and details actions explicit buttons.
+- Keep currency formatting in shared helpers.

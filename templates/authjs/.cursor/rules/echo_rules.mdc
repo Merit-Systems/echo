@@ -1,0 +1,24 @@
+---
+description: Echo and Auth.js provider rules for the Auth.js template
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# Echo Auth.js Guidelines
+
+## Auth architecture
+- Keep Auth.js configuration in `src/auth/index.ts`.
+- Keep Echo provider and client logic in `src/lib/echo-client.ts` and `src/echo/index.ts`.
+- Use server session helpers for protected pages and server routes.
+- Keep client components limited to rendering session-dependent UI.
+
+## Echo usage
+- Use Echo as the configured Auth.js provider instead of adding duplicate auth flows.
+- Store client IDs, client secrets, app IDs, and callback URLs in environment variables.
+- Never expose provider secrets or tokens to browser components.
+- Handle signed-out, expired-session, and denied-access states explicitly.
+
+## Implementation rules
+- Preserve Auth.js route handler conventions in `src/app/api/auth/[...nextauth]/route.ts`.
+- Validate callback and redirect behavior when changing auth configuration.
+- Keep dashboard pages server-rendered unless interactivity requires a client component.
+- Update template docs when auth setup steps change.

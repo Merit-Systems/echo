@@ -1,0 +1,24 @@
+---
+description: Echo and Assistant UI rules for the assistant-ui template
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# Echo Assistant UI Guidelines
+
+## Assistant architecture
+- Keep Echo route handling in `app/api/echo/[...path]/route.ts`.
+- Keep assistant chat streaming in `app/api/chat/route.ts`.
+- Use the configured Echo-backed provider for model calls instead of direct provider clients.
+- Preserve Assistant UI thread, message, and tool component contracts when modifying the UI.
+
+## Echo usage
+- Keep Echo app configuration in the existing `echo.ts` file.
+- Do not expose API keys, Echo credentials, or wallet information to client components.
+- Surface sign-in, balance, and billing failures in the assistant UI with recoverable states.
+- Keep usage-triggering actions behind explicit user actions.
+
+## Component rules
+- Reuse existing `components/assistant-ui/**` components before adding new ones.
+- Keep markdown rendering and tool fallbacks safe for untrusted model output.
+- Maintain accessible buttons, tooltips, focus states, and loading indicators.
+- Keep server-only logic out of `"use client"` components.

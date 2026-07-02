@@ -1,0 +1,24 @@
+---
+description: Echo, Next.js, Prisma, and API key management rules
+globs: **/*.{ts,tsx,js,jsx,prisma}
+---
+
+# Echo API Key Template Guidelines
+
+## API key architecture
+- Keep API key creation, validation, and storage on the server.
+- Use Prisma models and migrations for database changes.
+- Never expose plaintext API keys after initial creation.
+- Hash or otherwise protect API keys before persistence.
+
+## Echo usage
+- Keep Echo configuration in `src/echo/index.ts`.
+- Route paid AI calls through Echo-backed server routes.
+- Keep Echo app IDs, provider secrets, database URLs, and API-key secrets in environment variables.
+- Return clear auth, quota, and insufficient-balance errors from API routes.
+
+## Implementation rules
+- Validate request bodies before reading or writing database records.
+- Keep user/account lookup logic centralized in existing helpers.
+- Avoid putting database or provider calls in client components.
+- Update README and `env.example` when adding required configuration.

@@ -1,0 +1,24 @@
+---
+description: Echo, Vite React, and AI SDK rules for the chat template
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# Echo React Chat Guidelines
+
+## Chat architecture
+- Keep Echo client setup in `src/echo/index.ts`.
+- Keep chat state in existing chat components and hooks.
+- Use Echo React SDK APIs for auth, balance, and paid model calls.
+- Preserve message shape compatibility with the AI element components.
+
+## Echo usage
+- Do not ship provider API keys or wallet secrets in client-side Vite code.
+- Use `VITE_` environment variables only for public Echo app configuration.
+- Show clear sign-in, insufficient-balance, streaming, failed-send, and retry states.
+- Avoid triggering paid calls automatically on page load.
+
+## UI rules
+- Reuse existing chat, balance, Echo account, and AI element components.
+- Keep streaming UI responsive and keyboard accessible.
+- Keep money formatting in shared currency helpers.
+- Validate prompt input before starting a paid request.
