@@ -1,0 +1,42 @@
+---
+description: Guidelines for building Echo CLI apps
+globs: **/*.ts,**/*.js
+alwaysApply: true
+---
+
+# Echo CLI guidelines
+
+## Echo integration
+
+- Use Echo through the official `echo` package already included in this template.
+- Keep Echo client setup centralized in the existing auth/config/core modules instead of duplicating setup logic across commands.
+- Do not hard-code Echo app IDs, API keys, wallet private keys, or auth tokens. Read them from environment variables or the existing config store.
+- Never print secrets, private keys, raw tokens, or sensitive wallet data to stdout/stderr.
+
+## CLI behavior
+
+- Preserve existing command names, flags, and output formats unless the change explicitly requires a breaking update.
+- Make errors actionable and concise. Include what failed and what the user should try next.
+- Return non-zero exit codes for failed commands.
+- Keep interactive prompts clear and safe to cancel.
+- Avoid long-running blocking work without progress output.
+
+## Authentication and wallet handling
+
+- Reuse the existing auth modules for login/logout/session behavior.
+- Keep wallet and local credential storage logic in the existing wallet/config modules.
+- Validate required configuration before performing network requests.
+- Treat local wallet files and auth tokens as sensitive data.
+
+## AI/model usage
+
+- Keep model/provider selection configurable rather than hard-coded.
+- Preserve streaming/chat behavior in existing core chat flows.
+- Surface provider errors without leaking internal stack traces or secrets.
+
+## Code quality
+
+- Keep TypeScript strict and avoid `any` unless the upstream SDK type is unavailable and the cast is narrowly scoped.
+- Preserve the existing file structure under `src/auth`, `src/config`, `src/core`, and `src/utils`.
+- Keep examples minimal, copy-pasteable, and easy for new Echo users to understand.
+- Follow existing code style and formatting conventions.

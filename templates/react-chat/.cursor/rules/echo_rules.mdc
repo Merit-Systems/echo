@@ -1,0 +1,47 @@
+---
+description: Guidelines for building React apps with Echo
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+alwaysApply: true
+---
+
+# Echo + React guidelines
+
+## Echo integration
+
+- Use Echo through the official `echo` package already included in this template.
+- Keep Echo client setup centralized in the existing Echo-related files instead of duplicating setup logic across components.
+- Do not hard-code Echo app IDs, API keys, or wallet secrets. Read them from environment variables.
+- Use `VITE_ECHO_APP_ID` for values that are safe to expose to the browser (Vite convention).
+- Keep server-only secrets in backend code and never expose them to the client bundle.
+
+## React patterns
+
+- Use functional components and hooks.
+- Keep Echo provider/client components small and colocated with the existing provider setup.
+- Avoid prop drilling for Echo client instances; use context or existing provider patterns.
+- Keep state management simple and local unless shared state is genuinely needed.
+
+## AI SDK usage
+
+- When using Echo with the Vercel AI SDK, preserve streaming behavior and existing response shapes.
+- Keep model/provider selection configurable rather than hard-coded.
+- Surface errors with helpful user-facing messages while avoiding leakage of secrets or internal stack traces.
+
+## Vite configuration
+
+- Keep Vite config minimal and aligned with the template's existing setup.
+- Do not add unnecessary plugins or build complexity.
+- Preserve existing environment variable handling patterns.
+
+## Environment variables
+
+- Update `.env.example` whenever a new Echo-related variable is introduced.
+- Never commit real API keys, wallet private keys, app IDs intended to remain private, or generated credentials.
+- Validate required environment variables at app startup so failures are explicit.
+
+## Code quality
+
+- Keep TypeScript strict and avoid `any` unless the upstream SDK type is unavailable and the cast is narrowly scoped.
+- Preserve existing file structure and template conventions.
+- Keep examples minimal, copy-pasteable, and easy for new Echo users to understand.
+- Follow existing code style and formatting conventions.
