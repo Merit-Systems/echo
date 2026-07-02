@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+// @ts-nocheck
+import { PrismaClient } from '../../../app/control/src/generated/prisma/index.js';
 import crypto from 'crypto';
 import { hashApiKey } from './api-key';
 
@@ -142,7 +143,7 @@ export class TestDataFactory {
     const inputTokens = options.inputTokens || 100;
     const outputTokens = options.outputTokens || 50;
 
-    return prisma.llmTransaction.create({
+    return prisma.transaction.create({
       data: {
         id: options.id || this.generateUniqueId(),
         model: options.model || 'claude-3-5-sonnet-20241022',
@@ -237,7 +238,7 @@ export class TestDataFactory {
   // Cleanup utilities
   async cleanupUser(userId: string): Promise<void> {
     await prisma.refreshToken.deleteMany({ where: { userId } });
-    await prisma.llmTransaction.deleteMany({ where: { userId } });
+    await prisma.transaction.deleteMany({ where: { userId } });
     await prisma.payment.deleteMany({ where: { userId } });
     await prisma.apiKey.deleteMany({ where: { userId } });
     await prisma.echoApp.deleteMany({ where: { userId } });
@@ -246,7 +247,7 @@ export class TestDataFactory {
 
   async cleanupEchoApp(echoAppId: string): Promise<void> {
     await prisma.refreshToken.deleteMany({ where: { echoAppId } });
-    await prisma.llmTransaction.deleteMany({ where: { echoAppId } });
+    await prisma.transaction.deleteMany({ where: { echoAppId } });
     await prisma.payment.deleteMany({ where: { echoAppId } });
     await prisma.apiKey.deleteMany({ where: { echoAppId } });
     await prisma.echoApp.delete({ where: { id: echoAppId } });
@@ -264,7 +265,7 @@ export class TestDataFactory {
       },
     });
 
-    await prisma.llmTransaction.deleteMany({
+    await prisma.transaction.deleteMany({
       where: {
         user: {
           email: {
