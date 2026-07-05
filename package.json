@@ -5,6 +5,7 @@
   "private": true,
   "packageManager": "pnpm@10.11.0",
   "scripts": {
+    "predev": "pnpm run local-setup",
     "dev": "turbo run dev --filter=echo-control --filter=echo-server",
     "local-setup": "turbo run local-setup --filter=echo-control",
     "build": "turbo run build --env-mode=loose",

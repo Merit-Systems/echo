@@ -121,7 +121,27 @@ Or run `npx echo-start my-app` to choose interactively.
 
 # Development
 
-Fill out `packages/app/control/.env` and `packages/app/server/.env`. Then...
+Prerequisites:
 
-- `pnpm i`
-- `pnpm dev`
+- Node.js 18 or newer
+- pnpm 10.11.0 or newer
+- Docker with Docker Compose
+
+From a fresh clone:
+
+```bash
+pnpm i
+pnpm dev
+```
+
+`pnpm dev` runs the local setup step automatically. It creates
+`packages/app/control/.env` from `.env.example` when needed, generates a local
+`AUTH_SECRET`, sets the local PostgreSQL `DATABASE_URL`, starts the Docker
+PostgreSQL container, applies Prisma migrations, and starts the control app plus
+router server.
+
+If `pnpm` is not available yet, install the pinned version first:
+
+```bash
+npm install -g pnpm@10.11.0
+```
