@@ -17,13 +17,8 @@ const providers = {
   gemini: handleGoogleEdit,
 };
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb',
-    },
-  },
-};
+// App Router route segment config
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
