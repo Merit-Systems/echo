@@ -1,7 +1,6 @@
 import {
   usdcBigIntToDecimal,
   decimalToUsdcBigInt,
-  buildX402Response,
   getSmartAccount,
   validateXPaymentHeader,
 } from 'utils';
@@ -10,91 +9,107 @@ import { FacilitatorClient } from 'services/facilitator/facilitatorService';
 import {
   ExactEvmPayload,
   ExactEvmPayloadSchema,
-  PaymentPayload,
   PaymentRequirementsSchema,
   SettleRequestSchema,
   Network,
 } from 'services/facilitator/x402-types';
 import { Decimal } from '@prisma/client/runtime/library';
 import logger from 'logger';
-import { Request, Response } from 'express';
+import { Request } from 'express';
+import { ResultAsync, fromThrowable, err, ok } from 'neverthrow';
 import { env } from '../env';
+import type { SettleError } from '../errors/results';
 
-export async function settle(
+export type SettleSuccess = {
+  payload: ExactEvmPayload;
+  paymentAmountDecimal: Decimal;
+};
+
+const parseXPaymentHeader = fromThrowable(
+  validateXPaymentHeader,
+  (cause): SettleError => ({ type: 'SETTLE_INVALID_PAYMENT_HEADER', cause })
+);
+
+export function settle(
   req: Request,
-  res: Response,
   headers: Record<string, string>,
   maxCost: Decimal
-): Promise<
-  { payload: ExactEvmPayload; paymentAmountDecimal: Decimal } | undefined
-> {
+): ResultAsync<SettleSuccess, SettleError> {
   const network = env.NETWORK as Network;
 
-  let recipient: string;
-  try {
-    recipient = (await getSmartAccount()).smartAccount.address;
-  } catch (error) {
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
+  return ResultAsync.fromPromise(
+    getSmartAccount().then(({ smartAccount }) => smartAccount.address),
+    (cause): SettleError => ({ type: 'SETTLE_SMART_ACCOUNT_FAILED', cause })
+  )
+    .andThen(recipient =>
+      parseXPaymentHeader(headers, req).map(xPaymentData => ({
+        recipient,
+        xPaymentData,
+      }))
+    )
+    .andThen(({ recipient, xPaymentData }) => {
+      const payloadResult = ExactEvmPayloadSchema.safeParse(xPaymentData.payload);
+      if (!payloadResult.success) {
+        logger.error('Invalid ExactEvmPayload in settle', {
+          error: payloadResult.error,
+          payload: xPaymentData.payload,
+        });
+        return err<
+          { recipient: string; xPaymentData: typeof xPaymentData; payload: ExactEvmPayload; paymentAmountDecimal: Decimal },
+          SettleError
+        >({ type: 'SETTLE_INVALID_PAYLOAD', cause: payloadResult.error });
+      }
 
-  let xPaymentData: PaymentPayload;
-  try {
-    xPaymentData = validateXPaymentHeader(headers, req);
-  } catch (error) {
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
+      const payload = payloadResult.data;
+      const paymentAmount = payload.authorization.value;
+      const paymentAmountDecimal = usdcBigIntToDecimal(paymentAmount);
 
-  const payloadResult = ExactEvmPayloadSchema.safeParse(xPaymentData.payload);
-  if (!payloadResult.success) {
-    logger.error('Invalid ExactEvmPayload in settle', {
-      error: payloadResult.error,
-      payload: xPaymentData.payload,
+      // Note(shafu, alvaro): Edge case where client sends the x402-challenge
+      // but the payment amount is less than what we returned in the first response
+      if (BigInt(paymentAmount) < decimalToUsdcBigInt(maxCost)) {
+        return err<
+          { recipient: string; xPaymentData: typeof xPaymentData; payload: ExactEvmPayload; paymentAmountDecimal: Decimal },
+          SettleError
+        >({
+          type: 'SETTLE_INSUFFICIENT_PAYMENT',
+          required: decimalToUsdcBigInt(maxCost),
+          provided: BigInt(paymentAmount),
+        });
+      }
+
+      return ok({ recipient, xPaymentData, payload, paymentAmountDecimal });
+    })
+    .andThen(({ recipient, xPaymentData, payload, paymentAmountDecimal }) => {
+      const facilitatorClient = new FacilitatorClient();
+      const paymentRequirements = PaymentRequirementsSchema.parse({
+        scheme: 'exact',
+        network,
+        maxAmountRequired: payload.authorization.value,
+        resource: `${req.protocol}://${req.get('host')}${req.url}`,
+        description: 'Echo x402',
+        mimeType: 'application/json',
+        payTo: recipient,
+        maxTimeoutSeconds: 60,
+        asset: USDC_ADDRESS,
+        extra: {
+          name: 'USD Coin',
+          version: '2',
+        },
+      });
+
+      const settleRequest = SettleRequestSchema.parse({
+        paymentPayload: xPaymentData,
+        paymentRequirements,
+      });
+
+      return ResultAsync.fromPromise(
+        facilitatorClient.settle(settleRequest),
+        (): SettleError => ({ type: 'SETTLE_FACILITATOR_FAILED' })
+      ).andThen(settleResult => {
+        if (!settleResult.success || !settleResult.transaction) {
+          return err<SettleSuccess, SettleError>({ type: 'SETTLE_FACILITATOR_FAILED' });
+        }
+        return ok<SettleSuccess, SettleError>({ payload, paymentAmountDecimal });
+      });
     });
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
-  const payload = payloadResult.data;
-
-  const paymentAmount = payload.authorization.value;
-  const paymentAmountDecimal = usdcBigIntToDecimal(paymentAmount);
-
-  // Note(shafu, alvaro): Edge case where client sends the x402-challenge
-  // but the payment amount is less than what we returned in the first response
-  if (BigInt(paymentAmount) < decimalToUsdcBigInt(maxCost)) {
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
-
-  const facilitatorClient = new FacilitatorClient();
-  const paymentRequirements = PaymentRequirementsSchema.parse({
-    scheme: 'exact',
-    network,
-    maxAmountRequired: paymentAmount,
-    resource: `${req.protocol}://${req.get('host')}${req.url}`,
-    description: 'Echo x402',
-    mimeType: 'application/json',
-    payTo: recipient,
-    maxTimeoutSeconds: 60,
-    asset: USDC_ADDRESS,
-    extra: {
-      name: 'USD Coin',
-      version: '2',
-    },
-  });
-
-  const settleRequest = SettleRequestSchema.parse({
-    paymentPayload: xPaymentData,
-    paymentRequirements,
-  });
-
-  const settleResult = await facilitatorClient.settle(settleRequest);
-
-  if (!settleResult.success || !settleResult.transaction) {
-    buildX402Response(req, res, maxCost);
-    return undefined;
-  }
-
-  return { payload, paymentAmountDecimal };
 }

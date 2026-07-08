@@ -42,6 +42,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "neverthrow": "^7.2.0",
     "@coinbase/cdp-sdk": "^1.34.0",
     "@e2b/code-interpreter": "^2.0.1",
     "@google-cloud/storage": "^7.17.1",

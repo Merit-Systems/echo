@@ -2,17 +2,18 @@ import { decimalToUsdcBigInt } from 'utils';
 import { transfer } from 'transferWithAuth';
 import { ExactEvmPayload } from 'services/facilitator/x402-types';
 import { Decimal } from '@prisma/client/runtime/library';
-import logger from 'logger';
+import { ResultAsync } from 'neverthrow';
+import type { RefundError } from '../errors/results';
 
-export async function refund(
+export function refund(
   paymentAmountDecimal: Decimal,
   payload: ExactEvmPayload
-) {
-  try {
-    const refundAmountUsdcBigInt = decimalToUsdcBigInt(paymentAmountDecimal);
-    const authPayload = payload.authorization;
-    await transfer(authPayload.from as `0x${string}`, refundAmountUsdcBigInt);
-  } catch (error) {
-    logger.error('Failed to refund', error);
-  }
+): ResultAsync<void, RefundError> {
+  const refundAmountUsdcBigInt = decimalToUsdcBigInt(paymentAmountDecimal);
+  const authPayload = payload.authorization;
+
+  return ResultAsync.fromPromise(
+    transfer(authPayload.from as `0x${string}`, refundAmountUsdcBigInt),
+    (cause): RefundError => ({ type: 'REFUND_TRANSFER_FAILED', cause })
+  ).map(() => undefined);
 }

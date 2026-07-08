@@ -57,17 +57,17 @@ export class EchoControlService {
   }
 
   /**
-   * Verify API key against the database and cache the authentication result
-   * Uses centralized logic from EchoDbService
+   * Verify API key against the database and cache the authentication result.
+   * Uses centralized logic from EchoDbService via ResultAsync.
    */
   async verifyApiKey(): Promise<ApiKeyValidationResult | null> {
-    try {
-      if (this.apiKey) {
-        this.authResult = await this.dbService.validateApiKey(this.apiKey);
+    if (this.apiKey) {
+      const result = await this.dbService.validateApiKey(this.apiKey);
+      if (result.isErr()) {
+        logger.error(`Error verifying API key: ${result.error.type}`);
+        return null;
       }
-    } catch (error) {
-      logger.error(`Error verifying API key: ${error}`);
-      return null;
+      this.authResult = result.value;
     }
 
     const markupData = await this.earningsService.getEarningsData(
@@ -152,51 +152,45 @@ export class EchoControlService {
   }
 
   /**
-   * Get balance for the authenticated user directly from the database
-   * Uses centralized logic from EchoDbService
+   * Get balance for the authenticated user directly from the database.
+   * Uses centralized logic from EchoDbService via ResultAsync.
    */
   async getBalance(): Promise<number> {
-    try {
-      if (!this.authResult) {
-        logger.error('No authentication result available');
-        return 0;
-      }
-
-      const { userId } = this.authResult;
-      const balance = await this.dbService.getBalance(userId);
-
-      return balance.balance;
-    } catch (error) {
-      logger.error(`Error fetching balance: ${error}`);
+    if (!this.authResult) {
+      logger.error('No authentication result available');
       return 0;
     }
+
+    const { userId } = this.authResult;
+    const result = await this.dbService.getBalance(userId);
+
+    if (result.isErr()) {
+      logger.error(`Error fetching balance: ${result.error.type}`);
+      return 0;
+    }
+
+    return result.value.balance;
   }
 
   /**
-   * Create an LLM transaction record directly in the database
-   * Uses centralized logic from EchoDbService
+   * Create an LLM transaction record directly in the database.
+   * Uses centralized logic from EchoDbService via ResultAsync.
    */
   async createTransaction(transaction: Transaction): Promise<void> {
-    try {
-      if (!this.authResult) {
-        logger.error('No authentication result available');
-        return;
-      }
+    if (!this.authResult) {
+      logger.error('No authentication result available');
+      return;
+    }
 
-      if (!this.markUpAmount) {
-        logger.error('Error Fetching Markup Amount');
-        return;
-      }
+    if (!this.markUpAmount) {
+      logger.error('Error Fetching Markup Amount');
+      return;
+    }
 
-      if (this.freeTierSpendPool) {
-        await this.createFreeTierTransaction(transaction);
-        return;
-      } else {
-        await this.createPaidTransaction(transaction);
-        return;
-      }
-    } catch (error) {
-      logger.error(`Error creating transaction: ${error}`);
+    if (this.freeTierSpendPool) {
+      await this.createFreeTierTransaction(transaction);
+    } else {
+      await this.createPaidTransaction(transaction);
     }
   }
 
@@ -275,6 +269,7 @@ export class EchoControlService {
       echoProfit: echoProfitDecimal,
     };
   }
+
   async createFreeTierTransaction(transaction: Transaction): Promise<void> {
     if (!this.authResult) {
       logger.error('No authentication result available');
@@ -321,10 +316,17 @@ export class EchoControlService {
       ...(this.referrerRewardId && { referrerRewardId: this.referrerRewardId }),
     };
 
-    await this.freeTierService.createFreeTierTransaction(
+    const result = await this.freeTierService.createFreeTierTransaction(
       transactionData,
       this.freeTierSpendPool.id
     );
+
+    if (result.isErr()) {
+      const dbErr = result.error;
+      logger.error(`Error creating free tier transaction: ${dbErr.type}`);
+      const cause = 'cause' in dbErr ? dbErr.cause : undefined;
+      throw cause instanceof Error ? cause : new Error(String(dbErr.type));
+    }
   }
 
   async createPaidTransaction(transaction: Transaction): Promise<void> {
@@ -361,7 +363,14 @@ export class EchoControlService {
       ...(this.referrerRewardId && { referrerRewardId: this.referrerRewardId }),
     };
 
-    await this.dbService.createPaidTransaction(transactionData);
+    const result = await this.dbService.createPaidTransaction(transactionData);
+
+    if (result.isErr()) {
+      const dbErr = result.error;
+      logger.error(`Error creating paid transaction: ${dbErr.type}`);
+      const cause = 'cause' in dbErr ? dbErr.cause : undefined;
+      throw cause instanceof Error ? cause : new Error(String(dbErr.type));
+    }
   }
 
   async identifyX402Transaction(
@@ -402,7 +411,14 @@ export class EchoControlService {
       transactionType: EnumTransactionType.X402,
     };
 
-    await this.dbService.createPaidTransaction(transactionData);
+    const result = await this.dbService.createPaidTransaction(transactionData);
+
+    if (result.isErr()) {
+      const dbErr = result.error;
+      logger.error(`Error creating X402 transaction: ${dbErr.type}`);
+      const cause = 'cause' in dbErr ? dbErr.cause : undefined;
+      throw cause instanceof Error ? cause : new Error(String(dbErr.type));
+    }
 
     return transactionCosts;
   }
