@@ -19,13 +19,7 @@ const providers = {
   gemini: handleGoogleGenerate,
 };
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb',
-    },
-  },
-};
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
