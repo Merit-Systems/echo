@@ -1,0 +1,14 @@
+---
+description: Echo + React/Vite starter rules for this template
+globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+---
+
+# Echo React rules
+
+- Use `@merit-systems/echo-react-sdk` for Echo integration in React templates.
+- Keep `EchoProvider` at the root app boundary (`main.tsx` or `App.tsx`) so all Echo hooks/components share one provider.
+- Use `import.meta.env.VITE_ECHO_APP_ID` for app configuration; do not introduce server-only secret env vars into client code.
+- Prefer existing Echo hooks and components (`useEcho`, `useEchoModelProviders`, `EchoTokens`, `EchoChatProvider`) over reimplementing auth or balance flows.
+- When streaming chat responses, keep using AI SDK utilities already used in the template (`streamText`, `convertToModelMessages`) unless there is a clear reason to change.
+- Keep Echo auth/payment logic in the Echo SDK layer; avoid custom token handling in the browser.
+- Never hardcode Echo app IDs, API keys, wallet keys, or test secrets in source files.

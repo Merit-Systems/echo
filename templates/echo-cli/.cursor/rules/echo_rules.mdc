@@ -1,0 +1,14 @@
+---
+description: Echo CLI starter rules for this template
+globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+---
+
+# Echo CLI rules
+
+- Keep CLI command wiring in `src/index.ts` and business logic in `src/auth`, `src/core`, `src/config`, and `src/utils` modules.
+- Use `process.env.ECHO_APP_ID` (via `src/constants.ts`) as the Echo app identifier; do not hardcode app IDs.
+- Keep provider selection centralized in `src/auth/providers.ts` (`echo`, `wallet`, `local-wallet`).
+- Use `createEchoOpenAI` for API-key auth and `createX402OpenAI` for wallet-based auth exactly through existing helper flow.
+- Keep streaming chat behavior built on AI SDK `streamText` and existing terminal stream helpers.
+- Preserve history/thread persistence and auth state checks before sending model requests.
+- Never print or store private keys, API keys, or tokens outside the existing secure storage utilities.

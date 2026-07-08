@@ -1,0 +1,14 @@
+---
+description: Echo + Auth.js starter rules for this template
+globs: **/*.{ts,tsx,js,jsx,mjs,cjs}
+---
+
+# Echo Auth.js rules
+
+- Keep authentication wired through `next-auth` with `@merit-systems/echo-authjs-provider`.
+- Configure Echo Auth.js provider with `appId: process.env.ECHO_APP_ID!` and do not hardcode IDs.
+- Preserve the NextAuth handler export shape (`export const { handlers, signIn, signOut, auth } = NextAuth(...)`).
+- Keep `/api/auth/[...nextauth]` and `/api/echo/[...echo]` routes as thin re-exports from their respective handler modules.
+- Keep JWT/session callbacks aligned with existing access token + refresh token behavior unless a migration explicitly changes auth storage.
+- Use `@merit-systems/echo-next-sdk` for Echo route handlers and server model access in this template.
+- Never hardcode Echo app IDs, API keys, wallet keys, or test secrets in source files.
