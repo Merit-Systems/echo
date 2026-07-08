@@ -1,0 +1,89 @@
+---
+description: Guidelines and best practices for building Echo-powered Next.js applications with user-pays AI infrastructure
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Guidelines
+
+## What is Echo?
+Echo is a user-pays AI infrastructure SDK by Merit Systems. Instead of fronting AI API costs yourself, users authenticate via Echo and pay for their own usage. You set a markup and earn revenue automatically.
+
+## Project Setup
+- Echo is configured in `src/echo/index.ts` via the `Echo()` initializer
+- The `ECHO_APP_ID` environment variable must be set in `.env.local`
+- Echo provides `handlers`, `isSignedIn`, and model providers (e.g., `openai`, `anthropic`)
+
+## Echo SDK Initialization
+- ALWAYS initialize Echo in a dedicated file (e.g., `src/echo/index.ts`):
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+- NEVER hardcode the app ID — always use environment variables
+- Export model providers from this file and import them where needed
+
+## Authentication
+- Use `isSignedIn()` to check if a user is authenticated before making AI calls
+- Echo handles OAuth login — use the `EchoTokens` component for the auth UI:
+```typescript
+'use client';
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+export function EchoButton() {
+  return <EchoTokens />;
+}
+```
+- Client components using Echo UI must have the `'use client'` directive
+
+## API Routes
+- Use Echo's `handlers` for setting up auth API routes in `src/app/api/echo/[...echo]/route.ts`
+- For AI endpoints, use the exported model providers (e.g., `openai`, `anthropic`) from `src/echo/index.ts`
+- ALWAYS check `isSignedIn()` before processing AI requests
+
+## Model Usage
+- Use Echo model providers instead of direct AI SDK providers:
+```typescript
+// CORRECT — uses Echo (users pay)
+import { openai } from '@/echo';
+const response = await generateText({ model: openai('gpt-4o'), prompt: '...' });
+
+// WRONG — uses direct SDK (you pay)
+import { openai } from '@ai-sdk/openai';
+```
+- Echo is compatible with the Vercel AI SDK (`ai` package) — use `generateText`, `streamText`, `generateObject`, etc.
+
+## Component Patterns
+- Wrap Echo client components (like `EchoTokens`) in a separate client component file
+- Server components should import from `@/echo` for server-side AI calls
+- Client components should use hooks from `@merit-systems/echo-react-sdk` for client-side AI
+
+## Environment Variables
+- `ECHO_APP_ID` — Your Echo application ID (required)
+- Get your app ID from https://echo.merit.systems
+
+## Common Patterns
+### Text Generation
+```typescript
+import { openai } from '@/echo';
+import { generateText } from 'ai';
+
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  prompt: 'Hello!',
+});
+```
+
+### Streaming
+```typescript
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+const result = streamText({
+  model: openai('gpt-4o'),
+  prompt: 'Tell me a story',
+});
+return result.toDataStreamResponse();
+```
