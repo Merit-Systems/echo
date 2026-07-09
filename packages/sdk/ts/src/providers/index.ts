@@ -4,6 +4,7 @@ export * from './groq';
 export * from './xai';
 export * from './openai';
 export * from './openrouter';
+export * from './vercel-ai-gateway';
 
 export function echoFetch(
   originalFetch: typeof fetch,
