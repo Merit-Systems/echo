@@ -1,0 +1,52 @@
+---
+description: Guidelines and best practices for building Echo Next.js Video applications with AI-powered video generation
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Video Template Guidelines
+
+## Overview
+Echo Video is a Next.js application for AI-powered video generation using Echo's user-pays infrastructure. It uses `@merit-systems/echo-next-sdk`.
+
+## Project Structure
+- `src/echo/index.ts` — Echo SDK initialization (server-side)
+- `src/providers.tsx` — EchoProvider wrapper (client-side)
+- `src/app/api/echo/[...echo]/route.ts` — Echo API route handlers
+
+## Echo SDK Initialization
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+## Client-Side Provider
+```typescript
+'use client';
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Key Patterns
+- Use Echo-proxied `openai` for video/image generation API calls
+- Echo handles per-request billing automatically
+- Users pay for their own video generation costs
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side app ID
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side app ID
+
+## Anti-Patterns (DO NOT)
+- ❌ Do NOT import AI SDKs directly — use Echo proxies from `@/echo`
+- ❌ Do NOT store AI provider API keys
+- ❌ Do NOT modify the `[...echo]` route handler
+- ❌ Do NOT build custom billing for video generation

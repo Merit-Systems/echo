@@ -1,0 +1,59 @@
+---
+description: Guidelines and best practices for building Echo React (Vite) projects with user-pays AI infrastructure
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React (Vite) Guidelines
+
+## Overview
+Echo is a user-pays AI infrastructure SDK. Users pay for their own AI usage. This project uses `@merit-systems/echo-react-sdk` with Vite.
+
+## Project Structure
+- `src/main.tsx` — App entry point with EchoProvider
+- `src/App.tsx` — Main app component with Echo UI
+
+## EchoProvider Setup
+Wrap your app with `EchoProvider` at the root:
+```typescript
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+### Key Rules:
+- Use `import.meta.env.VITE_ECHO_APP_ID` for Vite environment variables
+- `EchoProvider` MUST wrap the entire component tree
+- The `config` object requires `appId` at minimum
+
+## Echo UI Components
+Use pre-built Echo components:
+```typescript
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <>
+      <h1>Welcome to Echo</h1>
+      <EchoTokens />
+    </>
+  );
+}
+```
+- `EchoTokens` provides sign-in, balance display, and top-up functionality
+- Import UI components directly from `@merit-systems/echo-react-sdk`
+
+## Environment Variables
+- `VITE_ECHO_APP_ID` — App ID from the Echo dashboard
+- Prefix with `VITE_` for Vite to expose to client code
+
+## Anti-Patterns (DO NOT)
+- ❌ Do NOT use `process.env` — use `import.meta.env` (Vite convention)
+- ❌ Do NOT import AI SDKs directly — Echo handles AI provider access
+- ❌ Do NOT build custom payment flows — Echo provides built-in top-up
+- ❌ Do NOT render Echo components outside of `EchoProvider`

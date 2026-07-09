@@ -1,0 +1,108 @@
+---
+description: Guidelines and best practices for building Echo Next.js projects with user-pays AI infrastructure
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Guidelines
+
+## Overview
+Echo is a user-pays AI infrastructure SDK. Users pay for their own AI usage—you never front costs. This project uses `@merit-systems/echo-next-sdk`.
+
+## Project Structure
+- `src/echo/index.ts` — Echo SDK initialization (server-side)
+- `src/providers.tsx` — EchoProvider wrapper (client-side)
+- `src/app/api/echo/[...echo]/route.ts` — Echo API route handlers
+- `src/components/EchoWrapper.tsx` — Client components using Echo
+
+## Echo SDK Initialization (Server-Side)
+Always initialize Echo in `src/echo/index.ts`:
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Key Rules:
+- `Echo()` returns `handlers`, `isSignedIn`, and AI provider proxies (`openai`, `anthropic`)
+- `appId` comes from `process.env.ECHO_APP_ID` (server-side env var)
+- The `openai` and `anthropic` objects are drop-in replacements for the official SDKs
+- NEVER import AI SDKs directly — always use the proxied versions from Echo
+
+## Echo API Route
+The catch-all route at `src/app/api/echo/[...echo]/route.ts` handles authentication and billing:
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+- NEVER modify handler exports — Echo manages auth, session, and payment flows internally
+- This route MUST exist for Echo to function
+
+## Client-Side Provider
+Wrap your app with `EchoProvider` in a client component:
+```typescript
+'use client';
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+### Key Rules:
+- `EchoProvider` MUST be a client component (`'use client'`)
+- Use `NEXT_PUBLIC_ECHO_APP_ID` for client-side (public env var)
+- Wrap the entire app in `<Providers>` inside `layout.tsx`
+
+## Echo UI Components
+Use pre-built Echo components for authentication and token management:
+```typescript
+'use client';
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+export function EchoButton() {
+  return <EchoTokens />;
+}
+```
+- `EchoTokens` provides sign-in, balance display, and top-up functionality
+- Always wrap Echo client components with `'use client'` directive
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side app ID (used in `src/echo/index.ts`)
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side app ID (used in `EchoProvider`)
+- Both reference the same app ID from the Echo dashboard
+
+## Common Patterns
+
+### Using AI Providers
+```typescript
+import { openai } from '@/echo';
+
+// Use exactly like the official OpenAI SDK
+const response = await openai.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [{ role: 'user', content: 'Hello' }],
+});
+```
+
+### Checking Authentication
+```typescript
+import { isSignedIn } from '@/echo';
+
+export async function protectedAction() {
+  const signedIn = await isSignedIn();
+  if (!signedIn) throw new Error('Not authenticated');
+  // ... proceed
+}
+```
+
+## Anti-Patterns (DO NOT)
+- ❌ Do NOT import `openai` or `@anthropic-ai/sdk` directly — use Echo proxies
+- ❌ Do NOT store API keys for AI providers — Echo handles billing
+- ❌ Do NOT build custom auth for AI usage — Echo provides auth via `EchoProvider`
+- ❌ Do NOT modify the `[...echo]` route handler internals
