@@ -49,6 +49,8 @@ export { GroqModels } from './supported-models/chat/groq';
 export type { GroqModel } from './supported-models/chat/groq';
 export { XAIModels } from './supported-models/chat/xai';
 export type { XAIModel } from './supported-models/chat/xai';
+export { VercelAIGatewayModels } from './supported-models/chat/vercel-ai-gateway';
+export type { VercelAIGatewayModel } from './supported-models/chat/vercel-ai-gateway';
 export { OpenAIImageModels } from './supported-models/image/openai';
 export type { OpenAIImageModel } from './supported-models/image/openai';
 export { GeminiVideoModels } from './supported-models/video/gemini';
