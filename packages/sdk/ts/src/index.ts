@@ -11,6 +11,7 @@ export * from './utils/error-handling';
 export * from './utils/validation';
 export * from './providers';
 export { createEchoXAI } from './providers/xai';
+export { createEchoVercelAIGateway } from './providers/vercel';
 
 // Export tool-related types and utilities
 export type {
@@ -49,6 +50,8 @@ export { GroqModels } from './supported-models/chat/groq';
 export type { GroqModel } from './supported-models/chat/groq';
 export { XAIModels } from './supported-models/chat/xai';
 export type { XAIModel } from './supported-models/chat/xai';
+export { VercelModels } from './supported-models/chat/vercel';
+export type { VercelModel } from './supported-models/chat/vercel';
 export { OpenAIImageModels } from './supported-models/image/openai';
 export type { OpenAIImageModel } from './supported-models/image/openai';
 export { GeminiVideoModels } from './supported-models/video/gemini';
