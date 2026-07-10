@@ -21,6 +21,8 @@ export const PROXY_PASSTHROUGH_ONLY_MODEL = 'PROXY_PLACEHOLDER_VERTEX_AI';
 const VEO3_MODELS = [
   'veo-3.0-fast-generate-preview',
   'veo-3.0-generate-preview',
+  'veo-3.1-fast-generate-preview',
+  'veo-3.1-generate-preview',
 ];
 const GCS_BUCKET_NAME = 'echo-veo3-videos';
 const GCS_URI_PREFIX = 'gs://';
