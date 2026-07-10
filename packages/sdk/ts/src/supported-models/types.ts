@@ -26,8 +26,13 @@ export interface ImageGenerationModelPricing {
   high: ImageGenerationQualityPricing;
 }
 
+export interface GeminiImageGenerationPricing {
+  cost_per_image: number;
+}
+
 export interface ImageGenerationPricing {
   gpt_image_1: ImageGenerationModelPricing;
+  gemini_flash_image?: GeminiImageGenerationPricing;
 }
 
 export interface CodeInterpreterPricing {
