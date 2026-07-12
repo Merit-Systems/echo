@@ -2,36 +2,35 @@
 
 ## Prerequisites
 
-This server depends on the generated Prisma client from the `echo-control` project. Before running the server, you need to ensure the Prisma client is copied locally.
+- Node.js 18+
+- pnpm
+- For full local stack: Docker + Docker Compose plugin (`docker compose`)
 
 ## Development
 
-### First Time Setup
+### Recommended (from repo root)
 
-1. Make sure the `echo-control` project has generated its Prisma client:
+```bash
+pnpm install
+pnpm dev
+```
 
-   ```bash
-   cd ../control
-   pnpm run build  # or whatever command generates the Prisma client
-   ```
-
-2. Copy the generated Prisma client:
-   ```bash
-   pnpm run copy-prisma
-   ```
+The root `pnpm dev` command starts both `echo-control` and `echo-server`.
 
 ### Running the Server
 
 ```bash
-# Development mode (automatically copies Prisma client)
+# In this package only:
 pnpm run dev
 
-# Production mode
+# Build + start
 pnpm run build
 pnpm start
 ```
 
-The `dev` and `start` scripts automatically run `copy-prisma` as a pre-hook, so you don't need to run it manually.
+The server scripts automatically copy Prisma schema/client artifacts from `echo-control` before build/start.
+If `DATABASE_URL` is not set, the server uses a local default:
+`postgresql://echo_user:echo_password@localhost:5469/echo_control_v2?schema=public`.
 
 ## Docker Considerations
 
@@ -78,4 +77,4 @@ CMD ["pnpm", "start"]
 
 ## Error Handling
 
-If the generated Prisma client is not found, the server will throw a descriptive error message asking you to run `pnpm run copy-prisma`.
+If the generated Prisma client artifacts are missing, run `pnpm run copy-prisma` and retry.

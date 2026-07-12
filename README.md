@@ -121,7 +121,36 @@ Or run `npx echo-start my-app` to choose interactively.
 
 # Development
 
-Fill out `packages/app/control/.env` and `packages/app/server/.env`. Then...
+## Prerequisites
+
+- Node.js 18+ (Node 20 recommended)
+- pnpm 10+
+- Docker + Docker Compose plugin (`docker compose`)
+
+## First run
+
+From repo root:
 
 - `pnpm i`
 - `pnpm dev`
+
+What `pnpm dev` does automatically on first run:
+
+- Creates `packages/app/control/.env` (from `.env.example`) if missing
+- Generates a local `AUTH_SECRET` and local `DATABASE_URL` if they are empty
+- Starts local Postgres via Docker Compose (`echo-control-postgres-v2` on `localhost:5469`)
+- Runs Prisma generate + migrations for control
+- Starts:
+  - Echo Control at `http://localhost:3000`
+  - Echo Server at `http://localhost:3069`
+
+## Optional local config
+
+- `packages/app/server/.env` is optional for booting locally.
+- To test real provider calls, add provider keys in `packages/app/server/.env` (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.).
+- To test OAuth providers in control, set provider credentials in `packages/app/control/.env`.
+
+## Troubleshooting
+
+- If `pnpm dev` says Docker is missing, install Docker Desktop (or Docker Engine + Compose plugin).
+- If Docker is installed but not running, start Docker and run `pnpm dev` again.
