@@ -44,6 +44,11 @@ const DEFAULT_TEMPLATES = {
     description:
       'Full-stack Next.js application with Echo and the Vercel AI SDK',
   },
+  'next-402-chat': {
+    title: 'Next.js Chat x402',
+    description:
+      'Next.js chat app with an auth switcher for Echo credits or x402 USDC',
+  },
   'next-image': {
     title: 'Next.js Image Gen',
     description:

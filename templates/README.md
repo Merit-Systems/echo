@@ -127,6 +127,23 @@ npx echo-start@latest --template next-chat
 
 ---
 
+#### Next.js Chat x402 (`next-402-chat`)
+
+A simple chat template with a payment/auth switcher for Echo credits or USDC via x402.
+
+```bash
+npx echo-start@latest --template next-402-chat
+```
+
+**Features:**
+
+- Simple chat UI based on the standard Next.js chat template
+- Auth switcher between Echo credits and wallet-based x402
+- USDC payments via x402 with wallet connection
+- Echo credits flow with built-in Echo authentication
+
+---
+
 #### Next.js Image Generation (`next-image`)
 
 Image generation application with Echo billing.
