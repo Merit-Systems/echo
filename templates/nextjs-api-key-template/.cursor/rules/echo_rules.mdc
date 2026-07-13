@@ -1,0 +1,27 @@
+---
+description: Echo template rules for Next.js projects (App Router).
+globs: "**/*.{ts,tsx,js,jsx,md,mdx,json}"
+alwaysApply: true
+---
+
+# Echo + Next.js template rules
+
+## Project shape
+- This is a Next.js (App Router) project.
+- Prefer React Server Components where appropriate; only add `"use client"` when needed.
+
+## API routes
+- API routes live under `app/api/**/route.ts`.
+- Keep handlers small; factor reusable logic into `lib/`.
+
+## Env configuration
+- Never invent API keys. Use values from `.env.local` / `.env.example`.
+- When documenting setup, update README and keep `.env.example` in sync.
+
+## TypeScript + lint
+- Keep types strict and avoid `any`.
+- Prefer `zod` or existing validators in the template when validating inputs.
+
+## Echo integration
+- When wiring Echo endpoints, keep the `/api/echo/*` surface consistent with the template.
+- Avoid breaking changes to request/response shapes.
