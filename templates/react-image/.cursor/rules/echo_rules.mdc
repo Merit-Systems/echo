@@ -1,0 +1,604 @@
+## Description: Guidelines and best practices for building Echo React Image Generation applications with Vite, including client OAuth, file handling, and validation globs: /**/*.ts,/**/*.tsx,**/*.js,**/*.jsx
+
+## Echo React Image Generation Guidelines
+
+## SDK Initialization
+
+### EchoProvider Setup
+
+ALWAYS wrap your application with `EchoProvider` in `src/main.tsx`:
+
+```typescript
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.tsx';
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+## Image Generation
+
+### Client-Side Image Generation
+
+Use Echo React SDK for direct client-side image generation (if using your own backend, call it via API):
+
+```typescript
+'use client';
+
+import { useState } from 'react';
+import { useEcho } from '@merit-systems/echo-react-sdk';
+
+interface GeneratedImage {
+  url: string;
+  prompt: string;
+  model: string;
+  size: string;
+}
+
+export function ImageGenerator() {
+  const [prompt, setPrompt] = useState('');
+  const [image, setImage] = useState<GeneratedImage | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useEcho();
+
+  const isSignedIn = user !== null;
+
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // ✅ ALWAYS check authentication
+    if (!isSignedIn) {
+      setError('Please sign in to generate images');
+      return;
+    }
+
+    // ✅ ALWAYS validate input
+    if (!prompt.trim()) {
+      setError('Please enter a prompt');
+      return;
+    }
+
+    if (prompt.length > 1000) {
+      setError('Prompt must be less than 1000 characters');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Call your backend API
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          model: 'dall-e-3',
+          size: '1024x1024',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate image');
+      }
+
+      const data = await response.json();
+      setImage(data.image);
+      setPrompt(''); // Clear input on success
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="image-generator">
+      <form onSubmit={handleGenerate} className="generator-form">
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Describe the image you want to generate..."
+          disabled={loading || !isSignedIn}
+          className="prompt-input"
+          rows={4}
+          maxLength={1000}
+        />
+        
+        <div className="form-footer">
+          <span className="char-count">
+            {prompt.length}/1000
+          </span>
+          <button 
+            type="submit" 
+            disabled={loading || !isSignedIn || !prompt.trim()}
+            className="generate-button"
+          >
+            {loading ? 'Generating...' : 'Generate Image'}
+          </button>
+        </div>
+      </form>
+
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
+      
+      {image && (
+        <div className="result">
+          <img 
+            src={image.url} 
+            alt={image.prompt}
+            className="generated-image"
+          />
+          <div className="image-details">
+            <p className="prompt">{image.prompt}</p>
+            <button 
+              onClick={() => downloadImage(image.url, image.prompt)}
+              className="download-button"
+            >
+              Download
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+async function downloadImage(url: string, prompt: string) {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `${prompt.slice(0, 30).replace(/[^a-z0-9]/gi, '_')}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error('Download failed:', error);
+  }
+}
+```
+
+## Image Gallery
+
+### Gallery Component
+
+Create a reusable gallery component:
+
+```typescript
+import { useState } from 'react';
+
+interface ImageItem {
+  id: string;
+  url: string;
+  prompt: string;
+  createdAt: number;
+}
+
+interface ImageGalleryProps {
+  images: ImageItem[];
+  onDelete?: (id: string) => void;
+}
+
+export function ImageGallery({ images, onDelete }: ImageGalleryProps) {
+  const [selectedImage, setSelectedImage] = useState<ImageItem | null>(null);
+
+  return (
+    <div className="image-gallery">
+      <div className="gallery-grid">
+        {images.map((image) => (
+          <div 
+            key={image.id} 
+            className="gallery-item"
+            onClick={() => setSelectedImage(image)}
+          >
+            <img 
+              src={image.url} 
+              alt={image.prompt}
+              className="gallery-thumbnail"
+            />
+            <div className="item-overlay">
+              <p className="item-prompt">{image.prompt}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {selectedImage && (
+        <ImageModal
+          image={selectedImage}
+          onClose={() => setSelectedImage(null)}
+          onDelete={onDelete}
+        />
+      )}
+    </div>
+  );
+}
+
+interface ImageModalProps {
+  image: ImageItem;
+  onClose: () => void;
+  onDelete?: (id: string) => void;
+}
+
+function ImageModal({ image, onClose, onDelete }: ImageModalProps) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>
+          ×
+        </button>
+        
+        <img 
+          src={image.url} 
+          alt={image.prompt}
+          className="modal-image"
+        />
+        
+        <div className="modal-details">
+          <p>{image.prompt}</p>
+          <div className="modal-actions">
+            <button onClick={() => downloadImage(image.url, image.prompt)}>
+              Download
+            </button>
+            {onDelete && (
+              <button 
+                onClick={() => {
+                  onDelete(image.id);
+                  onClose();
+                }}
+                className="delete-button"
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+## File Upload
+
+### Upload Component with Validation
+
+ALWAYS validate file types and sizes on the client (and server if you have one):
+
+```typescript
+import { useState, ChangeEvent } from 'react';
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+export function ImageUpload() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    
+    if (!file) return;
+
+    // ✅ ALWAYS validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError(`File type must be one of: ${ALLOWED_TYPES.join(', ')}`);
+      return;
+    }
+
+    // ✅ ALWAYS validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+      return;
+    }
+
+    setError(null);
+    setSelectedFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      // Handle success
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    }
+  };
+
+  return (
+    <div className="upload-container">
+      <input
+        type="file"
+        accept={ALLOWED_TYPES.join(',')}
+        onChange={handleFileSelect}
+        className="file-input"
+      />
+
+      {error && <div className="error">{error}</div>}
+
+      {preview && (
+        <div className="preview">
+          <img src={preview} alt="Preview" />
+          <button onClick={handleUpload}>Upload</button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Environment Variables
+
+### Vite Environment Setup
+
+ALWAYS prefix with `VITE_`:
+
+```bash
+# .env
+VITE_ECHO_APP_ID=your_echo_app_id
+
+# Optional: backend API URL
+VITE_API_URL=https://your-api.com
+```
+
+Access using `import.meta.env`:
+
+```typescript
+// ✅ CORRECT
+const appId = import.meta.env.VITE_ECHO_APP_ID;
+const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// ❌ INCORRECT
+const appId = process.env.ECHO_APP_ID; // Won't work in Vite
+```
+
+## TypeScript Types
+
+### Image Types
+
+ALWAYS define strict types:
+
+```typescript
+// src/lib/types.ts
+export interface GeneratedImage {
+  id: string;
+  url: string;
+  prompt: string;
+  model: 'dall-e-3' | 'dall-e-2' | 'stable-diffusion';
+  size: string;
+  createdAt: number;
+  userId?: string;
+}
+
+export interface ImageGenerationRequest {
+  prompt: string;
+  model?: string;
+  size?: '1024x1024' | '1024x1792' | '1792x1024';
+  quality?: 'standard' | 'hd';
+  style?: 'vivid' | 'natural';
+}
+
+export interface ImageGenerationResponse {
+  success: boolean;
+  image?: GeneratedImage;
+  error?: string;
+  cost?: number;
+}
+```
+
+## Feature Flags
+
+### Image Feature Flags
+
+ALWAYS centralize feature flags:
+
+```typescript
+// src/lib/flags.ts
+export const ImageFeatureFlags = {
+  ENABLE_HD_QUALITY: 'enable_hd_quality',
+  ENABLE_STYLE_OPTIONS: 'enable_style_options',
+  ENABLE_IMAGE_EDITING: 'enable_image_editing',
+  ENABLE_BATCH_GENERATION: 'enable_batch_generation',
+} as const;
+
+export type ImageFeatureFlag = typeof ImageFeatureFlags[keyof typeof ImageFeatureFlags];
+
+export function isImageFeatureEnabled(flag: ImageFeatureFlag): boolean {
+  // Check feature flag logic
+  return true; // Placeholder
+}
+```
+
+## State Management
+
+### Custom Hook for Image State
+
+Create a custom hook for image management:
+
+```typescript
+// src/hooks/useImageGeneration.ts
+import { useState, useCallback } from 'react';
+import { GeneratedImage, ImageGenerationRequest } from '@/lib/types';
+
+export function useImageGeneration() {
+  const [images, setImages] = useState<GeneratedImage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generateImage = useCallback(async (request: ImageGenerationRequest) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        throw new Error('Generation failed');
+      }
+
+      const data = await response.json();
+      setImages(prev => [data.image, ...prev]);
+      
+      return data.image;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const deleteImage = useCallback((id: string) => {
+    setImages(prev => prev.filter(img => img.id !== id));
+  }, []);
+
+  return {
+    images,
+    loading,
+    error,
+    generateImage,
+    deleteImage,
+  };
+}
+```
+
+## Component Organization
+
+### Recommended Structure
+
+```
+src/
+├── components/
+│   ├── image/
+│   │   ├── ImageGenerator.tsx   # Generation form
+│   │   ├── ImageGallery.tsx     # Gallery display
+│   │   ├── ImageCard.tsx        # Single image card
+│   │   └── ImageUpload.tsx      # File upload
+│   ├── header/
+│   │   └── Header.tsx           # App header
+│   └── ui/                      # Reusable UI components
+├── hooks/
+│   └── useImageGeneration.ts    # Image state hook
+├── lib/
+│   ├── api.ts                   # API wrapper
+│   ├── flags.ts                 # Feature flags
+│   ├── types.ts                 # Shared types
+│   └── utils.ts                 # Utility functions
+├── App.tsx                      # Main app
+├── main.tsx                     # Entry point
+└── index.css                    # Global styles
+```
+
+## Error Handling
+
+ALWAYS provide user-friendly error messages:
+
+```typescript
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    // Handle specific error types
+    if (error.message.includes('content_policy')) {
+      return 'Your prompt violates the content policy. Please try a different prompt.';
+    }
+    if (error.message.includes('rate_limit')) {
+      return 'Rate limit exceeded. Please try again in a few moments.';
+    }
+    return error.message;
+  }
+  return 'An unexpected error occurred. Please try again.';
+}
+```
+
+## Performance Optimization
+
+### Image Loading
+
+Use lazy loading for images:
+
+```typescript
+export function LazyImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    <img 
+      src={src} 
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+    />
+  );
+}
+```
+
+### Memoization
+
+Memoize expensive components:
+
+```typescript
+import { memo } from 'react';
+
+export const ImageCard = memo(({ image }: { image: GeneratedImage }) => {
+  return (
+    <div className="image-card">
+      <img src={image.url} alt={image.prompt} loading="lazy" />
+      <p>{image.prompt}</p>
+    </div>
+  );
+});
+
+ImageCard.displayName = 'ImageCard';
+```
+
+## Best Practices
+
+1. **Client OAuth**: Echo handles secure OAuth2 + PKCE; use built-in components
+2. **Validation**: Always validate prompts, file types, and sizes
+3. **Error Messages**: Provide specific, actionable error messages
+4. **Loading States**: Show clear loading indicators during generation
+5. **Type Safety**: Define strict types for images and requests
+6. **Feature Flags**: Centralize in one file, validate before use
+7. **Performance**: Use lazy loading and memoization for images
+8. **Security**: Never expose secrets; validate inputs on both client and server

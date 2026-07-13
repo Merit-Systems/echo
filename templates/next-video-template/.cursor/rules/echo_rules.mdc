@@ -1,0 +1,489 @@
+## Description : Guidelines and best practices for building Echo Next.js Video Generation applications, including async processing, polling, and job management globs: /**/*.ts,/**/*.tsx,**/*.js,**/*.jsx
+
+## Echo Next.js Video Generation Guidelines
+
+## SDK Initialization
+
+### Server-Side Setup
+
+ALWAYS initialize Echo in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+## Video Generation API
+
+### Video Generation Route with Job Management
+
+ALWAYS implement video generation with job tracking for long-running operations:
+
+```typescript
+// app/api/generate-video/route.ts
+export const runtime = 'nodejs'; // Video generation requires Node.js runtime
+export const maxDuration = 300; // 5 minutes max
+
+interface VideoJob {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  prompt: string;
+  videoUrl?: string;
+  error?: string;
+  createdAt: number;
+  completedAt?: number;
+}
+
+// In-memory job store (use database in production)
+const jobs = new Map<string, VideoJob>();
+
+export async function POST(req: Request) {
+  try {
+    const { prompt, duration, resolution } = await req.json();
+
+    // ✅ ALWAYS validate required parameters
+    if (!prompt || typeof prompt !== 'string') {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Prompt is required and must be a string',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate duration (e.g., 5-60 seconds)
+    if (duration && (duration < 5 || duration > 60)) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Duration must be between 5 and 60 seconds',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate resolution
+    const validResolutions = ['720p', '1080p', '4k'];
+    if (resolution && !validResolutions.includes(resolution)) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: `Resolution must be one of: ${validResolutions.join(', ')}`,
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create job
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const job: VideoJob = {
+      id: jobId,
+      status: 'pending',
+      prompt,
+      createdAt: Date.now(),
+    };
+    
+    jobs.set(jobId, job);
+
+    // Start async processing (don't await)
+    processVideoGeneration(jobId, prompt, duration, resolution).catch(error => {
+      console.error(`Job ${jobId} failed:`, error);
+      const job = jobs.get(jobId);
+      if (job) {
+        job.status = 'failed';
+        job.error = error.message;
+      }
+    });
+
+    // Return job ID immediately
+    return Response.json({
+      success: true,
+      jobId,
+      message: 'Video generation started',
+    });
+  } catch (error) {
+    console.error('Video generation error:', error);
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: 'Failed to start video generation',
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+async function processVideoGeneration(
+  jobId: string,
+  prompt: string,
+  duration?: number,
+  resolution?: string
+) {
+  const job = jobs.get(jobId);
+  if (!job) return;
+
+  job.status = 'processing';
+
+  // Simulate video generation (replace with actual API call)
+  // Example: const video = await videoAPI.generate({ prompt, duration, resolution });
+  
+  await new Promise(resolve => setTimeout(resolve, 30000)); // 30 second simulation
+
+  job.status = 'completed';
+  job.videoUrl = 'https://example.com/generated-video.mp4';
+  job.completedAt = Date.now();
+}
+```
+
+### Job Status Polling Route
+
+ALWAYS provide a status endpoint for clients to poll:
+
+```typescript
+// app/api/video-status/route.ts
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const jobId = searchParams.get('jobId');
+
+  if (!jobId) {
+    return new Response(
+      JSON.stringify({
+        error: 'Bad Request',
+        message: 'jobId parameter is required',
+      }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const job = jobs.get(jobId);
+  
+  if (!job) {
+    return new Response(
+      JSON.stringify({
+        error: 'Not Found',
+        message: 'Job not found',
+      }),
+      { status: 404, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  return Response.json({
+    success: true,
+    job: {
+      id: job.id,
+      status: job.status,
+      prompt: job.prompt,
+      videoUrl: job.videoUrl,
+      error: job.error,
+      progress: job.status === 'processing' ? 50 : job.status === 'completed' ? 100 : 0,
+    },
+  });
+}
+```
+
+## Client-Side Video Generation
+
+### Polling Implementation
+
+Implement client-side polling for job status:
+
+```typescript
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useEcho } from '@merit-systems/echo-react-sdk';
+
+interface VideoJob {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  prompt: string;
+  videoUrl?: string;
+  error?: string;
+  progress: number;
+}
+
+export function VideoGenerator() {
+  const [prompt, setPrompt] = useState('');
+  const [job, setJob] = useState<VideoJob | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useEcho();
+
+  // Poll for job status
+  useEffect(() => {
+    if (!job || job.status === 'completed' || job.status === 'failed') {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/video-status?jobId=${job.id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setJob(data.job);
+          
+          if (data.job.status === 'completed' || data.job.status === 'failed') {
+            clearInterval(pollInterval);
+          }
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 2000); // Poll every 2 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [job]);
+
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      setError('Please sign in to generate videos');
+      return;
+    }
+
+    if (!prompt.trim()) {
+      setError('Please enter a prompt');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          duration: 10,
+          resolution: '1080p',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to start video generation');
+      }
+
+      const data = await response.json();
+      setJob({
+        id: data.jobId,
+        status: 'pending',
+        prompt,
+        progress: 0,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleGenerate}>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Describe the video you want to generate..."
+          disabled={loading || !user || (job?.status === 'processing')}
+        />
+        <button 
+          type="submit" 
+          disabled={loading || !user || (job?.status === 'processing')}
+        >
+          {loading ? 'Starting...' : 'Generate Video'}
+        </button>
+      </form>
+
+      {error && <div className="error">{error}</div>}
+      
+      {job && (
+        <div className="job-status">
+          <h3>Status: {job.status}</h3>
+          <progress value={job.progress} max={100} />
+          <p>{job.progress}%</p>
+          
+          {job.status === 'completed' && job.videoUrl && (
+            <video src={job.videoUrl} controls />
+          )}
+          
+          {job.status === 'failed' && (
+            <p className="error">{job.error}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS use environment variables:
+
+```bash
+# .env.local
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+
+# Video API configuration
+VIDEO_API_KEY=your_video_api_key
+VIDEO_API_ENDPOINT=https://api.example.com/v1
+```
+
+NEVER hardcode credentials:
+
+```typescript
+// ✅ CORRECT
+const apiKey = process.env.VIDEO_API_KEY!;
+
+// ❌ INCORRECT
+const apiKey = 'sk-abc123...';
+```
+
+## TypeScript Types
+
+### Video Types
+
+ALWAYS define shared types:
+
+```typescript
+// src/lib/types.ts
+export interface VideoGenerationRequest {
+  prompt: string;
+  duration?: number; // seconds
+  resolution?: '720p' | '1080p' | '4k';
+  fps?: number;
+  codec?: 'h264' | 'h265' | 'vp9';
+}
+
+export interface VideoJob {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  prompt: string;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  duration?: number;
+  resolution?: string;
+  fileSize?: number;
+  error?: string;
+  createdAt: number;
+  startedAt?: number;
+  completedAt?: number;
+  progress: number;
+}
+
+export interface VideoGenerationResponse {
+  success: boolean;
+  jobId?: string;
+  error?: string;
+  message?: string;
+}
+```
+
+## Feature Flags
+
+### Video Feature Flags
+
+ALWAYS centralize feature flags:
+
+```typescript
+// src/lib/flags.ts
+export enum VideoFeatureFlags {
+  ENABLE_4K_GENERATION = 'enable_4k_generation',
+  ENABLE_CUSTOM_DURATION = 'enable_custom_duration',
+  ENABLE_ADVANCED_CODECS = 'enable_advanced_codecs',
+  ENABLE_BATCH_PROCESSING = 'enable_batch_processing',
+}
+
+export function validateVideoFeatureFlag(flag: string): boolean {
+  return Object.values(VideoFeatureFlags).includes(flag as VideoFeatureFlags);
+}
+```
+
+## Validation and Limits
+
+### Input Validation
+
+ALWAYS validate and enforce limits:
+
+```typescript
+// src/lib/validation.ts
+export const VideoLimits = {
+  MIN_DURATION: 5,
+  MAX_DURATION: 60,
+  MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
+  SUPPORTED_RESOLUTIONS: ['720p', '1080p', '4k'] as const,
+  SUPPORTED_CODECS: ['h264', 'h265', 'vp9'] as const,
+} as const;
+
+export function validateVideoRequest(request: VideoGenerationRequest): string | null {
+  if (!request.prompt || request.prompt.trim().length === 0) {
+    return 'Prompt is required';
+  }
+
+  if (request.prompt.length > 1000) {
+    return 'Prompt must be less than 1000 characters';
+  }
+
+  if (request.duration !== undefined) {
+    if (request.duration < VideoLimits.MIN_DURATION) {
+      return `Duration must be at least ${VideoLimits.MIN_DURATION} seconds`;
+    }
+    if (request.duration > VideoLimits.MAX_DURATION) {
+      return `Duration must be at most ${VideoLimits.MAX_DURATION} seconds`;
+    }
+  }
+
+  if (request.resolution && !VideoLimits.SUPPORTED_RESOLUTIONS.includes(request.resolution)) {
+    return `Resolution must be one of: ${VideoLimits.SUPPORTED_RESOLUTIONS.join(', ')}`;
+  }
+
+  return null; // Valid
+}
+```
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── echo/
+│   │   │   └── [...echo]/route.ts
+│   │   ├── generate-video/
+│   │   │   └── route.ts
+│   │   └── video-status/
+│   │       └── route.ts
+│   └── page.tsx
+├── components/
+│   ├── video-generator.tsx
+│   ├── video-player.tsx
+│   └── video-job-status.tsx
+├── echo/
+│   └── index.ts
+├── lib/
+│   ├── flags.ts             # Feature flags
+│   ├── types.ts             # Shared types
+│   ├── validation.ts        # Input validation
+│   └── video-utils.ts       # Video helpers
+└── providers.tsx
+```
+
+## Best Practices
+
+1. **Async Processing**: Never block requests for long-running video generation
+2. **Job Management**: Use job IDs and status polling for progress tracking
+3. **Validation**: Strictly validate all inputs (duration, resolution, codec)
+4. **Error Handling**: Provide clear error messages for different failure modes
+5. **Runtime**: Use Node.js runtime for video processing operations
+6. **Limits**: Enforce duration, size, and resolution limits
+7. **Progress**: Show progress indicators to users during generation
+8. **Security**: Never expose API keys or internal endpoints to clients

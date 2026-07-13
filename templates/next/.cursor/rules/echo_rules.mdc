@@ -1,0 +1,335 @@
+## Description: Guidelines and best practices for building Echo Next.js applications, including server/client boundaries, environment variables, API routes, and real-world examples globs: /**/*.ts,/**/*.tsx,**/*.js,**/*.jsx
+
+## Echo Next.js Guidelines
+
+## SDK Initialization
+
+### Server-Side Initialization
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts` for server-side usage:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap your application with `EchoProvider` in your providers file:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local`:
+
+```bash
+# Server-side only
+ECHO_APP_ID=your_echo_app_id
+
+# Client-side (public)
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code. ALWAYS read from environment variables:
+
+```typescript
+// ✅ CORRECT
+const appId = process.env.ECHO_APP_ID!;
+
+// ❌ INCORRECT
+const appId = 'echo_app_123abc';
+```
+
+## Server/Client Boundaries
+
+### Server Components
+
+ALWAYS use server components for Echo AI calls that require authentication:
+
+```typescript
+// app/page.tsx
+import { openai } from '@/echo';
+import { generateText } from 'ai';
+
+export default async function Page() {
+  const { text } = await generateText({
+    model: openai('gpt-4o'),
+    prompt: 'Hello, world!',
+  });
+  
+  return <div>{text}</div>;
+}
+```
+
+### Client Components
+
+Use client components ONLY for UI interactions. NEVER make direct AI calls from client components with server secrets:
+
+```typescript
+// ✅ CORRECT - Client component calls API route
+'use client';
+
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+export function EchoButton() {
+  return <EchoTokens />;
+}
+```
+
+```typescript
+// ❌ INCORRECT - Never use server secrets in client components
+'use client';
+
+import Echo from '@merit-systems/echo-next-sdk'; // Don't do this!
+
+export function BadComponent() {
+  const { openai } = Echo({ appId: process.env.ECHO_APP_ID! });
+  // This exposes server secrets to the client!
+}
+```
+
+## API Routes
+
+### Echo Authentication Handler
+
+ALWAYS register Echo authentication handlers at `app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+
+export const { GET, POST } = handlers;
+```
+
+### Custom API Routes
+
+Place custom Echo-related API routes under `app/api/` and ALWAYS validate inputs:
+
+```typescript
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  try {
+    const { messages, model } = await req.json();
+
+    // ✅ ALWAYS validate required parameters
+    if (!model) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Model parameter is required',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(
+        JSON.stringify({
+          error: 'Bad Request',
+          message: 'Messages parameter is required and must be an array',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const result = streamText({
+      model: openai(model),
+      messages,
+    });
+
+    return result.toDataStreamResponse();
+  } catch (error) {
+    console.error('API error:', error);
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: 'Failed to process request',
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+```
+
+### Runtime Configuration
+
+Use `export const runtime` to specify the execution environment when needed:
+
+```typescript
+// For Node.js-specific features
+export const runtime = 'nodejs';
+
+// For edge runtime (default)
+export const runtime = 'edge';
+```
+
+## Feature Flags and Custom Properties
+
+### Feature Flag Storage
+
+ALWAYS centralize feature flags in a constants file using TypeScript enums:
+
+```typescript
+// src/lib/flags.ts
+export enum FeatureFlags {
+  ENABLE_ADVANCED_CHAT = 'enable_advanced_chat',
+  ENABLE_IMAGE_GENERATION = 'enable_image_generation',
+  ENABLE_BETA_FEATURES = 'enable_beta_features',
+}
+
+// Validate flag values before use
+export function validateFeatureFlag(flag: string): boolean {
+  return Object.values(FeatureFlags).includes(flag as FeatureFlags);
+}
+```
+
+### Custom Properties
+
+If a custom property is used in multiple places, ALWAYS define it in a constants file:
+
+```typescript
+// src/lib/properties.ts
+export const CustomProperties = {
+  USER_TIER: 'user_tier',
+  TOTAL_REQUESTS: 'total_requests',
+  LAST_ACTIVE: 'last_active',
+} as const;
+
+export type CustomProperty = typeof CustomProperties[keyof typeof CustomProperties];
+```
+
+## TypeScript Guidelines
+
+### Type Safety
+
+ALWAYS export explicit types for shared data structures:
+
+```typescript
+// src/lib/types.ts
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: Date;
+}
+
+export interface ChatResponse {
+  message: ChatMessage;
+  usage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+```
+
+### Strict Typing
+
+ALWAYS use strict typing and avoid `any`:
+
+```typescript
+// ✅ CORRECT
+function processMessages(messages: ChatMessage[]): string {
+  return messages.map(m => m.content).join('\n');
+}
+
+// ❌ INCORRECT
+function processMessages(messages: any): any {
+  return messages.map((m: any) => m.content).join('\n');
+}
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly and provide meaningful messages:
+
+```typescript
+// ✅ CORRECT
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  throw new Error('Failed to complete operation');
+}
+
+// ❌ INCORRECT
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  // Silent failure
+}
+```
+
+## Project Structure
+
+Follow this recommended structure for Echo Next.js projects:
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── echo/
+│   │   │   └── [...echo]/
+│   │   │       └── route.ts       # Echo auth handlers
+│   │   └── chat/
+│   │       └── route.ts           # Custom API routes
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   └── EchoWrapper.tsx            # Client-side Echo components
+├── echo/
+│   └── index.ts                   # Server-side Echo initialization
+├── lib/
+│   ├── flags.ts                   # Feature flags
+│   ├── properties.ts              # Custom properties
+│   └── types.ts                   # Shared TypeScript types
+└── providers.tsx                  # Client providers including EchoProvider
+```
+
+## Testing
+
+NEVER call external services directly in unit tests. ALWAYS use mocks:
+
+```typescript
+// ✅ CORRECT
+import { vi } from 'vitest';
+
+vi.mock('@/echo', () => ({
+  openai: vi.fn(() => mockModel),
+}));
+
+test('chat endpoint returns response', async () => {
+  // Test implementation
+});
+```
+
+## Best Practices
+
+1. **Separation of Concerns**: Keep server logic in API routes and `src/echo/`, client logic in components
+2. **Environment Variables**: Use server variables for secrets, public variables for client-side config
+3. **Validation**: Always validate inputs in API routes before processing
+4. **Error Handling**: Provide clear error messages and appropriate HTTP status codes
+5. **Type Safety**: Use TypeScript strictly, export shared types
+6. **Feature Flags**: Centralize in one file, validate before use
+7. **Security**: Never expose server secrets to the client
