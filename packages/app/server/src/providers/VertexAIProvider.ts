@@ -18,9 +18,11 @@ import { env } from '../env';
 
 // Constants
 export const PROXY_PASSTHROUGH_ONLY_MODEL = 'PROXY_PLACEHOLDER_VERTEX_AI';
-const VEO3_MODELS = [
+const VEO_MODELS = [
   'veo-3.0-fast-generate-preview',
   'veo-3.0-generate-preview',
+  'veo-3.1-generate-preview',
+  'veo-3.1-fast-generate-preview',
 ];
 const GCS_BUCKET_NAME = 'echo-veo3-videos';
 const GCS_URI_PREFIX = 'gs://';
@@ -496,7 +498,7 @@ export class VertexAIProvider extends BaseProvider {
     }
   }
 
-  private isVeo3Model(): boolean {
-    return VEO3_MODELS.includes(this.getModel());
+  private isVeoModel(): boolean {
+    return VEO_MODELS.includes(this.getModel());
   }
 }
