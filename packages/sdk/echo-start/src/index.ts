@@ -14,7 +14,7 @@ import chalk from 'chalk';
 import { spawn } from 'child_process';
 import { Command } from 'commander';
 import degit from 'degit';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import path from 'path';
 
 const program = new Command();
@@ -200,6 +200,93 @@ function resolveTemplateRepo(template: string): string {
   }
 
   return repo;
+}
+
+interface EchoTemplateConfig {
+  referralCode?: string;
+}
+
+/**
+ * Read echo.config.json from a scaffolded template directory.
+ * Template creators can include this file to specify their referral code,
+ * which will be auto-registered when a user scaffolds from the template.
+ */
+function readTemplateReferralConfig(
+  projectPath: string
+): EchoTemplateConfig | null {
+  const configPath = path.join(projectPath, 'echo.config.json');
+  if (!existsSync(configPath)) {
+    return null;
+  }
+
+  try {
+    const content = readFileSync(configPath, 'utf-8');
+    const config = JSON.parse(content) as EchoTemplateConfig;
+    return config;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sanitize a referral code to prevent environment variable injection.
+ * Only allows alphanumeric characters, hyphens, underscores, and dots.
+ * Returns null if the code is invalid or empty after sanitization.
+ */
+function sanitizeReferralCode(code: unknown): string | null {
+  if (typeof code !== 'string' || code.length === 0) {
+    return null;
+  }
+
+  // Strict allowlist: only alphanumeric, hyphens, underscores, dots
+  const SAFE_REFERRAL_PATTERN = /^[a-zA-Z0-9_\-\.]+$/;
+
+  if (!SAFE_REFERRAL_PATTERN.test(code)) {
+    return null;
+  }
+
+  // Enforce a reasonable max length
+  if (code.length > 128) {
+    return null;
+  }
+
+  return code;
+}
+
+/**
+ * Extract the GitHub owner (user or org) from a GitHub template URL.
+ * e.g. "https://github.com/someuser/my-template" -> "someuser"
+ */
+function extractTemplateOwner(templateUrl: string): string | null {
+  const repo = resolveTemplateRepo(templateUrl);
+  const parts = repo.split('/');
+  return parts.length >= 2 ? parts[0] : null;
+}
+
+/**
+ * Detect the appropriate env var name for the referral code based on the project's framework.
+ */
+function detectReferralEnvVarName(projectPath: string): string {
+  const pkgPath = path.join(projectPath, 'package.json');
+
+  if (existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+      const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+
+      if (deps['next']) {
+        return 'NEXT_PUBLIC_ECHO_REFERRAL_CODE';
+      } else if (deps['vite']) {
+        return 'VITE_ECHO_REFERRAL_CODE';
+      } else if (deps['react-scripts']) {
+        return 'REACT_APP_ECHO_REFERRAL_CODE';
+      }
+    } catch {
+      // Fall through to default
+    }
+  }
+
+  return 'NEXT_PUBLIC_ECHO_REFERRAL_CODE';
 }
 
 function detectEnvVarName(projectPath: string): string | null {
@@ -412,6 +499,52 @@ async function createApp(projectDir: string, options: CreateAppOptions) {
       const envContent = `${envVarName}=${appId}\n`;
       writeFileSync(envPath, envContent);
       log.message(`Created .env.local with ${envVarName}`);
+    }
+
+    // Handle template referral system for external templates.
+    // If the template includes an echo.config.json with a referralCode,
+    // write it to .env.local so the OAuth flow auto-registers the template
+    // creator as the referrer on the new app.
+    // See: https://echo.merit.systems/docs/money/referrals
+    if (isExternal) {
+      const templateConfig = readTemplateReferralConfig(absoluteProjectPath);
+      const referralCode = sanitizeReferralCode(templateConfig?.referralCode);
+
+      if (templateConfig?.referralCode && !referralCode) {
+        log.warning(
+          'Template referral code was ignored: contains invalid characters. ' +
+            'Only alphanumeric characters, hyphens, underscores, and dots are allowed.'
+        );
+      }
+
+      if (referralCode) {
+        const referralEnvVar = detectReferralEnvVarName(absoluteProjectPath);
+        const envFilePath = path.join(absoluteProjectPath, '.env.local');
+
+        if (existsSync(envFilePath)) {
+          const currentEnv = readFileSync(envFilePath, 'utf-8');
+          writeFileSync(
+            envFilePath,
+            currentEnv.trimEnd() + `\n${referralEnvVar}=${referralCode}\n`
+          );
+        } else {
+          writeFileSync(envFilePath, `${referralEnvVar}=${referralCode}\n`);
+        }
+
+        const owner = extractTemplateOwner(template);
+        log.message(
+          `Registered template referral code from ${owner ? `@${owner}` : 'template creator'}`
+        );
+      }
+
+      // Clean up echo.config.json - it's template metadata, not app code
+      const echoConfigPath = path.join(
+        absoluteProjectPath,
+        'echo.config.json'
+      );
+      if (existsSync(echoConfigPath)) {
+        unlinkSync(echoConfigPath);
+      }
     }
 
     log.step('Project setup completed successfully');
