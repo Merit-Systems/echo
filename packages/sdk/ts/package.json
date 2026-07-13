@@ -63,6 +63,7 @@
     "@ai-sdk/openai": "2.0.32",
     "@ai-sdk/xai": "2.0.16",
     "@openrouter/ai-sdk-provider": "1.2.0",
+    "@ai-sdk/gateway": "^1.0.12",
     "ai": "5.0.47"
   }
 }

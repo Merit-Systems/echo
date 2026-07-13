@@ -45,6 +45,8 @@ export const env = createEnv({
     GROQ_API_KEY: z.string().optional(),
     XAI_API_KEY: z.string().optional(),
     OPENROUTER_API_KEY: z.string().optional(),
+    VERCEL_GATEWAY_API_KEY: z.string().optional(),
+    VERCEL_GATEWAY_BASE_URL: z.string().url().optional(),
     TAVILY_API_KEY: z.string().optional(),
     E2B_API_KEY: z.string().optional(),
     GOOGLE_SERVICE_ACCOUNT_KEY_ENCODED: z.string().optional(),

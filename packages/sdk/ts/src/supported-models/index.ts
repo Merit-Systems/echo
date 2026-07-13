@@ -4,6 +4,7 @@ export * from './chat/anthropic';
 export * from './chat/gemini';
 export * from './chat/openai';
 export * from './chat/openrouter';
+export * from './chat/vercel-gateway';
 export * from './image/openai';
 export * from './responses/openai';
 export * from './video/gemini';

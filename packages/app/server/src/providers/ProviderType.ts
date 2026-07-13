@@ -12,4 +12,5 @@ export enum ProviderType {
   OPENAI_VIDEOS = 'OPENAI_VIDEOS',
   GROQ = 'GROQ',
   XAI = 'XAI',
+  VERCEL_GATEWAY = 'VERCEL_GATEWAY',
 }

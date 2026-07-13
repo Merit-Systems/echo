@@ -22,6 +22,7 @@ import { OpenAIResponsesProvider } from './OpenAIResponsesProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { ProviderType } from './ProviderType';
 import { XAIProvider } from './XAIProvider';
+import { VercelGatewayProvider } from './VercelGatewayProvider';
 import {
   VertexAIProvider,
   PROXY_PASSTHROUGH_ONLY_MODEL as VertexAIProxyPassthroughOnlyModel,
@@ -57,6 +58,9 @@ const createChatModelToProviderMapping = (): Record<string, ProviderType> => {
         case 'XAI':
         case 'Xai':
           mapping[modelConfig.model_id] = ProviderType.XAI;
+          break;
+        case 'VercelGateway':
+          mapping[modelConfig.model_id] = ProviderType.VERCEL_GATEWAY;
           break;
         // Add other providers as needed
         default:
@@ -192,6 +196,8 @@ export const getProvider = (
       return new GroqProvider(stream, model);
     case ProviderType.XAI:
       return new XAIProvider(stream, model);
+    case ProviderType.VERCEL_GATEWAY:
+      return new VercelGatewayProvider(stream, model);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }
