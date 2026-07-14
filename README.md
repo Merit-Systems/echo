@@ -119,9 +119,15 @@ Or run `npx echo-start my-app` to choose interactively.
 
 **Note:** The CLI template (`echo-cli`) requires manual installation from the repository as it's a command-line tool rather than a web application. See the [templates README](./templates/README.md) for details.
 
-# Development
+## Local Development
 
-Fill out `packages/app/control/.env` and `packages/app/server/.env`. Then...
+**Quick Start:**
 
-- `pnpm i`
-- `pnpm dev`
+```bash
+git clone https://github.com/Merit-Systems/echo.git
+cd echo
+pnpm setup    # Automated setup (requires Docker)
+pnpm dev      # Start servers
+```
+
+Visit http://localhost:3000. For manual setup or troubleshooting, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
