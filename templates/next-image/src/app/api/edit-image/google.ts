@@ -7,12 +7,19 @@ import { generateText } from 'ai';
 import { getMediaTypeFromDataUrl } from '@/lib/image-utils';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
+interface FileInput {
+  bytes: Uint8Array;
+  mediaType: string;
+  filename: string;
+}
+
 /**
- * Handles Google Gemini image editing
+ * Handles Google Gemini image editing using raw file bytes.
+ * This avoids base64 data URL bloat in the request body.
  */
-export async function handleGoogleEdit(
+export async function handleGoogleFileEdit(
   prompt: string,
-  imageUrls: string[]
+  files: FileInput[]
 ): Promise<Response> {
   try {
     const content = [
@@ -20,10 +27,10 @@ export async function handleGoogleEdit(
         type: 'text' as const,
         text: prompt,
       },
-      ...imageUrls.map(imageUrl => ({
+      ...files.map(file => ({
         type: 'image' as const,
-        image: imageUrl, // Direct data URL - Gemini handles it
-        mediaType: getMediaTypeFromDataUrl(imageUrl),
+        image: file.bytes,
+        mediaType: file.mediaType,
       })),
     ];
 
@@ -63,4 +70,22 @@ export async function handleGoogleEdit(
       { status: 500 }
     );
   }
+}
+
+/**
+ * Handles Google Gemini image editing from data URLs (legacy/fallback).
+ * Converts data URLs to bytes and delegates to handleGoogleFileEdit.
+ */
+export async function handleGoogleEdit(
+  prompt: string,
+  imageUrls: string[]
+): Promise<Response> {
+  const files: FileInput[] = imageUrls.map((url, i) => {
+    const mediaType = getMediaTypeFromDataUrl(url);
+    const base64 = url.split(',')[1];
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    return { bytes, mediaType, filename: `image-${i}.png` };
+  });
+
+  return handleGoogleFileEdit(prompt, files);
 }

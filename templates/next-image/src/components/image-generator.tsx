@@ -27,7 +27,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fileToDataUrl } from '@/lib/image-utils';
 import type {
-  EditImageRequest,
   GeneratedImage,
   GenerateImageRequest,
   ImageResponse,
@@ -77,11 +76,26 @@ async function generateImage(
   return response.json();
 }
 
-async function editImage(request: EditImageRequest): Promise<ImageResponse> {
+/**
+ * Sends image edit request using FormData with File objects.
+ * This avoids base64 data URL encoding, preventing HTTP 413 errors.
+ */
+async function editImage(params: {
+  prompt: string;
+  provider: ModelOption;
+  imageFiles: File[];
+}): Promise<ImageResponse> {
+  const formData = new FormData();
+  formData.append('prompt', params.prompt);
+  formData.append('provider', params.provider);
+  for (const file of params.imageFiles) {
+    formData.append('imageFiles', file);
+  }
+
   const response = await fetch('/api/edit-image', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
+    // No Content-Type header - browser sets it automatically with boundary for multipart
+    body: formData,
   });
 
   if (!response.ok) {
@@ -144,7 +158,7 @@ export default function ImageGenerator() {
   /**
    * Handles form submission for both image generation and editing
    * - Text-only: generates new image using selected model
-   * - Text + attachments: edits uploaded images using Gemini
+   * - Text + attachments: edits uploaded images using selected model
    */
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
@@ -206,38 +220,36 @@ export default function ImageGenerator() {
         let imageUrl: ImageResponse['imageUrl'];
 
         if (isEdit) {
-          const imageFiles =
+          const imageAttachments =
             message.files?.filter(
               file =>
                 file.mediaType?.startsWith('image/') || file.type === 'file'
             ) || [];
 
-          if (imageFiles.length === 0) {
+          if (imageAttachments.length === 0) {
             throw new Error('No image files found in attachments');
           }
 
-          try {
-            const imageUrls = await Promise.all(
-              imageFiles.map(async imageFile => {
-                // Convert blob URL to data URL for API
-                const response = await fetch(imageFile.url);
-                const blob = await response.blob();
-                return await fileToDataUrl(
-                  new File([blob], 'image', { type: imageFile.mediaType })
-                );
-              })
-            );
+          // Convert blob URLs directly to File objects for FormData upload.
+          // This avoids base64 encoding entirely, preventing HTTP 413 errors.
+          const imageFiles = await Promise.all(
+            imageAttachments.map(async imageFile => {
+              const response = await fetch(imageFile.url);
+              const blob = await response.blob();
+              return new File(
+                [blob],
+                imageFile.filename || 'image.png',
+                { type: imageFile.mediaType || 'image/png' }
+              );
+            })
+          );
 
-            const result = await editImage({
-              prompt,
-              imageUrls,
-              provider: model,
-            });
-            imageUrl = result.imageUrl;
-          } catch (error) {
-            console.error('Error processing image files:', error);
-            throw error;
-          }
+          const result = await editImage({
+            prompt,
+            provider: model,
+            imageFiles,
+          });
+          imageUrl = result.imageUrl;
         } else {
           const result = await generateImage({ prompt, model });
           imageUrl = result.imageUrl;
