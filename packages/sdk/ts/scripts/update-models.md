@@ -11,6 +11,7 @@ pnpm run update-models:anthropic
 pnpm run update-models:gemini
 pnpm run update-models:openrouter
 pnpm run update-models:groq
+pnpm run update-models:vercel
 
 # Update all providers at once
 pnpm run update-all-models
@@ -25,6 +26,8 @@ Set environment variables for provider API keys:
 - `GOOGLE_GEMINI_API_KEY`
 - `OPENROUTER_API_KEY`
 - `GROQ_API_KEY`
+
+`update-models:vercel` uses the public Vercel AI Gateway model endpoint and does not require an API key.
 
 ## What it does
 

@@ -6,6 +6,7 @@ import {
   GroqProvider,
   OpenRouterProvider,
   XaiProvider,
+  VercelAIGatewayProvider,
 } from '@merit-systems/echo-typescript-sdk';
 import { NextRequest } from 'next/server';
 
@@ -52,4 +53,5 @@ export type EchoResult = {
   groq: GroqProvider;
   openrouter: OpenRouterProvider;
   xai: XaiProvider;
+  vercel: VercelAIGatewayProvider;
 };

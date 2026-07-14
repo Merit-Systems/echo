@@ -7,9 +7,11 @@ import {
   OpenAIImageModels,
   SupportedOpenAIResponseToolPricing,
   SupportedModel,
+  TokenPricingTier,
   SupportedImageModel,
   SupportedVideoModel,
   XAIModels,
+  VercelAIGatewayModels,
 } from '@merit-systems/echo-typescript-sdk';
 
 import { Decimal } from '@prisma/client/runtime/library';
@@ -30,6 +32,7 @@ export const ALL_SUPPORTED_MODELS: SupportedModel[] = [
   ...OpenRouterModels,
   ...GroqModels,
   ...XAIModels,
+  ...VercelAIGatewayModels,
 ];
 
 // Handle image models separately since they have different pricing structure
@@ -67,6 +70,8 @@ export const getModelPrice = (model: string) => {
     return {
       input_cost_per_token: supportedModel.input_cost_per_token,
       output_cost_per_token: supportedModel.output_cost_per_token,
+      input_cost_per_token_tiers: supportedModel.input_cost_per_token_tiers,
+      output_cost_per_token_tiers: supportedModel.output_cost_per_token_tiers,
       provider: supportedModel.provider,
       model: supportedModel.model_id,
     };
@@ -135,9 +140,17 @@ export const getCostPerToken = (
     throw new Error(`Invalid pricing for model: ${model}`);
   }
 
-  const cost = new Decimal(modelPrice.input_cost_per_token)
-    .mul(inputTokens)
-    .plus(new Decimal(modelPrice.output_cost_per_token).mul(outputTokens));
+  const cost = getTieredTokenCost(
+    inputTokens,
+    modelPrice.input_cost_per_token,
+    modelPrice.input_cost_per_token_tiers
+  ).plus(
+    getTieredTokenCost(
+      outputTokens,
+      modelPrice.output_cost_per_token,
+      modelPrice.output_cost_per_token_tiers
+    )
+  );
 
   if (cost.lessThan(0)) {
     throw new Error(`Invalid cost for model: ${model}`);
@@ -145,6 +158,44 @@ export const getCostPerToken = (
 
   return cost;
 };
+
+export function getTieredTokenRate(
+  tokens: number,
+  fallbackRate: number,
+  tiers?: TokenPricingTier[]
+): number {
+  if (!tiers || tiers.length === 0) {
+    return fallbackRate;
+  }
+
+  return (
+    tiers.find(
+      tier =>
+        tokens >= tier.min && (tier.max === undefined || tokens < tier.max)
+    )?.cost ?? fallbackRate
+  );
+}
+
+export function getMaxTokenRate(
+  fallbackRate: number,
+  tiers?: TokenPricingTier[]
+): number {
+  if (!tiers || tiers.length === 0) {
+    return fallbackRate;
+  }
+
+  return Math.max(fallbackRate, ...tiers.map(tier => tier.cost));
+}
+
+function getTieredTokenCost(
+  tokens: number,
+  fallbackRate: number,
+  tiers?: TokenPricingTier[]
+): Decimal {
+  return new Decimal(getTieredTokenRate(tokens, fallbackRate, tiers)).mul(
+    tokens
+  );
+}
 
 export const getImageModelCost = (
   model: string,

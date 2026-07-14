@@ -7,6 +7,7 @@ import {
   isValidVideoModel,
   calculateToolCost,
   getImageModelPrice,
+  getMaxTokenRate,
 } from './AccountingService';
 import { Decimal } from '@prisma/client/runtime/library';
 import { extractMaxOutputTokens } from './RequestDataService';
@@ -84,10 +85,16 @@ export function getRequestMaxCost(
       throw new UnknownModelError(`Invalid model: ${provider.getModel()}`);
     }
     const maxInputCost = new Decimal(maxInputTokens).mul(
-      modelWithPricing.input_cost_per_token
+      getMaxTokenRate(
+        modelWithPricing.input_cost_per_token,
+        modelWithPricing.input_cost_per_token_tiers
+      )
     );
     const maxOutputCost = new Decimal(maxOutputTokens).mul(
-      modelWithPricing.output_cost_per_token
+      getMaxTokenRate(
+        modelWithPricing.output_cost_per_token,
+        modelWithPricing.output_cost_per_token_tiers
+      )
     );
     // Tool cost for OpenAI Responses API
     const toolCost = predictMaxToolCost(req, provider);
