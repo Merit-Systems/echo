@@ -1,0 +1,15 @@
+---
+description: Shared Echo conventions for starter templates.
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Starter Guidelines
+
+- Keep Echo SDK setup in the template's existing Echo module or provider file.
+- Read Echo app IDs, API keys, and wallet credentials from environment variables.
+- Keep server-only Echo clients out of browser bundles.
+- Use TypeScript types for provider configuration, model selection, and API payloads.
+- Keep React UI components focused on rendering and user interaction.
+- Keep API, auth, wallet, and provider concerns in separate modules.
+- Prefer async/await and explicit error handling for Echo SDK calls.
+- Do not hardcode model names in multiple places; centralize supported model choices.

@@ -1,0 +1,37 @@
+---
+description: Guidelines for building Echo Vite React starter apps.
+globs: **/*.ts,**/*.tsx
+---
+
+# Echo React Guidelines
+
+## Provider Setup
+
+- Configure `EchoProvider` in `src/main.tsx`.
+- Read the public Echo app ID from `import.meta.env.VITE_ECHO_APP_ID`.
+- Keep provider configuration at the app boundary instead of duplicating it in pages.
+- Use hooks from `@merit-systems/echo-react-sdk` inside React components.
+
+## Components
+
+- Keep Echo account, balance, and token controls in small reusable components.
+- Keep model selection and prompt state in typed React state.
+- Avoid putting provider setup or long-running model orchestration directly in presentational components.
+- Extract shared Echo UI state into hooks when more than one component needs it.
+
+## Environment
+
+- Only expose values intended for the browser through `VITE_` variables.
+- Do not place server credentials, private wallet keys, or API keys in Vite env values.
+- Route server-only Echo calls through a backend service instead of calling them from the browser.
+
+## TypeScript
+
+- Type chat messages, model options, and provider responses explicitly.
+- Avoid `any` for Echo hook values and model payloads.
+- Keep supported model/provider lists centralized.
+
+## Testing
+
+- Mock Echo hooks and provider clients in component tests.
+- Test loading, signed-out, signed-in, and provider-error states for Echo UI.

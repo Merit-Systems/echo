@@ -1,0 +1,39 @@
+---
+description: Guidelines for building Echo CLI starter apps.
+globs: **/*.ts
+---
+
+# Echo CLI Guidelines
+
+## CLI Boundaries
+
+- Keep command parsing in `src/index.ts` and delegate work to `src/core`.
+- Keep Echo auth and provider creation inside `src/auth`.
+- Keep config loading and persistence inside `src/config`.
+- Keep terminal output formatting inside `src/print.ts` or `src/utils`.
+
+## Authentication And Secrets
+
+- Read Echo API keys, wallet settings, and profile configuration from the existing config layer.
+- Do not print secrets, private keys, raw tokens, or full wallet credentials.
+- Keep local wallet operations isolated in the wallet/auth modules.
+- Return user-friendly auth errors without exposing credential material.
+
+## Provider Usage
+
+- Create Echo model providers through `@merit-systems/echo-typescript-sdk`.
+- Centralize supported model names in `src/config/models.ts`.
+- Stream model output through the existing stream utilities.
+- Preserve chat history through `src/core/history.ts` instead of ad hoc files.
+
+## Validation
+
+- Validate command inputs with the schemas in `src/validation`.
+- Fail early for missing model, prompt, API key, or wallet configuration.
+- Keep error messages actionable and avoid swallowing provider failures.
+
+## TypeScript
+
+- Use explicit types for CLI options, auth profiles, model configs, and chat messages.
+- Prefer async/await for provider, wallet, and filesystem operations.
+- Keep side effects at the command boundary and core/auth modules.

@@ -1,0 +1,40 @@
+---
+description: Guidelines for building Echo Next.js starter apps.
+globs: **/*.ts,**/*.tsx
+---
+
+# Echo Next.js Guidelines
+
+## SDK Setup
+
+- Initialize the server Echo SDK in `src/echo/index.ts`.
+- Export the SDK helpers from that module and import them from application code.
+- Register Echo client providers in `src/providers.tsx`.
+- Wrap the app with `EchoProvider` using `NEXT_PUBLIC_ECHO_APP_ID`.
+
+## Server And Client Boundaries
+
+- Use server components, route handlers, or server actions for operations that need server-only credentials.
+- Keep `"use client"` components limited to UI state, sign-in UI, account display, and token/balance controls.
+- Import browser hooks and UI helpers from `@merit-systems/echo-next-sdk/client`.
+- Do not import the server SDK from client components.
+
+## API Routes
+
+- Put Echo-related API handlers under `src/app/api`.
+- Validate JSON request bodies before calling provider models.
+- Return explicit HTTP status codes for validation and provider errors.
+- Stream model responses from route handlers when building chat or generation flows.
+
+## Environment
+
+- Use `ECHO_APP_ID` only on the server.
+- Use `NEXT_PUBLIC_ECHO_APP_ID` only for public client configuration.
+- Do not hardcode app IDs, API keys, wallet keys, or model-provider secrets.
+
+## Project Shape
+
+- Keep shared Echo setup in `src/echo`.
+- Keep client wrappers in `src/components` or `src/providers.tsx`.
+- Keep reusable request/response types close to the route or in `src/lib`.
+- Add tests or examples beside the route/component when adding a new Echo workflow.
