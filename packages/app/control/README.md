@@ -46,8 +46,10 @@ A comprehensive Next.js application for managing Echo applications, API keys, an
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL database
-- pnpm
+- pnpm (install via `npm install -g pnpm` or `corepack enable`)
+- Docker + Docker Compose plugin (`docker compose`)
+
+> **Windows Users**: Use `.\scripts\setup-windows.ps1` in PowerShell instead of `./scripts/setup.sh`. See [WINDOWS-SETUP.md](../../../WINDOWS-SETUP.md) for complete Windows setup guide.
 
 ### Installation
 
@@ -66,8 +68,11 @@ A comprehensive Next.js application for managing Echo applications, API keys, an
 3. **Create .env file**:
 
    ```bash
-   # Generate .env file
+   # Linux/Mac/Git Bash
    pnpm local-setup
+   
+   # Windows PowerShell
+   .\scripts\setup-windows.ps1
    ```
 
 4. **Run database migrations**:
