@@ -35,6 +35,10 @@ export function validateGenerateVideoRequest(body: unknown): ValidationResult {
   }
 
   const validModels: VideoModelOption[] = [
+    'veo-3.1-fast-generate-001',
+    'veo-3.1-generate-001',
+    'veo-3.1-fast-generate-preview',
+    'veo-3.1-generate-preview',
     'veo-3.0-fast-generate-preview',
     'veo-3.0-generate-preview',
   ];
