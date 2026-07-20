@@ -12,7 +12,7 @@ export const env = createEnv({
     // Server
     PORT: z.coerce.number().default(3069),
     NODE_ENV: z
-      .enum(['development', 'production', 'staging', "test"])
+      .enum(['development', 'production', 'staging', 'test'])
       .default('development'),
 
     // Network & Blockchain
@@ -50,8 +50,12 @@ export const env = createEnv({
     GOOGLE_SERVICE_ACCOUNT_KEY_ENCODED: z.string().optional(),
 
     // API Keys - Echo
-    API_KEY_HASH_SECRET: z.string().default('change-this-in-production-very-secret-key'),
-    API_ECHO_ACCESS_JWT_SECRET: z.string().default('api-jwt-secret-change-in-production'),
+    API_KEY_HASH_SECRET: z
+      .string()
+      .default('change-this-in-production-very-secret-key'),
+    API_ECHO_ACCESS_JWT_SECRET: z
+      .string()
+      .default('api-jwt-secret-change-in-production'),
 
     // Echo Configuration
     ECHO_MARKUP: z.string().default('1.25'),
