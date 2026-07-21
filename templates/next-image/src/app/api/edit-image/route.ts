@@ -3,7 +3,6 @@
  *
  * This route demonstrates Echo SDK integration with AI image editing:
  * - Uses both Google Gemini and OpenAI for image editing
- * - Supports both data URLs (base64) and regular URLs
  * - Validates input images and prompts
  * - Returns edited images in appropriate format
  */
@@ -15,14 +14,6 @@ import { handleOpenAIEdit } from './openai';
 const providers = {
   openai: handleOpenAIEdit,
   gemini: handleGoogleEdit,
-};
-
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb',
-    },
-  },
 };
 
 export async function POST(req: Request) {

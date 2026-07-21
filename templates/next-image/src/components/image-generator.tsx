@@ -26,6 +26,7 @@ import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fileToDataUrl } from '@/lib/image-utils';
+import { uploadFilesToBlob } from '@/lib/blob-utils';
 import type {
   EditImageRequest,
   GeneratedImage,
@@ -144,7 +145,7 @@ export default function ImageGenerator() {
   /**
    * Handles form submission for both image generation and editing
    * - Text-only: generates new image using selected model
-   * - Text + attachments: edits uploaded images using Gemini
+   * - Text + attachments: uploads to blob storage, then edits images
    */
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
@@ -162,30 +163,33 @@ export default function ImageGenerator() {
       // Generate unique ID for this request
       const imageId = `img_${Date.now()}`;
 
-      // Convert attachment blob URLs to permanent data URLs for persistent display
-      const attachmentDataUrls =
+      // Convert blob URLs to File objects ONCE (for both upload and history display)
+      const imageFiles =
         message.files && message.files.length > 0
           ? await Promise.all(
               message.files
-                .filter(f => f.mediaType?.startsWith('image/'))
-                .map(async f => {
+                .filter(f => f.mediaType?.startsWith('image/') || f.type === 'file')
+                .map(async (f, index) => {
                   try {
                     const response = await fetch(f.url);
                     const blob = await response.blob();
-                    return await fileToDataUrl(
-                      new File([blob], f.filename || 'image', {
-                        type: f.mediaType,
-                      })
+                    return new File(
+                      [blob],
+                      f.filename || `image-${index}.png`,
+                      { type: f.mediaType }
                     );
                   } catch (error) {
-                    console.error(
-                      'Failed to convert attachment to data URL:',
-                      error
-                    );
-                    return f.url; // fallback
+                    console.error('Failed to convert attachment:', error);
+                    throw error;
                   }
                 })
             )
+          : [];
+
+      // Convert to data URLs for history display (only if we have files)
+      const attachmentDataUrls =
+        imageFiles.length > 0
+          ? await Promise.all(imageFiles.map(file => fileToDataUrl(file)))
           : undefined;
 
       // Create placeholder entry immediately for optimistic UI
@@ -206,31 +210,20 @@ export default function ImageGenerator() {
         let imageUrl: ImageResponse['imageUrl'];
 
         if (isEdit) {
-          const imageFiles =
-            message.files?.filter(
-              file =>
-                file.mediaType?.startsWith('image/') || file.type === 'file'
-            ) || [];
-
           if (imageFiles.length === 0) {
             throw new Error('No image files found in attachments');
           }
 
           try {
-            const imageUrls = await Promise.all(
-              imageFiles.map(async imageFile => {
-                // Convert blob URL to data URL for API
-                const response = await fetch(imageFile.url);
-                const blob = await response.blob();
-                return await fileToDataUrl(
-                  new File([blob], 'image', { type: imageFile.mediaType })
-                );
-              })
-            );
+            // Upload files to Vercel Blob storage (files already converted above)
+            const blobResults = await uploadFilesToBlob(imageFiles);
+            
+            // Extract blob URLs for API
+            const blobUrls = blobResults.map(result => result.url);
 
             const result = await editImage({
               prompt,
-              imageUrls,
+              imageUrls: blobUrls,
               provider: model,
             });
             imageUrl = result.imageUrl;
