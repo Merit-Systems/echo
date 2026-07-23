@@ -1,0 +1,70 @@
+---
+description: Guidelines and best practices for building Echo-powered Next.js applications
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Guidelines
+
+## Echo Provider Setup
+- Always wrap your application with `EchoProvider` from `@merit-systems/echo-next-sdk/client` in a client component
+- The provider must receive an `appId` from environment variable `NEXT_PUBLIC_ECHO_APP_ID`
+- Example provider setup:
+```tsx
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## AI Provider Integration
+- Use `useEchoModelProviders()` from `@merit-systems/echo-react-sdk` to get AI model providers
+- Supported providers: OpenAI, Anthropic, Google, OpenRouter, Groq, xAI
+- Example usage:
+```tsx
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { generateText } from 'ai';
+
+const { openai, anthropic } = useEchoModelProviders();
+const response = await generateText({
+  model: openai('gpt-4o'),
+  prompt: '...',
+});
+```
+
+## Authentication
+- Echo handles OAuth authentication automatically through the provider
+- Use `useEcho()` hook to access user state and authentication methods
+- Use `EchoSignIn` and `EchoSignOut` components for auth UI
+- Do NOT implement custom OAuth flows - use Echo's built-in components
+
+## Token Balance
+- Use `EchoTokens` component to display user's token balance
+- Use `useEcho()` hook to programmatically access balance information
+- Check balance before making expensive AI calls
+
+## Environment Variables
+- Required: `NEXT_PUBLIC_ECHO_APP_ID` - Your Echo application ID
+- Optional: `ECHO_API_KEY` - For server-side API access
+- Never expose API keys in client-side code
+
+## API Routes
+- For server-side AI calls, use the Echo TypeScript SDK: `@merit-systems/echo-typescript-sdk`
+- Initialize with API key: `EchoClient({ apiKey: process.env.ECHO_API_KEY })`
+- Server routes should proxy through Echo's infrastructure
+
+## Component Patterns
+- Use `'use client'` directive for components that use Echo hooks
+- Echo components handle loading and error states internally
+- Prefer `EchoSignIn` over custom login forms
+
+## Error Handling
+- Check for insufficient funds using `InsufficientFundsModal` component
+- Handle authentication errors gracefully
+- Always provide fallback UI for unauthenticated state

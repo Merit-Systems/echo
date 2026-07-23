@@ -1,0 +1,64 @@
+---
+description: Guidelines and best practices for building Echo-powered React applications with Vite
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React Guidelines
+
+## Echo Provider Setup
+- Wrap your application with `EchoProvider` from `@merit-systems/echo-react-sdk`
+- Configure with your Echo `appId` from environment variables
+- Example provider setup:
+```tsx
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID }}>
+      <YourApp />
+    </EchoProvider>
+  );
+}
+```
+
+## Environment Variables
+- Use Vite's `import.meta.env` to access environment variables
+- Required: `VITE_ECHO_APP_ID` - Your Echo application ID
+- Prefix all client-side variables with `VITE_`
+
+## AI Provider Integration
+- Use `useEchoModelProviders()` hook to get authenticated AI providers
+- Providers automatically handle user authentication and billing
+- Example:
+```tsx
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { generateText } from 'ai';
+
+function ChatComponent() {
+  const { openai } = useEchoModelProviders();
+  
+  const handleSend = async (prompt: string) => {
+    const response = await generateText({
+      model: openai('gpt-4o'),
+      prompt,
+    });
+    return response.text;
+  };
+}
+```
+
+## Authentication
+- Use `useEcho()` hook for authentication state
+- Use `EchoSignIn` component for login UI
+- Use `EchoSignOut` component for logout
+- Do NOT implement custom OAuth - Echo handles this
+
+## Token Management
+- Use `EchoTokens` component to display user balance
+- Use `useEchoClient()` for programmatic balance checks
+- Warn users before making expensive operations
+
+## Component Patterns
+- Echo hooks must be used within `EchoProvider` context
+- Components using Echo hooks should handle loading states
+- Use `InsufficientFundsModal` for balance warnings
