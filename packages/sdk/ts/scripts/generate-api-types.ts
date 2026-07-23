@@ -53,6 +53,13 @@ function generateControlAppTypes(options: ScriptOptions): void {
     return;
   }
 
+  // Skip generation in CI/Docker environments to avoid timeouts
+  if (process.env.CI === 'true' || process.env.DOCKER_BUILD === 'true') {
+    console.log('⏭️  Skipping API type generation (CI/Docker environment detected)');
+    console.log('   Using existing committed types');
+    return;
+  }
+
   log('Generating API types in control app...', options);
 
   try {
@@ -101,6 +108,11 @@ function copyResolvedTypes(options: ScriptOptions): void {
 
     // Check if resolved types file exists
     if (!fs.existsSync(resolvedTypesPath)) {
+      // In CI/Docker, if SDK types already exist, skip copying
+      if ((process.env.CI === 'true' || process.env.DOCKER_BUILD === 'true') && fs.existsSync(sdkOutputPath)) {
+        console.log('⏭️  Resolved types not found, but SDK types already exist. Using existing types.');
+        return;
+      }
       throw new Error(`Resolved types file not found at: ${resolvedTypesPath}`);
     }
 
@@ -154,6 +166,13 @@ function validateGeneratedTypes(options: ScriptOptions): void {
     const sdkOutputPath = path.resolve(__dirname, '..', SDK_OUTPUT_FILE);
 
     if (!fs.existsSync(sdkOutputPath)) {
+      // In CI/Docker, this is a hard failure - types must be committed
+      if (process.env.CI === 'true' || process.env.DOCKER_BUILD === 'true') {
+        throw new Error(
+          `API types file not found at: ${sdkOutputPath}. ` +
+          `Types must be committed to the repository for Docker builds.`
+        );
+      }
       throw new Error(`Generated types file not found at: ${sdkOutputPath}`);
     }
 
@@ -189,12 +208,20 @@ function validateGeneratedTypes(options: ScriptOptions): void {
 async function main(): Promise<void> {
   const options = parseArgs();
 
-  console.log('🔧 Generating API types for Echo TypeScript SDK...');
+  // Check if running in CI/Docker
+  const isDockerOrCI = process.env.CI === 'true' || process.env.DOCKER_BUILD === 'true';
+  
+  if (isDockerOrCI) {
+    console.log('🔧 Validating API types for Echo TypeScript SDK (Docker/CI mode)...');
+  } else {
+    console.log('🔧 Generating API types for Echo TypeScript SDK...');
+  }
 
   if (options.verbose) {
     console.log('Options:', options);
     console.log('Working directory:', process.cwd());
     console.log('Script directory:', __dirname);
+    console.log('Environment: Docker/CI =', isDockerOrCI);
   }
 
   // Step 1: Generate API types in control app
@@ -206,8 +233,13 @@ async function main(): Promise<void> {
   // Step 3: Validate generated types
   validateGeneratedTypes(options);
 
-  console.log('🎉 Successfully generated API types for SDK!');
-  console.log(`📄 Types available at: ${SDK_OUTPUT_FILE}`);
+  if (isDockerOrCI) {
+    console.log('✅ API types validated successfully!');
+    console.log(`📄 Using committed types at: ${SDK_OUTPUT_FILE}`);
+  } else {
+    console.log('🎉 Successfully generated API types for SDK!');
+    console.log(`📄 Types available at: ${SDK_OUTPUT_FILE}`);
+  }
 }
 
 // Run the script
