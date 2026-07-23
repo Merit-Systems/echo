@@ -96,31 +96,27 @@ Ready to code? Check our [open issues](https://github.com/Merit-Systems/echo/iss
    pnpm install
    ```
 
-3. **Set up environment variables**
+3. **Run the automated setup**
 
    ```bash
-   pnpm local-setup
+   pnpm setup
    ```
 
-4. **Set up the database** (for Echo Control)
+   This single command will:
+   - Check that prerequisites are installed (Node.js, pnpm, Docker)
+   - Generate `.env` files for both Echo Control and Echo Server with working local defaults
+   - Start a PostgreSQL container via Docker Compose
+   - Run Prisma migrations to initialize the database
 
-   ```bash
-   cd packages/app/control
-   ./setup-db.sh
-   # Or manually:
-   npx prisma generate
-   npx prisma db push
-   ```
-
-5. **Start development servers**
-
-   From the root directory:
+4. **Start development servers**
 
    ```bash
    pnpm dev
    ```
 
-   This starts both Echo Control (localhost:3000) and Echo Server simultaneously.
+   This starts both Echo Control (localhost:3000) and Echo Server (localhost:3069) simultaneously.
+
+> **Note:** If you prefer to set things up manually, see the [README](./README.md#local-development) for details on what `pnpm setup` does under the hood.
 
 ## Development Workflow
 
