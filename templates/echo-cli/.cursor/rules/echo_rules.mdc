@@ -1,0 +1,24 @@
+---
+description: Guidelines for building Echo-powered CLI applications, including SDK setup, authentication flows, wallet integration, and AI chat sessions
+globs: **/*.ts,**/*.js
+---
+
+# Echo CLI Guidelines
+
+## SDK Setup
+- Use `@merit-systems/echo-typescript-sdk` for server/CLI contexts
+- Use `@merit-systems/ai-x402` for x402 payment protocol integration
+- Use `@ai-sdk/openai` and `ai` for CLI chat
+
+## Authentication
+- Echo OAuth — Browser-based OAuth with PKCE
+- Crypto Wallet — WalletConnect or local wallet with private key
+- Use `conf` package for persistent configuration storage
+
+## CLI Framework
+- Use `commander` for command definitions
+- Use `@clack/prompts` for interactive selection
+- Use `chalk` for colored output, `ora` for spinners, `cli-table3` for tables
+
+## Environment Variables
+- `ECHO_APP_ID` — Echo application identifier

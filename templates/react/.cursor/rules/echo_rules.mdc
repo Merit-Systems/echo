@@ -1,0 +1,22 @@
+---
+description: Guidelines for building Echo-powered React applications with Vite, including SDK setup, provider configuration, and AI integration
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React (Vite) Guidelines
+
+## SDK Setup
+- Wrap app with `EchoProvider` from `@merit-systems/echo-react-sdk`
+- Use `import.meta.env.VITE_ECHO_APP_ID` for environment variables (Vite convention)
+- Use `EchoTokens` component for auth and token purchases
+
+## AI Integration
+- Use `@ai-sdk/react` hooks for chat and completion UIs
+- React 19 is used — leverage new features like `use()` hook
+
+## Environment Variables
+- `VITE_ECHO_APP_ID` — Echo app identifier (client-side, exposed to browser)
+
+## Common Patterns
+- Build with Vite: `npm run dev`
+- No server-side rendering — pure client-side app

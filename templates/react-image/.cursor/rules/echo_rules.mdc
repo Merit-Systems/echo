@@ -1,0 +1,26 @@
+---
+description: Guidelines for building Echo-powered React image generation applications with Vite and AI image models
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React Image Generation Guidelines
+
+## SDK Setup
+- Wrap app with `EchoProvider` from `@merit-systems/echo-react-sdk`
+- Use `import.meta.env.VITE_ECHO_APP_ID` for the Echo app identifier
+- Use `EchoTokens` component for authentication and token management
+
+## Image Generation
+- Use `@ai-sdk/react` hooks for prompt submission
+- Display generated images with loading states
+
+## UI Components
+- Use shadcn/ui components
+- Tailwind CSS for styling
+
+## Environment Variables
+- `VITE_ECHO_APP_ID` — Client-side Echo identifier (Vite prefix required)
+
+## Build & Development
+- Dev: `npm run dev` (Vite)
+- This is a client-side only app — no SSR

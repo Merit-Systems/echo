@@ -1,0 +1,26 @@
+---
+description: Guidelines for building Echo-powered Next.js applications with server-side API key management, PostgreSQL database, and Prisma ORM
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.prisma
+---
+
+# Echo Next.js API Key Template Guidelines
+
+## SDK Setup
+- Server-side: Initialize Echo in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Also uses `@merit-systems/echo-typescript-sdk` for server-side API calls
+
+## Database (Prisma + PostgreSQL)
+- Define models in `prisma/schema.prisma`
+- Use `@prisma/client` for database queries
+- Use global singleton pattern to prevent too many connections in development
+
+## API Key Management
+- Store API keys securely in the database (hashed)
+- Validate API keys on each request
+- Support key rotation and revocation
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo app identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo app identifier
+- `DATABASE_URL` — PostgreSQL connection string

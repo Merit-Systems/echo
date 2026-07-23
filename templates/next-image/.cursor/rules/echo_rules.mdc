@@ -1,0 +1,24 @@
+---
+description: Guidelines for building Echo-powered Next.js image generation applications with AI SDK, image models, and gallery components
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Image Generation Guidelines
+
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Use `EchoTokens` component for authentication and token management
+
+## Image Generation
+- Use `experimental_generateImage` from `ai` for image generation
+- Display generated images with proper loading states
+- Use `next/image` for optimized image rendering when possible
+
+## UI Components
+- Use shadcn/ui components
+- Build a gallery component for displaying generated images
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

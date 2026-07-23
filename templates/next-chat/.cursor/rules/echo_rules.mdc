@@ -1,0 +1,24 @@
+---
+description: Guidelines for building Echo-powered Next.js chat applications with AI SDK streaming, shadcn/ui components, and real-time message handling
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Chat Guidelines
+
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Use `EchoTokens` component for authentication and token management
+
+## Chat Integration
+- Use `useChat` hook from `@ai-sdk/react`
+- Use `streamText` from `ai` with Echo-proxied models in API routes
+- Always verify authentication with `isSignedIn()` before AI calls
+
+## UI Components
+- Use shadcn/ui components
+- Use Tailwind CSS v4 for styling
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

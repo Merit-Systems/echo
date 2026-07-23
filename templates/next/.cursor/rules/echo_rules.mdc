@@ -1,0 +1,28 @@
+---
+description: Guidelines for building Echo-powered Next.js applications, including SDK setup, provider configuration, API routes, and AI integration
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Guidelines
+
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- API route: Create catch-all at `src/app/api/echo/[...echo]/route.ts`
+
+## AI Integration
+- Always import AI models from `@/echo`, not directly from `@ai-sdk/openai`
+- Use Vercel AI SDK v5 patterns for streaming
+- Use `isSignedIn()` from `@/echo` to verify authentication
+
+## Components
+- Use `EchoTokens` component for auth/token purchase UI (client component)
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo app identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo app identifier
+
+## Common Patterns
+- Use Next.js 15 App Router (not Pages Router)
+- Use Tailwind CSS v4 for styling
+- Use `@/` path alias for imports from `src/`

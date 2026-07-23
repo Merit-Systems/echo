@@ -1,0 +1,24 @@
+---
+description: Guidelines for building Echo-powered Next.js applications with Auth.js (NextAuth v5) authentication, including provider setup and session management
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Auth.js Integration Guidelines
+
+## SDK Setup
+- Server-side: Initialize Echo in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Auth: Configure Auth.js with the Echo provider
+
+## Auth.js Configuration
+- Use `EchoProvider` from `@merit-systems/echo-authjs-provider`
+- Mount Auth.js handlers at `src/app/api/auth/[...nextauth]/route.ts`
+- Server components: `const session = await auth()`
+- Client components: Use `useSession()` from `next-auth/react`
+
+## Echo TypeScript SDK
+- Use `@merit-systems/echo-typescript-sdk` for server-side Echo API calls
+
+## Environment Variables
+- `ECHO_APP_ID` — Echo application identifier (also used as Auth.js client ID)
+- `AUTH_SECRET` — NextAuth secret for session encryption
+- `NEXTAUTH_URL` — Deployment URL for Auth.js callbacks

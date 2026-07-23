@@ -1,0 +1,25 @@
+---
+description: Guidelines for building Echo-powered React chat applications with Vite, AI SDK streaming, and shadcn/ui components
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React Chat Guidelines
+
+## SDK Setup
+- Wrap app with `EchoProvider` from `@merit-systems/echo-react-sdk`
+- Use `import.meta.env.VITE_ECHO_APP_ID` for the Echo app identifier
+- Use `EchoTokens` component for authentication and token management
+
+## Chat Integration
+- Use `useChat` hook from `@ai-sdk/react`
+
+## UI Components
+- Use shadcn/ui components
+- Tailwind CSS for styling
+
+## Environment Variables
+- `VITE_ECHO_APP_ID` — Client-side Echo identifier (Vite prefix required)
+
+## Build & Development
+- Dev: `npm run dev` (Vite)
+- This is a client-side only app — no SSR
