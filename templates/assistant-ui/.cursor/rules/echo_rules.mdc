@@ -1,0 +1,52 @@
+---
+description: Guidelines for building Echo-powered chat applications with assistant-ui, AI SDK v5, and the assistant-ui React component library
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Assistant-UI Guidelines
+
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+
+## Assistant-UI Integration
+
+### Runtime Provider
+```typescript
+'use client';
+import { AssistantRuntimeProvider, useEdgeRuntime } from '@assistant-ui/react';
+
+export function AssistantProvider({ children }: { children: React.ReactNode }) {
+  const runtime = useEdgeRuntime({ api: '/api/chat' });
+  return (
+    <AssistantRuntimeProvider runtime={runtime}>
+      {children}
+    </AssistantRuntimeProvider>
+  );
+}
+```
+
+### Chat Components
+- Use `@assistant-ui/react` primitives for chat UI:
+  - `Thread` — main chat container
+  - `ThreadWelcome` — welcome screen
+  - `Composer` — message input
+  - `AssistantMessage` / `UserMessage` — message bubbles
+- Use `@assistant-ui/react-markdown` for rendering markdown in messages
+- Use `@assistant-ui/react-ai-sdk` for AI SDK v5 integration
+
+### Streaming API Route
+```typescript
+import { streamText } from 'ai';
+import { openai } from '@/echo';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const result = streamText({ model: openai('gpt-4o'), messages });
+  return result.toDataStreamResponse();
+}
+```
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

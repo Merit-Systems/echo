@@ -1,0 +1,62 @@
+---
+description: Guidelines for building Echo-powered Next.js applications with server-side API key management, PostgreSQL database, and Prisma ORM
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.prisma
+---
+
+# Echo Next.js API Key Template Guidelines
+
+## SDK Setup
+- Server-side: Initialize Echo in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Also uses `@merit-systems/echo-typescript-sdk` for server-side API calls
+
+## Database (Prisma + PostgreSQL)
+
+### Schema
+- Define models in `prisma/schema.prisma`
+- Use `@prisma/client` for database queries
+- PostgreSQL as the database provider
+
+### Prisma Commands
+```bash
+npx prisma generate     # Generate client from schema
+npx prisma db push      # Push schema to database
+npx prisma migrate dev  # Create and apply migrations
+npx prisma studio       # Open database browser
+```
+
+### Client Instantiation
+```typescript
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+```
+- Use the global singleton pattern to prevent too many connections in development
+
+## API Key Management
+- Store API keys securely in the database (hashed)
+- Validate API keys on each request in middleware or API routes
+- Rate limit API key usage
+- Support key rotation and revocation
+
+## AI Integration
+```typescript
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+import { isSignedIn } from '@/echo';
+```
+- Always verify authentication before processing AI requests
+- Use Echo-proxied models to enable user billing
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo app identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo app identifier
+- `DATABASE_URL` — PostgreSQL connection string
+- `DIRECT_URL` — Direct database URL (if using connection pooling)
+
+## UI Components
+- Use shadcn/ui components (`class-variance-authority` for variants)
+- Tailwind CSS for styling
+- Build API key management dashboard components

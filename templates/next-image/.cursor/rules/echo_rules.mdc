@@ -1,0 +1,44 @@
+---
+description: Guidelines for building Echo-powered Next.js image generation applications with AI SDK, image models, and gallery components
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Image Generation Guidelines
+
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Use `EchoTokens` component for authentication and token management
+
+## Image Generation
+
+### API Route for Image Generation
+```typescript
+import { openai } from '@/echo';
+import { isSignedIn } from '@/echo';
+import { experimental_generateImage as generateImage } from 'ai';
+
+export async function POST(req: Request) {
+  await isSignedIn();
+  const { prompt } = await req.json();
+  const { image } = await generateImage({
+    model: openai.image('dall-e-3'),
+    prompt,
+  });
+  return Response.json({ url: image.base64 });
+}
+```
+
+### Client-Side Image Display
+- Display generated images with proper loading states
+- Use `next/image` for optimized image rendering when possible
+- Store image URLs/base64 in component state
+
+## UI Components
+- Use shadcn/ui components (`class-variance-authority` for variants)
+- Build a gallery component for displaying generated images
+- Include prompt input, generate button, and loading spinner
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

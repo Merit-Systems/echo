@@ -1,0 +1,56 @@
+---
+description: Guidelines for building Echo-powered Next.js chat applications with AI SDK streaming, shadcn/ui components, and real-time message handling
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Chat Guidelines
+
+## SDK Setup
+- Server-side: Initialize in `src/echo/index.ts` with `@merit-systems/echo-next-sdk`
+- Client-side: Wrap app with `EchoProvider` from `@merit-systems/echo-next-sdk/client`
+- Use `EchoTokens` component for authentication and token management
+
+## Chat Integration
+
+### AI SDK useChat Hook
+```typescript
+'use client';
+import { useChat } from '@ai-sdk/react';
+
+export function Chat() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    api: '/api/chat',
+  });
+  return (
+    <form onSubmit={handleSubmit}>
+      {messages.map((m) => (
+        <div key={m.id}>{m.role}: {m.content}</div>
+      ))}
+      <input value={input} onChange={handleInputChange} />
+    </form>
+  );
+}
+```
+
+### Streaming API Route
+```typescript
+import { streamText } from 'ai';
+import { openai } from '@/echo';
+import { isSignedIn } from '@/echo';
+
+export async function POST(req: Request) {
+  await isSignedIn();
+  const { messages } = await req.json();
+  const result = streamText({ model: openai('gpt-4o'), messages });
+  return result.toDataStreamResponse();
+}
+```
+
+## UI Components
+- Use shadcn/ui components (`class-variance-authority` for variants)
+- Import from `@/components/ui/` — button, input, card, scroll-area
+- Use Tailwind CSS v4 for styling
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo identifier

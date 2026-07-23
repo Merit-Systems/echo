@@ -1,0 +1,108 @@
+---
+description: Guidelines and best practices for building Echo-powered Next.js applications, including SDK setup, provider configuration, API routes, and AI integration
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Guidelines
+
+## SDK Setup
+
+### Server-Side Initialization
+- Initialize the Echo SDK in a dedicated `src/echo/index.ts` file:
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+- `ECHO_APP_ID` must be set in your `.env.local` file (server-side, no `NEXT_PUBLIC_` prefix)
+- `NEXT_PUBLIC_ECHO_APP_ID` is used only in the client-side `EchoProvider`
+
+### Client-Side Provider
+- Wrap your app with `EchoProvider` in a client component:
+```typescript
+'use client';
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+- Always add `'use client'` directive to components using `EchoProvider` or `EchoTokens`
+
+### API Route Handler
+- Create a catch-all API route at `src/app/api/echo/[...echo]/route.ts`:
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+- This route handles Echo authentication and token management automatically
+
+## AI Integration
+
+### Using AI SDK with Echo
+- Always import AI models from the Echo SDK, not directly from `@ai-sdk/openai`:
+```typescript
+// ✅ Correct — uses Echo billing
+import { openai } from '@/echo';
+
+// ❌ Wrong — bypasses Echo billing
+import { openai } from '@ai-sdk/openai';
+```
+- Use Vercel AI SDK v5 patterns for streaming:
+```typescript
+import { streamText } from 'ai';
+import { openai } from '@/echo';
+
+const result = streamText({
+  model: openai('gpt-4o'),
+  messages,
+});
+```
+
+### Auth Check
+- Use `isSignedIn()` from `@/echo` to verify authentication in API routes before making AI calls
+
+## Components
+
+### EchoTokens
+- Use `EchoTokens` component for the authentication/token purchase UI:
+```typescript
+'use client';
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+export function EchoButton() {
+  return <EchoTokens />;
+}
+```
+- Must be in a client component (`'use client'`)
+
+## Environment Variables
+- `ECHO_APP_ID` — Server-side Echo app identifier
+- `NEXT_PUBLIC_ECHO_APP_ID` — Client-side Echo app identifier (same value)
+- Never commit `.env.local` to version control
+
+## Project Structure
+```
+src/
+  echo/
+    index.ts          # Echo SDK init (server)
+  providers.tsx       # EchoProvider wrapper (client)
+  app/
+    layout.tsx        # Root layout with Providers
+    page.tsx          # App pages
+    api/echo/[...echo]/
+      route.ts        # Echo API handler
+  components/
+    EchoWrapper.tsx   # Client-side Echo components
+```
+
+## Common Patterns
+- Always use Next.js 15 App Router (not Pages Router)
+- Use `--turbopack` flag for dev server: `next dev --turbopack`
+- Use Tailwind CSS v4 for styling
+- Use `@/` path alias for imports from `src/`
