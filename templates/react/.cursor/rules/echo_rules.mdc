@@ -1,0 +1,116 @@
+---
+description: Guidelines and best practices for building Echo React (Vite) applications, including provider setup, environment variables, and component patterns
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React (Vite) Guidelines
+
+## SDK Initialization
+
+### EchoProvider Setup
+
+ALWAYS wrap your application with `EchoProvider` at the root level in `src/main.tsx`:
+
+```typescript
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+### Using Echo Components
+
+Use the provided Echo UI components for common functionality:
+
+```typescript
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <>
+      <h1>Welcome to Echo</h1>
+      <EchoTokens />
+    </>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local` with the `VITE_` prefix:
+
+```bash
+VITE_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code:
+
+```typescript
+// ✅ CORRECT
+const appId = import.meta.env.VITE_ECHO_APP_ID;
+
+// ❌ INCORRECT
+const appId = 'echo_app_123abc';
+```
+
+Note: Vite exposes environment variables prefixed with `VITE_` to the client. Be aware that these are visible in the browser.
+
+## Project Structure
+
+Follow this recommended structure for Echo React projects:
+
+```
+src/
+├── main.tsx          # App entry point with EchoProvider
+├── App.tsx           # Main application component
+├── App.css           # App styles
+├── index.css         # Global styles
+├── assets/           # Static assets
+└── vite-env.d.ts     # Vite type declarations
+```
+
+## TypeScript Guidelines
+
+ALWAYS use strict typing and avoid `any`:
+
+```typescript
+// ✅ CORRECT
+interface Message {
+  id: string;
+  content: string;
+  role: 'user' | 'assistant';
+}
+
+// ❌ INCORRECT
+function handleMessage(msg: any): any { ... }
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly:
+
+```typescript
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  throw new Error('Failed to complete operation');
+}
+```
+
+## Best Practices
+
+1. **Provider Placement**: Always place `EchoProvider` at the root of your component tree
+2. **Environment Variables**: Use `VITE_` prefix for all client-side environment variables
+3. **Type Safety**: Use TypeScript strictly, export shared types
+4. **Error Handling**: Always provide meaningful error messages
+5. **Security**: Remember that all Vite env vars are exposed to the browser -- never put true secrets there

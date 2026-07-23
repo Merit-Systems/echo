@@ -1,0 +1,148 @@
+---
+description: Guidelines and best practices for building Echo Next.js Chat applications, including streaming responses, server/client boundaries, and AI SDK integration
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Chat Guidelines
+
+## SDK Initialization
+
+### Server-Side Initialization
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts` for server-side usage:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap your application with `EchoProvider` in your providers file:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local`:
+
+```bash
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code.
+
+## Chat API Route
+
+ALWAYS implement the chat API route at `app/api/chat/route.ts` with proper validation and streaming:
+
+```typescript
+import { convertToModelMessages, streamText, type UIMessage } from 'ai';
+import { openai } from '@/echo';
+
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  const { model, messages }: { messages: UIMessage[]; model: string } = await req.json();
+
+  if (!model) {
+    return new Response(
+      JSON.stringify({ error: 'Bad Request', message: 'Model parameter is required' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (!messages || !Array.isArray(messages)) {
+    return new Response(
+      JSON.stringify({ error: 'Bad Request', message: 'Messages must be an array' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const result = streamText({
+    model: openai(model),
+    messages: convertToModelMessages(messages),
+  });
+
+  return result.toUIMessageStreamResponse({
+    sendSources: true,
+    sendReasoning: true,
+  });
+}
+```
+
+## Server/Client Boundaries
+
+### Server Components
+
+Use server components for Echo AI calls that require authentication.
+
+### Client Components
+
+Use client components ONLY for UI interactions. NEVER import the server-side Echo SDK in client components:
+
+```typescript
+// ✅ CORRECT
+'use client';
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+// ❌ INCORRECT
+'use client';
+import Echo from '@merit-systems/echo-next-sdk';
+```
+
+## Echo Authentication Handler
+
+ALWAYS register Echo auth handlers at `app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── echo/[...echo]/route.ts   # Echo auth handlers
+│   │   └── chat/route.ts             # Chat streaming endpoint
+│   ├── _components/                   # Page-specific components
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── ai-elements/                   # Chat UI components
+│   └── ui/                            # Shared UI components
+├── echo/
+│   └── index.ts                       # Server-side Echo init
+├── lib/
+│   └── utils.ts                       # Utility functions
+└── providers.tsx                      # Client providers
+```
+
+## Best Practices
+
+1. **Streaming**: Use `streamText` and `toUIMessageStreamResponse` for chat responses
+2. **Validation**: Always validate `model` and `messages` params in API routes
+3. **Separation**: Keep server logic in API routes and `src/echo/`, client logic in components
+4. **Environment Variables**: Use server variables for secrets, `NEXT_PUBLIC_` for client-side config
+5. **Error Handling**: Provide clear error messages and appropriate HTTP status codes
+6. **Type Safety**: Use TypeScript strictly, avoid `any`
+7. **Security**: Never expose server secrets to the client

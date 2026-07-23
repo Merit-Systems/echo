@@ -1,0 +1,152 @@
+---
+description: Guidelines and best practices for building Echo CLI applications, including authentication, wallet management, chat sessions, and AI SDK integration
+globs: **/*.ts,**/*.js
+---
+
+# Echo CLI Guidelines
+
+## SDK Initialization
+
+The CLI uses `@merit-systems/echo-typescript-sdk` for server-side Echo integration and `@merit-systems/ai-x402` for AI model access.
+
+## Project Structure
+
+```
+src/
+├── index.ts              # CLI entry point (Commander.js)
+├── print.ts              # Output formatting utilities
+├── auth/
+│   ├── index.ts          # Auth barrel exports
+│   ├── client.ts         # Echo auth client
+│   ├── login.ts          # Login flow
+│   ├── logout.ts         # Logout flow
+│   ├── providers.ts      # Auth provider options
+│   ├── wallet.ts         # Wallet-based auth
+│   └── local-wallet.ts   # Local wallet auth
+├── config/
+│   ├── index.ts          # Config barrel exports
+│   ├── store.ts          # Persistent config storage
+│   ├── models.ts         # Available AI models
+│   ├── wallet.ts         # Wallet configuration
+│   ├── ascii.ts          # ASCII art/branding
+│   └── messages.ts       # User-facing messages
+├── core/
+│   ├── index.ts          # Core barrel exports
+│   ├── chat.ts           # Chat session logic
+│   ├── model.ts          # Model selection
+│   ├── history.ts        # Conversation history
+│   ├── profile.ts        # User profile
+│   └── local-wallet.ts   # Local wallet operations
+└── utils/
+    ├── index.ts          # Utils barrel exports
+    ├── auth.ts           # Auth helpers
+    ├── stream.ts         # Streaming response handling
+    ├── wallet.ts         # Wallet utilities
+    ├── local-wallet.ts   # Local wallet helpers
+    ├── errors.ts         # Error handling
+    ├── spinner.ts        # CLI spinner
+    ├── chains.ts         # Blockchain chain configs
+    └── signer.ts         # Transaction signing
+```
+
+## Authentication
+
+The CLI supports multiple auth methods:
+
+- **Echo OAuth**: Browser-based login through Echo
+- **Wallet Connect**: Connect an existing crypto wallet
+- **Local Wallet**: Generate and manage a local wallet
+
+ALWAYS check authentication state before making API calls:
+
+```typescript
+import { isAuthenticated } from '@/utils';
+
+if (!isAuthenticated()) {
+  warning('Please login first: echodex login');
+  return;
+}
+```
+
+## CLI Commands
+
+Define commands using Commander.js:
+
+```typescript
+import { Command } from 'commander';
+
+const program = new Command();
+
+program
+  .name('echodex')
+  .description('CLI Coding Agent Powered by Echo')
+  .version('1.0.0');
+
+program
+  .command('login')
+  .description('Authenticate with Echo or Wallet')
+  .action(async () => { /* ... */ });
+```
+
+## Interactive Prompts
+
+Use `@clack/prompts` for interactive CLI prompts:
+
+```typescript
+import { select, isCancel } from '@clack/prompts';
+
+const choice = await select({
+  message: 'Choose an option:',
+  options: [
+    { label: 'Option A', value: 'a' },
+    { label: 'Option B', value: 'b' },
+  ],
+});
+
+if (isCancel(choice)) {
+  process.exit(0);
+}
+```
+
+## Streaming Responses
+
+ALWAYS use streaming for AI chat responses to provide real-time output.
+
+## TypeScript Guidelines
+
+ALWAYS use strict typing and avoid `any`:
+
+```typescript
+// ✅ CORRECT
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+// ❌ INCORRECT
+function handleMessage(msg: any): any { ... }
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly with user-friendly messages:
+
+```typescript
+import { handleError } from '@/utils/errors';
+
+try {
+  await someOperation();
+} catch (error) {
+  handleError(error, 'Failed to complete operation');
+}
+```
+
+## Best Practices
+
+1. **Authentication**: Always verify auth state before API calls
+2. **Streaming**: Use streaming for AI responses to give real-time feedback
+3. **Error Handling**: Provide clear, actionable error messages
+4. **Type Safety**: Use TypeScript strictly, define interfaces for all data structures
+5. **Config Storage**: Use the config store for persistent user settings
+6. **Modularity**: Keep auth, config, core logic, and utils separated
+7. **User Experience**: Use spinners and formatted output for long-running operations

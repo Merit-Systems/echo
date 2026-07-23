@@ -1,0 +1,99 @@
+---
+description: Guidelines and best practices for building Echo Next.js Video Generation applications, including server/client boundaries, environment variables, and API routes
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Video Generation Guidelines
+
+## SDK Initialization
+
+### Server-Side Initialization
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap your application with `EchoProvider`:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local`:
+
+```bash
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code.
+
+## Server/Client Boundaries
+
+Use server components for Echo AI calls. Use client components ONLY for UI interactions.
+
+```typescript
+// ✅ CORRECT
+'use client';
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+// ❌ INCORRECT - Never import server SDK in client components
+'use client';
+import Echo from '@merit-systems/echo-next-sdk';
+```
+
+## Echo Authentication Handler
+
+ALWAYS register Echo auth handlers at `app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── echo/[...echo]/route.ts   # Echo auth handlers
+│   │   └── generate/route.ts         # Video generation endpoint
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/                        # UI components
+├── echo/
+│   └── index.ts                       # Server-side Echo init
+├── lib/
+│   └── utils.ts
+└── providers.tsx
+```
+
+## Best Practices
+
+1. **Separation**: Keep server logic in API routes and `src/echo/`, client logic in components
+2. **Environment Variables**: Use server variables for secrets, `NEXT_PUBLIC_` for client-side config
+3. **Validation**: Always validate inputs in API routes before processing
+4. **Error Handling**: Provide clear error messages and appropriate HTTP status codes
+5. **Type Safety**: Use TypeScript strictly, avoid `any`
+6. **Security**: Never expose server secrets to the client

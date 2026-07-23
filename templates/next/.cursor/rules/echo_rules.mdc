@@ -1,0 +1,210 @@
+---
+description: Guidelines and best practices for building Echo Next.js applications, including server/client boundaries, environment variables, API routes, and real-world examples
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Guidelines
+
+## SDK Initialization
+
+### Server-Side Initialization
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts` for server-side usage:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap your application with `EchoProvider` in your providers file:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local`:
+
+```bash
+# Server-side only
+ECHO_APP_ID=your_echo_app_id
+
+# Client-side (public)
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code. ALWAYS read from environment variables:
+
+```typescript
+// ✅ CORRECT
+const appId = process.env.ECHO_APP_ID!;
+
+// ❌ INCORRECT
+const appId = 'echo_app_123abc';
+```
+
+## Server/Client Boundaries
+
+### Server Components
+
+ALWAYS use server components for Echo AI calls that require authentication:
+
+```typescript
+// app/page.tsx
+import { openai } from '@/echo';
+import { generateText } from 'ai';
+
+export default async function Page() {
+  const { text } = await generateText({
+    model: openai('gpt-4o'),
+    prompt: 'Hello, world!',
+  });
+
+  return <div>{text}</div>;
+}
+```
+
+### Client Components
+
+Use client components ONLY for UI interactions. NEVER make direct AI calls from client components with server secrets:
+
+```typescript
+// ✅ CORRECT - Client component uses Echo UI components
+'use client';
+
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+export function EchoButton() {
+  return <EchoTokens />;
+}
+```
+
+```typescript
+// ❌ INCORRECT - Never use server secrets in client components
+'use client';
+
+import Echo from '@merit-systems/echo-next-sdk'; // Don't do this!
+
+export function BadComponent() {
+  const { openai } = Echo({ appId: process.env.ECHO_APP_ID! });
+  // This exposes server secrets to the client!
+}
+```
+
+## API Routes
+
+### Echo Authentication Handler
+
+ALWAYS register Echo authentication handlers at `app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+
+export const { GET, POST } = handlers;
+```
+
+### Custom API Routes
+
+Place custom Echo-related API routes under `app/api/` and ALWAYS validate inputs:
+
+```typescript
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  const { messages, model } = await req.json();
+
+  if (!model) {
+    return new Response(
+      JSON.stringify({ error: 'Bad Request', message: 'Model parameter is required' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const result = streamText({
+    model: openai(model),
+    messages,
+  });
+
+  return result.toDataStreamResponse();
+}
+```
+
+## Project Structure
+
+Follow this recommended structure for Echo Next.js projects:
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── echo/
+│   │   │   └── [...echo]/
+│   │   │       └── route.ts       # Echo auth handlers
+│   │   └── chat/
+│   │       └── route.ts           # Custom API routes
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   └── EchoWrapper.tsx            # Client-side Echo components
+├── echo/
+│   └── index.ts                   # Server-side Echo initialization
+└── providers.tsx                  # Client providers including EchoProvider
+```
+
+## TypeScript Guidelines
+
+ALWAYS use strict typing and avoid `any`:
+
+```typescript
+// ✅ CORRECT
+function processMessages(messages: ChatMessage[]): string {
+  return messages.map(m => m.content).join('\n');
+}
+
+// ❌ INCORRECT
+function processMessages(messages: any): any {
+  return messages.map((m: any) => m.content).join('\n');
+}
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly and provide meaningful messages:
+
+```typescript
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  throw new Error('Failed to complete operation');
+}
+```
+
+## Best Practices
+
+1. **Separation of Concerns**: Keep server logic in API routes and `src/echo/`, client logic in components
+2. **Environment Variables**: Use server variables for secrets, public variables for client-side config
+3. **Validation**: Always validate inputs in API routes before processing
+4. **Error Handling**: Provide clear error messages and appropriate HTTP status codes
+5. **Type Safety**: Use TypeScript strictly, export shared types
+6. **Security**: Never expose server secrets to the client
