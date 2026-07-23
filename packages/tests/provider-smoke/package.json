@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.6",
+    "@ai-sdk/gateway": "^1.0.12",
     "@ai-sdk/google": "^2.0.7",
     "@ai-sdk/openai": "^2.0.16",
     "@merit-systems/echo-typescript-sdk": "workspace:*",

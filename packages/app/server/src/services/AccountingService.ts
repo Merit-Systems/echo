@@ -9,7 +9,12 @@ import {
   SupportedModel,
   SupportedImageModel,
   SupportedVideoModel,
+  SupportedSpeechModel,
+  SupportedTranscriptionModel,
   XAIModels,
+  VercelAIGatewayModels,
+  OpenAISpeechModels,
+  OpenAITranscriptionModels,
 } from '@merit-systems/echo-typescript-sdk';
 
 import { Decimal } from '@prisma/client/runtime/library';
@@ -30,6 +35,7 @@ export const ALL_SUPPORTED_MODELS: SupportedModel[] = [
   ...OpenRouterModels,
   ...GroqModels,
   ...XAIModels,
+  ...VercelAIGatewayModels,
 ];
 
 // Handle image models separately since they have different pricing structure
@@ -40,6 +46,14 @@ export const ALL_SUPPORTED_VIDEO_MODELS: SupportedVideoModel[] = [
   ...GeminiVideoModels,
   ...VertexAIVideoModels,
   ...OpenAIVideoModels,
+];
+
+export const ALL_SUPPORTED_SPEECH_MODELS: SupportedSpeechModel[] = [
+  ...OpenAISpeechModels,
+];
+
+export const ALL_SUPPORTED_TRANSCRIPTION_MODELS: SupportedTranscriptionModel[] = [
+  ...OpenAITranscriptionModels,
 ];
 
 // Create a lookup map for O(1) model price retrieval
@@ -58,6 +72,18 @@ ALL_SUPPORTED_IMAGE_MODELS.forEach(model => {
 const VIDEO_MODEL_MAP = new Map();
 ALL_SUPPORTED_VIDEO_MODELS.forEach(model => {
   VIDEO_MODEL_MAP.set(model.model_id, model);
+});
+
+// Create a separate map for speech models
+const SPEECH_MODEL_MAP = new Map<string, SupportedSpeechModel>();
+ALL_SUPPORTED_SPEECH_MODELS.forEach(model => {
+  SPEECH_MODEL_MAP.set(model.model_id, model);
+});
+
+// Create a separate map for transcription models
+const TRANSCRIPTION_MODEL_MAP = new Map<string, SupportedTranscriptionModel>();
+ALL_SUPPORTED_TRANSCRIPTION_MODELS.forEach(model => {
+  TRANSCRIPTION_MODEL_MAP.set(model.model_id, model);
 });
 
 export const getModelPrice = (model: string) => {
@@ -112,6 +138,92 @@ export const isValidImageModel = (model: string) => {
 
 export const isValidVideoModel = (model: string) => {
   return VIDEO_MODEL_MAP.has(model);
+};
+
+export const isValidSpeechModel = (model: string) => {
+  return SPEECH_MODEL_MAP.has(model);
+};
+
+export const isValidTranscriptionModel = (model: string) => {
+  return TRANSCRIPTION_MODEL_MAP.has(model);
+};
+
+export const getSpeechModelPrice = (
+  model: string
+): SupportedSpeechModel | null => {
+  const speechModel = SPEECH_MODEL_MAP.get(model);
+  if (speechModel) {
+    return speechModel;
+  }
+  return null;
+};
+
+export const getTranscriptionModelPrice = (
+  model: string
+): SupportedTranscriptionModel | null => {
+  const transcriptionModel = TRANSCRIPTION_MODEL_MAP.get(model);
+  if (transcriptionModel) {
+    return transcriptionModel;
+  }
+  return null;
+};
+
+/**
+ * Calculate cost for speech generation (text-to-speech)
+ * @param model - Speech model ID
+ * @param characterCount - Number of characters in the input text
+ * @returns Cost in dollars
+ */
+export const getSpeechCost = (
+  model: string,
+  characterCount: number
+): Decimal => {
+  if (!isValidSpeechModel(model)) {
+    throw new UnknownModelError(`Invalid speech model: ${model}`);
+  }
+
+  const modelPrice = getSpeechModelPrice(model);
+  if (!modelPrice) {
+    throw new Error(`Pricing information not found for speech model: ${model}`);
+  }
+
+  const cost = new Decimal(modelPrice.cost_per_character).mul(characterCount);
+
+  if (cost.lessThan(0)) {
+    throw new Error(`Invalid cost for speech model: ${model}`);
+  }
+
+  return cost;
+};
+
+/**
+ * Calculate cost for transcription (speech-to-text)
+ * @param model - Transcription model ID
+ * @param audioSeconds - Duration of audio in seconds
+ * @returns Cost in dollars
+ */
+export const getTranscriptionCost = (
+  model: string,
+  audioSeconds: number
+): Decimal => {
+  if (!isValidTranscriptionModel(model)) {
+    throw new UnknownModelError(`Invalid transcription model: ${model}`);
+  }
+
+  const modelPrice = getTranscriptionModelPrice(model);
+  if (!modelPrice) {
+    throw new Error(
+      `Pricing information not found for transcription model: ${model}`
+    );
+  }
+
+  const cost = new Decimal(modelPrice.cost_per_second).mul(audioSeconds);
+
+  if (cost.lessThan(0)) {
+    throw new Error(`Invalid cost for transcription model: ${model}`);
+  }
+
+  return cost;
 };
 
 export const getCostPerToken = (
