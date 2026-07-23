@@ -1,0 +1,76 @@
+---
+description: Guidelines for the Echo next-video-template — AI-powered video analysis, caption generation, and Next.js video handling routes.
+globs: **/*.ts,**/*.tsx
+---
+
+# Echo Next-Video-Template Guidelines
+
+This template supports AI video processing (analysis, captions, summaries) using Echo in a Next.js app.
+
+## Echo API Route
+
+```ts
+// src/app/api/echo/[...echo]/route.ts
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Video Analysis Route
+
+Use multimodal models to process video content:
+
+```ts
+// src/app/api/analyze-video/route.ts
+import { google } from '@/echo';
+import { generateText } from 'ai';
+
+export async function POST(req: Request) {
+  const { videoUrl, prompt } = await req.json();
+  const { text } = await generateText({
+    model: google('gemini-2.0-flash'),
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'text', text: prompt ?? 'Describe what happens in this video.' },
+        { type: 'file', data: videoUrl, mimeType: 'video/mp4' },
+      ],
+    }],
+  });
+  return Response.json({ analysis: text });
+}
+```
+
+## Streaming Caption Generation
+
+```ts
+// src/app/api/captions/route.ts
+import { google } from '@/echo';
+import { streamText } from 'ai';
+
+export async function POST(req: Request) {
+  const { videoUrl } = await req.json();
+  const result = streamText({
+    model: google('gemini-2.0-flash'),
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Generate timestamped captions for this video.' },
+        { type: 'file', data: videoUrl, mimeType: 'video/mp4' },
+      ],
+    }],
+  });
+  return result.toDataStreamResponse();
+}
+```
+
+## Key Rules
+
+- Use `google('gemini-2.0-flash')` for multimodal video tasks — it has the best video understanding.
+- Always validate video URL format and file size before passing to the model.
+- For large videos, prefer streaming (`streamText`) over `generateText` to avoid timeouts.
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_ECHO_APP_ID=your-echo-app-id
+```

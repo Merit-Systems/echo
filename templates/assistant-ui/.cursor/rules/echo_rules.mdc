@@ -1,0 +1,67 @@
+---
+description: Guidelines for the Echo assistant-ui template — multi-provider AI (OpenAI, Anthropic, Google), streaming chat, and tool calling via the AI SDK.
+globs: **/*.ts,**/*.tsx
+---
+
+# Echo Assistant-UI Guidelines
+
+This template exposes multiple AI providers through a single `echo.ts` at the project root.
+
+## Echo Setup (`echo.ts`)
+
+```ts
+import Echo from '@merit-systems/echo-next-sdk';
+const echo = Echo({ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID ?? 'ECHO_APP_ID' });
+export const { getUser, isSignedIn, openai, anthropic, google } = echo;
+export default echo.handlers;
+```
+
+- Import `openai`, `anthropic`, or `google` from `@/echo` — never directly from provider SDKs.
+- The default export `echo.handlers` mounts to `app/api/echo/[...path]/route.ts`.
+
+## Echo Catch-All Route
+
+```ts
+// app/api/echo/[...path]/route.ts
+import handlers from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Chat Route with Tools
+
+```ts
+// app/api/chat/route.ts
+import { openai } from '@/echo';
+import { streamText, tool } from 'ai';
+import { z } from 'zod';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const result = streamText({
+    model: openai('gpt-4o'),
+    messages,
+    tools: {
+      lookup: tool({
+        description: 'Look up structured data',
+        parameters: z.object({ query: z.string() }),
+        execute: async ({ query }) => ({ data: `result for ${query}` }),
+      }),
+    },
+  });
+  return result.toDataStreamResponse();
+}
+```
+
+## Provider Selection
+
+| Use case | Client |
+|----------|--------|
+| Tool / function calling | `openai('gpt-4o')` |
+| Long context, document analysis | `anthropic('claude-3-5-sonnet-20241022')` |
+| Vision / multimodal | `google('gemini-2.0-flash')` |
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_ECHO_APP_ID=your-echo-app-id
+```

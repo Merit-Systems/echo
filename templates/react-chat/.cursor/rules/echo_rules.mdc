@@ -1,0 +1,73 @@
+---
+description: Guidelines for the Echo React-Chat (Vite) template — EchoProvider, EchoChatProvider, useEchoModelProviders, and streaming chat in a React SPA.
+globs: **/*.ts,**/*.tsx
+---
+
+# Echo React-Chat Guidelines
+
+This is a client-side React chat app using Vite and the `@merit-systems/echo-react-sdk` with streaming AI responses.
+
+## Provider Hierarchy
+
+Nest `EchoChatProvider` inside `EchoProvider`:
+
+```tsx
+// src/App.tsx
+import { EchoProvider, EchoChatProvider } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID }}>
+      <EchoChatProvider>
+        <ChatWrapper />
+      </EchoChatProvider>
+    </EchoProvider>
+  );
+}
+```
+
+## Streaming Chat with Model Providers
+
+```tsx
+import { useEchoModelProviders } from '@merit-systems/echo-react-sdk';
+import { streamText, convertToModelMessages } from 'ai';
+
+export function ChatWrapper() {
+  const { openai } = useEchoModelProviders();
+
+  async function send(messages: Message[]) {
+    const { textStream } = streamText({
+      model: openai('gpt-4o'),
+      messages: convertToModelMessages(messages),
+    });
+    for await (const chunk of textStream) {
+      // append chunk to UI
+    }
+  }
+}
+```
+
+## Chat Component
+
+```tsx
+// src/chat.tsx
+import { useEcho } from '@merit-systems/echo-react-sdk';
+
+export default function Chat({ onSend }: { onSend: (params: ChatSendParams) => void }) {
+  const { isSignedIn } = useEcho();
+  if (!isSignedIn) return <p>Please sign in to chat.</p>;
+  // render message list and input
+}
+```
+
+## Key Rules
+
+- Use `convertToModelMessages` to normalise messages before passing to `streamText`.
+- `useEchoModelProviders` must be called inside a component wrapped by `EchoProvider`.
+- All env vars must be prefixed `VITE_` — this is a Vite app, not Next.js.
+
+## Environment Variables
+
+```
+VITE_ECHO_APP_ID=your-echo-app-id
+```

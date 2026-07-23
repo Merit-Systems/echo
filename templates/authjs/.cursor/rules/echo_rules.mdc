@@ -1,0 +1,70 @@
+---
+description: Guidelines for the Echo authjs template — Next-Auth session management, authenticated API routes, and echo handler setup.
+globs: **/*.ts,**/*.tsx
+---
+
+# Echo AuthJS Guidelines
+
+This template integrates Next-Auth (Auth.js) with Echo for user-authenticated AI API routes.
+
+## Echo Client (`src/lib/echo-client.ts`)
+
+The Echo client is created once and reused across the app:
+
+```ts
+import Echo from '@merit-systems/echo-next-sdk';
+export const echo = Echo({ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! });
+export const { handlers, openai, getUser, isSignedIn } = echo;
+```
+
+## Echo API Route
+
+```ts
+// src/app/api/echo/[...echo]/route.ts
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Auth-Protected Chat Route
+
+Always verify the user session before forwarding requests to AI models:
+
+```ts
+// src/app/api/chat/route.ts
+import { auth } from '@/auth';
+import { openai } from '@/echo';
+import { streamText } from 'ai';
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  const { messages } = await req.json();
+  const result = streamText({ model: openai('gpt-4o'), messages });
+  return result.toDataStreamResponse();
+}
+```
+
+## Auth Route
+
+```ts
+// src/app/api/auth/[...nextauth]/route.ts
+import { handlers } from '@/auth';
+export const { GET, POST } = handlers;
+```
+
+## Key Rules
+
+- Always check `session?.user` before making AI calls — never allow unauthenticated usage.
+- Use `getUser()` from `@/echo` for Echo-native identity; use `auth()` for Next-Auth sessions.
+- Store secrets (`NEXTAUTH_SECRET`, `NEXT_PUBLIC_ECHO_APP_ID`) in `.env.local`, never in source.
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_ECHO_APP_ID=your-echo-app-id
+NEXTAUTH_SECRET=your-nextauth-secret
+AUTH_GITHUB_ID=your-github-oauth-id
+AUTH_GITHUB_SECRET=your-github-oauth-secret
+```

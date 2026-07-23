@@ -1,0 +1,60 @@
+---
+description: Guidelines for the Echo next-image template — AI-powered image generation routes, streaming responses, and Next.js image display.
+globs: **/*.ts,**/*.tsx
+---
+
+# Echo Next-Image Guidelines
+
+This template adds AI image generation to a Next.js app using Echo.
+
+## Echo API Route
+
+```ts
+// src/app/api/echo/[...echo]/route.ts
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Image Generation Route
+
+```ts
+// src/app/api/generate-image/route.ts
+import { openai } from '@/echo';
+import { experimental_generateImage as generateImage } from 'ai';
+
+export async function POST(req: Request) {
+  const { prompt } = await req.json();
+  const { image } = await generateImage({
+    model: openai.image('dall-e-3'),
+    prompt,
+    size: '1024x1024',
+  });
+  return Response.json({ url: image.url });
+}
+```
+
+## Displaying Generated Images
+
+```tsx
+// src/components/GeneratedImage.tsx
+import Image from 'next/image';
+
+export function GeneratedImage({ url }: { url: string }) {
+  return (
+    <Image src={url} alt="AI generated" width={1024} height={1024}
+      style={{ maxWidth: '100%', height: 'auto' }} />
+  );
+}
+```
+
+## Key Rules
+
+- Always use `next/image` (not plain `<img>`) for generated image display — it handles CDN caching and optimisation.
+- Add the image provider domain to `next.config.ts` under `images.remotePatterns`.
+- Validate and sanitise the `prompt` parameter before passing to the model.
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_ECHO_APP_ID=your-echo-app-id
+```
