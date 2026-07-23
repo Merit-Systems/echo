@@ -1,0 +1,210 @@
+---
+description: Guidelines and best practices for building Echo Next.js applications with API key management, Prisma database integration, and server-side authentication
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.prisma
+---
+
+# Echo Next.js API Key Template Guidelines
+
+## Architecture
+
+This is a Next.js application demonstrating server-side API key management with Echo. It uses Prisma with PostgreSQL for database storage, Echo for AI billing and authentication, and provides a full-featured chat interface.
+
+### Key Dependencies
+
+- `@merit-systems/echo-next-sdk` for server-side Echo integration
+- `@merit-systems/echo-react-sdk` for client-side Echo components
+- `@merit-systems/echo-typescript-sdk` for direct Echo API calls
+- `@prisma/client` for database access
+- `ai` (Vercel AI SDK v5) for streaming and model interaction
+- `next` for the application framework
+- Docker for local PostgreSQL database
+
+## SDK Initialization
+
+### Server-Side Echo Setup
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap the application with `EchoProvider` in `src/providers.tsx`:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store secrets in `.env.local`:
+
+```bash
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+DATABASE_URL=postgresql://user:password@localhost:5432/echo
+```
+
+NEVER hardcode API keys, app IDs, or database URLs. ALWAYS use environment variables.
+
+## Database (Prisma)
+
+### Schema
+
+The Prisma schema is defined in `prisma/schema.prisma` with PostgreSQL:
+
+```prisma
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+### Prisma Client
+
+ALWAYS use the singleton pattern for the Prisma client in `src/lib/db.ts`:
+
+```typescript
+import { PrismaClient } from '@/generated/prisma';
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const prisma = globalForPrisma.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+```
+
+### Database Commands
+
+- `prisma generate` - Generate the Prisma client
+- `prisma migrate dev` - Create and apply migrations in development
+- `prisma migrate deploy` - Apply migrations in production
+- `prisma studio` - Open the database browser
+
+ALWAYS run `prisma generate` after schema changes. The generated client outputs to `src/generated/prisma`.
+
+### Local Development
+
+The project uses Docker for local PostgreSQL. Run `docker-compose -f docker-local-db.yml up -d` to start the database.
+
+## API Key Management
+
+- Store API keys in the database, associated with user records.
+- NEVER expose API keys in client-side code or responses.
+- ALWAYS validate API keys on the server side before processing requests.
+- Use proper hashing when storing sensitive keys.
+
+## Streaming Chat
+
+Use the Vercel AI SDK with Echo for streaming chat:
+
+```typescript
+import { openai } from '@/echo';
+import { streamText, convertToModelMessages, type UIMessage } from 'ai';
+
+export async function POST(req: Request) {
+  const { messages, model }: { messages: UIMessage[]; model: string } = await req.json();
+  const result = streamText({
+    model: openai(model),
+    messages: convertToModelMessages(messages),
+  });
+  return result.toUIMessageStreamResponse();
+}
+```
+
+## Server/Client Boundaries
+
+- Server components: Echo SDK, Prisma queries, API key validation, authentication
+- Client components: Chat UI, Echo provider, interactive elements
+
+NEVER import `@merit-systems/echo-next-sdk` or `@prisma/client` in client components. NEVER expose database queries or API keys to the client.
+
+## Project Structure
+
+Follow this structure:
+
+```
+prisma/
+  schema.prisma                    # Database schema
+  migrations/                      # Database migrations
+src/
+  generated/
+    prisma/                        # Generated Prisma client
+  app/
+    api/
+      echo/[...echo]/route.ts     # Echo auth handlers
+      chat/route.ts                # Streaming chat endpoint
+    layout.tsx
+    page.tsx
+  components/
+    ai-elements/                   # Chat UI components
+    echo-button.tsx                # Echo integration components
+  echo/
+    index.ts                       # Server-side Echo initialization
+  lib/
+    db.ts                          # Prisma client singleton
+    utils.ts                       # Shared utilities
+  providers.tsx                    # Client providers
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly and provide meaningful HTTP status codes:
+
+```typescript
+try {
+  const result = await prisma.user.findUnique({ where: { apiKey } });
+  if (!result) {
+    return new Response(JSON.stringify({ error: 'Invalid API key' }), { status: 401 });
+  }
+  // proceed
+} catch (error) {
+  console.error('Database error:', error);
+  return new Response(
+    JSON.stringify({ error: 'Internal server error' }),
+    { status: 500, headers: { 'Content-Type': 'application/json' } }
+  );
+}
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Use Prisma-generated types for database models.
+- Export explicit types for shared data structures.
+
+## Testing
+
+NEVER call external services or the real database in unit tests. ALWAYS mock Prisma and the Echo SDK:
+
+```typescript
+vi.mock('@/lib/db', () => ({
+  prisma: { user: { findUnique: vi.fn(), create: vi.fn() } },
+}));
+
+vi.mock('@/echo', () => ({
+  openai: vi.fn(() => mockModel),
+}));
+```

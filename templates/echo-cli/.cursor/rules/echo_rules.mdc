@@ -1,0 +1,171 @@
+---
+description: Guidelines and best practices for building the Echo CLI application, including command structure, authentication, wallet integration, and TypeScript patterns
+globs: **/*.ts,**/*.js
+---
+
+# Echo CLI Guidelines
+
+## Architecture
+
+This is a Node.js CLI application built with Commander.js and the Echo TypeScript SDK. It provides a terminal-based chat agent with wallet-based authentication.
+
+### Key Dependencies
+
+- `commander` for CLI command parsing
+- `@clack/prompts` for interactive terminal prompts
+- `@merit-systems/echo-typescript-sdk` for Echo API integration
+- `@merit-systems/ai-x402` for AI payment integration
+
+## Project Structure
+
+Follow this structure:
+
+```
+src/
+  index.ts              # CLI entry point and command registration
+  constants.ts          # Shared constants (ASCII art, auth options)
+  print.ts              # Output formatting utilities
+  auth/                 # Authentication modules
+    client.ts           # Echo client setup
+    login.ts            # Login flows
+    logout.ts           # Logout handling
+    wallet.ts           # Wallet authentication
+    local-wallet.ts     # Local wallet management
+    providers.ts        # Auth provider configuration
+  config/               # Configuration management
+    index.ts            # Config entry point
+    store.ts            # Persistent storage
+    models.ts           # Model configuration
+    wallet.ts           # Wallet config
+  core/                 # Core functionality
+    chat.ts             # Chat session management
+    history.ts          # Conversation history
+    model.ts            # Model selection
+    profile.ts          # User profile
+  utils/                # Shared utilities
+    auth.ts             # Auth helpers
+    errors.ts           # Error handling
+    spinner.ts          # Loading indicators
+    stream.ts           # Stream processing
+    wallet.ts           # Wallet utilities
+  validation/           # Input validation
+    schemas.ts          # Validation schemas
+    validator.ts        # Validation logic
+```
+
+## Command Registration
+
+ALWAYS register commands using Commander.js in `src/index.ts`:
+
+```typescript
+import { Command } from 'commander';
+
+const program = new Command();
+
+program
+  .name('echodex')
+  .description('CLI Coding Agent Powered by Echo')
+  .version('1.0.0');
+
+program
+  .command('login')
+  .description('Authenticate with Echo or Wallet')
+  .action(async () => {
+    // handler
+  });
+```
+
+ALWAYS call `process.exit()` with appropriate codes at the end of each command action.
+
+## Authentication
+
+### Authentication Methods
+
+The CLI supports multiple authentication methods:
+- Echo OAuth login
+- External wallet connection
+- Local wallet generation
+
+ALWAYS check authentication state before executing protected commands:
+
+```typescript
+import { isAuthenticated } from '@/utils';
+
+const authenticated = await isAuthenticated();
+if (!authenticated) {
+  program.help();
+  process.exit(0);
+}
+```
+
+### Wallet Security
+
+NEVER log or display private keys unless the user explicitly requests it (e.g., `export-private-key` command).
+
+ALWAYS warn users when performing sensitive wallet operations.
+
+## Interactive Prompts
+
+Use `@clack/prompts` for all user interactions:
+
+```typescript
+import { select, isCancel } from '@clack/prompts';
+
+const choice = await select({
+  message: 'Choose an option:',
+  options: [
+    { value: 'a', label: 'Option A' },
+    { value: 'b', label: 'Option B' },
+  ],
+});
+
+if (isCancel(choice)) {
+  warning('Operation cancelled');
+  process.exit(1);
+}
+```
+
+ALWAYS handle cancellation by checking `isCancel()` on prompt results.
+
+## Path Aliases
+
+This project uses TypeScript path aliases. ALWAYS use `@/` imports:
+
+```typescript
+// CORRECT
+import { isAuthenticated } from '@/utils';
+import { ECHODEX_ASCII_ART } from '@/constants';
+
+// INCORRECT
+import { isAuthenticated } from '../../utils';
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly and provide user-friendly output:
+
+```typescript
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  process.exit(1);
+}
+```
+
+Use the `print.ts` utilities for consistent output formatting:
+- `info()` for informational messages
+- `warning()` for warnings
+- `header()` for section headers
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Export explicit types for shared data structures.
+- Use `as const` for string literals and enum-like objects.
+- ALWAYS add `@types/node` to devDependencies.
+
+## Testing
+
+NEVER call external services directly in tests. ALWAYS mock the Echo SDK and wallet providers.

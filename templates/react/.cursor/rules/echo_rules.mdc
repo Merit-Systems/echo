@@ -1,0 +1,148 @@
+---
+description: Guidelines and best practices for building Echo React (Vite) applications, including SDK initialization, provider setup, environment variables, and component patterns
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React (Vite) Guidelines
+
+## SDK Initialization
+
+### EchoProvider Setup
+
+ALWAYS wrap your application with `EchoProvider` at the root level in `main.tsx`:
+
+```typescript
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+### Using Echo Components
+
+Use the pre-built Echo UI components from `@merit-systems/echo-react-sdk`:
+
+```typescript
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+
+function App() {
+  return (
+    <>
+      <h1>Welcome to Echo</h1>
+      <EchoTokens />
+    </>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env`:
+
+```bash
+VITE_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code. ALWAYS use `import.meta.env.VITE_*` environment variables.
+
+Note: Vite only exposes environment variables prefixed with `VITE_` to client code. NEVER store server secrets in `VITE_` prefixed variables as they are bundled into the client.
+
+## Client-Side Architecture
+
+This is a client-side React application. All Echo interactions happen through the React SDK:
+
+- Use `@merit-systems/echo-react-sdk` for all Echo functionality.
+- The `EchoProvider` manages authentication state and token management.
+- Use Echo UI components (`EchoTokens`, etc.) for user-facing Echo features.
+
+NEVER attempt to use `@merit-systems/echo-next-sdk` in a Vite/React project. That package is exclusively for Next.js server-side usage.
+
+## Component Patterns
+
+### Echo-Aware Components
+
+When building components that interact with Echo, keep Echo logic isolated:
+
+```typescript
+// CORRECT - Echo component handles its own concerns
+import { EchoTokens } from '@merit-systems/echo-react-sdk';
+
+export function TokenDisplay() {
+  return (
+    <div className="token-section">
+      <EchoTokens />
+    </div>
+  );
+}
+```
+
+### Separation of Concerns
+
+- Keep Echo provider setup in `main.tsx`.
+- Keep Echo-specific components in a dedicated directory (e.g., `src/components/echo/`).
+- Keep UI components separate from Echo integration logic.
+
+## Error Handling
+
+ALWAYS handle errors explicitly and provide meaningful feedback to users:
+
+```typescript
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  // Show user-friendly error message
+}
+```
+
+## Project Structure
+
+Follow this structure for Echo React (Vite) projects:
+
+```
+src/
+  App.tsx                # Main application component
+  main.tsx               # Entry point with EchoProvider
+  components/            # UI components
+  lib/                   # Shared utilities
+  assets/                # Static assets
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Export explicit types for shared data structures.
+- Use `as const` for string literals in discriminated union types.
+
+## Vite Configuration
+
+Use the standard Vite React configuration:
+
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+});
+```
+
+## Testing
+
+NEVER call external services directly in unit tests. ALWAYS mock the Echo SDK:
+
+```typescript
+vi.mock('@merit-systems/echo-react-sdk', () => ({
+  EchoProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  EchoTokens: () => <div data-testid="echo-tokens" />,
+}));
+```

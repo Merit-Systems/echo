@@ -1,0 +1,151 @@
+---
+description: Guidelines and best practices for building Echo Next.js image generation applications, including SDK initialization, image API integration, server/client boundaries, and UI patterns
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Image Generation Guidelines
+
+## Architecture
+
+This is a Next.js application for AI-powered image generation using the Echo SDK. It provides image generation through Echo's model routing with automatic billing and user management.
+
+### Key Dependencies
+
+- `@merit-systems/echo-next-sdk` for server-side Echo integration
+- `@merit-systems/echo-react-sdk` for client-side Echo components
+- `ai` (Vercel AI SDK) for model interaction
+- `openai` for image generation API calls
+- `next` for the application framework
+- Radix UI components for the UI layer
+
+## SDK Initialization
+
+### Server-Side Echo Setup
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local`:
+
+```bash
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs. ALWAYS use environment variables.
+
+## Image Generation
+
+### Server Actions
+
+Use Next.js server actions in `src/lib/image-actions.ts` for image generation:
+
+```typescript
+'use server';
+
+import { openai } from '@/echo';
+
+export async function generateImage(prompt: string, model: string) {
+  // Generate image using Echo-proxied OpenAI
+  const response = await openai.images.generate({
+    model,
+    prompt,
+  });
+  return response.data;
+}
+```
+
+ALWAYS use server actions or API routes for image generation. NEVER call the OpenAI API directly from client components.
+
+### Image Utilities
+
+Keep image processing utilities in `src/lib/image-utils.ts` and type definitions in `src/lib/types.ts`.
+
+Keep model and size constants in `src/lib/constants.ts`.
+
+## Echo UI Components
+
+Use the shared Echo UI components in `src/components/`:
+
+- `echo-button.tsx` - Echo sign-in button
+- `echo-popover.tsx` - Account popover menu
+- `echo-account-next.tsx` - Account management
+- `echo-tokens.tsx` - Token display
+- `balance.tsx` - Token balance display
+- `signin.tsx` - Sign-in page component
+- `image-details-dialog.tsx` - Image detail view
+
+## Server/Client Boundaries
+
+- Server components: Echo SDK initialization, image generation actions, authentication
+- Client components: Image display, user input, Echo provider components
+
+NEVER import `@merit-systems/echo-next-sdk` in client components. Use `@merit-systems/echo-react-sdk` for client-side Echo features.
+
+## Project Structure
+
+Follow this structure:
+
+```
+src/
+  app/
+    api/
+      echo/[...echo]/route.ts     # Echo auth handlers
+    layout.tsx
+    page.tsx
+  components/
+    ui/                            # Reusable UI primitives
+    echo-button.tsx                # Echo integration components
+    echo-tokens.tsx
+    image-details-dialog.tsx       # Image-specific components
+    ai-elements/
+      prompt-input.tsx             # Image prompt input
+  echo/
+    index.ts                       # Server-side Echo initialization
+  lib/
+    types.ts                       # Image type definitions
+    constants.ts                   # Model and size constants
+    image-actions.ts               # Server actions for generation
+    image-utils.ts                 # Image processing utilities
+    utils.ts                       # Shared utilities
+    currency-utils.ts              # Currency formatting
+```
+
+## Error Handling
+
+ALWAYS handle image generation errors and provide user feedback:
+
+```typescript
+try {
+  const result = await generateImage(prompt, model);
+  return result;
+} catch (error) {
+  console.error('Image generation failed:', error);
+  // Return user-friendly error
+}
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Define image-related types in `src/lib/types.ts`.
+- Export explicit types for shared data structures.
+
+## Testing
+
+NEVER call external services in unit tests. ALWAYS mock the Echo SDK and image generation:
+
+```typescript
+vi.mock('@/echo', () => ({
+  openai: { images: { generate: vi.fn() } },
+}));
+```

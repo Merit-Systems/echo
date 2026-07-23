@@ -1,0 +1,178 @@
+---
+description: Guidelines and best practices for building Echo React chat applications with Vite, including SDK initialization, chat UI patterns, environment variables, and component architecture
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo React Chat (Vite) Guidelines
+
+## Architecture
+
+This is a client-side React chat application built with Vite and the Echo React SDK. It provides a streaming chat interface with AI billing and user management through Echo.
+
+### Key Dependencies
+
+- `@merit-systems/echo-react-sdk` for Echo integration (provider, auth, UI)
+- `@ai-sdk/react` for React chat hooks (useChat)
+- `ai` (Vercel AI SDK v5) for streaming and model interaction
+- `react` and `react-dom` for the UI framework
+- `vite` for the build tool
+- Radix UI components for the UI layer
+
+## SDK Initialization
+
+### EchoProvider Setup
+
+ALWAYS wrap your application with `EchoProvider` at the root level in `src/main.tsx`:
+
+```typescript
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+import App from './App.tsx';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <EchoProvider config={{ appId: import.meta.env.VITE_ECHO_APP_ID! }}>
+      <App />
+    </EchoProvider>
+  </StrictMode>
+);
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env`:
+
+```bash
+VITE_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs. ALWAYS use `import.meta.env.VITE_*` environment variables.
+
+Note: Vite only exposes variables prefixed with `VITE_` to client code. NEVER store server secrets in `VITE_` prefixed variables as they are bundled into the client.
+
+## Chat Implementation
+
+### Chat Component
+
+Use `useChat` from `@ai-sdk/react` for chat state management:
+
+```typescript
+import { useChat } from '@ai-sdk/react';
+
+export function Chat() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: '/api/chat',
+  });
+  // render chat UI
+}
+```
+
+### AI UI Elements
+
+This template includes reusable AI UI components in `src/components/ai-elements/`:
+
+- `conversation.tsx` - Chat conversation container
+- `prompt-input.tsx` - User input with model selection
+- `response.tsx` - AI response rendering
+- `code-block.tsx` - Syntax-highlighted code blocks
+- `sources.tsx` - Source citation display
+- `suggestion.tsx` - Suggested prompts
+- `task.tsx` - Task/tool execution display
+- `image.tsx` - Image generation display
+
+ALWAYS use these existing components rather than building custom equivalents.
+
+## Client-Side Architecture
+
+This is entirely a client-side application. All Echo interactions happen through the React SDK:
+
+- Use `@merit-systems/echo-react-sdk` for all Echo functionality.
+- The `EchoProvider` manages authentication state and token management.
+- Use Echo UI components for user-facing Echo features.
+
+NEVER attempt to use `@merit-systems/echo-next-sdk` in this project. That package is exclusively for Next.js server-side usage.
+
+## Echo UI Components
+
+Use the shared Echo UI components in `src/components/`:
+
+- `echo-button.tsx` - Echo sign-in button
+- `echo-popover.tsx` - Account popover menu
+- `balance.tsx` - Token balance display
+- `money-input.tsx` - Currency input for top-ups
+- `logo.tsx` - Echo logo component
+
+## Component Patterns
+
+### Separation of Concerns
+
+- Keep Echo provider setup in `src/main.tsx`.
+- Keep the main chat logic in `src/chat.tsx`.
+- Keep the app header/navigation in `src/header.tsx`.
+- Keep Echo-specific components in `src/components/`.
+- Keep AI chat UI elements in `src/components/ai-elements/`.
+
+## Project Structure
+
+Follow this structure:
+
+```
+src/
+  main.tsx                         # Entry point with EchoProvider
+  App.tsx                          # Root component
+  chat.tsx                         # Chat implementation
+  header.tsx                       # App header/navigation
+  components/
+    ai-elements/                   # Chat UI components
+    echo-button.tsx                # Echo integration components
+    echo-popover.tsx
+    balance.tsx
+  lib/
+    utils.ts                       # Shared utilities
+    currency-utils.ts              # Currency formatting
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly and provide meaningful feedback:
+
+```typescript
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  // Show user-friendly error message
+}
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Export explicit types for shared data structures.
+- Use `as const` for string literals in discriminated union types.
+
+## Vite Configuration
+
+Use the standard Vite React configuration with TypeScript:
+
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+});
+```
+
+## Testing
+
+NEVER call external services in unit tests. ALWAYS mock the Echo SDK:
+
+```typescript
+vi.mock('@merit-systems/echo-react-sdk', () => ({
+  EchoProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  EchoTokens: () => <div data-testid="echo-tokens" />,
+}));
+```

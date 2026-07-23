@@ -1,0 +1,177 @@
+---
+description: Guidelines and best practices for building Echo Next.js applications, including SDK initialization, server/client boundaries, environment variables, and API routes
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Guidelines
+
+## SDK Initialization
+
+### Server-Side Initialization
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts` for server-side usage:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap your application with `EchoProvider` in your providers file:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-next-sdk/client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local`:
+
+```bash
+# Server-side only
+ECHO_APP_ID=your_echo_app_id
+
+# Client-side (public)
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs directly in your code. ALWAYS use environment variables.
+
+## Server/Client Boundaries
+
+### Server Components
+
+ALWAYS use server components for Echo AI calls that require authentication:
+
+```typescript
+import { openai } from '@/echo';
+import { generateText } from 'ai';
+
+export default async function Page() {
+  const { text } = await generateText({
+    model: openai('gpt-4o'),
+    prompt: 'Hello, world!',
+  });
+  return <div>{text}</div>;
+}
+```
+
+### Client Components
+
+Use client components ONLY for UI interactions. NEVER make direct AI calls from client components with server secrets:
+
+```typescript
+// CORRECT - Client component uses Echo UI components
+'use client';
+
+import { EchoTokens } from '@merit-systems/echo-next-sdk/client';
+
+export function EchoButton() {
+  return <EchoTokens />;
+}
+```
+
+NEVER import `@merit-systems/echo-next-sdk` (server SDK) in a client component. Only use `@merit-systems/echo-next-sdk/client` on the client side.
+
+## API Routes
+
+### Echo Authentication Handler
+
+ALWAYS register Echo authentication handlers at `app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+### Custom API Routes with AI
+
+Use the Vercel AI SDK (`ai` package) with Echo model providers for streaming:
+
+```typescript
+import { openai } from '@/echo';
+import { streamText, convertToModelMessages, type UIMessage } from 'ai';
+
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  const { messages, model }: { messages: UIMessage[]; model: string } = await req.json();
+
+  if (!model || !messages || !Array.isArray(messages)) {
+    return new Response(JSON.stringify({ error: 'Bad Request' }), { status: 400 });
+  }
+
+  const result = streamText({
+    model: openai(model),
+    messages: convertToModelMessages(messages),
+  });
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly in API routes and provide meaningful HTTP status codes:
+
+```typescript
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  return new Response(
+    JSON.stringify({ error: 'Internal server error', message: 'Failed to process request' }),
+    { status: 500, headers: { 'Content-Type': 'application/json' } }
+  );
+}
+```
+
+## Project Structure
+
+Follow this structure for Echo Next.js projects:
+
+```
+src/
+  app/
+    api/
+      echo/[...echo]/route.ts  # Echo auth handlers
+      chat/route.ts             # Custom API routes
+    layout.tsx
+    page.tsx
+  components/                   # Client-side components
+  echo/
+    index.ts                    # Server-side Echo initialization
+  lib/                          # Shared utilities and types
+  providers.tsx                 # Client providers including EchoProvider
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Export explicit types for shared data structures.
+- Use `as const` for string literals in discriminated union types.
+
+## Testing
+
+NEVER call external services directly in unit tests. ALWAYS mock the Echo SDK:
+
+```typescript
+vi.mock('@/echo', () => ({
+  openai: vi.fn(() => mockModel),
+}));
+```

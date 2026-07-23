@@ -1,0 +1,218 @@
+---
+description: Guidelines and best practices for building Echo applications with Auth.js (NextAuth) integration, including authentication flows, session management, and Echo SDK usage
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Auth.js Guidelines
+
+## Architecture
+
+This is a Next.js application that uses Echo as an Auth.js (NextAuth v5) provider for authentication, combined with the Echo Next SDK for AI functionality. It demonstrates OAuth-based login through Echo.
+
+### Key Dependencies
+
+- `next-auth` (v5 beta) for authentication
+- `@merit-systems/echo-authjs-provider` for the Echo Auth.js provider
+- `@merit-systems/echo-next-sdk` for Echo AI integration
+- `@merit-systems/echo-typescript-sdk` for server-side Echo API calls
+- `ai` (Vercel AI SDK) for model interaction
+- `next` for the application framework
+
+## Authentication Setup
+
+### Auth Configuration
+
+ALWAYS configure Auth.js in `src/auth/index.ts` using the Echo provider:
+
+```typescript
+import NextAuth from 'next-auth';
+import Echo from '@merit-systems/echo-authjs-provider';
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [
+    Echo({
+      appId: process.env.ECHO_APP_ID!,
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, account }) {
+      if (account) {
+        token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      session.accessToken = token.accessToken as string;
+      session.refreshToken = token.refreshToken as string;
+      return session;
+    },
+  },
+});
+```
+
+### Auth Route Handler
+
+ALWAYS register the NextAuth route handler at `src/app/api/auth/[...nextauth]/route.ts`:
+
+```typescript
+import { handlers } from '@/auth';
+export const { GET, POST } = handlers;
+```
+
+### Session Type Augmentation
+
+ALWAYS augment the NextAuth types in `src/types/next-auth.d.ts` to include Echo tokens:
+
+```typescript
+declare module 'next-auth' {
+  interface Session {
+    accessToken: string;
+    refreshToken: string;
+  }
+}
+```
+
+## Echo SDK Initialization
+
+### Server-Side Echo Setup
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Echo Route Handler
+
+ALWAYS register Echo handlers at `src/app/api/echo/[...echo]/route.ts`:
+
+```typescript
+import { handlers } from '@/echo';
+export const { GET, POST } = handlers;
+```
+
+## Environment Variables
+
+ALWAYS store secrets in `.env.local`:
+
+```bash
+ECHO_APP_ID=your_echo_app_id
+AUTH_SECRET=your_nextauth_secret
+```
+
+NEVER hardcode API keys, app IDs, or auth secrets. ALWAYS use environment variables.
+
+Note: `AUTH_SECRET` is required by NextAuth v5 for JWT encryption.
+
+## Authentication Patterns
+
+### Protecting Pages
+
+Use the `auth()` function from your auth config to check sessions:
+
+```typescript
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
+
+export default async function DashboardPage() {
+  const session = await auth();
+  if (!session) {
+    redirect('/');
+  }
+  return <div>Welcome, {session.user?.name}</div>;
+}
+```
+
+### Sign In / Sign Out
+
+Use the `signIn` and `signOut` server actions:
+
+```typescript
+import { signIn, signOut } from '@/auth';
+
+// In a server action or form
+await signIn('echo');
+await signOut();
+```
+
+## Server/Client Boundaries
+
+- Server components: Authentication checks, Echo SDK calls, data fetching
+- Client components: UI interactions, sign-in buttons, session display
+
+NEVER import `@merit-systems/echo-next-sdk` or access `auth()` in client components. Use server components or API routes for authenticated operations.
+
+## Echo Client for API Calls
+
+Use `@merit-systems/echo-typescript-sdk` for direct Echo API calls on the server:
+
+```typescript
+import { EchoClient } from '@merit-systems/echo-typescript-sdk';
+
+const echoClient = new EchoClient({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+## Project Structure
+
+Follow this structure:
+
+```
+src/
+  app/
+    api/
+      auth/[...nextauth]/route.ts  # NextAuth handlers
+      echo/[...echo]/route.ts      # Echo handlers
+    dashboard/page.tsx              # Protected page
+    layout.tsx
+    page.tsx
+  auth/
+    index.ts                        # NextAuth configuration
+  echo/
+    index.ts                        # Echo SDK initialization
+  lib/
+    echo-client.ts                  # Echo TypeScript SDK client
+  types/
+    next-auth.d.ts                  # Type augmentation
+```
+
+## Error Handling
+
+ALWAYS handle authentication errors gracefully:
+
+```typescript
+try {
+  const session = await auth();
+  if (!session) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  // proceed with authenticated logic
+} catch (error) {
+  console.error('Auth error:', error);
+  return new Response('Internal server error', { status: 500 });
+}
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- ALWAYS augment NextAuth types when adding custom session fields.
+- Export explicit types for shared data structures.
+
+## Testing
+
+NEVER call external auth services in tests. ALWAYS mock NextAuth and the Echo SDK:
+
+```typescript
+vi.mock('@/auth', () => ({
+  auth: vi.fn(() => Promise.resolve({ user: { name: 'Test' } })),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+}));
+```

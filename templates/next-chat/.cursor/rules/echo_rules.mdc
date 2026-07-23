@@ -1,0 +1,198 @@
+---
+description: Guidelines and best practices for building Echo Next.js chat applications, including SDK initialization, streaming chat, server/client boundaries, and UI component patterns
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
+
+# Echo Next.js Chat Guidelines
+
+## Architecture
+
+This is a full-featured Next.js chat application using the Echo SDK for AI billing, authentication, and model routing. It includes streaming chat, user management, and a rich set of AI UI elements.
+
+### Key Dependencies
+
+- `@merit-systems/echo-next-sdk` for server-side Echo integration
+- `@merit-systems/echo-react-sdk` for client-side Echo components
+- `@ai-sdk/react` for React hooks (useChat)
+- `ai` (Vercel AI SDK v5) for streaming and model interaction
+- `next` for the application framework
+- Radix UI components for the UI layer
+
+## SDK Initialization
+
+### Server-Side Echo Setup
+
+ALWAYS initialize the Echo SDK in `src/echo/index.ts`:
+
+```typescript
+import Echo from '@merit-systems/echo-next-sdk';
+
+export const { handlers, isSignedIn, openai, anthropic } = Echo({
+  appId: process.env.ECHO_APP_ID!,
+});
+```
+
+### Client-Side Provider
+
+ALWAYS wrap the application with `EchoProvider` in `src/providers.tsx`:
+
+```typescript
+'use client';
+
+import { EchoProvider } from '@merit-systems/echo-react-sdk';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EchoProvider config={{ appId: process.env.NEXT_PUBLIC_ECHO_APP_ID! }}>
+      {children}
+    </EchoProvider>
+  );
+}
+```
+
+## Environment Variables
+
+ALWAYS store your Echo App ID in `.env.local`:
+
+```bash
+ECHO_APP_ID=your_echo_app_id
+NEXT_PUBLIC_ECHO_APP_ID=your_echo_app_id
+```
+
+NEVER hardcode API keys or app IDs. ALWAYS use environment variables.
+
+## Streaming Chat API
+
+### Chat API Route
+
+Use the Vercel AI SDK with Echo model providers for streaming responses:
+
+```typescript
+import { openai } from '@/echo';
+import { streamText, convertToModelMessages, type UIMessage } from 'ai';
+
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  const { messages, model }: { messages: UIMessage[]; model: string } = await req.json();
+
+  if (!model || !messages || !Array.isArray(messages)) {
+    return new Response(JSON.stringify({ error: 'Bad Request' }), { status: 400 });
+  }
+
+  const result = streamText({
+    model: openai(model),
+    messages: convertToModelMessages(messages),
+  });
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+### Client-Side Chat Hook
+
+Use `useChat` from `@ai-sdk/react` for client-side chat state management:
+
+```typescript
+'use client';
+
+import { useChat } from '@ai-sdk/react';
+
+export function Chat() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: '/api/chat',
+  });
+  // render chat UI
+}
+```
+
+## AI UI Elements
+
+This template includes reusable AI UI components in `src/components/ai-elements/`:
+
+- `conversation.tsx` - Chat conversation container
+- `prompt-input.tsx` - User input with model selection
+- `response.tsx` - AI response rendering
+- `code-block.tsx` - Syntax-highlighted code blocks
+- `sources.tsx` - Source citation display
+- `suggestion.tsx` - Suggested prompts
+- `task.tsx` - Task/tool execution display
+- `image.tsx` - Image generation display
+
+ALWAYS use these existing components rather than building custom equivalents.
+
+## Echo UI Components
+
+Use the shared Echo UI components in `src/components/`:
+
+- `echo-button.tsx` - Echo sign-in button
+- `echo-popover.tsx` - Account popover menu
+- `echo-account-next.tsx` - Account management
+- `balance.tsx` - Token balance display
+- `money-input.tsx` - Currency input for top-ups
+
+## Server/Client Boundaries
+
+- Server components: Echo SDK initialization, API routes, authentication checks
+- Client components: Chat UI, Echo provider, interactive elements
+
+NEVER import `@merit-systems/echo-next-sdk` in client components. Use `@merit-systems/echo-react-sdk` for client-side Echo features.
+
+## Project Structure
+
+Follow this structure:
+
+```
+src/
+  app/
+    api/
+      echo/[...echo]/route.ts     # Echo auth handlers
+      chat/route.ts                # Streaming chat endpoint
+    layout.tsx
+    page.tsx
+  components/
+    ai-elements/                   # Chat UI components
+    echo-button.tsx                # Echo integration components
+    echo-popover.tsx
+    balance.tsx
+  echo/
+    index.ts                       # Server-side Echo initialization
+  lib/
+    utils.ts                       # Shared utilities
+    currency-utils.ts              # Currency formatting
+  providers.tsx                    # Client providers
+```
+
+## Error Handling
+
+ALWAYS handle errors explicitly in API routes and provide meaningful HTTP status codes:
+
+```typescript
+try {
+  const result = await someOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  return new Response(
+    JSON.stringify({ error: 'Internal server error' }),
+    { status: 500, headers: { 'Content-Type': 'application/json' } }
+  );
+}
+```
+
+## TypeScript Guidelines
+
+- Use strict typing and avoid `any`.
+- Export explicit types for shared data structures.
+- Use `as const` for string literals in discriminated union types.
+- Type chat messages using `UIMessage` from the `ai` package.
+
+## Testing
+
+NEVER call external services in unit tests. ALWAYS mock the Echo SDK:
+
+```typescript
+vi.mock('@/echo', () => ({
+  openai: vi.fn(() => mockModel),
+}));
+```
