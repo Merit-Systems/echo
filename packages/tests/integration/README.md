@@ -80,3 +80,10 @@ Reset only:
 ```bash
 pnpm db:reset
 ```
+
+## Navigation
+
+- [Back to `packages/tests`](../../README.md)
+- [Back to `echo`](../../../README.md)
+- [Back to `REPOS`](../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../README.md)

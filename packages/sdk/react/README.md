@@ -8,6 +8,13 @@ React SDK for Echo OAuth2 + PKCE authentication and token management.
 pnpm install @merit-systems/echo-react-sdk
 ```
 
+## Navigation
+
+- [Back to `packages/sdk`](../../README.md)
+- [Back to `echo`](../../../README.md)
+- [Back to `REPOS`](../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../README.md)
+
 ## Setup
 
 ```tsx

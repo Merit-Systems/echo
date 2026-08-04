@@ -243,3 +243,10 @@ Make sure to update your Echo app configuration with your production domain.
 ---
 
 Built with ❤️ using [Echo](https://echo.merit.systems) - The simplest way to build AI applications with built-in billing and user management.
+
+## Navigation
+
+- [Back to `templates`](../README.md)
+- [Back to `echo`](../../README.md)
+- [Back to `REPOS`](../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../README.md)

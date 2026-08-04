@@ -255,3 +255,10 @@ For complete documentation and examples, visit:
 - Next.js 15.0.0 or higher
 - React 18.0.0 or 19.0.0
 - Node.js 18 or higher
+
+## Navigation
+
+- [Back to `packages/sdk`](../../README.md)
+- [Back to `echo`](../../../README.md)
+- [Back to `REPOS`](../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../README.md)

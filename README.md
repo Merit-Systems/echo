@@ -125,3 +125,8 @@ Fill out `packages/app/control/.env` and `packages/app/server/.env`. Then...
 
 - `pnpm i`
 - `pnpm dev`
+
+## Navigation
+
+- [Back to `REPOS`](../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../README.md)

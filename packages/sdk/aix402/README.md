@@ -53,3 +53,9 @@ const result = streamText({
   messages: [{ role: 'user', content: 'Hello!' }],
 });
 ```
+## Navigation
+
+- [Back to `packages/sdk`](../../README.md)
+- [Back to `echo`](../../../README.md)
+- [Back to `REPOS`](../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../README.md)
