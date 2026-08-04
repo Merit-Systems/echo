@@ -306,3 +306,9 @@ Some templates (like `nextjs-api-key-template`) may require additional environme
 ---
 
 Built with ❤️ by [Merit Systems](https://merit.systems)
+
+## Navigation
+
+- [Back to `echo`](../README.md)
+- [Back to `REPOS`](../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../README.md)

@@ -227,3 +227,10 @@ The test suite is designed for CI/CD environments:
 - Coverage reporting
 - Parallel test execution support
 - Deterministic test results
+
+## Navigation
+
+- [Back to `packages/sdk/ts`](../../../README.md)
+- [Back to `echo`](../../../../README.md)
+- [Back to `REPOS`](../../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../../README.md)

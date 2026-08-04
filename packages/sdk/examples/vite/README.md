@@ -25,3 +25,10 @@ The entire app is in `src/App.tsx` - just 70 lines of code demonstrating:
 4. Using `EchoSignIn` and `EchoTokens` components
 
 This shows the complete user journey from sign-up to having a positive balance.
+
+## Navigation
+
+- [Back to `packages/sdk/examples`](../../../README.md)
+- [Back to `echo`](../../../../README.md)
+- [Back to `REPOS`](../../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../../README.md)

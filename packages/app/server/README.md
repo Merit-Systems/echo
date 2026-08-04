@@ -79,3 +79,16 @@ CMD ["pnpm", "start"]
 ## Error Handling
 
 If the generated Prisma client is not found, the server will throw a descriptive error message asking you to run `pnpm run copy-prisma`.
+
+## Navigation
+
+- [Back to `packages/app`](../../README.md)
+- [Back to `echo`](../../../README.md)
+- [Back to `REPOS`](../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../README.md)
+## Navigation
+
+- [Back to `packages/app`](../../README.md)
+- [Back to `echo`](../../../README.md)
+- [Back to `REPOS`](../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../README.md)

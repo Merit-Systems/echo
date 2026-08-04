@@ -87,3 +87,10 @@ const runtime = useChatRuntime({
 ## API Route
 
 The API route at `/api/chat` uses the new `streamText` function from AI SDK v5 to handle chat completions.
+
+## Navigation
+
+- [Back to `templates`](../README.md)
+- [Back to `echo`](../../README.md)
+- [Back to `REPOS`](../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../README.md)

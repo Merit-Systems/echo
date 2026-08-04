@@ -21,3 +21,10 @@ This is a template for creating a custom registry using Next.js.
 ## Documentation
 
 Visit the [shadcn documentation](https://ui.shadcn.com/docs/registry) to view the full documentation.
+
+## Navigation
+
+- [Back to `packages/sdk`](../../README.md)
+- [Back to `echo`](../../../README.md)
+- [Back to `REPOS`](../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../README.md)

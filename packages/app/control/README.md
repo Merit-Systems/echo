@@ -157,3 +157,16 @@ pnpm start
 ## License
 
 This project is licensed under the MIT License.
+
+## Navigation
+
+- [Back to `packages/app`](../../README.md)
+- [Back to `echo`](../../../README.md)
+- [Back to `REPOS`](../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../README.md)
+## Navigation
+
+- [Back to `packages/app`](../../README.md)
+- [Back to `echo`](../../../README.md)
+- [Back to `REPOS`](../../../../README.md)
+- [Back to `AI_REVENUE_SPRINT_100_24H`](../../../../../README.md)
